@@ -1,5 +1,6 @@
-// This is a placeholder implementation for authentication
-// In a real application, you would use a proper auth library like NextAuth.js
+import { NextAuthOptions } from "next-auth";
+import CredentialsProvider from "next-auth/providers/credentials";
+import { getServerSession } from "next-auth";
 
 interface User {
   id: string;
@@ -11,6 +12,37 @@ interface User {
 interface Session {
   user: User;
   expires: Date;
+}
+
+// Helper function to get session in API routes
+export async function getSession() {
+  try {
+    const session = await getServerSession(authOptions);
+    return session;
+  } catch (error) {
+    console.error('Error getting session:', error);
+    return null;
+  }
+}
+
+// Helper function to get current user ID
+export async function getCurrentUserId(): Promise<string | null> {
+  try {
+    const session = await getSession();
+    const userId = (session?.user as any)?.id || null;
+    
+    // Si no hay sesión, usar un ID fijo para testing
+    if (!userId) {
+      console.log('No session found, using default user ID for testing');
+      return "user_123";
+    }
+    
+    return userId;
+  } catch (error) {
+    console.error('Error getting current user ID:', error);
+    // En caso de error, usar un ID fijo para testing
+    return "user_123";
+  }
 }
 
 // Mock implementation of auth function
@@ -37,3 +69,54 @@ export async function getCurrentUser(): Promise<User | null> {
   const session = await auth();
   return session?.user || null;
 }
+
+// NextAuth configuration
+export const authOptions: NextAuthOptions = {
+  providers: [
+    CredentialsProvider({
+      name: "credentials",
+      credentials: {
+        email: { label: "Email", type: "email" },
+        password: { label: "Password", type: "password" }
+      },
+      async authorize(credentials) {
+        // Mock authentication - in a real app, you would validate against your database
+        if (credentials?.email === "admin@cemse.com" && credentials?.password === "admin") {
+          return {
+            id: "user_123",
+            email: "admin@cemse.com",
+            name: "Super Admin",
+            role: "SUPER_ADMIN",
+          };
+        }
+        return null;
+      }
+    })
+  ],
+  session: {
+    strategy: "jwt",
+  },
+  callbacks: {
+    async session({ session, token }: any) {
+      if (token) {
+        session.user = {
+          id: token.sub || "user_123",
+          email: token.email || "admin@cemse.com",
+          name: token.name || "Super Admin",
+          role: token.role || "SUPER_ADMIN",
+        };
+      }
+      return session;
+    },
+    async jwt({ token, user }: any) {
+      if (user) {
+        token.role = user.role;
+        token.id = user.id;
+      }
+      return token;
+    },
+  },
+  pages: {
+    signIn: "/auth/signin",
+  },
+};

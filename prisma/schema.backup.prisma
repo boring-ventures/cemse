@@ -1,0 +1,949 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+// Looking for ways to speed up your queries, or scale easily with your serverless or edge functions?
+// Try Prisma Accelerate: https://pris.ly/cli/accelerate-init
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+
+enum UserRole {
+  YOUTH
+  ADOLESCENTS
+  COMPANIES
+  MUNICIPAL_GOVERNMENTS
+  TRAINING_CENTERS
+  NGOS_AND_FOUNDATIONS
+  SUPERADMIN
+}
+
+enum UserStatus {
+  ACTIVE
+  INACTIVE
+  PENDING_VERIFICATION
+  SUSPENDED
+}
+
+
+
+enum EducationLevel {
+  PRIMARY
+  SECONDARY
+  TECHNICAL
+  UNIVERSITY
+  POSTGRADUATE
+  OTHER
+}
+
+enum CompanySize {
+  MICRO
+  SMALL
+  MEDIUM
+  LARGE
+}
+
+enum JobStatus {
+  ACTIVE
+  PAUSED
+  CLOSED
+  DRAFT
+}
+
+enum ApplicationStatus {
+  SENT
+  UNDER_REVIEW
+  PRE_SELECTED
+  REJECTED
+  HIRED
+}
+
+enum ContractType {
+  FULL_TIME
+  PART_TIME
+  INTERNSHIP
+  VOLUNTEER
+  FREELANCE
+}
+
+enum WorkModality {
+  ON_SITE
+  REMOTE
+  HYBRID
+}
+
+enum ExperienceLevel {
+  NO_EXPERIENCE
+  ENTRY_LEVEL
+  MID_LEVEL
+  SENIOR_LEVEL
+}
+
+enum CourseCategory {
+  SOFT_SKILLS
+  BASIC_COMPETENCIES
+  JOB_PLACEMENT
+  ENTREPRENEURSHIP
+  TECHNICAL_SKILLS
+  DIGITAL_LITERACY
+  COMMUNICATION
+  LEADERSHIP
+}
+
+enum CourseLevel {
+  BEGINNER
+  INTERMEDIATE
+  ADVANCED
+}
+
+enum LessonType {
+  VIDEO
+  TEXT
+  QUIZ
+  ASSIGNMENT
+  LIVE
+}
+
+enum ResourceType {
+  PDF
+  DOCUMENT
+  VIDEO
+  AUDIO
+  IMAGE
+  LINK
+  ZIP
+  OTHER
+}
+
+enum QuestionType {
+  MULTIPLE_CHOICE
+  TRUE_FALSE
+  FILL_BLANK
+  SORT_ELEMENTS
+  MULTIPLE_SELECT
+  SHORT_ANSWER
+}
+
+enum EnrollmentStatus {
+  ENROLLED
+  IN_PROGRESS
+  COMPLETED
+  DROPPED
+  SUSPENDED
+}
+
+enum NewsType {
+  COMPANY
+  GOVERNMENT
+  NGO
+}
+
+enum NewsStatus {
+  PUBLISHED
+  DRAFT
+  ARCHIVED
+}
+
+enum NewsPriority {
+  LOW
+  MEDIUM
+  HIGH
+  URGENT
+}
+
+enum BusinessStage {
+  IDEA
+  STARTUP
+  GROWING
+  ESTABLISHED
+}
+
+model Profile {
+  id            String               @id @default(cuid())
+  userId        String               @unique
+  avatarUrl     String?
+  createdAt     DateTime             @default(now())
+  updatedAt     DateTime             @updatedAt
+  active        Boolean              @default(true)
+  status        UserStatus           @default(ACTIVE)
+  role          UserRole             @default(YOUTH)
+
+  // Basic Information (All users)
+  firstName     String?              @map("first_name")
+  lastName      String?              @map("last_name")
+  email         String?
+  phone         String?
+  address       String?
+  municipality  String?
+  department    String?              @default("Cochabamba")
+  country       String?              @default("Bolivia")
+  birthDate     DateTime?            @map("birth_date")
+  gender        String?
+  
+  // Identification
+  documentType  String?              @map("document_type") // CI, Passport, etc.
+  documentNumber String?             @map("document_number")
+  
+  // For YOUTH and ADOLESCENTS
+  educationLevel     EducationLevel?      @map("education_level")
+  currentInstitution String?              @map("current_institution")
+  graduationYear     Int?                 @map("graduation_year")
+  isStudying         Boolean?             @map("is_studying")
+  skills             String[]             // JSON array of skills
+  interests          String[]             // JSON array of interests
+  workExperience     Json?                @map("work_experience") // JSON object with work history
+  
+  // For COMPANIES
+  companyName        String?              @map("company_name")
+  taxId              String?              @map("tax_id") // NIT
+  legalRepresentative String?             @map("legal_representative")
+  businessSector     String?              @map("business_sector")
+  companySize        CompanySize?         @map("company_size")
+  companyDescription String?              @map("company_description")
+  website            String?
+  foundedYear        Int?                 @map("founded_year")
+  
+  // For INSTITUTIONS (Governments, Centers, NGOs)
+  institutionName    String?              @map("institution_name")
+  institutionType    String?              @map("institution_type")
+  serviceArea        String?              @map("service_area")
+  specialization     String[]             // Areas of specialization
+  institutionDescription String?          @map("institution_description")
+  
+  // Profile Completion
+  profileCompletion  Int                 @default(0) @map("profile_completion") // Percentage
+  lastLoginAt        DateTime?           @map("last_login_at")
+  
+  // Parental Consent (for ADOLESCENTS)
+  parentalConsent    Boolean             @default(false) @map("parental_consent")
+  parentEmail        String?             @map("parent_email")
+  consentDate        DateTime?           @map("consent_date")
+  
+  // Relations
+  jobApplications    JobApplication[]
+  jobOffers          JobOffer[]
+  courseEnrollments  CourseEnrollment[]
+  entrepreneurships  Entrepreneurship[]
+  newsArticles       NewsArticle[]
+  certificates       Certificate[]
+  quizAttempts       QuizAttempt[]
+  studentNotes       StudentNote[]
+  discussions        Discussion[]
+  instructedCourses Course[] @relation("CourseInstructor")
+  newsComments       NewsComment[]
+  createdCompanies   Company[] @relation("CompanyCreator")
+  companies          Company[] @relation("CompanyProfiles")
+  achievements       Json?
+  
+  // Contact Network Relations
+  sentContacts       Contact[] @relation("UserContacts")
+  receivedContacts   Contact[] @relation("ContactUsers")
+  
+  // Cover Letter fields
+  coverLetterRecipient Json?              @map("cover_letter_recipient") // JSON object with department, companyName, address, city, country
+  coverLetterSubject   String?            @map("cover_letter_subject")
+  coverLetterContent   String?            @map("cover_letter_content")
+  coverLetterTemplate  String?            @map("cover_letter_template") @default("professional")
+  
+  @@index([userId])
+  @@index([role])
+  @@index([municipality])
+  @@index([status])
+  @@map("profiles")
+}
+
+// Job Management Models
+model JobOffer {
+  id                 String               @id @default(cuid())
+  title              String
+  description        String
+  requirements       String
+  benefits           String?
+  salaryMin          Decimal?             @map("salary_min")
+  salaryMax          Decimal?             @map("salary_max")
+  salaryCurrency     String?              @map("salary_currency") @default("BOB")
+  contractType       ContractType         @map("contract_type")
+  workSchedule       String               @map("work_schedule") // FULL_TIME, PART_TIME, FLEXIBLE
+  workModality       WorkModality         @map("work_modality")
+  location           String
+  latitude           Float?
+  longitude          Float?
+  municipality       String
+  department         String               @default("Cochabamba")
+  experienceLevel    ExperienceLevel      @map("experience_level")
+  educationRequired  EducationLevel?      @map("education_required")
+  skillsRequired     String[]             @map("skills_required")
+  desiredSkills      String[]             @map("desired_skills")
+  applicationDeadline DateTime?           @map("application_deadline")
+  isActive           Boolean              @default(true) @map("is_active")
+  status             JobStatus            @default(ACTIVE)
+  viewsCount         Int                  @default(0) @map("views_count")
+  applicationsCount  Int                  @default(0) @map("applications_count")
+  featured           Boolean              @default(false)
+  expiresAt          DateTime?            @map("expires_at")
+  publishedAt        DateTime             @default(now()) @map("published_at")
+  
+  // Company Information
+  companyId          String?              @map("company_id")
+  company            Company?             @relation(fields: [companyId], references: [id])
+  
+  // Relations
+  applications       JobApplication[]
+  jobQuestions       JobQuestion[]
+  
+  createdAt          DateTime             @default(now()) @map("created_at")
+  updatedAt          DateTime             @updatedAt @map("updated_at")
+  
+  @@index([companyId])
+  @@index([municipality])
+  @@index([contractType])
+  @@index([workModality])
+  @@index([isActive])
+  @@index([status])
+  @@map("job_offers")
+}
+
+model JobQuestion {
+  id                 String               @id @default(cuid())
+  jobOfferId         String               @map("job_offer_id")
+  question           String
+  type               String               // TEXT, MULTIPLE_CHOICE, YES_NO
+  required           Boolean              @default(false)
+  options            String[]             // For multiple choice questions
+  orderIndex         Int                  @map("order_index")
+  
+  // Relations
+  jobOffer           JobOffer             @relation(fields: [jobOfferId], references: [id], onDelete: Cascade)
+  questionAnswers    JobQuestionAnswer[]
+  
+  @@index([jobOfferId])
+  @@index([orderIndex])
+  @@map("job_questions")
+}
+
+model JobApplication {
+  id                 String               @id @default(cuid())
+  applicantId        String               @map("applicant_id")
+  jobOfferId         String               @map("job_offer_id")
+  coverLetter        String?              @map("cover_letter")
+  cvUrl              String?              @map("cv_url")
+  status             ApplicationStatus    @default(SENT)
+  appliedAt          DateTime             @default(now()) @map("applied_at")
+  reviewedAt         DateTime?            @map("reviewed_at")
+  notes              String?              // Company notes about the candidate
+  rating             Int?                 // Company rating (1-5)
+  
+  // Relations
+  applicant          Profile              @relation(fields: [applicantId], references: [userId])
+  jobOffer           JobOffer             @relation(fields: [jobOfferId], references: [id])
+  questionAnswers    JobQuestionAnswer[]
+  
+  @@unique([applicantId, jobOfferId])
+  @@index([applicantId])
+  @@index([jobOfferId])
+  @@index([status])
+  @@map("job_applications")
+}
+
+model JobQuestionAnswer {
+  id                 String               @id @default(cuid())
+  applicationId      String               @map("application_id")
+  questionId         String               @map("question_id")
+  answer             String
+  
+  // Relations
+  application        JobApplication       @relation(fields: [applicationId], references: [id], onDelete: Cascade)
+  question           JobQuestion          @relation(fields: [questionId], references: [id], onDelete: Cascade)
+  
+  @@unique([applicationId, questionId])
+  @@index([applicationId])
+  @@index([questionId])
+  @@map("job_question_answers")
+}
+
+// Training/LMS Models
+model Course {
+  id                 String               @id @default(cuid())
+  title              String
+  slug               String               @unique
+  description        String
+  shortDescription   String?              @map("short_description")
+  thumbnail          String?
+  videoPreview       String?              @map("video_preview")
+  objectives         String[]
+  prerequisites      String[]
+  duration           Int                  // Duration in hours
+  level              CourseLevel
+  category           CourseCategory
+  isMandatory        Boolean              @default(false) @map("is_mandatory")
+  isActive           Boolean              @default(true) @map("is_active")
+  price              Decimal?             @default(0)
+  rating             Decimal?             @default(0)
+  studentsCount      Int                  @default(0) @map("students_count")
+  completionRate     Decimal?             @default(0) @map("completion_rate")
+  totalLessons       Int                  @default(0) @map("total_lessons")
+  totalQuizzes       Int                  @default(0) @map("total_quizzes")
+  totalResources     Int                  @default(0) @map("total_resources")
+  tags               String[]
+  certification      Boolean              @default(true)
+  includedMaterials String[] @map("included_materials")
+  
+  // Instructor/Institution
+  instructorId       String?              @map("instructor_id")
+  instructor         Profile?             @relation("CourseInstructor", fields: [instructorId], references: [userId])
+  institutionName    String?              @map("institution_name")
+  
+  // Content
+  modules            CourseModule[]
+  enrollments        CourseEnrollment[]
+  certificates       Certificate[]
+  quizzes            Quiz[]
+  
+  createdAt          DateTime             @default(now()) @map("created_at")
+  updatedAt          DateTime             @updatedAt @map("updated_at")
+  publishedAt        DateTime?            @map("published_at")
+  
+  @@index([category])
+  @@index([level])
+  @@index([isMandatory])
+  @@index([isActive])
+  @@index([instructorId])
+  @@map("courses")
+}
+
+model CourseModule {
+  id                 String               @id @default(cuid())
+  courseId           String               @map("course_id")
+  title              String
+  description        String?
+  orderIndex         Int                  @map("order_index")
+  estimatedDuration  Int                  @map("estimated_duration") // in minutes
+  isLocked           Boolean              @default(false) @map("is_locked")
+  prerequisites      String[]             // module IDs
+  hasCertificate     Boolean              @default(true) @map("has_certificate")
+  certificateTemplate String?             @map("certificate_template")
+  
+  // Content
+  lessons            Lesson[]
+  moduleCertificates ModuleCertificate[]
+  
+  // Relations
+  course             Course               @relation(fields: [courseId], references: [id], onDelete: Cascade)
+  
+  @@index([courseId])
+  @@index([orderIndex])
+  @@map("course_modules")
+}
+
+model Lesson {
+  id                 String               @id @default(cuid())
+  moduleId           String               @map("module_id")
+  title              String
+  description        String?
+  content            String               // HTML content or markdown
+  contentType        LessonType           @map("content_type")
+  videoUrl           String?              @map("video_url")
+  duration           Int?                 // in minutes
+  orderIndex         Int                  @map("order_index")
+  isRequired         Boolean              @default(true) @map("is_required")
+  isPreview          Boolean              @default(false) @map("is_preview")
+  attachments        Json?                // Array of attachment objects
+  
+  // Relations
+  module             CourseModule         @relation(fields: [moduleId], references: [id], onDelete: Cascade)
+  resources          LessonResource[]
+  progress           LessonProgress[]
+  notes              StudentNote[]
+  discussions        Discussion[]
+  quizzes            Quiz[]
+  
+  @@index([moduleId])
+  @@index([orderIndex])
+  @@map("lessons")
+}
+
+model CourseEnrollment {
+  id                 String               @id @default(cuid())
+  studentId          String               @map("student_id")
+  courseId           String               @map("course_id")
+  enrolledAt         DateTime             @default(now()) @map("enrolled_at")
+  startedAt          DateTime?            @map("started_at")
+  completedAt        DateTime?            @map("completed_at")
+  status             EnrollmentStatus     @default(ENROLLED)
+  progress           Decimal              @default(0) // Percentage completed
+  currentModuleId    String?              @map("current_module_id")
+  currentLessonId    String?              @map("current_lesson_id")
+  certificateUrl     String?              @map("certificate_url")
+  timeSpent          Int                  @default(0) @map("time_spent") // in minutes
+  certificateIssued Boolean @default(false) @map("certificate_issued")
+  finalGrade Int? @map("final_grade")
+  moduleProgress Json? @map("module_progress")
+  quizResults Json? @map("quiz_results")
+  
+  // Relations
+  student            Profile              @relation(fields: [studentId], references: [userId])
+  course             Course               @relation(fields: [courseId], references: [id])
+  lessonProgress     LessonProgress[]
+  quizAttempts       QuizAttempt[]
+  
+  @@unique([studentId, courseId])
+  @@index([studentId])
+  @@index([courseId])
+  @@index([status])
+  @@map("course_enrollments")
+}
+
+model LessonProgress {
+  id                 String               @id @default(cuid())
+  enrollmentId       String               @map("enrollment_id")
+  lessonId           String               @map("lesson_id")
+  isCompleted        Boolean              @default(false) @map("is_completed")
+  completedAt        DateTime?            @map("completed_at")
+  timeSpent          Int                  @default(0) @map("time_spent") // in minutes
+  
+  // Relations
+  enrollment         CourseEnrollment     @relation(fields: [enrollmentId], references: [id], onDelete: Cascade)
+  lesson             Lesson               @relation(fields: [lessonId], references: [id], onDelete: Cascade)
+  
+  @@unique([enrollmentId, lessonId])
+  @@index([enrollmentId])
+  @@index([lessonId])
+  @@map("lesson_progress")
+}
+
+model Quiz {
+  id                 String               @id @default(cuid())
+  courseId           String?              @map("course_id")
+  lessonId           String?              @map("lesson_id")
+  title              String
+  description        String?
+  timeLimit          Int?                 @map("time_limit") // in minutes
+  passingScore       Int                  @default(70) @map("passing_score")
+  showCorrectAnswers Boolean              @default(false) @map("show_correct_answers")
+  isActive           Boolean              @default(true) @map("is_active")
+  
+  // Relations
+  course             Course?              @relation(fields: [courseId], references: [id], onDelete: Cascade)
+  lesson             Lesson?              @relation(fields: [lessonId], references: [id], onDelete: Cascade)
+  questions          QuizQuestion[]
+  attempts           QuizAttempt[]
+  
+  @@index([courseId])
+  @@index([lessonId])
+  @@map("quizzes")
+}
+
+model QuizQuestion {
+  id                 String               @id @default(cuid())
+  quizId             String               @map("quiz_id")
+  question           String
+  type               QuestionType
+  options            String[]             // For multiple choice questions
+  correctAnswer      String               @map("correct_answer")
+  explanation        String?
+  points             Int                  @default(1)
+  orderIndex         Int                  @map("order_index")
+  
+  // Relations
+  quiz               Quiz                 @relation(fields: [quizId], references: [id], onDelete: Cascade)
+  answers            QuizAnswer[]
+  
+  @@index([quizId])
+  @@index([orderIndex])
+  @@map("quiz_questions")
+}
+
+model QuizAttempt {
+  id                 String               @id @default(cuid())
+  enrollmentId       String?              @map("enrollment_id")
+  quizId             String               @map("quiz_id")
+  studentId          String               @map("student_id")
+  startedAt          DateTime             @default(now()) @map("started_at")
+  completedAt        DateTime?            @map("completed_at")
+  score              Int?
+  passed             Boolean?
+  timeSpent          Int                  @default(0) @map("time_spent") // in minutes
+  
+  // Relations
+  enrollment         CourseEnrollment?    @relation(fields: [enrollmentId], references: [id], onDelete: Cascade)
+  quiz               Quiz                 @relation(fields: [quizId], references: [id], onDelete: Cascade)
+  student            Profile              @relation(fields: [studentId], references: [userId])
+  answers            QuizAnswer[]
+  
+  @@index([enrollmentId])
+  @@index([quizId])
+  @@index([studentId])
+  @@map("quiz_attempts")
+}
+
+model QuizAnswer {
+  id                 String               @id @default(cuid())
+  attemptId          String               @map("attempt_id")
+  questionId         String               @map("question_id")
+  answer             String
+  isCorrect          Boolean              @default(false) @map("is_correct")
+  timeSpent          Int                  @default(0) @map("time_spent") // in seconds
+  
+  // Relations
+  attempt            QuizAttempt          @relation(fields: [attemptId], references: [id], onDelete: Cascade)
+  question           QuizQuestion         @relation(fields: [questionId], references: [id], onDelete: Cascade)
+  
+  @@unique([attemptId, questionId])
+  @@index([attemptId])
+  @@index([questionId])
+  @@map("quiz_answers")
+}
+
+model Certificate {
+  id                 String               @id @default(cuid())
+  userId             String               @map("user_id")
+  courseId           String               @map("course_id")
+  template           String               @default("default")
+  issuedAt           DateTime             @default(now()) @map("issued_at")
+  verificationCode   String              @unique @map("verification_code")
+  digitalSignature   String              @map("digital_signature")
+  isValid            Boolean              @default(true) @map("is_valid")
+  url                String?
+  
+  // Relations
+  user               Profile              @relation(fields: [userId], references: [userId])
+  course             Course               @relation(fields: [courseId], references: [id])
+  
+  @@index([userId])
+  @@index([courseId])
+  @@map("certificates")
+}
+
+model StudentNote {
+  id                 String               @id @default(cuid())
+  userId             String               @map("user_id")
+  lessonId           String               @map("lesson_id")
+  content            String
+  timestamp          Int?                 // for video notes (in seconds)
+  
+  // Relations
+  user               Profile              @relation(fields: [userId], references: [userId])
+  lesson             Lesson               @relation(fields: [lessonId], references: [id], onDelete: Cascade)
+  
+  createdAt          DateTime             @default(now()) @map("created_at")
+  updatedAt          DateTime             @updatedAt @map("updated_at")
+  
+  @@index([userId])
+  @@index([lessonId])
+  @@map("student_notes")
+}
+
+model Discussion {
+  id                 String               @id @default(cuid())
+  lessonId           String               @map("lesson_id")
+  userId             String               @map("user_id")
+  content            String
+  parentId           String?              @map("parent_id") // for replies
+  likes              Int                  @default(0)
+  
+  // Relations
+  lesson             Lesson               @relation(fields: [lessonId], references: [id], onDelete: Cascade)
+  user               Profile              @relation(fields: [userId], references: [userId])
+  parent             Discussion?          @relation("DiscussionReplies", fields: [parentId], references: [id], onDelete: Cascade)
+  replies            Discussion[]         @relation("DiscussionReplies")
+  
+  createdAt          DateTime             @default(now()) @map("created_at")
+  updatedAt          DateTime             @updatedAt @map("updated_at")
+  
+  @@index([lessonId])
+  @@index([userId])
+  @@index([parentId])
+  @@map("discussions")
+}
+
+// Entrepreneurship Models
+model Entrepreneurship {
+  id                 String               @id @default(cuid())
+  ownerId            String               @map("owner_id")
+  name               String
+  description        String
+  category           String
+  subcategory        String?
+  businessStage      BusinessStage        @map("business_stage")
+  logo               String?
+  images             String[]             // Array of image URLs
+  website            String?
+  email              String?
+  phone              String?
+  address            String?
+  municipality       String
+  department         String               @default("Cochabamba")
+  socialMedia        Json?                @map("social_media") // JSON object with social media links
+  
+  // Business Information
+  founded            DateTime?
+  employees          Int?
+  annualRevenue      Decimal?             @map("annual_revenue")
+  businessModel      String?              @map("business_model")
+  targetMarket       String?              @map("target_market")
+  
+  // Platform Specific
+  isPublic           Boolean              @default(true) @map("is_public")
+  isActive           Boolean              @default(true) @map("is_active")
+  viewsCount         Int                  @default(0) @map("views_count")
+  rating             Decimal?             @default(0)
+  reviewsCount       Int                  @default(0) @map("reviews_count")
+  
+  // Relations
+  owner              Profile              @relation(fields: [ownerId], references: [userId])
+  businessPlan       BusinessPlan?
+  
+  createdAt          DateTime             @default(now()) @map("created_at")
+  updatedAt          DateTime             @updatedAt @map("updated_at")
+  
+  @@index([ownerId])
+  @@index([category])
+  @@index([municipality])
+  @@index([businessStage])
+  @@index([isActive, isPublic])
+  @@map("entrepreneurships")
+}
+
+model BusinessPlan {
+  id                     String               @id @default(cuid())
+  entrepreneurshipId     String               @unique @map("entrepreneurship_id")
+  
+  // Triple Impact Assessment
+  tripleImpactAssessment Json?                @map("triple_impact_assessment")
+  
+  // Executive Summary
+  executiveSummary       String?              @map("executive_summary")
+  businessDescription    String?              @map("business_description")
+  missionStatement       String?              @map("mission_statement")
+  visionStatement        String?              @map("vision_statement")
+  
+  // Market Analysis
+  marketAnalysis         String?              @map("market_analysis")
+  targetMarket           String?              @map("target_market")
+  competitiveAnalysis    String?              @map("competitive_analysis")
+  
+  // Business Model
+  businessModelCanvas    Json?                @map("business_model_canvas")
+  revenueStreams         String[]             @map("revenue_streams")
+  costStructure          Json?                @map("cost_structure")
+  
+  // Marketing Plan
+  marketingStrategy      String?              @map("marketing_strategy")
+  marketingPlan          String?              @map("marketing_plan")
+  pricingStrategy        String?              @map("pricing_strategy")
+  salesStrategy          String?              @map("sales_strategy")
+  
+  // Financial Projections
+  initialInvestment      Decimal?             @map("initial_investment")
+  monthlyExpenses        Decimal?             @map("monthly_expenses")
+  revenueProjection      Json?                @map("revenue_projection") // 12-month projection
+  breakEvenPoint         Int?                 @map("break_even_point") // in months
+  roi                    Decimal?             // Return on Investment
+  
+  // Financial Calculator
+  financialCalculator    Json?                @map("financial_calculator")
+  
+  // Risk Analysis
+  riskAnalysis           String?              @map("risk_analysis")
+  mitigationStrategies   String[]             @map("mitigation_strategies")
+  
+  // Operational Plan
+  operationalPlan        String?              @map("operational_plan")
+  managementTeam         String?              @map("management_team")
+  
+  // Status
+  isCompleted            Boolean              @default(false) @map("is_completed")
+  lastSection            String?              @map("last_section")
+  completionPercentage   Int                  @default(0) @map("completion_percentage")
+  
+  // Relations
+  entrepreneurship       Entrepreneurship     @relation(fields: [entrepreneurshipId], references: [id], onDelete: Cascade)
+  
+  createdAt              DateTime             @default(now()) @map("created_at")
+  updatedAt              DateTime             @updatedAt @map("updated_at")
+  
+  @@map("business_plans")
+}
+
+// News and Content Models
+model NewsArticle {
+  id                 String               @id @default(cuid())
+  title              String
+  content            String
+  summary            String
+  imageUrl           String?              @map("image_url")
+  videoUrl           String?              @map("video_url")
+  authorId           String               @map("author_id")
+  authorName         String               @map("author_name")
+  authorType         NewsType             @map("author_type")
+  authorLogo         String?              @map("author_logo")
+  status             NewsStatus           @default(DRAFT)
+  priority           NewsPriority         @default(MEDIUM)
+  featured           Boolean              @default(false)
+  tags               String[]
+  category           String
+  publishedAt        DateTime?            @map("published_at")
+  expiresAt          DateTime?            @map("expires_at")
+  viewCount          Int                  @default(0) @map("view_count")
+  likeCount          Int                  @default(0) @map("like_count")
+  commentCount       Int                  @default(0) @map("comment_count")
+  targetAudience     String[]             @map("target_audience") // ["YOUTH", "COMPANIES", "ALL"]
+  region             String?
+  relatedLinks       Json?                @map("related_links") // Array of link objects
+  
+  // Relations
+  author             Profile              @relation(fields: [authorId], references: [userId])
+  comments           NewsComment[]
+  
+  createdAt          DateTime             @default(now()) @map("created_at")
+  updatedAt          DateTime             @updatedAt @map("updated_at")
+  
+  @@index([authorId])
+  @@index([status])
+  @@index([category])
+  @@index([publishedAt])
+  @@index([targetAudience])
+  @@map("news_articles")
+}
+
+model NewsComment {
+  id                 String               @id @default(cuid())
+  newsId             String               @map("news_id")
+  userId             String               @map("user_id")
+  userName           String               @map("user_name")
+  userAvatar         String?              @map("user_avatar")
+  content            String
+  parentId           String?              @map("parent_id") // for replies
+  likes              Int                  @default(0)
+  
+  // Relations
+  news               NewsArticle          @relation(fields: [newsId], references: [id], onDelete: Cascade)
+  user               Profile              @relation(fields: [userId], references: [userId])
+  parent             NewsComment?         @relation("CommentReplies", fields: [parentId], references: [id], onDelete: Cascade)
+  replies            NewsComment[]        @relation("CommentReplies")
+  
+  createdAt          DateTime             @default(now()) @map("created_at")
+  updatedAt          DateTime             @updatedAt @map("updated_at")
+  
+  @@index([newsId])
+  @@index([userId])
+  @@index([parentId])
+  @@map("news_comments")
+}
+
+model Resource {
+  id            String   @id @default(cuid())
+  title         String
+  description   String
+  type          String   // "guide", "template", "tool", "course"
+  category      String
+  format        String   // "PDF", "DOCX", "Video", etc.
+  downloadUrl   String?  @map("download_url")
+  externalUrl   String?  @map("external_url")
+  thumbnail     String
+  author        String
+  publishedDate DateTime @map("published_date")
+  downloads     Int      @default(0)
+  rating        Float    @default(0)
+  tags          String[]
+  createdAt     DateTime @default(now()) @map("created_at")
+  updatedAt     DateTime @updatedAt @map("updated_at")
+}
+
+// Municipality Model
+model Municipality {
+  id            String   @id @default(cuid())
+  name          String
+  department    String
+  region        String?
+  population    Int?
+  mayorName     String?  @map("mayor_name")
+  mayorEmail    String?  @map("mayor_email")
+  mayorPhone    String?  @map("mayor_phone")
+  address       String?
+  website       String?
+  phone         String?
+  institutionType String @default("MUNICIPALITY") @map("institution_type")
+  customType    String?  @map("custom_type")
+  primaryColor  String?  @map("primary_color")
+  secondaryColor String? @map("secondary_color")
+  isActive      Boolean  @default(true) @map("is_active")
+  
+  // Relations
+  companies     Company[]
+  
+  createdAt     DateTime @default(now()) @map("created_at")
+  updatedAt     DateTime @updatedAt @map("updated_at")
+  
+  @@index([isActive])
+  @@index([institutionType])
+  @@map("municipalities")
+}
+
+// Company Model
+model Company {
+  id                  String       @id @default(cuid())
+  name                String
+  description         String?
+  taxId               String?      @map("tax_id")
+  legalRepresentative String?      @map("legal_representative")
+  businessSector      String?      @map("business_sector")
+  companySize         CompanySize?
+  website             String?
+  email               String?
+  phone               String?
+  address             String?
+  foundedYear         Int?
+  isActive            Boolean      @default(true) @map("is_active")
+  
+  // Relations
+  municipalityId      String       @map("municipality_id")
+  municipality        Municipality @relation(fields: [municipalityId], references: [id])
+  createdBy           String       @map("created_by")
+  creator             Profile      @relation("CompanyCreator", fields: [createdBy], references: [userId])
+  jobOffers           JobOffer[]
+  profiles            Profile[]    @relation("CompanyProfiles")
+  
+  createdAt           DateTime     @default(now()) @map("created_at")
+  updatedAt           DateTime     @updatedAt @map("updated_at")
+  
+  @@index([municipalityId])
+  @@index([isActive])
+  @@index([businessSector])
+  @@unique([name, municipalityId])
+  @@map("companies")
+}
+
+// Contact Network Models
+enum ContactStatus {
+  PENDING
+  ACCEPTED
+  REJECTED
+  BLOCKED
+}
+
+model Contact {
+  id          String        @id @default(cuid())
+  userId      String        @map("user_id")      // Usuario que envía la solicitud
+  contactId   String        @map("contact_id")   // Usuario que recibe la solicitud
+  status      ContactStatus @default(PENDING)
+  message     String?       // Mensaje opcional con la solicitud
+  createdAt   DateTime      @default(now()) @map("created_at")
+  updatedAt   DateTime      @updatedAt @map("updated_at")
+  
+  // Relations
+  user        Profile       @relation("UserContacts", fields: [userId], references: [userId])
+  contact     Profile       @relation("ContactUsers", fields: [contactId], references: [userId])
+  
+  @@unique([userId, contactId])
+  @@index([userId])
+  @@index([contactId])
+  @@index([status])
+  @@map("contacts")
+}

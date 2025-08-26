@@ -1,42 +1,104 @@
-import { createMiddlewareClient } from "@supabase/auth-helpers-nextjs";
 import { NextResponse } from "next/server";
 import type { NextRequest } from "next/server";
 
-export async function middleware(req: NextRequest) {
-  const res = NextResponse.next();
-  const supabase = createMiddlewareClient({ req, res });
-
-  const {
-    data: { session },
-  } = await supabase.auth.getSession();
-
-  // Skip auth check for the auth callback route
-  if (req.nextUrl.pathname.startsWith("/auth/callback")) {
-    return res;
-  }
-
-  // If there's no session and the user is trying to access a protected route
-  if (!session && req.nextUrl.pathname.startsWith("/dashboard")) {
-    const redirectUrl = req.nextUrl.clone();
-    redirectUrl.pathname = "/sign-in";
-    redirectUrl.searchParams.set("redirectTo", req.nextUrl.pathname);
-    return NextResponse.redirect(redirectUrl);
-  }
-
-  // If there's a session and the user is trying to access auth routes
-  if (
-    session &&
-    (req.nextUrl.pathname.startsWith("/sign-in") ||
-      req.nextUrl.pathname.startsWith("/sign-up"))
-  ) {
-    const redirectUrl = req.nextUrl.clone();
-    redirectUrl.pathname = "/dashboard";
-    return NextResponse.redirect(redirectUrl);
-  }
-
-  return res;
-}
-
+// Configure runtime for middleware
 export const config = {
-  matcher: ["/dashboard/:path*", "/sign-in", "/sign-up", "/auth/callback"],
+  matcher: [
+    // Protected routes
+    '/dashboard/:path*',
+    '/profile/:path*',
+    '/settings/:path*',
+    '/admin/:path*',
+    '/company/:path*',
+    '/courses/:path*',
+    '/jobs/:path*',
+    '/entrepreneurship/:path*',
+    '/my-applications/:path*',
+    '/my-courses/:path*',
+    '/my-entrepreneurships/:path*',
+    '/my-interviews/:path*',
+    '/cv-builder/:path*',
+    '/mentorship/:path*',
+    '/municipalities/:path*',
+    '/institutions/:path*',
+    '/youth-content/:path*',
+    '/business-plan-simulator/:path*',
+    '/certificates/:path*',
+    '/development/:path*',
+    '/publish-entrepreneurship/:path*',
+    '/job-publishing/:path*',
+    // Auth routes
+    '/sign-in',
+    '/sign-up',
+    '/login',
+    '/forgot-password',
+    '/reset-password',
+    '/magic-link',
+    '/auth/callback'
+  ],
 };
+
+// Routes that require authentication
+const protectedRoutes = [
+  '/dashboard',
+  '/profile',
+  '/settings',
+  '/admin',
+  '/company',
+  '/courses',
+  '/jobs',
+  '/entrepreneurship',
+  '/my-applications',
+  '/my-courses',
+  '/my-entrepreneurships',
+  '/my-interviews',
+  '/cv-builder',
+  '/mentorship',
+  '/municipalities',
+  '/institutions',
+  '/youth-content',
+  '/business-plan-simulator',
+  '/certificates',
+  '/development',
+  '/publish-entrepreneurship',
+  '/job-publishing'
+];
+
+// Routes that should redirect to dashboard if authenticated
+const authRoutes = [
+  '/sign-in',
+  '/sign-up',
+  '/login',
+  '/forgot-password',
+  '/reset-password',
+  '/magic-link'
+];
+
+export async function middleware(req: NextRequest) {
+  const { pathname } = req.nextUrl;
+  
+  // Get the access token from cookies only (skip JWT verification in middleware)
+  const token = req.cookies.get('access_token')?.value;
+
+  // Simple token existence check (no verification in middleware)
+  const hasToken = !!token;
+
+  // Check if the route is protected
+  const isProtectedRoute = protectedRoutes.some(route => pathname.startsWith(route));
+  const isAuthRoute = authRoutes.some(route => pathname.startsWith(route));
+
+  // Redirect to sign-in if accessing protected route without token
+  if (isProtectedRoute && !hasToken) {
+    const signInUrl = new URL('/sign-in', req.url);
+    signInUrl.searchParams.set('redirect', pathname);
+    return NextResponse.redirect(signInUrl);
+  }
+
+  // Redirect to dashboard if accessing auth routes with token
+  if (isAuthRoute && hasToken) {
+    return NextResponse.redirect(new URL('/dashboard', req.url));
+  }
+
+  // Let the client-side auth context handle detailed role-based access control
+  return NextResponse.next();
+}
