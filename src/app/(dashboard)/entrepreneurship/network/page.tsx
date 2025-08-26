@@ -70,6 +70,7 @@ export default function NetworkingPage() {
   const [contacts, setContacts] = useState<ContactUser[]>([]);
   const [stats, setStats] = useState<ContactStats | null>(null);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
   const [searchQuery, setSearchQuery] = useState("");
   const [activeTab, setActiveTab] = useState("entrepreneurs");
   const [isMessagingModalOpen, setIsMessagingModalOpen] = useState(false);
@@ -154,19 +155,6 @@ export default function NetworkingPage() {
     }
   };
 
-  // Cargar perfil del usuario al montar el componente
-  useEffect(() => {
-    const initializeData = async () => {
-      await fetchCurrentUserProfile();
-      await searchUsers();
-      await getContacts();
-      await getStats();
-      setLoading(false);
-    };
-
-    initializeData();
-  }, []);
-
   // Cargar datos cuando se cambie de pestaña
   const handleTabChange = (tab: string) => {
     setActiveTab(tab);
@@ -189,28 +177,45 @@ export default function NetworkingPage() {
       const url = `${backendUrl}/api/contacts/search${params.toString() ? `?${params.toString()}` : ""}`;
       console.log("🔍 searchUsers - Calling backend URL:", url);
 
+      const token = localStorage.getItem("token");
+      if (!token) {
+        console.error("❌ No token found in localStorage");
+        throw new Error("No authentication token found");
+      }
+
       const response = await fetch(url, {
         headers: {
-          Authorization: `Bearer ${localStorage.getItem("token")}`,
+          Authorization: `Bearer ${token}`,
           "Content-Type": "application/json",
         },
       });
 
-      if (!response.ok) throw new Error("Error searching users");
+      console.log("🔍 searchUsers - Response status:", response.status);
+
+      if (!response.ok) {
+        const errorText = await response.text();
+        console.error("❌ searchUsers - Backend error:", errorText);
+        throw new Error(`Backend error: ${response.status} ${errorText}`);
+      }
 
       const data = await response.json();
-      console.log("Search response:", data); // Debug
+      console.log("✅ searchUsers - Response data:", data);
 
       // Filtrar usuarios que ya son contactos aceptados
       const filteredUsers = (data.users || []).filter(
         (user: ContactUser) => user.contactStatus !== "ACCEPTED"
       );
 
-      console.log("Filtered users:", filteredUsers); // Debug
+      console.log(
+        "✅ searchUsers - Filtered users count:",
+        filteredUsers.length
+      );
       setUsers(filteredUsers);
       return data;
     } catch (err) {
-      console.error("Error searching users:", err);
+      console.error("❌ searchUsers - Error:", err);
+      setUsers([]);
+      throw err;
     }
   };
 
@@ -337,18 +342,29 @@ export default function NetworkingPage() {
       const url = `${backendUrl}/api/contacts`;
       console.log("🔍 getContacts - Calling backend URL:", url);
 
+      const token = localStorage.getItem("token");
+      if (!token) {
+        console.error("❌ No token found in localStorage");
+        throw new Error("No authentication token found");
+      }
+
       const response = await fetch(url, {
         headers: {
-          Authorization: `Bearer ${localStorage.getItem("token")}`,
+          Authorization: `Bearer ${token}`,
           "Content-Type": "application/json",
         },
       });
 
-      if (!response.ok) throw new Error("Error getting contacts");
+      console.log("🔍 getContacts - Response status:", response.status);
+
+      if (!response.ok) {
+        const errorText = await response.text();
+        console.error("❌ getContacts - Backend error:", errorText);
+        throw new Error(`Backend error: ${response.status} ${errorText}`);
+      }
 
       const data = await response.json();
-      console.log("Contacts response:", data); // Debug
-      console.log("Contacts array:", data.contacts); // Debug
+      console.log("✅ getContacts - Response data:", data);
 
       // Manejar diferentes estructuras de respuesta
       let contactsArray = [];
@@ -357,7 +373,7 @@ export default function NetworkingPage() {
       } else if (Array.isArray(data)) {
         contactsArray = data;
       } else {
-        console.error("Unexpected contacts data structure:", data);
+        console.error("❌ getContacts - Unexpected data structure:", data);
         setContacts([]);
         return data;
       }
@@ -372,7 +388,10 @@ export default function NetworkingPage() {
           } else if (contactData.userId) {
             contactInfo = contactData;
           } else {
-            console.error("Unexpected contact data structure:", contactData);
+            console.error(
+              "❌ getContacts - Unexpected contact structure:",
+              contactData
+            );
             return null;
           }
 
@@ -390,17 +409,21 @@ export default function NetworkingPage() {
             contactStatus: "ACCEPTED",
             contactId: contactData.id || contactData.contactId,
           };
-          console.log("Processed contact:", contact); // Debug
           return contact;
         })
         .filter(Boolean); // Filtrar contactos nulos
 
-      console.log("Final contacts list:", contactsList); // Debug
+      console.log(
+        "✅ getContacts - Processed contacts count:",
+        contactsList.length
+      );
       setContacts(contactsList);
 
       return data;
     } catch (err) {
-      console.error("Error getting contacts:", err);
+      console.error("❌ getContacts - Error:", err);
+      setContacts([]);
+      throw err;
     }
   };
 
@@ -413,21 +436,35 @@ export default function NetworkingPage() {
       const url = `${backendUrl}/api/contacts/stats`;
       console.log("🔍 getStats - Calling backend URL:", url);
 
+      const token = localStorage.getItem("token");
+      if (!token) {
+        console.error("❌ No token found in localStorage");
+        throw new Error("No authentication token found");
+      }
+
       const response = await fetch(url, {
         headers: {
-          Authorization: `Bearer ${localStorage.getItem("token")}`,
+          Authorization: `Bearer ${token}`,
           "Content-Type": "application/json",
         },
       });
 
-      if (!response.ok) throw new Error("Error getting stats");
+      console.log("🔍 getStats - Response status:", response.status);
+
+      if (!response.ok) {
+        const errorText = await response.text();
+        console.error("❌ getStats - Backend error:", errorText);
+        throw new Error(`Backend error: ${response.status} ${errorText}`);
+      }
 
       const data = await response.json();
-      console.log("Stats response:", data); // Debug
-      setStats(data.stats);
+      console.log("✅ getStats - Response data:", data);
+      setStats(data.stats || data);
       return data;
     } catch (err) {
-      console.error("Error getting stats:", err);
+      console.error("❌ getStats - Error:", err);
+      setStats(null);
+      throw err;
     }
   };
 
@@ -435,14 +472,57 @@ export default function NetworkingPage() {
   const fetchNetworkingData = async () => {
     try {
       setLoading(true);
-      await Promise.all([
-        searchUsers(),
-        getReceivedRequests(),
-        getContacts(),
-        getStats(),
+      setError(null);
+      console.log("🚀 Starting to fetch networking data...");
+
+      // Verificar token antes de hacer las llamadas
+      const token = localStorage.getItem("token");
+      if (!token) {
+        console.error("❌ No authentication token found");
+        setError(
+          "No se encontró el token de autenticación. Por favor, inicia sesión nuevamente."
+        );
+        return;
+      }
+
+      // Hacer las llamadas en paralelo pero manejar errores individualmente
+      const results = await Promise.allSettled([
+        searchUsers().catch((err) => {
+          console.error("❌ searchUsers failed:", err);
+          return null;
+        }),
+        getReceivedRequests().catch((err) => {
+          console.error("❌ getReceivedRequests failed:", err);
+          return null;
+        }),
+        getContacts().catch((err) => {
+          console.error("❌ getContacts failed:", err);
+          return null;
+        }),
+        getStats().catch((err) => {
+          console.error("❌ getStats failed:", err);
+          return null;
+        }),
       ]);
+
+      console.log("✅ Networking data fetch completed:", results);
+
+      // Verificar si todas las llamadas fallaron
+      const failedCount = results.filter(
+        (result) => result.status === "rejected"
+      ).length;
+      if (failedCount === results.length) {
+        setError(
+          "No se pudo conectar con el servidor. Verifica tu conexión a internet."
+        );
+      }
     } catch (error) {
-      console.error("Error fetching networking data:", error);
+      console.error("❌ Error in fetchNetworkingData:", error);
+      setError(
+        error instanceof Error
+          ? error.message
+          : "Error desconocido al cargar los datos"
+      );
     } finally {
       setLoading(false);
     }
@@ -493,6 +573,30 @@ export default function NetworkingPage() {
           Conecta, colabora y crece junto a otros emprendedores bolivianos
         </p>
       </div>
+
+      {/* Error Message */}
+      {error && (
+        <div className="mb-6 p-4 bg-red-50 border border-red-200 rounded-lg">
+          <div className="flex items-center gap-2">
+            <X className="h-5 w-5 text-red-600" />
+            <div>
+              <h3 className="font-medium text-red-800">Error de conexión</h3>
+              <p className="text-sm text-red-600">{error}</p>
+            </div>
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => {
+                setError(null);
+                fetchNetworkingData();
+              }}
+              className="ml-auto"
+            >
+              Reintentar
+            </Button>
+          </div>
+        </div>
+      )}
 
       {/* Estadísticas */}
       {stats && (

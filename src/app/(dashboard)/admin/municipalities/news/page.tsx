@@ -338,6 +338,7 @@ export default function MunicipalityNewsPage() {
                 mode="create"
                 onSubmit={handleCreateNews}
                 isLoading={createNewsMutation.isPending}
+                restrictedRegion="Cochabamba"
               />
             </DialogContent>
           </Dialog>
@@ -482,6 +483,7 @@ export default function MunicipalityNewsPage() {
               initialData={selectedNews}
               onSubmit={handleUpdateNews}
               isLoading={updateNewsMutation.isPending}
+              restrictedRegion="Cochabamba"
             />
           )}
         </DialogContent>

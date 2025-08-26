@@ -5,7 +5,7 @@ A modern Next.js template with Supabase authentication, profiles, and file uploa
 ## 🚀 Features
 
 - ⚡️ Next.js 14 with App Router
-- 🔋 Prisma ORM with PostgreSQL
+- 🔋 Backend API Integration
 - 🔑 Authentication with Supabase Auth
 - 🎨 Tailwind CSS + shadcn/ui
 - 📁 File uploads with Supabase Storage
@@ -60,10 +60,10 @@ DIRECT_URL="postgresql://postgres.[YOUR-PROJECT-REF]:[YOUR-PASSWORD]@aws-0-[YOUR
 NEXT_PUBLIC_SUPABASE_STORAGE_BUCKET=avatars
 ```
 
-6. Initialize Prisma:
+6. Configure Backend Connection:
 ```bash
-pnpm prisma generate
-pnpm prisma db push
+# Set your backend URL in .env.local
+NEXT_PUBLIC_BACKEND_URL=http://localhost:3000
 ```
 
 ## 🚀 Development
@@ -90,21 +90,15 @@ Your app will be available at `http://localhost:3000`
 └── public/              # Static assets
 ```
 
-## 📝 Database Management
+## 📝 Backend Management
 
-### Push schema changes
-```bash
-pnpm prisma db push
-```
+### API Configuration
+The application connects to the backend API for all data operations. No local database management is needed.
 
-### Reset database
+### Environment Variables
+Make sure to set your backend URL in `.env.local`:
 ```bash
-pnpm prisma db reset
-```
-
-### Open Prisma Studio
-```bash
-pnpm prisma studio
+NEXT_PUBLIC_BACKEND_URL=http://localhost:3000
 ```
 
 ## 🔧 Common Issues & Solutions
@@ -122,10 +116,10 @@ const nextConfig = {
 }
 ```
 
-### Database Connection Issues
-- Verify your DATABASE_URL in .env.local
-- Ensure you're using the correct Supabase connection strings
-- Check if your IP is allowed in Supabase dashboard
+### Backend Connection Issues
+- Verify your NEXT_PUBLIC_BACKEND_URL in .env.local
+- Ensure the backend server is running
+- Check if the backend API endpoints are accessible
 
 ## 📄 License
 
@@ -142,7 +136,6 @@ This project is licensed under the MIT License - see the [LICENSE](LICENSE) file
 ## 🙏 Acknowledgments
 
 - [Next.js](https://nextjs.org/)
-- [Prisma](https://www.prisma.io/)
 - [Supabase](https://supabase.com/)
 - [shadcn/ui](https://ui.shadcn.com/)
 
@@ -156,10 +149,7 @@ This project is licensed under the MIT License - see the [LICENSE](LICENSE) file
 - Service Role Key: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InN3Zmd2ZmhwbWljd3B0dXBqeWtvIiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTc0MDA2Njg0OSwiZXhwIjoyMDU1NjQyODQ5fQ.jOx413xoAvBdez9ofCGU8DEIunRI2SU9SXWJsm_IY2Q
 - Project URL: https://swfgvfhpmicwptupjyko.supabase.co
 
-- PRISMA URLs:
-    # Connect to Supabase via connection pooling with Supavisor.
-    DATABASE_URL="postgresql://postgres.swfgvfhpmicwptupjyko:[YOUR-PASSWORD]@aws-0-us-west-1.pooler.supabase.com:6543/postgres?pgbouncer=true"
-
-    # Direct connection to the database. Used for migrations.
-    DIRECT_URL="postgresql://postgres.swfgvfhpmicwptupjyko:[YOUR-PASSWORD]@aws-0-us-west-1.pooler.supabase.com:5432/postgres"
+- BACKEND URL:
+    # Backend API URL for data operations
+    NEXT_PUBLIC_BACKEND_URL="http://localhost:3000"
         

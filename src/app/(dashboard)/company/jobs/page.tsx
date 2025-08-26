@@ -4,11 +4,13 @@ import { useState, useEffect } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
+import { Alert, AlertDescription } from "@/components/ui/alert";
 
 import { useToast } from "@/hooks/use-toast";
 import { JobOffer } from "@/types/jobs";
 import { JobOfferService } from "@/services/job-offer.service";
-import { useAuth } from "@/providers/auth-provider";
+import { useAuth } from "@/hooks/use-auth";
+import { getToken, API_BASE } from "@/lib/api";
 import {
   Plus,
   Briefcase,
@@ -18,6 +20,7 @@ import {
   Trash2,
   TrendingUp,
   Calendar,
+  AlertCircle,
 } from "lucide-react";
 import JobApplicationsModal from "@/components/jobs/company/job-applications-modal";
 import { useRouter } from "next/navigation";
@@ -38,43 +41,115 @@ const statusLabels = {
 
 export default function CompanyJobsPage() {
   const { toast } = useToast();
-  const { user, getCurrentUser } = useAuth();
+  const { user, getCurrentUser, loading: authLoading } = useAuth();
   const router = useRouter();
   const [jobOffers, setJobOffers] = useState<JobOffer[]>([]);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+  const [debugInfo, setDebugInfo] = useState<any>(null);
   const [selectedJobOffer, setSelectedJobOffer] = useState<JobOffer | null>(
     null
   );
   const [isApplicationsModalOpen, setIsApplicationsModalOpen] = useState(false);
 
   useEffect(() => {
-    if (user?.id) {
-      fetchJobOffers();
+    console.log("🔍 useEffect - User changed:", user);
+    console.log("🔍 useEffect - Auth loading:", authLoading);
+
+    if (authLoading) {
+      console.log("🔍 useEffect - Auth still loading, waiting...");
+      return;
     }
-  }, [user?.id]);
+
+    if (user?.id) {
+      console.log("🔍 useEffect - User has ID, fetching job offers");
+      fetchJobOffers();
+    } else {
+      console.log("🔍 useEffect - No user ID, not fetching job offers");
+      setLoading(false);
+    }
+  }, [user?.id, authLoading]);
 
   const fetchJobOffers = async () => {
     if (!user?.id) return;
 
     try {
       setLoading(true);
+      setError(null);
       console.log("🔍 Fetching job offers for company:", user.id);
       console.log("🔍 User object:", user);
+      console.log("🔍 API_BASE:", API_BASE);
+      console.log("🔍 Token exists:", !!getToken());
+
+      // Collect debug information
+      const debug = {
+        apiBase: API_BASE,
+        tokenExists: !!getToken(),
+        user: {
+          id: user.id,
+          role: user.role,
+          company: user.company,
+        },
+        timestamp: new Date().toISOString(),
+      };
 
       // Obtener el usuario actual del backend para asegurar que tenemos el companyId correcto
       const currentUser = await getCurrentUser();
-      const companyId = user?.company?.id || user?.id;
+      debug.currentUser = currentUser
+        ? {
+            id: currentUser.id,
+            role: currentUser.role,
+            company: currentUser.company,
+          }
+        : null;
+
+      // Para empresas, el companyId debe ser el ID de la empresa, no el ID del usuario
+      let companyId = user?.id; // Por defecto usar el ID del usuario
+
+      // Si el usuario tiene información de empresa, usar el ID de la empresa
+      if (user?.company?.id) {
+        companyId = user.company.id;
+      } else if (user?.role === "EMPRESAS") {
+        // Si es una empresa pero no tiene company.id, usar el ID del usuario
+        companyId = user.id;
+      }
+
+      debug.companyId = companyId;
+      debug.userRole = user.role;
+      debug.userCompanyInfo = user.company;
 
       console.log("🔍 Using companyId:", companyId);
+      console.log("🔍 User role:", user.role);
+      console.log("🔍 User company info:", user.company);
 
       // Usar el método correcto con el parámetro companyId
       const data = await JobOfferService.getJobOffersByCompany(companyId);
       console.log("✅ Job offers fetched:", data);
       console.log("✅ Number of job offers:", data?.length || 0);
 
+      debug.jobOffersResult = {
+        success: true,
+        count: Array.isArray(data) ? data.length : 0,
+        data: data,
+      };
+
       setJobOffers(data || []);
+      setDebugInfo(debug);
     } catch (error) {
       console.error("❌ Error fetching job offers:", error);
+
+      const errorMessage =
+        error instanceof Error ? error.message : "Error desconocido";
+      setError(errorMessage);
+
+      setDebugInfo({
+        ...debug,
+        jobOffersResult: {
+          success: false,
+          error: errorMessage,
+        },
+      });
+
       toast({
         title: "Error",
         description: "No se pudieron cargar los puestos de trabajo",
@@ -152,7 +227,7 @@ export default function CompanyJobsPage() {
 
   const stats = getStats();
 
-  if (loading) {
+  if (authLoading || loading) {
     return (
       <div className="space-y-6">
         <div className="animate-pulse">
@@ -172,6 +247,19 @@ export default function CompanyJobsPage() {
     );
   }
 
+  if (!user) {
+    return (
+      <div className="space-y-6">
+        <Alert variant="destructive">
+          <AlertCircle className="h-4 w-4" />
+          <AlertDescription>
+            No estás autenticado. Por favor inicia sesión.
+          </AlertDescription>
+        </Alert>
+      </div>
+    );
+  }
+
   return (
     <div className="space-y-6">
       <div className="flex justify-between items-center">
@@ -181,6 +269,108 @@ export default function CompanyJobsPage() {
           Crear Puesto
         </Button>
       </div>
+
+      {/* Error Display */}
+      {error && (
+        <Alert variant="destructive">
+          <AlertCircle className="h-4 w-4" />
+          <AlertDescription>
+            <strong>Error al cargar empleos:</strong> {error}
+          </AlertDescription>
+        </Alert>
+      )}
+
+      {/* Debug Information */}
+      {debugInfo && (
+        <Card>
+          <CardHeader>
+            <CardTitle className="text-sm">Información de Depuración</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="text-xs space-y-2">
+              <div>
+                <strong>API Base:</strong> {debugInfo.apiBase}
+              </div>
+              <div>
+                <strong>Token Existe:</strong>{" "}
+                {debugInfo.tokenExists ? "Sí" : "No"}
+              </div>
+              <div>
+                <strong>Usuario ID:</strong> {debugInfo.user?.id}
+              </div>
+              <div>
+                <strong>Rol:</strong> {debugInfo.user?.role}
+              </div>
+              <div>
+                <strong>Company ID:</strong> {debugInfo.companyId}
+              </div>
+              <div>
+                <strong>Resultado:</strong>{" "}
+                {debugInfo.jobOffersResult?.success ? "Éxito" : "Error"}
+              </div>
+              {debugInfo.jobOffersResult?.success && (
+                <div>
+                  <strong>Cantidad de empleos:</strong>{" "}
+                  {debugInfo.jobOffersResult.count}
+                </div>
+              )}
+              {debugInfo.jobOffersResult?.error && (
+                <div>
+                  <strong>Error:</strong> {debugInfo.jobOffersResult.error}
+                </div>
+              )}
+            </div>
+            <div className="mt-4 space-y-2">
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={async () => {
+                  try {
+                    console.log("🔍 Testing backend connection...");
+                    const response = await fetch("/api/health");
+                    const data = await response.json();
+                    console.log("✅ Health check result:", data);
+                    alert(
+                      `Backend health check: ${JSON.stringify(data, null, 2)}`
+                    );
+                  } catch (error) {
+                    console.error("❌ Health check failed:", error);
+                    alert(`Health check failed: ${error}`);
+                  }
+                }}
+              >
+                Test Backend Connection
+              </Button>
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={async () => {
+                  try {
+                    console.log("🔍 Testing joboffer endpoint...");
+                    const token = getToken();
+                    const response = await fetch("/api/joboffer", {
+                      headers: {
+                        Authorization: `Bearer ${token}`,
+                        "Content-Type": "application/json",
+                      },
+                    });
+                    const data = await response.json();
+                    console.log("✅ Joboffer endpoint result:", data);
+                    alert(
+                      `Joboffer endpoint: ${JSON.stringify(data, null, 2)}`
+                    );
+                  } catch (error) {
+                    console.error("❌ Joboffer endpoint failed:", error);
+                    alert(`Joboffer endpoint failed: ${error}`);
+                  }
+                }}
+              >
+                Test Joboffer Endpoint
+              </Button>
+            </div>
+          </CardContent>
+        </Card>
+      )}
 
       {/* Estadísticas */}
       <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
@@ -245,9 +435,16 @@ export default function CompanyJobsPage() {
       <div className="space-y-6">
         <div className="flex justify-between items-center">
           <h2 className="text-xl font-semibold">Mis Puestos de Trabajo</h2>
-          <Button variant="outline" onClick={fetchJobOffers}>
-            Actualizar
-          </Button>
+          <div className="flex gap-2">
+            <Button variant="outline" onClick={fetchJobOffers}>
+              Actualizar
+            </Button>
+            {error && (
+              <Button variant="outline" onClick={fetchJobOffers}>
+                Reintentar
+              </Button>
+            )}
+          </div>
         </div>
 
         {jobOffers.length === 0 ? (

@@ -59,6 +59,7 @@ interface NewsFormProps {
   onSubmit: (data: NewsFormData, imageFile?: File) => Promise<void>;
   isLoading?: boolean;
   mode: "create" | "edit";
+  restrictedRegion?: string;
 }
 
 const categories = [
@@ -93,6 +94,7 @@ export function NewsForm({
   onSubmit,
   isLoading = false,
   mode,
+  restrictedRegion,
 }: NewsFormProps) {
   const { toast } = useToast();
   const [imageFile, setImageFile] = useState<File | null>(null);
@@ -111,7 +113,9 @@ export function NewsForm({
       status: initialData?.status || "DRAFT",
       featured: initialData?.featured || false,
       targetAudience: initialData?.targetAudience?.join(", ") || "YOUTH",
-      region: initialData?.region || (mode === "create" ? "Cochabamba" : ""),
+      region:
+        initialData?.region ||
+        (mode === "create" ? restrictedRegion || "Cochabamba" : ""),
       videoUrl: initialData?.videoUrl || "",
       relatedLinks: initialData?.relatedLinks
         ? JSON.stringify(initialData.relatedLinks)
@@ -420,23 +424,38 @@ export function NewsForm({
                   render={({ field }) => (
                     <FormItem>
                       <FormLabel>Región</FormLabel>
-                      <Select
-                        onValueChange={field.onChange}
-                        defaultValue={field.value}
-                      >
-                        <FormControl>
-                          <SelectTrigger>
-                            <SelectValue placeholder="Seleccionar región" />
-                          </SelectTrigger>
-                        </FormControl>
-                        <SelectContent>
-                          {regions.map((region) => (
-                            <SelectItem key={region} value={region}>
-                              {region}
-                            </SelectItem>
-                          ))}
-                        </SelectContent>
-                      </Select>
+                      {restrictedRegion ? (
+                        <div className="space-y-2">
+                          <Input
+                            value={restrictedRegion}
+                            disabled
+                            className="bg-gray-50"
+                          />
+                          <input
+                            type="hidden"
+                            {...field}
+                            value={restrictedRegion}
+                          />
+                        </div>
+                      ) : (
+                        <Select
+                          onValueChange={field.onChange}
+                          defaultValue={field.value}
+                        >
+                          <FormControl>
+                            <SelectTrigger>
+                              <SelectValue placeholder="Seleccionar región" />
+                            </SelectTrigger>
+                          </FormControl>
+                          <SelectContent>
+                            {regions.map((region) => (
+                              <SelectItem key={region} value={region}>
+                                {region}
+                              </SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
+                      )}
                       <FormMessage />
                     </FormItem>
                   )}

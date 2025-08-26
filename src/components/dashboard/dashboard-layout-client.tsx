@@ -7,7 +7,6 @@ import { AdaptiveAppSidebar } from "@/components/sidebar/adaptive-app-sidebar";
 import SkipToMain from "@/components/skip-to-main";
 import { AdaptiveHeader } from "@/components/sidebar/adaptive-header";
 import RoleGuard from "@/components/auth/role-guard";
-import { AuthRedirect } from "@/components/auth/auth-redirect";
 import { useUserColors } from "@/hooks/use-user-colors";
 
 interface DashboardLayoutProps {
@@ -20,7 +19,6 @@ export function DashboardLayoutClient({ children }: DashboardLayoutProps) {
 
   return (
     <RoleGuard>
-      <AuthRedirect />
       <SearchProvider>
         <SidebarProvider defaultOpen={true}>
           <SkipToMain />

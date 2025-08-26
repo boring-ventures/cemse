@@ -5,7 +5,7 @@ import { getAuthHeaders } from "@/lib/api";
 export async function GET() {
     try {
         // Forward to backend
-        const backendUrl = process.env.BACKEND_URL || 'http://localhost:3001';
+        const backendUrl = process.env.NEXT_PUBLIC_BACKEND_URL || 'https://cemse-back-production.up.railway.app';
         const url = `${backendUrl}/api/events/my-municipality`;
 
         console.log('🔍 Events My-Municipality API - Forwarding to backend:', url);

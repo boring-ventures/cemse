@@ -1,4 +1,4 @@
-import { apiCall, getAuthHeaders, API_BASE } from '@/lib/api';
+import { backendCall, getAuthHeaders, BACKEND_URL } from '@/lib/api';
 import { JobOffer, JobStatus, ContractType, WorkModality, ExperienceLevel } from '@/types/jobs';
 
 export interface CreateJobOfferRequest {
@@ -71,7 +71,7 @@ export class JobOfferService {
     try {
       console.log('🏢 JobOfferService.createJobOffer - Creating job offer:', data);
 
-      const response = await apiCall('/joboffer', {
+      const response = await backendCall('/api/joboffer', {
         method: 'POST',
         headers: getAuthHeaders(),
         body: JSON.stringify(data)
@@ -97,7 +97,7 @@ export class JobOfferService {
         url += `&status=${status}`;
       }
 
-      const response = await apiCall(url, {
+      const response = await backendCall(`/api${url}`, {
         method: 'GET',
         headers: getAuthHeaders()
       });
@@ -117,7 +117,7 @@ export class JobOfferService {
     try {
       console.log('👥 JobOfferService.getActiveJobOffers - Fetching active job offers');
 
-      const response = await apiCall('/joboffer', {
+      const response = await backendCall('/api/joboffer', {
         method: 'GET',
         headers: getAuthHeaders()
       });
@@ -137,7 +137,7 @@ export class JobOfferService {
     try {
       console.log('🔍 JobOfferService.getJobOffer - Fetching job offer:', id);
 
-      const response = await apiCall(`/joboffer/${id}`, {
+      const response = await backendCall(`/api/joboffer/${id}`, {
         method: 'GET',
         headers: getAuthHeaders()
       });
@@ -157,7 +157,7 @@ export class JobOfferService {
     try {
       console.log('🏢 JobOfferService.updateJobOffer - Updating job offer:', id, data);
 
-      const response = await apiCall(`/joboffer/${id}`, {
+      const response = await backendCall(`/api/joboffer/${id}`, {
         method: 'PUT',
         headers: getAuthHeaders(),
         body: JSON.stringify(data)
@@ -178,7 +178,7 @@ export class JobOfferService {
     try {
       console.log('🏢 JobOfferService.closeJobOffer - Closing job offer:', id);
 
-      const response = await apiCall(`/joboffer/${id}`, {
+      const response = await backendCall(`/api/joboffer/${id}`, {
         method: 'PUT',
         headers: getAuthHeaders(),
         body: JSON.stringify({
@@ -202,7 +202,7 @@ export class JobOfferService {
     try {
       console.log('🏢 JobOfferService.pauseJobOffer - Pausing job offer:', id);
 
-      const response = await apiCall(`/joboffer/${id}`, {
+      const response = await backendCall(`/api/joboffer/${id}`, {
         method: 'PUT',
         headers: getAuthHeaders(),
         body: JSON.stringify({
@@ -226,7 +226,7 @@ export class JobOfferService {
     try {
       console.log('🏢 JobOfferService.activateJobOffer - Activating job offer:', id);
 
-      const response = await apiCall(`/joboffer/${id}`, {
+      const response = await backendCall(`/api/joboffer/${id}`, {
         method: 'PUT',
         headers: getAuthHeaders(),
         body: JSON.stringify({
@@ -250,7 +250,7 @@ export class JobOfferService {
     try {
       console.log('🔍 JobOfferService.getJobOffers - Fetching job offers');
 
-      const response = await apiCall('/joboffer', {
+      const response = await backendCall('/api/joboffer', {
         method: 'GET',
         headers: getAuthHeaders()
       });
@@ -290,9 +290,9 @@ export class JobOfferService {
       }
 
       console.log('🏢 JobOfferService.getJobOffersByCompany - Final URL:', url);
-      console.log('🏢 JobOfferService.getJobOffersByCompany - Expected full URL:', API_BASE + url);
+      console.log('🏢 JobOfferService.getJobOffersByCompany - Expected full URL:', BACKEND_URL + '/api' + url);
 
-      const response = await apiCall(url, {
+      const response = await backendCall(`/api${url}`, {
         method: 'GET',
         headers: getAuthHeaders()
       });
@@ -315,7 +315,7 @@ export class JobOfferService {
     try {
       console.log('🏢 JobOfferService.deleteJobOffer - Deleting job offer:', id);
 
-      await apiCall(`/joboffer/${id}`, {
+      await backendCall(`/api/joboffer/${id}`, {
         method: 'DELETE',
         headers: getAuthHeaders()
       });

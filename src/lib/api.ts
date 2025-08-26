@@ -1,8 +1,14 @@
 // Base API configuration and utilities
+// Available API base URLs for different environments
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
+const API_BASE_DEV = process.env.NEXT_PUBLIC_API_BASE_DEV || "http://localhost:3001/api";
 const API_BASE_PROD = process.env.NEXT_PUBLIC_API_BASE_PROD || "https://cemse-back-production.up.railway.app/api";
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
+const API_BASE_LOCAL = "/api"; // Use local Next.js API routes
 
-// Use production URL for both environments to ensure consistency
-export const API_BASE = API_BASE_PROD;
+// Use local API routes - change this line to switch between environments
+// Options: API_BASE_PROD, API_BASE_DEV, API_BASE_LOCAL
+export const API_BASE = API_BASE_DEV;
 
 // Backend URL configuration - ensure it matches the API_BASE without /api suffix
 export const BACKEND_URL = process.env.NEXT_PUBLIC_BACKEND_URL || "https://cemse-back-production.up.railway.app";
@@ -31,29 +37,57 @@ export const backendCall = async (endpoint: string, options: RequestInit = {}) =
 // Token management
 export const setTokens = (accessToken: string, refreshToken: string) => {
   if (typeof window !== 'undefined') {
+    // Store in localStorage for client-side access
     localStorage.setItem("token", accessToken);
     localStorage.setItem("refreshToken", refreshToken);
+
+    // Also store in cookies for middleware access
+    document.cookie = `token=${accessToken}; path=/; max-age=3600; SameSite=Strict`;
+    document.cookie = `refreshToken=${refreshToken}; path=/; max-age=86400; SameSite=Strict`;
   }
 };
 
 export const getToken = () => {
   if (typeof window !== 'undefined') {
-    return localStorage.getItem("token");
+    // Try localStorage first, then cookies
+    const localToken = localStorage.getItem("token");
+    if (localToken) return localToken;
+
+    // Fallback to cookies
+    const cookies = document.cookie.split(';');
+    const tokenCookie = cookies.find(cookie => cookie.trim().startsWith('token='));
+    if (tokenCookie) {
+      return tokenCookie.split('=')[1];
+    }
   }
   return null;
 };
 
 export const getRefreshToken = () => {
   if (typeof window !== 'undefined') {
-    return localStorage.getItem("refreshToken");
+    // Try localStorage first, then cookies
+    const localToken = localStorage.getItem("refreshToken");
+    if (localToken) return localToken;
+
+    // Fallback to cookies
+    const cookies = document.cookie.split(';');
+    const tokenCookie = cookies.find(cookie => cookie.trim().startsWith('refreshToken='));
+    if (tokenCookie) {
+      return tokenCookie.split('=')[1];
+    }
   }
   return null;
 };
 
 export const clearTokens = () => {
   if (typeof window !== 'undefined') {
+    // Clear localStorage
     localStorage.removeItem("token");
     localStorage.removeItem("refreshToken");
+
+    // Clear cookies
+    document.cookie = "token=; path=/; expires=Thu, 01 Jan 1970 00:00:00 GMT";
+    document.cookie = "refreshToken=; path=/; expires=Thu, 01 Jan 1970 00:00:00 GMT";
   }
 };
 
@@ -1017,6 +1051,64 @@ const getMockData = (endpoint: string) => {
         },
         issuedAt: '2024-01-15T10:00:00Z'
       }
+    };
+  }
+
+  // Mock data for user-activities dashboard endpoint
+  if (endpoint.includes('/user-activities') && endpoint.includes('/dashboard')) {
+    return {
+      statistics: {
+        totalCourses: 15,
+        totalJobs: 25,
+        totalEntrepreneurships: 8,
+        totalInstitutions: 12,
+        userCourses: 3,
+        userJobApplications: 5,
+        userEntrepreneurships: 1
+      },
+      recentActivities: [
+        {
+          id: '1',
+          icon: '🎓',
+          title: 'Curso completado',
+          description: 'Completaste el curso "Desarrollo Web Básico"',
+          timestamp: '2024-01-15T10:30:00Z',
+          type: 'course_completion'
+        },
+        {
+          id: '2',
+          icon: '💼',
+          title: 'Postulación enviada',
+          description: 'Postulaste al trabajo "Desarrollador Frontend" en TechCorp',
+          timestamp: '2024-01-14T14:20:00Z',
+          type: 'job_application'
+        },
+        {
+          id: '3',
+          icon: '📚',
+          title: 'Lección completada',
+          description: 'Completaste la lección "Introducción a React"',
+          timestamp: '2024-01-13T16:45:00Z',
+          type: 'lesson_completion'
+        },
+        {
+          id: '4',
+          icon: '🏢',
+          title: 'Emprendimiento creado',
+          description: 'Creaste el emprendimiento "Mi Startup Digital"',
+          timestamp: '2024-01-12T09:15:00Z',
+          type: 'entrepreneurship_creation'
+        },
+        {
+          id: '5',
+          icon: '📝',
+          title: 'Quiz completado',
+          description: 'Completaste el quiz "Fundamentos de JavaScript" con 85%',
+          timestamp: '2024-01-11T11:30:00Z',
+          type: 'quiz_completion'
+        }
+      ],
+      total: 5
     };
   }
 

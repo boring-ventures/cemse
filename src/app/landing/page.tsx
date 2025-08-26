@@ -17,72 +17,89 @@ const carouselImages = [
     src: "https://images.unsplash.com/photo-1578662996442-48f60103fc96?w=1200&h=800&fit=crop&crop=center",
     alt: "Cristo de la Concordia al atardecer",
     title: "Developing Potential Market",
-    description: "Cochabamba, Bolivia"
+    description: "Cochabamba, Bolivia",
   },
   {
     id: 2,
-    src: "https://images.unsplash.com/photo-1578662996442-48f60103fc96?w=1200&h=800&fit=crop&crop=center", 
+    src: "https://images.unsplash.com/photo-1578662996442-48f60103fc96?w=1200&h=800&fit=crop&crop=center",
     alt: "Cristo de la Concordia de día",
     title: "Innovation Hub",
-    description: "Centro de desarrollo tecnológico"
+    description: "Centro de desarrollo tecnológico",
   },
   {
     id: 3,
     src: "https://images.unsplash.com/photo-1578662996442-48f60103fc96?w=1200&h=800&fit=crop&crop=center",
     alt: "Cristo de la Concordia de noche",
     title: "Future Leaders",
-    description: "Formando líderes del mañana"
-  }
+    description: "Formando líderes del mañana",
+  },
 ];
 
 // Configuración de colores por municipio
 const municipalityColors = {
   cercado: {
-    primary: "blue",
-    gradient: "from-blue-600 to-blue-700",
-    bgGradient: "from-blue-50 to-blue-100",
-    accent: "blue",
-    textGradient: "from-blue-600 to-blue-700",
-    hoverBg: "hover:bg-blue-50",
-    buttonGradient: "from-blue-600 to-blue-700",
-    buttonHover: "hover:from-blue-700 hover:to-blue-800"
-  },
-  tiquipaya: {
-    primary: "green", 
-    gradient: "from-green-600 to-green-700",
-    bgGradient: "from-green-50 to-green-100",
-    accent: "green",
-    textGradient: "from-green-600 to-green-700",
-    hoverBg: "hover:bg-green-50",
-    buttonGradient: "from-green-600 to-green-700",
-    buttonHover: "hover:from-green-700 hover:to-green-800"
-  },
-  quillacollo: {
     primary: "purple",
-    gradient: "from-purple-600 to-purple-700", 
+    gradient: "from-purple-600 to-purple-700",
     bgGradient: "from-purple-50 to-purple-100",
     accent: "purple",
     textGradient: "from-purple-600 to-purple-700",
     hoverBg: "hover:bg-purple-50",
     buttonGradient: "from-purple-600 to-purple-700",
-    buttonHover: "hover:from-purple-700 hover:to-purple-800"
-  }
+    buttonHover: "hover:from-purple-700 hover:to-purple-800",
+  },
+  quillacollo: {
+    primary: "blue",
+    gradient: "from-blue-800 to-blue-900",
+    bgGradient: "from-blue-50 to-blue-100",
+    accent: "blue",
+    textGradient: "from-blue-800 to-blue-900",
+    hoverBg: "hover:bg-blue-50",
+    buttonGradient: "from-blue-800 to-blue-900",
+    buttonHover: "hover:from-blue-900 hover:to-blue-950",
+  },
+  sacaba: {
+    primary: "sky",
+    gradient: "from-sky-400 to-sky-500",
+    bgGradient: "from-sky-50 to-sky-100",
+    accent: "sky",
+    textGradient: "from-sky-400 to-sky-500",
+    hoverBg: "hover:bg-sky-50",
+    buttonGradient: "from-sky-400 to-sky-500",
+    buttonHover: "hover:from-sky-500 hover:to-sky-600",
+  },
+  tiquipaya: {
+    primary: "cyan",
+    gradient: "from-cyan-400 to-cyan-500",
+    bgGradient: "from-cyan-50 to-cyan-100",
+    accent: "cyan",
+    textGradient: "from-cyan-400 to-cyan-500",
+    hoverBg: "hover:bg-cyan-50",
+    buttonGradient: "from-cyan-400 to-cyan-500",
+    buttonHover: "hover:from-cyan-500 hover:to-cyan-600",
+  },
 };
 
 export default function LandingPage() {
-  const { data: entrepreneurships, loading, error } = usePublicEntrepreneurships();
+  const {
+    data: entrepreneurships,
+    loading,
+    error,
+  } = usePublicEntrepreneurships();
   const [currentImageIndex, setCurrentImageIndex] = useState(0);
   const [selectedMunicipality, setSelectedMunicipality] = useState("cercado");
   const [isPaused, setIsPaused] = useState(false);
 
-  const colors = municipalityColors[selectedMunicipality as keyof typeof municipalityColors];
+  const colors =
+    municipalityColors[selectedMunicipality as keyof typeof municipalityColors];
 
   const nextImage = () => {
     setCurrentImageIndex((prev) => (prev + 1) % carouselImages.length);
   };
 
   const prevImage = () => {
-    setCurrentImageIndex((prev) => (prev - 1 + carouselImages.length) % carouselImages.length);
+    setCurrentImageIndex(
+      (prev) => (prev - 1 + carouselImages.length) % carouselImages.length
+    );
   };
 
   const handleMunicipalityChange = (municipality: string) => {
@@ -134,23 +151,30 @@ export default function LandingPage() {
       <header className="border-b bg-white/80 backdrop-blur-sm sticky top-0 z-50">
         <div className="container mx-auto px-4 py-4 flex justify-between items-center">
           <div className="flex items-center space-x-2">
-            <div className={`w-8 h-8 bg-gradient-to-r ${colors.gradient} rounded-lg flex items-center justify-center`}>
+            <div
+              className={`w-8 h-8 bg-gradient-to-r ${colors.gradient} rounded-lg flex items-center justify-center`}
+            >
               <Zap className="w-5 h-5 text-white" />
             </div>
-            <h1 className={`text-xl font-bold bg-gradient-to-r ${colors.textGradient} bg-clip-text text-transparent`}>
+            <h1
+              className={`text-xl font-bold bg-gradient-to-r ${colors.textGradient} bg-clip-text text-transparent`}
+            >
               Cemse
             </h1>
           </div>
-                      <Link href="/login">
-              <Button variant="outline" className={`${colors.hoverBg} bg-transparent`}>
-                Iniciar Sesión
-              </Button>
-            </Link>
+          <Link href="/login">
+            <Button
+              variant="outline"
+              className={`${colors.hoverBg} bg-transparent`}
+            >
+              Iniciar Sesión
+            </Button>
+          </Link>
         </div>
       </header>
 
       {/* Hero Section with Carousel */}
-      <section 
+      <section
         className="relative h-screen flex items-center justify-center overflow-hidden"
         onMouseEnter={handleCarouselHover}
         onMouseLeave={handleCarouselLeave}
@@ -206,7 +230,10 @@ export default function LandingPage() {
 
         {/* Hero Content */}
         <div className="relative z-10 text-center text-white max-w-4xl mx-auto px-4">
-          <Badge variant="secondary" className="mb-4 bg-white/20 backdrop-blur-sm text-white border-white/30">
+          <Badge
+            variant="secondary"
+            className="mb-4 bg-white/20 backdrop-blur-sm text-white border-white/30"
+          >
             🚀 Plataforma de Emprendimientos
           </Badge>
           <h1 className="text-4xl md:text-6xl font-bold mb-6">
@@ -226,7 +253,11 @@ export default function LandingPage() {
               </Button>
             </Link>
             <Link href="/login">
-              <Button size="lg" variant="outline" className="px-8 bg-white/20 backdrop-blur-sm border-white/30 text-white hover:bg-white/30">
+              <Button
+                size="lg"
+                variant="outline"
+                className="px-8 bg-white/20 backdrop-blur-sm border-white/30 text-white hover:bg-white/30"
+              >
                 Ver Dashboard
               </Button>
             </Link>
@@ -240,8 +271,14 @@ export default function LandingPage() {
             {!isPaused && (
               <div className="flex space-x-1">
                 <div className="w-2 h-2 bg-white rounded-full animate-pulse"></div>
-                <div className="w-2 h-2 bg-white rounded-full animate-pulse" style={{ animationDelay: '0.2s' }}></div>
-                <div className="w-2 h-2 bg-white rounded-full animate-pulse" style={{ animationDelay: '0.4s' }}></div>
+                <div
+                  className="w-2 h-2 bg-white rounded-full animate-pulse"
+                  style={{ animationDelay: "0.2s" }}
+                ></div>
+                <div
+                  className="w-2 h-2 bg-white rounded-full animate-pulse"
+                  style={{ animationDelay: "0.4s" }}
+                ></div>
               </div>
             )}
           </div>
@@ -252,16 +289,19 @@ export default function LandingPage() {
       <section className="py-16 px-4 bg-white">
         <div className="container mx-auto max-w-7xl">
           <div className="text-center mb-12">
-            <h2 className="text-3xl md:text-4xl font-bold mb-4">Emprendimientos Destacados</h2>
+            <h2 className="text-3xl md:text-4xl font-bold mb-4">
+              Emprendimientos Destacados
+            </h2>
             <p className="text-gray-600 text-lg max-w-2xl mx-auto">
-              Conoce las startups más prometedoras creadas por jóvenes emprendedores
+              Conoce las startups más prometedoras creadas por jóvenes
+              emprendedores
             </p>
           </div>
 
-          <EntrepreneurshipCarousel 
-            entrepreneurships={entrepreneurships} 
-            loading={loading} 
-            error={error} 
+          <EntrepreneurshipCarousel
+            entrepreneurships={entrepreneurships}
+            loading={loading}
+            error={error}
           />
         </div>
       </section>
@@ -269,13 +309,20 @@ export default function LandingPage() {
       {/* CTA Section */}
       <section className={`py-20 px-4 bg-gradient-to-r ${colors.gradient}`}>
         <div className="container mx-auto text-center max-w-4xl">
-          <h2 className="text-3xl md:text-4xl font-bold text-white mb-6">¿Listo para Emprender?</h2>
+          <h2 className="text-3xl md:text-4xl font-bold text-white mb-6">
+            ¿Listo para Emprender?
+          </h2>
           <p className="text-xl text-white/90 mb-8">
-            Únete a nuestra plataforma y accede a herramientas exclusivas, networking y oportunidades de inversión.
+            Únete a nuestra plataforma y accede a herramientas exclusivas,
+            networking y oportunidades de inversión.
           </p>
           <div className="flex flex-col sm:flex-row gap-4 justify-center">
             <Link href="/login">
-              <Button size="lg" variant="secondary" className="px-8 bg-white text-gray-900 hover:bg-gray-100">
+              <Button
+                size="lg"
+                variant="secondary"
+                className="px-8 bg-white text-gray-900 hover:bg-gray-100"
+              >
                 Acceder a la Plataforma
                 <ArrowRight className="ml-2 w-4 h-4" />
               </Button>
@@ -288,14 +335,21 @@ export default function LandingPage() {
       <footer className="bg-gray-900 text-white py-12 px-4">
         <div className="container mx-auto text-center">
           <div className="flex items-center justify-center space-x-2 mb-4">
-            <div className={`w-8 h-8 bg-gradient-to-r ${colors.gradient} rounded-lg flex items-center justify-center`}>
+            <div
+              className={`w-8 h-8 bg-gradient-to-r ${colors.gradient} rounded-lg flex items-center justify-center`}
+            >
               <Zap className="w-5 h-5 text-white" />
             </div>
             <h3 className="text-xl font-bold">Cemse</h3>
           </div>
-          <p className="text-gray-400 mb-6">Conectando emprendedores con el futuro de la innovación</p>
+          <p className="text-gray-400 mb-6">
+            Conectando emprendedores con el futuro de la innovación
+          </p>
           <Link href="/login">
-            <Button variant="outline" className="border-gray-600 text-gray-300 hover:bg-gray-800 bg-transparent">
+            <Button
+              variant="outline"
+              className="border-gray-600 text-gray-300 hover:bg-gray-800 bg-transparent"
+            >
               Iniciar Sesión
             </Button>
           </Link>

@@ -8,7 +8,7 @@ export async function GET(request: NextRequest) {
         const municipality = searchParams.get("municipality");
 
         // Forward to backend
-        const backendUrl = process.env.BACKEND_URL || 'http://localhost:3001';
+        const backendUrl = process.env.NEXT_PUBLIC_BACKEND_URL || 'https://cemse-back-production.up.railway.app';
 
         let url: string;
         if (municipality) {
@@ -136,7 +136,7 @@ export async function POST(request: NextRequest) {
         }
 
         // Forward to backend
-        const backendUrl = process.env.BACKEND_URL || 'http://localhost:3001';
+        const backendUrl = process.env.NEXT_PUBLIC_BACKEND_URL || 'https://cemse-back-production.up.railway.app';
         const url = `${backendUrl}/api/events`;
 
         const response = await fetch(url, {

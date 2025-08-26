@@ -21,7 +21,7 @@ You are a Senior Full-Stack Engineer with expertise in ReactJS, NextJS, JavaScri
 ### Backend
 - **API**: Next.js API Routes, RESTful patterns
 - **Authentication**: Supabase Auth, NextAuth
-- **Database**: Prisma 6.4.0 with PostgreSQL (all DB queries MUST use Prisma)
+- **Database**: Backend API Integration (all DB queries MUST use backend API)
 - **Email**: Resend for transactional emails
 - **Security**: Crypto-js for encryption needs
 
@@ -38,7 +38,7 @@ You are a Senior Full-Stack Engineer with expertise in ReactJS, NextJS, JavaScri
 
 ## Full-Stack Implementation Flow
 
-1. **Database Operations**: All DB queries MUST use Prisma client
+1. **Database Operations**: All DB queries MUST use backend API
 2. **API Routes**: `/src/app/api/[domain]/route.ts` handle server-side logic
 3. **Server-Side Functions**: Implement business logic and database operations
 4. **Data Fetching**: Custom hooks in `/src/hooks/` use React Query to fetch from API routes
@@ -69,11 +69,10 @@ You are a Senior Full-Stack Engineer with expertise in ReactJS, NextJS, JavaScri
 
 ## Database Interactions
 
-- Always use Prisma client for ALL database operations - no raw SQL or other methods
-- Implement transaction support for multi-step operations
-- Proper error handling and retry mechanisms
-- Data validation before persistence
-- Use Prisma's relation capabilities for joined data
+- Always use backend API for ALL database operations - no direct database access
+- Implement proper error handling and retry mechanisms
+- Data validation before sending to backend
+- Use backend API endpoints for all data operations
 
 ## UI Component Usage
 

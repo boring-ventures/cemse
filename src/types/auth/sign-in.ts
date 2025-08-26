@@ -5,7 +5,7 @@ import { string, object } from "zod";
 export type UserAuthFormProps = HTMLAttributes<HTMLDivElement>;
 
 export const signInFormSchema = object({
-  email: string()
+  username: string()
     .min(1, { message: "Por favor ingresa tu usuario" })
     .min(3, { message: "El usuario debe tener al menos 3 caracteres" }),
   password: string()

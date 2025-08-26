@@ -11,6 +11,7 @@ import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Eye, EyeOff, Loader2 } from "lucide-react";
 import Link from "next/link";
 import { useHydrationSafe } from "@/hooks/use-hydration-safe";
+import { AuthRedirect } from "@/components/auth/auth-redirect";
 
 export default function LoginPage() {
   const { login, loading } = useAuthContext();
@@ -33,21 +34,25 @@ export default function LoginPage() {
 
     // Prevent multiple form submissions
     if (loading || isSubmitting) {
-      console.log('🔐 Form submission blocked - login already in progress');
+      console.log("🔐 Form submission blocked - login already in progress");
       return;
     }
 
     setIsSubmitting(true);
     try {
-      console.log('🔐 Form submitted, starting login...');
+      console.log("🔐 Form submitted, starting login...");
       await login({ username: username.trim(), password });
-      console.log('🔐 Login completed, redirecting...');
-      
-      // Redirection will be handled by AuthRedirect component based on user role
-      router.replace("/dashboard");
+      console.log(
+        "🔐 Login completed, AuthRedirect will handle redirection based on user role"
+      );
+
+      // Don't redirect manually - let AuthRedirect handle it based on user role
+      // The user will be automatically redirected to the appropriate dashboard
     } catch (err: any) {
       console.error("Login error:", err);
-      setError(err?.message || "Error al iniciar sesión. Verifica tus credenciales.");
+      setError(
+        err?.message || "Error al iniciar sesión. Verifica tus credenciales."
+      );
     } finally {
       setIsSubmitting(false);
     }
@@ -152,7 +157,7 @@ export default function LoginPage() {
               >
                 ¿Olvidaste tu contraseña?
               </Link>
-              
+
               <div className="text-sm text-muted-foreground">
                 ¿No tienes cuenta?{" "}
                 <Link
@@ -169,16 +174,33 @@ export default function LoginPage() {
           <div className="mt-6 p-4 bg-muted rounded-lg">
             <h4 className="text-sm font-medium mb-2">Tipos de Usuario:</h4>
             <div className="text-xs text-muted-foreground space-y-1">
-              <div>• <strong>Jóvenes/Adolescentes:</strong> Acceso a cursos y empleos</div>
-              <div>• <strong>Empresas:</strong> Publicar empleos y crear cursos</div>
-              <div>• <strong>Gobiernos Municipales:</strong> Gestión institucional</div>
-              <div>• <strong>Centros de Formación:</strong> Crear contenido educativo</div>
-              <div>• <strong>ONGs/Fundaciones:</strong> Programas sociales</div>
-              <div>• <strong>Administradores:</strong> Gestión completa del sistema</div>
+              <div>
+                • <strong>Jóvenes/Adolescentes:</strong> Acceso a cursos y
+                empleos
+              </div>
+              <div>
+                • <strong>Empresas:</strong> Publicar empleos y crear cursos
+              </div>
+              <div>
+                • <strong>Gobiernos Municipales:</strong> Gestión institucional
+              </div>
+              <div>
+                • <strong>Centros de Formación:</strong> Crear contenido
+                educativo
+              </div>
+              <div>
+                • <strong>ONGs/Fundaciones:</strong> Programas sociales
+              </div>
+              <div>
+                • <strong>Administradores:</strong> Gestión completa del sistema
+              </div>
             </div>
           </div>
         </CardContent>
       </Card>
+
+      {/* AuthRedirect will handle automatic redirection after successful login */}
+      <AuthRedirect />
     </div>
   );
 }

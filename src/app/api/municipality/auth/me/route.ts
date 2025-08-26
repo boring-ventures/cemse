@@ -27,19 +27,6 @@ export async function GET(request: NextRequest) {
       },
     });
 
-    if (!response.ok) {
-      console.error("❌ GET /api/municipality/auth/me - Backend error:", response.status, response.statusText);
-      return NextResponse.json(
-        { error: `Backend error: ${response.status} ${response.statusText}` },
-        { status: response.status }
-      );
-    }
-
-    const data = await response.json();
-    console.log("✅ GET /api/municipality/auth/me - Backend response:", data);
-
-    return NextResponse.json(data);
-
   } catch (error) {
     console.error("❌ GET /api/municipality/auth/me - Error:", error);
 

@@ -433,10 +433,7 @@ export const municipalGovernmentSidebarData: SidebarData = {
               title: "Crear Curso",
               url: "/admin/courses/create",
             },
-            {
-              title: "Estudiantes",
-              url: "/admin/students",
-            },
+
           ],
         },
         {
@@ -485,16 +482,7 @@ export const municipalGovernmentSidebarData: SidebarData = {
         },
       ],
     },
-    {
-      title: "Análisis",
-      items: [
-        {
-          title: "Reportes Avanzados",
-          url: "/reports/admin",
-          icon: PieChart,
-        },
-      ],
-    },
+
     {
       title: "Sistema",
       items: [
@@ -756,11 +744,7 @@ export const superAdminSidebarData: SidebarData = {
           url: "/admin/companies",
           icon: Building2,
         },
-        {
-          title: "Gestión de Roles",
-          url: "/admin/roles",
-          icon: Users,
-        },
+
       ],
     },
     {
@@ -776,11 +760,7 @@ export const superAdminSidebarData: SidebarData = {
           url: "/admin/courses/create",
           icon: GraduationCap,
         },
-        {
-          title: "Estudiantes",
-          url: "/admin/students",
-          icon: Users,
-        },
+
       ],
     },
     {
@@ -791,11 +771,7 @@ export const superAdminSidebarData: SidebarData = {
           url: "/admin/job-offers",
           icon: Briefcase,
         },
-        {
-          title: "Candidatos",
-          url: "/admin/job-applications",
-          icon: Users,
-        },
+
       ],
     },
     {
@@ -866,11 +842,7 @@ export const superAdminSidebarData: SidebarData = {
     {
       title: "Configuración",
       items: [
-        {
-          title: "Configuración del Sistema",
-          url: "/admin/settings",
-          icon: Settings,
-        },
+
         {
           title: "Mi Perfil",
           url: "/profile",

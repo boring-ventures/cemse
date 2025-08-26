@@ -2,11 +2,18 @@
 
 import { useState } from "react";
 import React from "react";
+import { useRouter } from "next/navigation";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Search, MapPin } from "lucide-react";
 import Image from "next/image";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
 
 interface Institution {
   id: string;
@@ -18,10 +25,14 @@ interface Institution {
 }
 
 export default function InstitutionsDirectoryPage() {
+  const router = useRouter();
   const [searchQuery, setSearchQuery] = useState("");
   const [institutions, setInstitutions] = useState<Institution[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [selectedInstitution, setSelectedInstitution] =
+    useState<Institution | null>(null);
+  const [showModal, setShowModal] = useState(false);
 
   // Fetch institutions from the backend
   const fetchInstitutions = async () => {
@@ -59,6 +70,42 @@ export default function InstitutionsDirectoryPage() {
         .includes(searchQuery.toLowerCase())
   );
 
+  const handleViewDetails = (institution: Institution) => {
+    console.log("🔍 handleViewDetails called with:", institution);
+    setSelectedInstitution(institution);
+    setShowModal(true);
+    console.log("🔍 showModal set to true");
+
+    // Test: Force a re-render
+    setTimeout(() => {
+      console.log("🔍 After timeout - showModal:", showModal);
+    }, 100);
+  };
+
+  const handleCloseModal = () => {
+    setShowModal(false);
+    setSelectedInstitution(null);
+  };
+
+  const getInstitutionTypeLabel = (type: string) => {
+    const typeLabels: { [key: string]: string } = {
+      GOBIERNOS_MUNICIPALES: "Gobierno Municipal",
+      CENTROS_DE_FORMACION: "Centro de Formación",
+      ONGS_Y_FUNDACIONES: "ONG y Fundación",
+      EMPRESAS_PRIVADAS: "Empresa Privada",
+      INSTITUCIONES_EDUCATIVAS: "Institución Educativa",
+      ORGANISMOS_GUBERNAMENTALES: "Organismo Gubernamental",
+    };
+    return typeLabels[type] || type;
+  };
+
+  console.log(
+    "🔍 Component render - showModal:",
+    showModal,
+    "selectedInstitution:",
+    selectedInstitution
+  );
+
   return (
     <div className="container mx-auto p-6 max-w-7xl">
       {/* Header */}
@@ -92,6 +139,25 @@ export default function InstitutionsDirectoryPage() {
             onChange={(e) => setSearchQuery(e.target.value)}
             className="pl-10 py-6 text-lg"
           />
+        </div>
+        {/* Test Button */}
+        <div className="text-center mt-4">
+          <Button
+            onClick={() => {
+              console.log("🔍 Test button clicked");
+              setShowModal(true);
+              setSelectedInstitution({
+                id: "test",
+                name: "Test Institution",
+                department: "Test Dept",
+                region: "Test Region",
+                institutionType: "TEST",
+              });
+            }}
+            variant="outline"
+          >
+            Test Modal
+          </Button>
         </div>
       </div>
 
@@ -162,7 +228,9 @@ export default function InstitutionsDirectoryPage() {
                         </div>
                         <div className="flex items-center text-sm">
                           <span className="bg-blue-100 text-blue-800 px-2 py-1 rounded-full text-xs font-medium">
-                            {institution.institutionType}
+                            {getInstitutionTypeLabel(
+                              institution.institutionType
+                            )}
                           </span>
                           {institution.customType && (
                             <span className="ml-2 bg-gray-100 text-gray-800 px-2 py-1 rounded-full text-xs">
@@ -178,7 +246,11 @@ export default function InstitutionsDirectoryPage() {
                     <div className="text-sm text-muted-foreground">
                       ID: {institution.id}
                     </div>
-                    <Button variant="outline" size="sm">
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => handleViewDetails(institution)}
+                    >
                       Ver detalles
                     </Button>
                   </div>
@@ -188,6 +260,51 @@ export default function InstitutionsDirectoryPage() {
           )}
         </div>
       )}
+
+      {/* Institution Details Modal */}
+      <Dialog open={showModal} onOpenChange={setShowModal}>
+        <DialogContent className="max-w-2xl">
+          <DialogHeader>
+            <DialogTitle>Detalles de la Institución</DialogTitle>
+          </DialogHeader>
+
+          {selectedInstitution && (
+            <div className="space-y-4">
+              <div className="text-center">
+                <h2 className="text-2xl font-bold text-gray-900 mb-2">
+                  {selectedInstitution.name}
+                </h2>
+                <p className="text-muted-foreground">
+                  {selectedInstitution.department}, {selectedInstitution.region}
+                </p>
+              </div>
+
+              <div className="bg-gray-50 rounded-lg p-4">
+                <h3 className="font-semibold text-gray-900 mb-2">
+                  Tipo de Institución
+                </h3>
+                <span className="bg-blue-100 text-blue-800 px-3 py-1 rounded-full text-sm font-medium">
+                  {getInstitutionTypeLabel(selectedInstitution.institutionType)}
+                </span>
+              </div>
+
+              <div className="flex justify-end gap-3 pt-4 border-t">
+                <Button variant="outline" onClick={handleCloseModal}>
+                  Cerrar
+                </Button>
+                <Button
+                  onClick={() => {
+                    router.push(`/institutions/${selectedInstitution.id}`);
+                    handleCloseModal();
+                  }}
+                >
+                  Ver Perfil Completo
+                </Button>
+              </div>
+            </div>
+          )}
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
