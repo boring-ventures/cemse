@@ -10,7 +10,7 @@ const nextConfig = {
   },
   env: {
     NEXT_PUBLIC_USE_BACKEND: 'true',
-    NEXT_PUBLIC_BACKEND_URL: 'https://cemse-back-production.up.railway.app',
+    NEXT_PUBLIC_BACKEND_URL: process.env.NODE_ENV === "production" ? 'https://cemse-back-production.up.railway.app' : 'http://localhost:3001',
   },
   // Ensure proper URL resolution
   basePath: '',

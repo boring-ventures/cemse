@@ -32,7 +32,6 @@ export default function InstitutionsDirectoryPage() {
   const [error, setError] = useState<string | null>(null);
   const [selectedInstitution, setSelectedInstitution] =
     useState<Institution | null>(null);
-  const [showModal, setShowModal] = useState(false);
 
   // Fetch institutions from the backend
   const fetchInstitutions = async () => {
@@ -73,17 +72,9 @@ export default function InstitutionsDirectoryPage() {
   const handleViewDetails = (institution: Institution) => {
     console.log("🔍 handleViewDetails called with:", institution);
     setSelectedInstitution(institution);
-    setShowModal(true);
-    console.log("🔍 showModal set to true");
-
-    // Test: Force a re-render
-    setTimeout(() => {
-      console.log("🔍 After timeout - showModal:", showModal);
-    }, 100);
   };
 
   const handleCloseModal = () => {
-    setShowModal(false);
     setSelectedInstitution(null);
   };
 
@@ -100,9 +91,7 @@ export default function InstitutionsDirectoryPage() {
   };
 
   console.log(
-    "🔍 Component render - showModal:",
-    showModal,
-    "selectedInstitution:",
+    "🔍 Component render - selectedInstitution:",
     selectedInstitution
   );
 
@@ -145,7 +134,6 @@ export default function InstitutionsDirectoryPage() {
           <Button
             onClick={() => {
               console.log("🔍 Test button clicked");
-              setShowModal(true);
               setSelectedInstitution({
                 id: "test",
                 name: "Test Institution",
@@ -262,7 +250,7 @@ export default function InstitutionsDirectoryPage() {
       )}
 
       {/* Institution Details Modal */}
-      <Dialog open={showModal} onOpenChange={setShowModal}>
+      <Dialog open={!!selectedInstitution} onOpenChange={handleCloseModal}>
         <DialogContent className="max-w-2xl">
           <DialogHeader>
             <DialogTitle>Detalles de la Institución</DialogTitle>
