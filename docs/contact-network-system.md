@@ -7,23 +7,27 @@ El **Sistema de Red de Contactos** permite a los usuarios jóvenes ("YOUTH") con
 ## 🎯 Funcionalidades Principales
 
 ### 1. **Búsqueda de Jóvenes**
+
 - Buscar usuarios jóvenes por nombre, email o habilidades
 - Filtrado automático (solo usuarios YOUTH)
 - Paginación y resultados ordenados
 - Exclusión del usuario actual de los resultados
 
 ### 2. **Sistema de Solicitudes**
+
 - Enviar solicitudes con mensajes personalizados
 - Ver estado de solicitudes (pendiente, aceptada, rechazada)
 - Aceptar o rechazar solicitudes recibidas
 - Prevención de solicitudes duplicadas
 
 ### 3. **Gestión de Contactos**
+
 - Ver lista de contactos conectados
 - Eliminar contactos de la red
 - Estadísticas de la red personal
 
 ### 4. **Seguridad y Validaciones**
+
 - Solo jóvenes pueden conectarse entre sí
 - No se pueden enviar solicitudes a sí mismo
 - Prevención de solicitudes duplicadas
@@ -32,16 +36,19 @@ El **Sistema de Red de Contactos** permite a los usuarios jóvenes ("YOUTH") con
 ## 🚀 Endpoints Disponibles
 
 ### **Búsqueda de Usuarios**
+
 ```http
-GET /api/contacts/search?query=maria&page=1&limit=10
+GET https://cemse-back-production-56da.up.railway.app/api/contacts/search?query=maria&page=1&limit=10
 ```
 
 **Parámetros:**
+
 - `query` (opcional): Término de búsqueda (nombre, email, habilidades)
 - `page` (opcional): Número de página (default: 1)
 - `limit` (opcional): Resultados por página (default: 10)
 
 **Respuesta:**
+
 ```json
 {
   "users": [
@@ -71,8 +78,9 @@ GET /api/contacts/search?query=maria&page=1&limit=10
 ```
 
 ### **Enviar Solicitud de Contacto**
+
 ```http
-POST /api/contacts/request
+POST https://cemse-back-production-56da.up.railway.app/api/contacts/request
 Content-Type: application/json
 
 {
@@ -82,6 +90,7 @@ Content-Type: application/json
 ```
 
 **Respuesta:**
+
 ```json
 {
   "message": "Contact request sent successfully",
@@ -97,11 +106,13 @@ Content-Type: application/json
 ```
 
 ### **Obtener Solicitudes Recibidas**
+
 ```http
-GET /api/contacts/requests/received?page=1&limit=10
+GET https://cemse-back-production-56da.up.railway.app/api/contacts/requests/received?page=1&limit=10
 ```
 
 **Respuesta:**
+
 ```json
 {
   "requests": [
@@ -133,11 +144,13 @@ GET /api/contacts/requests/received?page=1&limit=10
 ```
 
 ### **Aceptar Solicitud**
+
 ```http
-PUT /api/contacts/requests/clx123456/accept
+PUT https://cemse-back-production-56da.up.railway.app/api/contacts/requests/clx123456/accept
 ```
 
 **Respuesta:**
+
 ```json
 {
   "message": "Contact request accepted successfully",
@@ -150,11 +163,13 @@ PUT /api/contacts/requests/clx123456/accept
 ```
 
 ### **Rechazar Solicitud**
+
 ```http
-PUT /api/contacts/requests/clx123456/reject
+PUT https://cemse-back-production-56da.up.railway.app/api/contacts/requests/clx123456/reject
 ```
 
 **Respuesta:**
+
 ```json
 {
   "message": "Contact request rejected successfully",
@@ -167,11 +182,13 @@ PUT /api/contacts/requests/clx123456/reject
 ```
 
 ### **Obtener Lista de Contactos**
+
 ```http
-GET /api/contacts?page=1&limit=10
+GET https://cemse-back-production-56da.up.railway.app/api/contacts?page=1&limit=10
 ```
 
 **Respuesta:**
+
 ```json
 {
   "contacts": [
@@ -202,11 +219,13 @@ GET /api/contacts?page=1&limit=10
 ```
 
 ### **Eliminar Contacto**
+
 ```http
-DELETE /api/contacts/clx123456
+DELETE https://cemse-back-production-56da.up.railway.app/api/contacts/clx123456
 ```
 
 **Respuesta:**
+
 ```json
 {
   "message": "Contact deleted successfully"
@@ -214,11 +233,13 @@ DELETE /api/contacts/clx123456
 ```
 
 ### **Obtener Estadísticas**
+
 ```http
-GET /api/contacts/stats
+GET https://cemse-back-production-56da.up.railway.app/api/contacts/stats
 ```
 
 **Respuesta:**
+
 ```json
 {
   "stats": {
@@ -235,26 +256,28 @@ GET /api/contacts/stats
 ## 📊 Estructura de Datos
 
 ### **Modelo Contact**
+
 ```typescript
 interface Contact {
   id: string;
-  userId: string;        // Usuario que envía la solicitud
-  contactId: string;     // Usuario que recibe la solicitud
+  userId: string; // Usuario que envía la solicitud
+  contactId: string; // Usuario que recibe la solicitud
   status: ContactStatus; // PENDING, ACCEPTED, REJECTED, BLOCKED
-  message?: string;      // Mensaje opcional con la solicitud
+  message?: string; // Mensaje opcional con la solicitud
   createdAt: Date;
   updatedAt: Date;
 }
 
 enum ContactStatus {
   PENDING = "PENDING",
-  ACCEPTED = "ACCEPTED", 
+  ACCEPTED = "ACCEPTED",
   REJECTED = "REJECTED",
-  BLOCKED = "BLOCKED"
+  BLOCKED = "BLOCKED",
 }
 ```
 
 ### **Estados de Contacto**
+
 - **PENDING**: Solicitud enviada, esperando respuesta
 - **ACCEPTED**: Solicitud aceptada, contacto establecido
 - **REJECTED**: Solicitud rechazada
@@ -263,8 +286,9 @@ enum ContactStatus {
 ## 🔧 Implementación en Frontend
 
 ### **Hook React para Contactos**
+
 ```typescript
-import { useState, useEffect } from 'react';
+import { useState, useEffect } from "react";
 
 interface ContactUser {
   userId: string;
@@ -277,7 +301,7 @@ interface ContactUser {
   department?: string;
   municipality?: string;
   contactStatus?: {
-    type: 'sent' | 'received';
+    type: "sent" | "received";
     status: string;
   };
 }
@@ -304,22 +328,25 @@ export const useContacts = () => {
     setLoading(true);
     try {
       const params = new URLSearchParams();
-      if (query) params.append('query', query);
-      params.append('page', page.toString());
-      
-      const response = await fetch(`http://localhost:3001/api/contacts/search?${params}`, {
-        headers: {
-          'Authorization': `Bearer ${localStorage.getItem('token')}`
+      if (query) params.append("query", query);
+      params.append("page", page.toString());
+
+      const response = await fetch(
+        `https://cemse-back-production-56da.up.railway.app/api/contacts/search?${params}`,
+        {
+          headers: {
+            Authorization: `Bearer ${localStorage.getItem("token")}`,
+          },
         }
-      });
-      
-      if (!response.ok) throw new Error('Error searching users');
-      
+      );
+
+      if (!response.ok) throw new Error("Error searching users");
+
       const data = await response.json();
       setUsers(data.users);
       return data;
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Error desconocido');
+      setError(err instanceof Error ? err.message : "Error desconocido");
     } finally {
       setLoading(false);
     }
@@ -328,23 +355,26 @@ export const useContacts = () => {
   // Enviar solicitud de contacto
   const sendRequest = async (contactId: string, message?: string) => {
     try {
-      const response = await fetch('http://localhost:3001/api/contacts/request', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${localStorage.getItem('token')}`
-        },
-        body: JSON.stringify({ contactId, message })
-      });
-      
-      if (!response.ok) throw new Error('Error sending request');
-      
+      const response = await fetch(
+        "https://cemse-back-production-56da.up.railway.app/api/contacts/request",
+        {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${localStorage.getItem("token")}`,
+          },
+          body: JSON.stringify({ contactId, message }),
+        }
+      );
+
+      if (!response.ok) throw new Error("Error sending request");
+
       const data = await response.json();
       // Actualizar la lista de usuarios para mostrar el estado
       await searchUsers();
       return data;
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Error desconocido');
+      setError(err instanceof Error ? err.message : "Error desconocido");
       throw err;
     }
   };
@@ -352,40 +382,46 @@ export const useContacts = () => {
   // Obtener solicitudes recibidas
   const getReceivedRequests = async () => {
     try {
-      const response = await fetch('http://localhost:3001/api/contacts/requests/received', {
-        headers: {
-          'Authorization': `Bearer ${localStorage.getItem('token')}`
+      const response = await fetch(
+        "https://cemse-back-production-56da.up.railway.app/api/contacts/requests/received",
+        {
+          headers: {
+            Authorization: `Bearer ${localStorage.getItem("token")}`,
+          },
         }
-      });
-      
-      if (!response.ok) throw new Error('Error getting requests');
-      
+      );
+
+      if (!response.ok) throw new Error("Error getting requests");
+
       const data = await response.json();
       setRequests(data.requests);
       return data;
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Error desconocido');
+      setError(err instanceof Error ? err.message : "Error desconocido");
     }
   };
 
   // Aceptar solicitud
   const acceptRequest = async (requestId: string) => {
     try {
-      const response = await fetch(`http://localhost:3001/api/contacts/requests/${requestId}/accept`, {
-        method: 'PUT',
-        headers: {
-          'Authorization': `Bearer ${localStorage.getItem('token')}`
+      const response = await fetch(
+        `https://cemse-back-production-56da.up.railway.app/api/contacts/requests/${requestId}/accept`,
+        {
+          method: "PUT",
+          headers: {
+            Authorization: `Bearer ${localStorage.getItem("token")}`,
+          },
         }
-      });
-      
-      if (!response.ok) throw new Error('Error accepting request');
-      
+      );
+
+      if (!response.ok) throw new Error("Error accepting request");
+
       const data = await response.json();
       // Actualizar listas
       await Promise.all([getReceivedRequests(), getContacts(), getStats()]);
       return data;
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Error desconocido');
+      setError(err instanceof Error ? err.message : "Error desconocido");
       throw err;
     }
   };
@@ -393,20 +429,23 @@ export const useContacts = () => {
   // Rechazar solicitud
   const rejectRequest = async (requestId: string) => {
     try {
-      const response = await fetch(`http://localhost:3001/api/contacts/requests/${requestId}/reject`, {
-        method: 'PUT',
-        headers: {
-          'Authorization': `Bearer ${localStorage.getItem('token')}`
+      const response = await fetch(
+        `https://cemse-back-production-56da.up.railway.app/api/contacts/requests/${requestId}/reject`,
+        {
+          method: "PUT",
+          headers: {
+            Authorization: `Bearer ${localStorage.getItem("token")}`,
+          },
         }
-      });
-      
-      if (!response.ok) throw new Error('Error rejecting request');
-      
+      );
+
+      if (!response.ok) throw new Error("Error rejecting request");
+
       const data = await response.json();
       await getReceivedRequests();
       return data;
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Error desconocido');
+      setError(err instanceof Error ? err.message : "Error desconocido");
       throw err;
     }
   };
@@ -414,39 +453,45 @@ export const useContacts = () => {
   // Obtener contactos
   const getContacts = async () => {
     try {
-      const response = await fetch('http://localhost:3001/api/contacts', {
-        headers: {
-          'Authorization': `Bearer ${localStorage.getItem('token')}`
+      const response = await fetch(
+        "https://cemse-back-production-56da.up.railway.app/api/contacts",
+        {
+          headers: {
+            Authorization: `Bearer ${localStorage.getItem("token")}`,
+          },
         }
-      });
-      
-      if (!response.ok) throw new Error('Error getting contacts');
-      
+      );
+
+      if (!response.ok) throw new Error("Error getting contacts");
+
       const data = await response.json();
       setContacts(data.contacts.map((c: any) => c.contact));
       return data;
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Error desconocido');
+      setError(err instanceof Error ? err.message : "Error desconocido");
     }
   };
 
   // Eliminar contacto
   const deleteContact = async (contactId: string) => {
     try {
-      const response = await fetch(`http://localhost:3001/api/contacts/${contactId}`, {
-        method: 'DELETE',
-        headers: {
-          'Authorization': `Bearer ${localStorage.getItem('token')}`
+      const response = await fetch(
+        `https://cemse-back-production-56da.up.railway.app/api/contacts/${contactId}`,
+        {
+          method: "DELETE",
+          headers: {
+            Authorization: `Bearer ${localStorage.getItem("token")}`,
+          },
         }
-      });
-      
-      if (!response.ok) throw new Error('Error deleting contact');
-      
+      );
+
+      if (!response.ok) throw new Error("Error deleting contact");
+
       const data = await response.json();
       await Promise.all([getContacts(), getStats()]);
       return data;
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Error desconocido');
+      setError(err instanceof Error ? err.message : "Error desconocido");
       throw err;
     }
   };
@@ -454,19 +499,22 @@ export const useContacts = () => {
   // Obtener estadísticas
   const getStats = async () => {
     try {
-      const response = await fetch('http://localhost:3001/api/contacts/stats', {
-        headers: {
-          'Authorization': `Bearer ${localStorage.getItem('token')}`
+      const response = await fetch(
+        "https://cemse-back-production-56da.up.railway.app/api/contacts/stats",
+        {
+          headers: {
+            Authorization: `Bearer ${localStorage.getItem("token")}`,
+          },
         }
-      });
-      
-      if (!response.ok) throw new Error('Error getting stats');
-      
+      );
+
+      if (!response.ok) throw new Error("Error getting stats");
+
       const data = await response.json();
       setStats(data.stats);
       return data;
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Error desconocido');
+      setError(err instanceof Error ? err.message : "Error desconocido");
     }
   };
 
@@ -484,12 +532,13 @@ export const useContacts = () => {
     rejectRequest,
     getContacts,
     deleteContact,
-    getStats
+    getStats,
   };
 };
 ```
 
 ### **Componente de Búsqueda**
+
 ```typescript
 import React, { useState } from 'react';
 import { useContacts } from '../hooks/useContacts';
@@ -557,7 +606,7 @@ export const ContactSearch = () => {
                     <strong>Institución:</strong> {user.currentInstitution}
                   </p>
                 )}
-                
+
                 {user.skills && user.skills.length > 0 && (
                   <div>
                     <p className="text-sm font-medium mb-1">Habilidades:</p>
@@ -573,15 +622,15 @@ export const ContactSearch = () => {
 
                 {user.contactStatus ? (
                   <div className="flex items-center gap-2">
-                    <Badge 
+                    <Badge
                       variant={user.contactStatus.status === 'PENDING' ? 'outline' : 'default'}
                     >
                       {user.contactStatus.type === 'sent' ? 'Solicitud enviada' : 'Solicitud recibida'}
                     </Badge>
                   </div>
                 ) : (
-                  <Button 
-                    size="sm" 
+                  <Button
+                    size="sm"
                     onClick={() => handleSendRequest(user.userId)}
                     className="w-full"
                   >
@@ -602,6 +651,7 @@ export const ContactSearch = () => {
 ## 🎯 Casos de Uso
 
 ### **1. Juan busca y conecta con María**
+
 1. Juan accede a la sección "Red de Emprendedores"
 2. Busca "María" en el campo de búsqueda
 3. Ve el perfil de María García con sus habilidades
@@ -609,12 +659,14 @@ export const ContactSearch = () => {
 5. María recibe la solicitud en su panel de solicitudes recibidas
 
 ### **2. María acepta la solicitud de Juan**
+
 1. María ve la solicitud de Juan en su lista de solicitudes recibidas
 2. Revisa el perfil de Juan y su mensaje
 3. Hace clic en "Aceptar" para establecer la conexión
 4. Ambos aparecen ahora en sus listas de contactos
 
 ### **3. Gestión de contactos**
+
 1. Juan puede ver todos sus contactos conectados
 2. Puede eliminar contactos que ya no desee mantener
 3. Ve estadísticas de su red (total de contactos, solicitudes pendientes, etc.)

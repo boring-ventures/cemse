@@ -1,17 +1,17 @@
 // Base API configuration and utilities
 // Available API base URLs for different environments
 // eslint-disable-next-line @typescript-eslint/no-unused-vars
-const API_BASE_DEV = process.env.NEXT_PUBLIC_API_BASE_DEV || "http://localhost:3001/api";
-const API_BASE_PROD = process.env.NEXT_PUBLIC_API_BASE_PROD || "https://cemse-back-production.up.railway.app/api";
+const API_BASE_DEV = process.env.NEXT_PUBLIC_API_BASE_DEV || "https://cemse-back-production-56da.up.railway.app/api";
+const API_BASE_PROD = process.env.NEXT_PUBLIC_API_BASE_PROD || "https://cemse-back-production-56da.up.railway.app/api";
 // eslint-disable-next-line @typescript-eslint/no-unused-vars
 const API_BASE_LOCAL = "/api"; // Use local Next.js API routes
 
-// Use local API routes - change this line to switch between environments
+// Use production API by default - change this line to switch between environments
 // Options: API_BASE_PROD, API_BASE_DEV, API_BASE_LOCAL
-export const API_BASE = API_BASE_DEV;
+export const API_BASE = API_BASE_PROD;
 
 // Backend URL configuration - ensure it matches the API_BASE without /api suffix
-export const BACKEND_URL = process.env.NEXT_PUBLIC_BACKEND_URL || "https://cemse-back-production.up.railway.app";
+export const BACKEND_URL = process.env.NEXT_PUBLIC_BACKEND_URL || "https://cemse-back-production-56da.up.railway.app";
 
 // Utility function to make direct backend calls
 export const backendCall = async (endpoint: string, options: RequestInit = {}) => {

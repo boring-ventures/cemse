@@ -59,5 +59,5 @@ export const getBaseUrl = (): string => {
   }
 
   // Server-side: use environment variable or default
-  return process.env.NEXT_PUBLIC_SITE_URL || 'https://cemse-back-production.up.railway.app';
+  return process.env.NEXT_PUBLIC_SITE_URL || 'https://cemse-back-production-56da.up.railway.app';
 };

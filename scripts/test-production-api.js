@@ -1,7 +1,7 @@
 const https = require('https');
 const http = require('http');
 
-const PRODUCTION_API = 'https://cemse-back-production.up.railway.app/api';
+const PRODUCTION_API = 'https://cemse-back-production-56da.up.railway.app/api';
 
 async function testAPI(url) {
     return new Promise((resolve, reject) => {

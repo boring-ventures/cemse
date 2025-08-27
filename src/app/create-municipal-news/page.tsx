@@ -38,7 +38,7 @@ export default function CreateMunicipalNewsPage() {
       console.log("🔍 Creating municipal news with data:", newsData);
 
       const response = await fetch(
-        "https://cemse-back-production.up.railway.app/api/newsarticle",
+        "https://cemse-back-production-56da.up.railway.app/api/newsarticle",
         {
           method: "POST",
           headers: {

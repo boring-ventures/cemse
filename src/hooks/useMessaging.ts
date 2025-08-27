@@ -54,7 +54,7 @@ export const useMessaging = () => {
   };
 
   // Usar directamente el backend en lugar de las API routes
-  const BACKEND_URL = process.env.NEXT_PUBLIC_BACKEND_URL || "https://cemse-back-production.up.railway.app";
+  const BACKEND_URL = process.env.NEXT_PUBLIC_BACKEND_URL || "https://cemse-back-production-56da.up.railway.app";
 
   const fetchConversations = async () => {
     try {

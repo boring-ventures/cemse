@@ -13,14 +13,14 @@
 ### 1. **Configuración Actual**
 
 - **API Base Configurada:** `API_BASE_LOCAL` (`/api`)
-- **API de Producción Disponible:** `https://cemse-back-production.up.railway.app/api`
+- **API de Producción Disponible:** `https://cemse-back-production-56da.up.railway.app/api`
 - **Estado:** Usando rutas locales de Next.js en lugar de la API de producción
 
 ### 2. **Verificación de Conectividad**
 
 ✅ **API de Producción Accesible**
 
-- URL: `https://cemse-back-production.up.railway.app/api`
+- URL: `https://cemse-back-production-56da.up.railway.app/api`
 - Estado: Servidor respondiendo correctamente
 - Endpoints probados:
   - `/health` → 404 (endpoint no existe, pero servidor responde)
@@ -59,7 +59,7 @@ const API_BASE_DEV =
   process.env.NEXT_PUBLIC_API_BASE_DEV || "http://localhost:3001/api";
 const API_BASE_PROD =
   process.env.NEXT_PUBLIC_API_BASE_PROD ||
-  "https://cemse-back-production.up.railway.app/api";
+  "https://cemse-back-production-56da.up.railway.app/api";
 // eslint-disable-next-line @typescript-eslint/no-unused-vars
 const API_BASE_LOCAL = "/api"; // Use local Next.js API routes
 

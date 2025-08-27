@@ -1602,16 +1602,16 @@ interface Post {
 // === API Base Configuration ===
 const API_BASE_DEV =
   process.env.NEXT_PUBLIC_API_BASE_DEV ||
-  "https://cemse-back-production.up.railway.app/api";
+  "https://cemse-back-production-56da.up.railway.app/api";
 const API_BASE_PROD =
   process.env.NEXT_PUBLIC_API_BASE_PROD ||
-  "https://cemse-back-production.up.railway.app/api";
+  "https://cemse-back-production-56da.up.railway.app/api";
 
 export const API_BASE =
   process.env.NODE_ENV === "production" ? API_BASE_PROD : API_BASE_DEV;
 export const BACKEND_URL =
   process.env.NEXT_PUBLIC_BACKEND_URL ||
-  "https://cemse-back-production.up.railway.app/api";
+  "https://cemse-back-production-56da.up.railway.app/api";
 
 // === Token Management ===
 export const setTokens = (accessToken: string, refreshToken: string) => {

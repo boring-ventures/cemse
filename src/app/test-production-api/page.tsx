@@ -50,7 +50,7 @@ export default function TestProductionAPI() {
     setResults(null);
 
     const productionEndpoint =
-      "https://cemse-back-production.up.railway.app/api/health";
+      "https://cemse-back-production-56da.up.railway.app/api/health";
     const localEndpoint = "/api/health";
 
     const [productionResult, localResult] = await Promise.all([
@@ -93,7 +93,7 @@ export default function TestProductionAPI() {
               API de Producción
             </Badge>
             <p className="font-mono text-sm bg-muted p-2 rounded">
-              https://cemse-back-production.up.railway.app/api
+              https://cemse-back-production-56da.up.railway.app/api
             </p>
           </div>
           <div>
@@ -146,7 +146,7 @@ export default function TestProductionAPI() {
                 API de Producción
               </CardTitle>
               <CardDescription>
-                https://cemse-back-production.up.railway.app/api
+                https://cemse-back-production-56da.up.railway.app/api
               </CardDescription>
             </CardHeader>
             <CardContent>

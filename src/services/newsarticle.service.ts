@@ -7,7 +7,7 @@ const processImageUrl = (imageUrl: string): string => {
 
   // Replace localhost URLs with production URL
   if (imageUrl.includes('localhost:3000') || imageUrl.includes('localhost:3001')) {
-    return imageUrl.replace(/localhost:\d+/, 'cemse-back-production.up.railway.app').replace('http://', 'https://');
+    return imageUrl.replace(/localhost:\d+/, 'cemse-back-production-56da.up.railway.app').replace('http://', 'https://');
   }
 
   // If it's already a full URL, return as is

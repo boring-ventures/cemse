@@ -3,7 +3,7 @@ const FormData = require('form-data');
 const fetch = require('node-fetch');
 
 // Configuration
-const API_BASE_URL = 'https://cemse-back-production.up.railway.app';
+const API_BASE_URL = 'https://cemse-back-production-56da.up.railway.app';
 const AUTH_TOKEN = 'your-auth-token-here'; // Replace with actual token
 
 // Test video file path (create a small test video or use existing one)

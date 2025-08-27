@@ -10,7 +10,7 @@ const nextConfig = {
   },
   env: {
     NEXT_PUBLIC_USE_BACKEND: 'true',
-    NEXT_PUBLIC_BACKEND_URL: process.env.NODE_ENV === "production" ? 'https://cemse-back-production.up.railway.app' : 'http://localhost:3001',
+    NEXT_PUBLIC_BACKEND_URL: 'https://cemse-back-production-56da.up.railway.app',
   },
   // Ensure proper URL resolution
   basePath: '',
@@ -25,7 +25,7 @@ const nextConfig = {
       "placehold.co",
       "localhost",
       "192.168.0.87",
-      "cemse-back-production.up.railway.app",
+      "cemse-back-production-56da.up.railway.app",
       "bucket-production-1a58.up.railway.app",
     ],
     remotePatterns: [
@@ -53,7 +53,7 @@ const nextConfig = {
       },
       {
         protocol: "https",
-        hostname: "cemse-back-production.up.railway.app",
+        hostname: "cemse-back-production-56da.up.railway.app",
       },
       {
         protocol: "https",
@@ -96,7 +96,7 @@ const nextConfig = {
           {
             key: "Content-Security-Policy",
             value:
-              "default-src 'self'; script-src 'self' 'unsafe-inline' 'unsafe-eval' https://js.stripe.com https://*.supabase.co; connect-src 'self' https://*.supabase.co wss://*.supabase.co https://api.stripe.com https://cemse-back-production.up.railway.app https://bucket-production-1a58.up.railway.app; style-src 'self' 'unsafe-inline' https://unpkg.com; img-src 'self' data: https://*.supabase.co https://* https://cemse-back-production.up.railway.app https://bucket-production-1a58.up.railway.app blob:; media-src *; font-src 'self' data:; frame-src 'self' https://js.stripe.com; object-src 'none'",
+              "default-src 'self'; script-src 'self' 'unsafe-inline' 'unsafe-eval' https://js.stripe.com https://*.supabase.co; connect-src 'self' https://*.supabase.co wss://*.supabase.co https://api.stripe.com https://cemse-back-production-56da.up.railway.app https://cemse-back-production-56da.up.railway.app https://bucket-production-1a58.up.railway.app; style-src 'self' 'unsafe-inline' https://unpkg.com; img-src 'self' data: https://*.supabase.co https://* https://cemse-back-production-56da.up.railway.app https://bucket-production-1a58.up.railway.app blob:; media-src *; font-src 'self' data:; frame-src 'self' https://js.stripe.com; object-src 'none'",
           },
           {
             key: "Cache-Control",

@@ -337,7 +337,7 @@ export function DashboardMunicipio() {
         try {
           console.log(`🧪 Testing endpoint: ${endpoint}`);
           const response = await fetch(
-            `https://cemse-back-production.up.railway.app/api${endpoint}`,
+            `https://cemse-back-production-56da.up.railway.app/api${endpoint}`,
             {
               headers: {
                 Authorization: `Bearer ${token}`,

@@ -133,7 +133,7 @@ export default function NetworkingPage() {
     try {
       const backendUrl =
         process.env.NEXT_PUBLIC_BACKEND_URL ||
-        "https://cemse-back-production.up.railway.app";
+        "https://cemse-back-production-56da.up.railway.app";
       const response = await fetch(`${backendUrl}/profile/me`, {
         headers: {
           Authorization: `Bearer ${localStorage.getItem("token")}`,
@@ -170,7 +170,7 @@ export default function NetworkingPage() {
     try {
       const backendUrl =
         process.env.NEXT_PUBLIC_BACKEND_URL ||
-        "https://cemse-back-production.up.railway.app";
+        "https://cemse-back-production-56da.up.railway.app";
       const params = new URLSearchParams();
       if (query) params.append("query", query);
 
@@ -224,7 +224,7 @@ export default function NetworkingPage() {
     try {
       const backendUrl =
         process.env.NEXT_PUBLIC_BACKEND_URL ||
-        "https://cemse-back-production.up.railway.app";
+        "https://cemse-back-production-56da.up.railway.app";
       const url = `${backendUrl}/api/contacts/request`;
       console.log("🔍 sendRequest - Calling backend URL:", url);
 
@@ -254,7 +254,7 @@ export default function NetworkingPage() {
     try {
       const backendUrl =
         process.env.NEXT_PUBLIC_BACKEND_URL ||
-        "https://cemse-back-production.up.railway.app";
+        "https://cemse-back-production-56da.up.railway.app";
       const url = `${backendUrl}/api/contacts/requests/received`;
       console.log("🔍 getReceivedRequests - Calling backend URL:", url);
 
@@ -280,7 +280,7 @@ export default function NetworkingPage() {
     try {
       const backendUrl =
         process.env.NEXT_PUBLIC_BACKEND_URL ||
-        "https://cemse-back-production.up.railway.app";
+        "https://cemse-back-production-56da.up.railway.app";
       const url = `${backendUrl}/api/contacts/requests/${requestId}/accept`;
       console.log("🔍 acceptRequest - Calling backend URL:", url);
 
@@ -309,7 +309,7 @@ export default function NetworkingPage() {
     try {
       const backendUrl =
         process.env.NEXT_PUBLIC_BACKEND_URL ||
-        "https://cemse-back-production.up.railway.app";
+        "https://cemse-back-production-56da.up.railway.app";
       const url = `${backendUrl}/api/contacts/requests/${requestId}/reject`;
       console.log("🔍 rejectRequest - Calling backend URL:", url);
 
@@ -338,7 +338,7 @@ export default function NetworkingPage() {
     try {
       const backendUrl =
         process.env.NEXT_PUBLIC_BACKEND_URL ||
-        "https://cemse-back-production.up.railway.app";
+        "https://cemse-back-production-56da.up.railway.app";
       const url = `${backendUrl}/api/contacts`;
       console.log("🔍 getContacts - Calling backend URL:", url);
 
@@ -432,7 +432,7 @@ export default function NetworkingPage() {
     try {
       const backendUrl =
         process.env.NEXT_PUBLIC_BACKEND_URL ||
-        "https://cemse-back-production.up.railway.app";
+        "https://cemse-back-production-56da.up.railway.app";
       const url = `${backendUrl}/api/contacts/stats`;
       console.log("🔍 getStats - Calling backend URL:", url);
 

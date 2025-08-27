@@ -9,7 +9,7 @@ export async function PUT(
         const authHeader = request.headers.get('authorization');
 
         // Use the same backend URL structure as institutions
-        const backendUrl = process.env.NEXT_PUBLIC_BACKEND_URL || 'https://cemse-back-production.up.railway.app';
+        const backendUrl = process.env.NEXT_PUBLIC_BACKEND_URL || 'https://cemse-back-production-56da.up.railway.app';
 
         const url = `${backendUrl}/api/contacts/requests/${params.requestId}/reject`;
 

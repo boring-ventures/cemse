@@ -359,7 +359,7 @@ Los municipios pueden personalizar sus colores:
 
 ```env
 # Backend URL
-NEXT_PUBLIC_BACKEND_URL=https://cemse-back-production.up.railway.app
+NEXT_PUBLIC_BACKEND_URL=https://cemse-back-production-56da.up.railway.app
 
 # MinIO Bucket URL (para imágenes)
 NEXT_PUBLIC_MINIO_BUCKET_URL=https://bucket-production-1a58.up.railway.app
@@ -380,7 +380,7 @@ const nextConfig = {
             key: "Content-Security-Policy",
             value: `
               default-src 'self';
-              img-src 'self' data: https://*.supabase.co https://* https://cemse-back-production.up.railway.app https://bucket-production-1a58.up.railway.app blob:;
+              img-src 'self' data: https://*.supabase.co https://* https://cemse-back-production-56da.up.railway.app https://bucket-production-1a58.up.railway.app blob:;
               // ... otros headers
             `,
           },

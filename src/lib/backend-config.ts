@@ -1,5 +1,5 @@
 // Backend configuration - always use production backend
-export const BACKEND_URL = process.env.NEXT_PUBLIC_BACKEND_URL || 'https://cemse-back-production.up.railway.app';
+export const BACKEND_URL = process.env.NEXT_PUBLIC_BACKEND_URL || 'https://cemse-back-production-56da.up.railway.app';
 
 // Backend API endpoints
 export const BACKEND_ENDPOINTS = {
