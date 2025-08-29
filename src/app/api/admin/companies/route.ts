@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { cookies } from "next/headers";
-import jwt from 'jsonwebtoken';
+import jwt from "jsonwebtoken";
 import { prisma } from "@/lib/prisma";
 
 const JWT_SECRET = process.env.JWT_SECRET || "supersecretkey"; // Same secret as auth routes
@@ -23,8 +23,10 @@ export async function GET(request: NextRequest) {
     }
 
     // Handle mock development tokens
-    if (token.startsWith('mock-dev-token-')) {
-      console.log("🔐 Admin companies API - Mock token detected, allowing access");
+    if (token.startsWith("mock-dev-token-")) {
+      console.log(
+        "🔐 Admin companies API - Mock token detected, allowing access"
+      );
       // Mock tokens are considered admin for development
     } else {
       // Verify JWT token using proper JWT verification
@@ -34,44 +36,60 @@ export async function GET(request: NextRequest) {
           id: payload.id,
           username: payload.username,
           role: payload.role,
-          type: payload.type
+          type: payload.type,
         });
 
         // Also check the user's actual role in the database
         try {
           const dbUser = await prisma.user.findUnique({
             where: { id: payload.id },
-            select: { id: true, username: true, role: true, isActive: true }
+            select: { id: true, username: true, role: true, isActive: true },
           });
           console.log("🔍 Admin companies API - User from database:", dbUser);
         } catch (dbError) {
-          console.error("🔍 Admin companies API - Database user lookup failed:", dbError);
+          console.error(
+            "🔍 Admin companies API - Database user lookup failed:",
+            dbError
+          );
         }
 
         // Check if user has admin permissions (multiple roles can manage companies)
         const userRole = payload.type || payload.role;
-        const allowedRoles = ["SUPERADMIN", "MUNICIPAL_GOVERNMENTS", "INSTRUCTOR", "TRAINING_CENTERS", "NGOS_AND_FOUNDATIONS"];
-        
+        const allowedRoles = [
+          "SUPERADMIN",
+          "MUNICIPAL_GOVERNMENTS",
+          "INSTRUCTOR",
+          "TRAINING_CENTERS",
+          "NGOS_AND_FOUNDATIONS",
+        ];
+
         console.log(`🔍 Admin companies API - Detailed role check:`, {
           payloadRole: payload.role,
           payloadType: payload.type,
           finalUserRole: userRole,
           allowedRoles: allowedRoles,
           isAllowed: allowedRoles.includes(userRole),
-          username: payload.username
+          username: payload.username,
         });
-        
+
         if (!allowedRoles.includes(userRole)) {
-          console.log(`🔍 Admin companies API - Insufficient permissions. Role: ${userRole}, Allowed: ${allowedRoles.join(', ')}`);
+          console.log(
+            `🔍 Admin companies API - Insufficient permissions. Role: ${userRole}, Allowed: ${allowedRoles.join(", ")}`
+          );
           return NextResponse.json(
             { error: "Unauthorized. Admin access required." },
             { status: 401 }
           );
         }
 
-        console.log(`✅ Admin companies API - Role ${userRole} has permission to access companies`);
+        console.log(
+          `✅ Admin companies API - Role ${userRole} has permission to access companies`
+        );
       } catch (error) {
-        console.error("🔍 Admin companies API - JWT verification failed:", error);
+        console.error(
+          "🔍 Admin companies API - JWT verification failed:",
+          error
+        );
         return NextResponse.json(
           { error: "Unauthorized. Invalid or expired token." },
           { status: 401 }
@@ -83,8 +101,10 @@ export async function GET(request: NextRequest) {
 
     // Fetch all companies from database using Prisma
     try {
-      console.log("🔍 Admin companies API - Fetching companies from database with Prisma");
-      
+      console.log(
+        "🔍 Admin companies API - Fetching companies from database with Prisma"
+      );
+
       const companies = await prisma.company.findMany({
         include: {
           municipality: {
@@ -92,25 +112,27 @@ export async function GET(request: NextRequest) {
               id: true,
               name: true,
               department: true,
-            }
+            },
           },
           creator: {
             select: {
               id: true,
               username: true,
               role: true,
-            }
-          }
+            },
+          },
         },
         orderBy: {
-          createdAt: 'desc'
-        }
+          createdAt: "desc",
+        },
       });
 
-      console.log(`✅ Admin companies API - Successfully fetched ${companies.length} companies from database`);
-      
+      console.log(
+        `✅ Admin companies API - Successfully fetched ${companies.length} companies from database`
+      );
+
       // Transform the data to match the expected format
-      const transformedCompanies = companies.map(company => ({
+      const transformedCompanies = companies.map((company) => ({
         id: company.id,
         name: company.name,
         description: company.description,
@@ -131,9 +153,11 @@ export async function GET(request: NextRequest) {
       }));
 
       return NextResponse.json(transformedCompanies);
-      
     } catch (error) {
-      console.error("❌ Admin companies API - Error fetching companies from database:", error);
+      console.error(
+        "❌ Admin companies API - Error fetching companies from database:",
+        error
+      );
       return NextResponse.json(
         { error: "Failed to fetch companies from database" },
         { status: 500 }
