@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
@@ -32,7 +32,14 @@ type MagicLinkFormProps = React.HTMLAttributes<HTMLDivElement>;
 export function MagicLinkForm({ className, ...props }: MagicLinkFormProps) {
   const [isLoading, setIsLoading] = useState(false);
   const [isSuccess, setIsSuccess] = useState(false);
-  const supabase = createClientComponentClient();
+  const [isMounted, setIsMounted] = useState(false);
+
+  // Only initialize Supabase client after component mounts (client-side)
+  const supabase = isMounted ? createClientComponentClient() : null;
+
+  useEffect(() => {
+    setIsMounted(true);
+  }, []);
 
   const form = useForm<FormValues>({
     resolver: zodResolver(formSchema),
@@ -42,6 +49,16 @@ export function MagicLinkForm({ className, ...props }: MagicLinkFormProps) {
   });
 
   async function onSubmit(data: FormValues) {
+    if (!supabase) {
+      toast({
+        title: "Error",
+        description:
+          "Authentication service is not available. Please try again.",
+        variant: "destructive",
+      });
+      return;
+    }
+
     try {
       setIsLoading(true);
 
@@ -104,7 +121,11 @@ export function MagicLinkForm({ className, ...props }: MagicLinkFormProps) {
                 </FormItem>
               )}
             />
-            <Button type="submit" className="w-full" disabled={isLoading}>
+            <Button
+              type="submit"
+              className="w-full"
+              disabled={isLoading || !isMounted}
+            >
               {isLoading ? "Sending..." : "Send Magic Link"}
             </Button>
           </form>
