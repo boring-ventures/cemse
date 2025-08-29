@@ -52,38 +52,7 @@ export async function GET(request: NextRequest) {
       orderBy: { issuedAt: 'desc' }
     });
 
-    // If no certificates found in database, return mock data for development
-    if (certificates.length === 0) {
-      console.log('🏅 API: No module certificates found in database, using mock data');
-      const mockCertificates = [
-        {
-          id: 'cert_module_1',
-          moduleId: 'module_1',
-          studentId: decoded.id,
-          certificateUrl: 'https://example.com/certificates/module-cert.pdf',
-          issuedAt: new Date().toISOString(),
-          grade: 95,
-          completedAt: new Date().toISOString(),
-          module: {
-            id: 'module_1',
-            title: 'Introducción a React',
-            course: {
-              id: '1',
-              title: 'React para Principiantes'
-            }
-          },
-          student: {
-            id: decoded.id,
-            firstName: 'Usuario',
-            lastName: 'Demo',
-            email: decoded.username + '@email.com',
-          }
-        }
-      ];
-
-      console.log('🏅 API: Returning', mockCertificates.length, 'mock module certificates');
-      return NextResponse.json(mockCertificates);
-    }
+    // Return actual certificates from database
 
     console.log('🏅 API: Found', certificates.length, 'module certificates');
     return NextResponse.json(certificates);

@@ -4,12 +4,12 @@ import { useAuthContext } from './use-auth';
 export interface JobMessage {
   id: string;
   content: string;
-  messageType: 'TEXT' | 'FILE' | 'INTERVIEW_INVITE' | 'STATUS_UPDATE';
+  messageType: 'TEXT' | 'IMAGE' | 'FILE';
   senderId: string;
-  senderType: 'COMPANY' | 'APPLICANT' | 'ADMIN';
+  senderType: 'COMPANY' | 'APPLICANT';
+  status: 'SENT' | 'DELIVERED' | 'READ';
   createdAt: string;
   readAt?: string;
-  isRead?: boolean;
   application?: {
     applicant: {
       firstName: string;
@@ -28,7 +28,7 @@ export interface JobMessage {
 
 export interface SendMessageData {
   content: string;
-  messageType?: 'TEXT' | 'FILE' | 'INTERVIEW_INVITE' | 'STATUS_UPDATE';
+  messageType?: 'TEXT' | 'IMAGE' | 'FILE';
 }
 
 export function useJobMessages(applicationId: string) {
@@ -46,22 +46,13 @@ export function useJobMessages(applicationId: string) {
       setLoading(true);
       setError(null);
       
-      const token = localStorage.getItem('token');
-      console.log('🔑 Token from localStorage:', token ? 'Present' : 'Missing');
-      
-      if (!token) {
-        setError('No hay token de autenticación');
-        return;
-      }
-
       const response = await fetch(`/api/jobapplication-messages/${applicationId}/messages`, {
+        method: 'GET',
+        credentials: 'include', // Use cookies for authentication
         headers: {
-          'Authorization': `Bearer ${token}`,
           'Content-Type': 'application/json',
         },
       });
-
-      console.log('📡 Response status:', response.status);
 
       if (!response.ok) {
         const errorData = await response.json().catch(() => ({}));
@@ -70,11 +61,9 @@ export function useJobMessages(applicationId: string) {
       }
 
       const data = await response.json();
-      console.log('📦 Received data:', data);
       
       // Handle the backend response structure: {messages: [], pagination: {...}}
       const messagesArray = data.messages || [];
-      console.log('📦 Messages array:', messagesArray);
       
       setMessages(messagesArray);
     } catch (err) {
@@ -93,11 +82,10 @@ export function useJobMessages(applicationId: string) {
       setSending(true);
       setError(null);
       
-      const token = localStorage.getItem('token');
       const response = await fetch(`/api/jobapplication-messages/${applicationId}/messages`, {
         method: 'POST',
+        credentials: 'include', // Use cookies for authentication
         headers: {
-          'Authorization': `Bearer ${token}`,
           'Content-Type': 'application/json',
         },
         body: JSON.stringify({
@@ -111,7 +99,6 @@ export function useJobMessages(applicationId: string) {
       }
 
       const data = await response.json();
-      console.log('📤 Send message response:', data);
       
       // Handle the response structure - could be the message object directly or wrapped
       const newMessage = data.message || data;
@@ -130,16 +117,16 @@ export function useJobMessages(applicationId: string) {
   // Mark message as read
   const markAsRead = async (messageId: string) => {
     try {
-      const token = localStorage.getItem('token');
       await fetch(`/api/jobapplication-messages/${applicationId}/messages/${messageId}/read`, {
         method: 'PUT',
+        credentials: 'include', // Use cookies for authentication
         headers: {
-          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json',
         },
       });
 
       setMessages(prev => prev.map(msg => 
-        msg.id === messageId ? { ...msg, isRead: true, readAt: new Date().toISOString() } : msg
+        msg.id === messageId ? { ...msg, status: 'READ', readAt: new Date().toISOString() } : msg
       ));
     } catch (err) {
       console.error('Error marking message as read:', err);
@@ -149,10 +136,11 @@ export function useJobMessages(applicationId: string) {
   // Get unread count
   const getUnreadCount = async () => {
     try {
-      const token = localStorage.getItem('token');
       const response = await fetch('/api/jobapplication-messages/unread-count', {
+        method: 'GET',
+        credentials: 'include', // Use cookies for authentication
         headers: {
-          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json',
         },
       });
 
@@ -171,14 +159,11 @@ export function useJobMessages(applicationId: string) {
   useEffect(() => {
     if (!applicationId || applicationId.trim() === '') return;
     
-    console.log('💬 useJobMessages - Fetching messages for applicationId:', applicationId);
-    
     // Initial fetch
     fetchMessages();
     
     // Set up auto-refresh every 30 seconds
     const interval = setInterval(() => {
-      console.log('💬 useJobMessages - Auto-refreshing messages');
       fetchMessages();
     }, 30000);
     

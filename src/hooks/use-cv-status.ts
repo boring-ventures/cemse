@@ -177,17 +177,29 @@ export function useCVStatus() {
       const formData = new FormData();
       formData.append('cvFile', file);
 
-      const result = await apiCall('/files/upload/cv', {
+      // Use direct fetch to Next.js API route with cookies for authentication
+      const response = await fetch('/api/files/upload/cv', {
         method: 'POST',
-        body: formData
+        credentials: 'include', // Include cookies for authentication
+        body: formData // Don't set Content-Type header for FormData
       });
+
+      if (!response.ok) {
+        if (response.status === 401) {
+          throw new Error('Authentication failed');
+        }
+        const errorData = await response.json();
+        throw new Error(errorData.error || `HTTP error! status: ${response.status}`);
+      }
+
+      const result = await response.json();
 
       // Actualizar el estado con la URL devuelta por el backend
       const newStatus = {
         ...status,
         hasCV: true,
         cvUrl: result.cvUrl, // Usar la URL devuelta por el backend
-        cvSource: 'file',
+        cvSource: 'file' as const,
         loading: false,
         hasCoverLetter: status.hasCoverLetter ?? false
       };
@@ -211,10 +223,22 @@ export function useCVStatus() {
       const formData = new FormData();
       formData.append('coverLetterFile', file);
 
-      const result = await apiCall('/files/upload/cover-letter', {
+      // Use direct fetch to Next.js API route with cookies for authentication
+      const response = await fetch('/api/files/upload/cover-letter', {
         method: 'POST',
-        body: formData
+        credentials: 'include', // Include cookies for authentication
+        body: formData // Don't set Content-Type header for FormData
       });
+
+      if (!response.ok) {
+        if (response.status === 401) {
+          throw new Error('Authentication failed');
+        }
+        const errorData = await response.json();
+        throw new Error(errorData.error || `HTTP error! status: ${response.status}`);
+      }
+
+      const result = await response.json();
 
       // Actualizar el estado con la URL devuelta por el backend
       const newStatus = {

@@ -49,8 +49,8 @@ export default function ModulePreviewPage() {
   const { data: modulesData, isLoading: modulesLoading } = useCourseModules(courseId);
   const { data: lessonsData, isLoading: lessonsLoading } = useModuleLessons(moduleId);
 
-  const module = modulesData?.modules?.find(m => m.id === moduleId);
-  const lessons = lessonsData?.lessons || [];
+  const module = (modulesData as any)?.modules?.find((m: any) => m.id === moduleId);
+  const lessons = (lessonsData as any)?.lessons || [];
 
   if (modulesLoading || lessonsLoading) {
     return (

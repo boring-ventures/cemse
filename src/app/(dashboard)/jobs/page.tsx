@@ -10,7 +10,7 @@ import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
 import { JobSearchFilters } from "@/components/jobs/job-search-filters";
 import { JobCard } from "@/components/jobs/job-card";
-import { JobOffer } from "@/types/api";
+import { JobOffer, JobSearchFilters as JobFilters } from "@/types/jobs";
 import { useJobOfferSearch } from "@/hooks/useJobOfferApi";
 
 export default function JobsPage() {
@@ -20,7 +20,7 @@ export default function JobsPage() {
   const [searchQuery, setSearchQuery] = useState("");
   const [viewMode, setViewMode] = useState<"grid" | "list">("grid");
   const [showFilters, setShowFilters] = useState(false);
-  const [filters, setFilters] = useState<any>({}); // Changed to any as JobFilters is removed
+  const [filters, setFilters] = useState<JobFilters>({});
 
   const searchParams = useSearchParams();
 
@@ -134,7 +134,7 @@ export default function JobsPage() {
     }
   };
 
-  const handleFiltersChange = (newFilters: any) => { // Changed to any as JobFilters is removed
+  const handleFiltersChange = (newFilters: JobFilters) => {
     setFilters(newFilters);
   };
 
@@ -147,65 +147,71 @@ export default function JobsPage() {
     <div className="min-h-screen bg-gray-50">
       {/* Header */}
       <div className="bg-white border-b">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
-          <div className="flex flex-col space-y-4">
-            <div className="flex items-center justify-between">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4 sm:py-6">
+          <div className="flex flex-col space-y-3 sm:space-y-4">
+            <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 sm:gap-0">
               <div>
-                <h1 className="text-2xl font-bold text-gray-900">
+                <h1 className="text-xl sm:text-2xl font-bold text-gray-900">
                   Buscar Empleos
                 </h1>
-                <p className="text-gray-600">
+                <p className="text-sm sm:text-base text-gray-600">
                   Encuentra oportunidades laborales que se ajusten a tu perfil
                 </p>
               </div>
-              <div className="flex items-center space-x-2">
+              <div className="flex items-center space-x-2 justify-center sm:justify-end">
                 <Button
                   variant={viewMode === "grid" ? "default" : "outline"}
                   size="sm"
                   onClick={() => setViewMode("grid")}
                 >
-                  <Grid className="w-4 h-4" />
+                  <Grid className="w-3 sm:w-4 h-3 sm:h-4" />
+                  <span className="ml-1 sm:hidden">Grid</span>
                 </Button>
                 <Button
                   variant={viewMode === "list" ? "default" : "outline"}
                   size="sm"
                   onClick={() => setViewMode("list")}
                 >
-                  <List className="w-4 h-4" />
+                  <List className="w-3 sm:w-4 h-3 sm:h-4" />
+                  <span className="ml-1 sm:hidden">Lista</span>
                 </Button>
               </div>
             </div>
 
             {/* Search Bar */}
-            <form onSubmit={handleSearch} className="flex space-x-2">
+            <form onSubmit={handleSearch} className="flex flex-col sm:flex-row gap-2 sm:space-x-2 sm:gap-0">
               <div className="flex-1 relative">
-                <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-4 h-4" />
+                <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-3 sm:w-4 h-3 sm:h-4" />
                 <Input
                   placeholder="Buscar por título, empresa, habilidades..."
                   value={searchQuery}
                   onChange={(e) => setSearchQuery(e.target.value)}
-                  className="pl-10 pr-4 py-2"
+                  className="pl-8 sm:pl-10 pr-4 py-2 text-sm sm:text-base"
                 />
               </div>
-              <Button type="submit">Buscar</Button>
-              <Button
-                variant="outline"
-                onClick={() => setShowFilters(!showFilters)}
-                className="flex items-center space-x-2"
-              >
-                <Filter className="w-4 h-4" />
-                <span>Filtros</span>
-              </Button>
+              <div className="flex gap-2">
+                <Button type="submit" className="flex-1 sm:flex-none text-sm">
+                  Buscar
+                </Button>
+                <Button
+                  variant="outline"
+                  onClick={() => setShowFilters(!showFilters)}
+                  className="flex-1 sm:flex-none items-center justify-center text-sm"
+                >
+                  <Filter className="w-3 sm:w-4 h-3 sm:h-4" />
+                  <span className="ml-1 sm:ml-2">Filtros</span>
+                </Button>
+              </div>
             </form>
           </div>
         </div>
       </div>
 
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
-        <div className="flex gap-6">
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4 sm:py-6">
+        <div className="flex flex-col lg:flex-row gap-4 lg:gap-6">
           {/* Filters Sidebar */}
           {showFilters && (
-            <div className="w-80 flex-shrink-0">
+            <div className="w-full lg:w-80 lg:flex-shrink-0">
               <JobSearchFilters
                 filters={filters}
                 onFiltersChange={handleFiltersChange}
@@ -215,32 +221,34 @@ export default function JobsPage() {
           )}
 
           {/* Results */}
-          <div className="flex-1">
+          <div className="flex-1 min-w-0">
             {/* Results Header */}
-            <div className="flex items-center justify-between mb-6">
-              <div className="flex items-center space-x-4">
-                <h2 className="text-lg font-semibold text-gray-900">
+            <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 sm:gap-0 mb-4 sm:mb-6">
+              <div className="flex flex-col sm:flex-row sm:items-center gap-2 sm:gap-4">
+                <h2 className="text-base sm:text-lg font-semibold text-gray-900">
                   {loading ? "Buscando..." : `${totalJobs} empleos encontrados`}
                 </h2>
-                {Object.keys(filters).length > 1 && (
-                  <Button
-                    variant="ghost"
-                    onClick={clearFilters}
-                    className="text-sm"
-                  >
-                    Limpiar filtros
-                  </Button>
-                )}
-                {/* Mock data indicator */}
-                {jobs.length > 0 && jobs[0]?.id === "1" && (
-                  <Badge variant="outline" className="text-xs text-orange-600 border-orange-300">
-                    Datos de ejemplo
-                  </Badge>
-                )}
+                <div className="flex items-center gap-2">
+                  {Object.keys(filters).length > 1 && (
+                    <Button
+                      variant="ghost"
+                      onClick={clearFilters}
+                      className="text-xs sm:text-sm h-8"
+                    >
+                      Limpiar filtros
+                    </Button>
+                  )}
+                  {/* Mock data indicator */}
+                  {jobs.length > 0 && jobs[0]?.id === "1" && (
+                    <Badge variant="outline" className="text-xs text-orange-600 border-orange-300">
+                      Datos de ejemplo
+                    </Badge>
+                  )}
+                </div>
               </div>
-              <div className="flex items-center space-x-2">
-                <SortDesc className="w-4 h-4 text-gray-400" />
-                <span className="text-sm text-gray-600">
+              <div className="flex items-center space-x-2 text-xs sm:text-sm">
+                <SortDesc className="w-3 sm:w-4 h-3 sm:h-4 text-gray-400" />
+                <span className="text-gray-600">
                   Más recientes primero
                 </span>
               </div>
@@ -250,7 +258,7 @@ export default function JobsPage() {
             {(filters.contractType?.length ||
               filters.workModality?.length ||
               filters.experienceLevel?.length) && (
-              <div className="flex flex-wrap gap-2 mb-4">
+              <div className="flex flex-wrap gap-1 sm:gap-2 mb-3 sm:mb-4">
                 {filters.contractType?.map((type) => (
                   <Badge key={type} variant="secondary" className="text-xs">
                     {type === "FULL_TIME"
@@ -292,22 +300,22 @@ export default function JobsPage() {
               <div
                 className={
                   viewMode === "grid"
-                    ? "grid grid-cols-1 md:grid-cols-2 gap-6"
-                    : "space-y-4"
+                    ? "grid grid-cols-1 sm:grid-cols-1 md:grid-cols-2 gap-4 sm:gap-6"
+                    : "space-y-3 sm:space-y-4"
                 }
               >
                 {[...Array(6)].map((_, i) => (
                   <Card key={i}>
-                    <CardHeader>
-                      <Skeleton className="h-6 w-3/4" />
-                      <Skeleton className="h-4 w-1/2" />
+                    <CardHeader className="pb-2 sm:pb-6">
+                      <Skeleton className="h-5 sm:h-6 w-3/4" />
+                      <Skeleton className="h-3 sm:h-4 w-1/2" />
                     </CardHeader>
                     <CardContent>
-                      <Skeleton className="h-20 w-full mb-4" />
-                      <div className="flex space-x-2">
-                        <Skeleton className="h-6 w-16" />
-                        <Skeleton className="h-6 w-20" />
-                        <Skeleton className="h-6 w-14" />
+                      <Skeleton className="h-16 sm:h-20 w-full mb-3 sm:mb-4" />
+                      <div className="flex flex-wrap gap-1 sm:gap-2">
+                        <Skeleton className="h-5 sm:h-6 w-12 sm:w-16" />
+                        <Skeleton className="h-5 sm:h-6 w-16 sm:w-20" />
+                        <Skeleton className="h-5 sm:h-6 w-10 sm:w-14" />
                       </div>
                     </CardContent>
                   </Card>
@@ -317,8 +325,8 @@ export default function JobsPage() {
               <div
                 className={
                   viewMode === "grid"
-                    ? "grid grid-cols-1 md:grid-cols-2 gap-6"
-                    : "space-y-4"
+                    ? "grid grid-cols-1 sm:grid-cols-1 md:grid-cols-2 gap-4 sm:gap-6"
+                    : "space-y-3 sm:space-y-4"
                 }
               >
                 {jobs?.map((job) => (
@@ -327,16 +335,16 @@ export default function JobsPage() {
               </div>
             ) : (
               <Card>
-                <CardContent className="flex flex-col items-center justify-center py-12 text-center">
-                  <Search className="w-12 h-12 text-gray-400 mb-4" />
-                  <h3 className="text-lg font-semibold text-gray-900 mb-2">
+                <CardContent className="flex flex-col items-center justify-center py-8 sm:py-12 text-center px-4">
+                  <Search className="w-10 sm:w-12 h-10 sm:h-12 text-gray-400 mb-3 sm:mb-4" />
+                  <h3 className="text-base sm:text-lg font-semibold text-gray-900 mb-2">
                     No se encontraron empleos
                   </h3>
-                  <p className="text-gray-600 mb-4">
+                  <p className="text-sm sm:text-base text-gray-600 mb-3 sm:mb-4">
                     Intenta ajustar tus filtros de búsqueda o buscar términos
                     diferentes.
                   </p>
-                  <Button onClick={clearFilters} variant="outline">
+                  <Button onClick={clearFilters} variant="outline" size="sm">
                     Limpiar todos los filtros
                   </Button>
                 </CardContent>

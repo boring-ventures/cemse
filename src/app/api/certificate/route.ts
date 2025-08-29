@@ -47,38 +47,6 @@ export async function GET(request: NextRequest) {
       orderBy: { issuedAt: 'desc' }
     });
 
-    // If no certificates found in database, return mock data for development
-    if (certificates.length === 0) {
-      console.log('🏆 API: No certificates found in database, using mock data');
-      const mockCertificates = [
-        {
-          id: 'cert_course_1',
-          userId: decoded.id,
-          courseId: '1',
-          template: 'default',
-          issuedAt: new Date().toISOString(),
-          verificationCode: 'CERT-COURSE-001',
-          digitalSignature: 'sha256-mock-signature',
-          isValid: true,
-          url: 'https://example.com/certificates/course-cert.pdf',
-          course: {
-            id: '1',
-            title: 'React para Principiantes',
-            description: 'Aprende React desde cero con proyectos prácticos'
-          },
-          user: {
-            id: decoded.id,
-            firstName: 'Usuario',
-            lastName: 'Demo',
-            email: decoded.username + '@email.com',
-          }
-        }
-      ];
-
-      console.log('🏆 API: Returning', mockCertificates.length, 'mock certificates');
-      return NextResponse.json(mockCertificates);
-    }
-
     console.log('🏆 API: Found', certificates.length, 'course certificates');
     return NextResponse.json(certificates);
   } catch (error) {

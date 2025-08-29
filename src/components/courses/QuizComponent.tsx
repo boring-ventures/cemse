@@ -83,6 +83,31 @@ export const QuizComponent: React.FC<QuizComponentProps> = ({
   const [results, setResults] = useState<QuizResults | null>(null);
   const [showExplanations, setShowExplanations] = useState(false);
 
+  // Validate quiz data
+  if (!quiz || !quiz.questions || !Array.isArray(quiz.questions) || quiz.questions.length === 0) {
+    return (
+      <div className="max-w-4xl mx-auto p-6">
+        <Card>
+          <CardContent className="pt-6">
+            <div className="text-center">
+              <AlertCircle className="h-12 w-12 text-red-500 mx-auto mb-4" />
+              <h3 className="text-lg font-medium mb-2">Quiz no disponible</h3>
+              <p className="text-muted-foreground mb-4">
+                No se pudieron cargar las preguntas del quiz. Por favor, intenta nuevamente.
+              </p>
+              {onCancel && (
+                <Button onClick={onCancel}>
+                  <ArrowLeft className="h-4 w-4 mr-2" />
+                  Volver
+                </Button>
+              )}
+            </div>
+          </CardContent>
+        </Card>
+      </div>
+    );
+  }
+
   const currentQuestion = quiz.questions[currentQuestionIndex];
   const totalQuestions = quiz.questions.length;
   const progress = ((currentQuestionIndex + 1) / totalQuestions) * 100;
@@ -119,6 +144,8 @@ export const QuizComponent: React.FC<QuizComponentProps> = ({
   };
 
   const handleNext = () => {
+    if (!quiz?.questions || quiz.questions.length === 0) return;
+    
     if (currentQuestionIndex < totalQuestions - 1) {
       setCurrentQuestionIndex(prev => prev + 1);
     } else {
@@ -127,12 +154,19 @@ export const QuizComponent: React.FC<QuizComponentProps> = ({
   };
 
   const handlePrevious = () => {
+    if (!quiz?.questions || quiz.questions.length === 0) return;
+    
     if (currentQuestionIndex > 0) {
       setCurrentQuestionIndex(prev => prev - 1);
     }
   };
 
   const handleComplete = async () => {
+    if (!quiz?.questions || quiz.questions.length === 0) {
+      console.error('Cannot complete quiz: no questions available');
+      return;
+    }
+    
     setIsCompleted(true);
     
     try {
@@ -161,15 +195,23 @@ export const QuizComponent: React.FC<QuizComponentProps> = ({
 
       console.log('🔍 QuizComponent: Quiz attempt result:', attemptResult);
 
+      // Calcular puntos totales basado en las preguntas del quiz
+      const totalPoints = quiz.questions.reduce((sum, q) => sum + q.points, 0);
+      
       // Crear resultados basados en la respuesta del servidor
       const quizResults: QuizResults = {
         quizId: quiz.id,
         score: attemptResult.score,
-        totalPoints: attemptResult.totalQuestions,
-        percentage: (attemptResult.score / attemptResult.totalQuestions) * 100,
+        totalPoints,
+        percentage: totalPoints > 0 ? (attemptResult.score / totalPoints) * 100 : 0,
         passed: attemptResult.passed,
         timeSpent,
-        answers: attemptResult.answers,
+        answers: attemptResult.answers.map(answer => ({
+          questionId: answer.questionId,
+          answer: answer.answer,
+          isCorrect: answer.isCorrect,
+          points: answer.isCorrect ? quiz.questions.find(q => q.id === answer.questionId)?.points || 0 : 0
+        })),
         completedAt: new Date(attemptResult.completedAt)
       };
 
@@ -235,7 +277,14 @@ export const QuizComponent: React.FC<QuizComponentProps> = ({
   };
 
   const renderQuestion = () => {
-    if (!currentQuestion) return null;
+    if (!currentQuestion) {
+      return (
+        <div className="text-center py-8">
+          <AlertCircle className="h-8 w-8 text-red-500 mx-auto mb-4" />
+          <p className="text-muted-foreground">Error al cargar la pregunta actual.</p>
+        </div>
+      );
+    }
 
     const userAnswer = answers[currentQuestion.id];
 
@@ -495,12 +544,12 @@ export const QuizComponent: React.FC<QuizComponentProps> = ({
               <BookOpen className="h-5 w-5" />
               Pregunta {currentQuestionIndex + 1}
             </CardTitle>
-            <Badge variant="outline">{currentQuestion.points} puntos</Badge>
+            <Badge variant="outline">{currentQuestion?.points || 0} puntos</Badge>
           </div>
         </CardHeader>
         <CardContent className="space-y-6">
           <div>
-            <p className="text-lg mb-4">{currentQuestion.question}</p>
+            <p className="text-lg mb-4">{currentQuestion?.question || 'Pregunta no disponible'}</p>
             {renderQuestion()}
           </div>
 
@@ -528,7 +577,7 @@ export const QuizComponent: React.FC<QuizComponentProps> = ({
               {currentQuestionIndex < totalQuestions - 1 ? (
                 <Button 
                   onClick={handleNext}
-                  disabled={!answers[currentQuestion.id] || submittingQuiz}
+                  disabled={!currentQuestion || !answers[currentQuestion.id] || submittingQuiz}
                 >
                   {submittingQuiz ? (
                     <>

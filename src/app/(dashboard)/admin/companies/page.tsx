@@ -1,19 +1,9 @@
 "use client";
 
 import { useState } from "react";
-import {
-  useCompanies,
-  useCompaniesByMunicipality,
-  useCreateCompany,
-  useUpdateCompany,
-  useDeleteCompany,
-} from "@/hooks/useCompanyApi";
-import {
-  useCurrentMunicipality,
-  useMunicipalities,
-} from "@/hooks/useMunicipalityApi";
+import { useCompanies, useCreateCompany, useUpdateCompany, useDeleteCompany } from "@/hooks/use-companies";
+import { useMunicipalities } from "@/hooks/use-municipalities";
 import { useCurrentUser } from "@/hooks/use-current-user";
-import { CredentialsModal } from "./components/credentials-modal";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -57,9 +47,8 @@ import {
   AlertDialogFooter,
   AlertDialogHeader,
   AlertDialogTitle,
-  AlertDialogTrigger,
 } from "@/components/ui/alert-dialog";
-import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import {
   Building2,
   Plus,
@@ -72,232 +61,105 @@ import {
   Mail,
   CheckCircle,
   XCircle,
-  Clock,
-  Copy,
-  Check,
+  Users,
+  Briefcase,
 } from "lucide-react";
-import type { Company } from "@/services/company-api.service";
-import { generateCompanyCredentials } from "@/lib/utils/generate-credentials";
+import type { Company, CreateCompanyRequest } from "@/services/companies.service";
 
 export default function CompaniesPage() {
+  // State
   const [searchTerm, setSearchTerm] = useState("");
   const [statusFilter, setStatusFilter] = useState<string>("all");
   const [isCreateDialogOpen, setIsCreateDialogOpen] = useState(false);
   const [editingCompany, setEditingCompany] = useState<Company | null>(null);
-  const [credentials, setCredentials] = useState<{
-    username: string;
-    password: string;
-  }>({ username: "", password: "" });
-  const [copiedField, setCopiedField] = useState<string | null>(null);
-  const [showCredentialsModal, setShowCredentialsModal] = useState(false);
-  const [createdCredentials, setCreatedCredentials] = useState<{
-    username: string;
-    password: string;
-    email: string;
-    companyName: string;
-  } | null>(null);
+  const [deletingCompany, setDeletingCompany] = useState<Company | null>(null);
 
-  // Removido useUserColors() para usar colores por defecto
-
-  // Obtener el usuario actual y su rol
-  const { profile } = useCurrentUser();
-  const isSuperAdmin =
-    profile?.role === "SUPERADMIN" || profile?.role === "SUPER_ADMIN";
-
-  // Obtener el municipio actual del usuario (solo si no es super admin)
-  const { data: currentMunicipality, isLoading: municipalityLoading } =
-    useCurrentMunicipality();
-
-  // Obtener todos los municipios para super admin
-  const { data: allMunicipalities = [] } = useMunicipalities();
-
-  // Hooks de datos - usar empresas según el rol del usuario
-  // Siempre usar el ID del municipio, no el username
-  const municipalityIdentifier =
-    !isSuperAdmin && currentMunicipality?.id
-      ? currentMunicipality.id
-      : "no-municipality";
-
-  const {
-    data: companiesByMunicipality = [],
-    isLoading: companiesByMunicipalityLoading,
-    error: companiesByMunicipalityError,
-  } = useCompaniesByMunicipality(municipalityIdentifier);
-  const {
-    data: allCompanies = [],
-    isLoading: allCompaniesLoading,
-    error: allCompaniesError,
-  } = useCompanies(isSuperAdmin); // Solo cargar todas las empresas si es superadmin
-
-  // Usar todas las empresas si es super admin, o empresas del municipio si no
-  const companies = isSuperAdmin ? allCompanies : companiesByMunicipality;
-  const companiesLoading = isSuperAdmin
-    ? allCompaniesLoading
-    : companiesByMunicipalityLoading;
-
-  console.log("🏢 CompaniesPage - Debug info:", {
-    userRole: profile?.role,
-    isSuperAdmin,
-    currentMunicipalityId: currentMunicipality?.id,
-    municipalityIdentifier,
-    currentMunicipality: currentMunicipality,
-    municipalityLoading,
-    companiesByMunicipalityCount: companiesByMunicipality.length,
-    allCompaniesCount: allCompanies.length,
-    finalCompaniesCount: companies.length,
-    companiesLoading,
-    allCompaniesLoading,
-    companiesByMunicipalityLoading,
-    companiesByMunicipalityError: companiesByMunicipalityError?.message,
-    allCompaniesError: allCompaniesError?.message,
-    API_BASE:
-      process.env.NEXT_PUBLIC_API_BASE_DEV ||
-      "https://cemse-back-production.up.railway.app/api",
-    backendUrl:
-      process.env.NEXT_PUBLIC_BACKEND_URL ||
-      "https://cemse-back-production.up.railway.app",
+  // Form state
+  const [formData, setFormData] = useState<CreateCompanyRequest>({
+    name: "",
+    description: "",
+    businessSector: "",
+    companySize: undefined,
+    foundedYear: new Date().getFullYear(),
+    website: "",
+    email: "",
+    phone: "",
+    address: "",
+    municipalityId: "",
+    username: "",
+    password: "",
+    isActive: true,
   });
-  // Removido useCompanyStats ya que ahora calculamos las estadísticas localmente
+
+  // Hooks
+  const { profile } = useCurrentUser();
+  const { data: companiesData, isLoading: companiesLoading, error: companiesError } = useCompanies();
+  const { data: municipalities = [], isLoading: municipalitiesLoading } = useMunicipalities();
   const createCompanyMutation = useCreateCompany();
   const updateCompanyMutation = useUpdateCompany();
   const deleteCompanyMutation = useDeleteCompany();
 
-  // Estados del formulario
-  const [formData, setFormData] = useState({
-    name: "",
-    description: "",
-    businessSector: "",
-    companySize: "",
-    foundedYear: new Date().getFullYear(),
-    municipalityId: isSuperAdmin ? "" : currentMunicipality?.id || "",
-    email: "",
-    phone: "",
-    website: "",
-    address: "",
-  });
+  // Check permissions
+  const canManageCompanies = profile && profile.role && [
+    'SUPERADMIN', 
+    'GOBIERNOS_MUNICIPALES',
+    'INSTRUCTOR'
+  ].includes(profile.role);
+  
+  const isSuperAdmin = profile && profile.role === 'SUPERADMIN';
 
-  // Filtros - solo por búsqueda y estado, no por municipio
+  // Extract companies and metadata
+  const companies = companiesData?.companies || [];
+  const metadata = companiesData?.metadata || {
+    totalActive: 0,
+    totalInactive: 0,
+    totalJobOffers: 0,
+    totalEmployees: 0,
+  };
+
+  // Filter companies
   const filteredCompanies = companies.filter((company) => {
-    const matchesSearch =
+    const matchesSearch = 
       company.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      (company.description?.toLowerCase() || "").includes(
-        searchTerm.toLowerCase()
-      ) ||
-      (company.businessSector?.toLowerCase() || "").includes(
-        searchTerm.toLowerCase()
-      );
+      (company.description?.toLowerCase() || "").includes(searchTerm.toLowerCase()) ||
+      (company.businessSector?.toLowerCase() || "").includes(searchTerm.toLowerCase());
 
     const matchesStatus =
       statusFilter === "all" ||
-      !statusFilter ||
       (statusFilter === "active" && company.isActive) ||
       (statusFilter === "inactive" && !company.isActive);
 
     return matchesSearch && matchesStatus;
   });
 
-  // Estadísticas calculadas basadas en los datos reales de la lista
-  const calculatedStats = {
-    totalCompanies: companies.length,
-    activeCompanies: companies.filter((c) => c.isActive).length,
-    inactiveCompanies: companies.filter((c) => !c.isActive).length,
-    pendingCompanies: 0, // No hay estado "pending" en el modelo actual
-    totalEmployees: 0, // No hay campo employeeCount en el modelo actual
-    totalRevenue: 0, // No hay campo revenue en el modelo actual
-  };
-
   // Handlers
-  const handleCreateCompany = () => {
-    // Usar las credenciales del estado (pueden ser generadas o escritas por el usuario)
-    const companyName = formData.name.trim() || "empresa";
-    const finalCredentials =
-      credentials.username && credentials.password
-        ? credentials
-        : generateCompanyCredentials(companyName);
-
-    createCompanyMutation.mutate(
-      {
-        ...formData,
-        municipalityId: isSuperAdmin
-          ? formData.municipalityId
-          : currentMunicipality?.id || "",
-        foundedYear: parseInt(formData.foundedYear.toString()),
-        username: finalCredentials.username,
-        password: finalCredentials.password,
-      },
-      {
-        onSuccess: () => {
-          // Store credentials to show in modal
-          setCreatedCredentials({
-            username: finalCredentials.username,
-            password: finalCredentials.password,
-            email: formData.email,
-            companyName: formData.name,
-          });
-
-          // Show credentials modal
-          setShowCredentialsModal(true);
-
-          setIsCreateDialogOpen(false);
-          setFormData({
-            name: "",
-            description: "",
-            businessSector: "",
-            companySize: "",
-            foundedYear: new Date().getFullYear(),
-            municipalityId: isSuperAdmin ? "" : currentMunicipality?.id || "",
-            email: "",
-            phone: "",
-            website: "",
-            address: "",
-          });
-          setCredentials({ username: "", password: "" });
-        },
-      }
-    );
+  const resetForm = () => {
+    setFormData({
+      name: "",
+      description: "",
+      businessSector: "",
+      companySize: undefined,
+      foundedYear: new Date().getFullYear(),
+      website: "",
+      email: "",
+      phone: "",
+      address: "",
+      municipalityId: "",
+      username: "",
+      password: "",
+      isActive: true,
+    });
   };
 
-  const handleCredentialsModalClose = () => {
-    setShowCredentialsModal(false);
-    setCreatedCredentials(null);
-  };
-
-  const handleUpdateCompany = () => {
-    if (!editingCompany) return;
-
-    updateCompanyMutation.mutate(
-      {
-        id: editingCompany.id,
-        data: {
-          ...formData,
-          municipalityId: isSuperAdmin
-            ? formData.municipalityId
-            : currentMunicipality?.id || "",
-          foundedYear: parseInt(formData.foundedYear.toString()),
-        },
-      },
-      {
-        onSuccess: () => {
-          setEditingCompany(null);
-          setFormData({
-            name: "",
-            description: "",
-            businessSector: "",
-            companySize: "",
-            foundedYear: new Date().getFullYear(),
-            municipalityId: isSuperAdmin ? "" : currentMunicipality?.id || "",
-            email: "",
-            phone: "",
-            website: "",
-            address: "",
-          });
-        },
-      }
-    );
-  };
-
-  const handleDeleteCompany = (companyId: string) => {
-    deleteCompanyMutation.mutate(companyId);
+  const handleCreateCompany = async () => {
+    try {
+      await createCompanyMutation.mutateAsync(formData);
+      setIsCreateDialogOpen(false);
+      resetForm();
+    } catch (error) {
+      console.error("Failed to create company:", error);
+      // Error handling is done in the mutation
+    }
   };
 
   const handleEditCompany = (company: Company) => {
@@ -306,43 +168,74 @@ export default function CompaniesPage() {
       name: company.name,
       description: company.description || "",
       businessSector: company.businessSector || "",
-      companySize: company.companySize || "",
+      companySize: company.companySize || undefined,
       foundedYear: company.foundedYear || new Date().getFullYear(),
-      municipalityId: isSuperAdmin
-        ? company.municipality?.id || ""
-        : currentMunicipality?.id || "",
+      website: company.website || "",
       email: company.email || "",
       phone: company.phone || "",
-      website: company.website || "",
       address: company.address || "",
+      municipalityId: company.municipality.id,
+      username: company.username,
+      password: "", // Don't pre-fill password
+      isActive: company.isActive,
     });
   };
 
-  // Función para generar credenciales automáticamente
-  const handleGenerateCredentials = () => {
-    // Generar credenciales basadas en el nombre de la empresa o un nombre genérico
-    const companyName = formData.name.trim() || "empresa";
-    const generatedCredentials = generateCompanyCredentials(companyName);
-    setCredentials(generatedCredentials);
-  };
+  const handleUpdateCompany = async () => {
+    if (!editingCompany) return;
 
-  // Función para copiar al portapapeles
-  const handleCopyToClipboard = async (text: string, field: string) => {
     try {
-      await navigator.clipboard.writeText(text);
-      setCopiedField(field);
-      setTimeout(() => setCopiedField(null), 2000);
-    } catch (err) {
-      console.error("Error copying to clipboard:", err);
+      const { password, ...updateData } = formData;
+      // Only include password if it's not empty
+      const finalData = password ? { ...updateData, password } : updateData;
+      
+      await updateCompanyMutation.mutateAsync({
+        id: editingCompany.id,
+        data: finalData
+      });
+      setEditingCompany(null);
+      resetForm();
+    } catch (error) {
+      console.error("Failed to update company:", error);
     }
   };
 
-  if (companiesLoading || municipalityLoading) {
+  const handleDeleteCompany = async () => {
+    if (!deletingCompany) return;
+
+    try {
+      await deleteCompanyMutation.mutateAsync(deletingCompany.id);
+      setDeletingCompany(null);
+    } catch (error) {
+      console.error("Failed to delete company:", error);
+    }
+  };
+
+  // Loading state
+  if (companiesLoading || municipalitiesLoading) {
     return (
       <div className="flex items-center justify-center h-64">
         <div className="text-center">
           <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary mx-auto"></div>
           <p className="mt-2 text-muted-foreground">Cargando empresas...</p>
+        </div>
+      </div>
+    );
+  }
+
+  // Error state
+  if (companiesError) {
+    return (
+      <div className="flex items-center justify-center h-64">
+        <div className="text-center">
+          <XCircle className="h-12 w-12 text-red-500 mx-auto mb-4" />
+          <h3 className="text-lg font-semibold mb-2">Error al cargar empresas</h3>
+          <p className="text-muted-foreground mb-4">
+            {companiesError instanceof Error ? companiesError.message : "Error desconocido"}
+          </p>
+          <Button onClick={() => window.location.reload()}>
+            Reintentar
+          </Button>
         </div>
       </div>
     );
@@ -357,374 +250,239 @@ export default function CompaniesPage() {
             Gestión de Empresas
           </h1>
           <p className="text-muted-foreground">
-            Administra las empresas registradas en{" "}
-            <span className="font-semibold text-primary">
-              {currentMunicipality?.name || "tu municipio"}
-            </span>
+            Administra las empresas registradas en el sistema
           </p>
         </div>
 
-        <Dialog
-          open={isCreateDialogOpen}
-          onOpenChange={(open) => {
-            setIsCreateDialogOpen(open);
-            if (!open) {
-              setCredentials({ username: "", password: "" });
-              setCopiedField(null);
-            }
-          }}
-        >
-          <DialogTrigger asChild>
-            <Button className="hover:opacity-90 transition-opacity">
-              <Plus className="mr-2 h-4 w-4" />
-              Crear Empresa
-            </Button>
-          </DialogTrigger>
-          <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
-            <DialogHeader>
-              <DialogTitle>Crear Nueva Empresa</DialogTitle>
-            </DialogHeader>
-            <div className="grid grid-cols-2 gap-4">
-              <div className="space-y-2">
-                <Label htmlFor="name">Nombre de la Empresa</Label>
-                <Input
-                  id="name"
-                  value={formData.name}
-                  onChange={(e) =>
-                    setFormData({ ...formData, name: e.target.value })
-                  }
-                  placeholder="Ingrese el nombre de la empresa"
-                />
-              </div>
-              <div className="space-y-2">
-                <Label htmlFor="businessSector">Sector de Negocio</Label>
-                <Input
-                  id="businessSector"
-                  value={formData.businessSector}
-                  onChange={(e) =>
-                    setFormData({ ...formData, businessSector: e.target.value })
-                  }
-                  placeholder="Ej: Tecnología, Salud, Educación"
-                />
-              </div>
-
-              {isSuperAdmin && (
+        {canManageCompanies && (
+          <Dialog
+            open={isCreateDialogOpen}
+            onOpenChange={(open) => {
+              setIsCreateDialogOpen(open);
+              if (!open) resetForm();
+            }}
+          >
+            <DialogTrigger asChild>
+              <Button>
+                <Plus className="mr-2 h-4 w-4" />
+                Crear Empresa
+              </Button>
+            </DialogTrigger>
+            <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
+              <DialogHeader>
+                <DialogTitle>Crear Nueva Empresa</DialogTitle>
+              </DialogHeader>
+              <div className="grid grid-cols-2 gap-4">
                 <div className="space-y-2">
-                  <Label htmlFor="municipalityId">Municipio/Institución</Label>
+                  <Label htmlFor="name">Nombre de la Empresa *</Label>
+                  <Input
+                    id="name"
+                    value={formData.name}
+                    onChange={(e) => setFormData({ ...formData, name: e.target.value })}
+                    placeholder="Ingrese el nombre de la empresa"
+                  />
+                </div>
+                
+                <div className="space-y-2">
+                  <Label htmlFor="email">Email *</Label>
+                  <Input
+                    id="email"
+                    type="email"
+                    value={formData.email}
+                    onChange={(e) => setFormData({ ...formData, email: e.target.value })}
+                    placeholder="contacto@empresa.com"
+                  />
+                </div>
+
+                <div className="space-y-2">
+                  <Label htmlFor="municipalityId">Municipio *</Label>
                   <Select
                     value={formData.municipalityId}
-                    onValueChange={(value) =>
-                      setFormData({ ...formData, municipalityId: value })
-                    }
+                    onValueChange={(value) => setFormData({ ...formData, municipalityId: value })}
                   >
                     <SelectTrigger>
                       <SelectValue placeholder="Selecciona un municipio" />
                     </SelectTrigger>
                     <SelectContent>
-                      {allMunicipalities.map((municipality) => (
-                        <SelectItem
-                          key={municipality.id}
-                          value={municipality.id}
-                        >
+                      {municipalities.map((municipality) => (
+                        <SelectItem key={municipality.id} value={municipality.id}>
                           {municipality.name} - {municipality.department}
                         </SelectItem>
                       ))}
                     </SelectContent>
                   </Select>
                 </div>
-              )}
-              <div className="space-y-2">
-                <Label htmlFor="companySize">Tamaño de la Empresa</Label>
-                <Select
-                  value={formData.companySize}
-                  onValueChange={(value) =>
-                    setFormData({ ...formData, companySize: value })
-                  }
-                >
-                  <SelectTrigger>
-                    <SelectValue placeholder="Seleccione el tamaño" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="MICRO">
-                      Micro (1-10 empleados)
-                    </SelectItem>
-                    <SelectItem value="SMALL">
-                      Pequeña (11-50 empleados)
-                    </SelectItem>
-                    <SelectItem value="MEDIUM">
-                      Mediana (51-250 empleados)
-                    </SelectItem>
-                    <SelectItem value="LARGE">
-                      Grande (250+ empleados)
-                    </SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
-              <div className="space-y-2">
-                <Label htmlFor="foundedYear">Año de Fundación</Label>
-                <Input
-                  id="foundedYear"
-                  type="number"
-                  value={formData.foundedYear}
-                  onChange={(e) =>
-                    setFormData({
-                      ...formData,
-                      foundedYear: parseInt(e.target.value),
-                    })
-                  }
-                  min="1900"
-                  max={new Date().getFullYear()}
-                />
-              </div>
-              <div className="space-y-2">
-                <Label htmlFor="email">Email de Contacto</Label>
-                <Input
-                  id="email"
-                  type="email"
-                  value={formData.email}
-                  onChange={(e) =>
-                    setFormData({ ...formData, email: e.target.value })
-                  }
-                  placeholder="contacto@empresa.com"
-                />
-              </div>
-              <div className="space-y-2">
-                <Label htmlFor="phone">Teléfono de Contacto</Label>
-                <Input
-                  id="phone"
-                  value={formData.phone}
-                  onChange={(e) =>
-                    setFormData({ ...formData, phone: e.target.value })
-                  }
-                  placeholder="+1234567890"
-                />
-              </div>
-              <div className="space-y-2">
-                <Label htmlFor="website">Sitio Web</Label>
-                <Input
-                  id="website"
-                  value={formData.website}
-                  onChange={(e) =>
-                    setFormData({ ...formData, website: e.target.value })
-                  }
-                  placeholder="https://www.empresa.com"
-                />
-              </div>
-              <div className="space-y-2 col-span-2">
-                <Label htmlFor="address">Dirección</Label>
-                <Input
-                  id="address"
-                  value={formData.address}
-                  onChange={(e) =>
-                    setFormData({ ...formData, address: e.target.value })
-                  }
-                  placeholder="Dirección completa de la empresa"
-                />
-              </div>
-              <div className="space-y-2 col-span-2">
-                <Label htmlFor="description">Descripción</Label>
-                <Textarea
-                  id="description"
-                  value={formData.description}
-                  onChange={(e) =>
-                    setFormData({ ...formData, description: e.target.value })
-                  }
-                  placeholder="Descripción de la empresa y sus actividades"
-                  rows={3}
-                />
-              </div>
 
-              {/* Sección de Credenciales */}
-              <div className="space-y-4 col-span-2">
-                <div className="flex items-center justify-between">
-                  <Label className="text-base font-semibold">
-                    Credenciales de Acceso
-                  </Label>
-                  <Button
-                    type="button"
-                    variant="outline"
-                    size="sm"
-                    onClick={handleGenerateCredentials}
+                <div className="space-y-2">
+                  <Label htmlFor="businessSector">Sector de Negocio</Label>
+                  <Input
+                    id="businessSector"
+                    value={formData.businessSector}
+                    onChange={(e) => setFormData({ ...formData, businessSector: e.target.value })}
+                    placeholder="Ej: Tecnología, Salud, Educación"
+                  />
+                </div>
+
+                <div className="space-y-2">
+                  <Label htmlFor="companySize">Tamaño de la Empresa</Label>
+                  <Select
+                    value={formData.companySize || ""}
+                    onValueChange={(value) => setFormData({ ...formData, companySize: value as any })}
                   >
-                    Generar Credenciales
-                  </Button>
+                    <SelectTrigger>
+                      <SelectValue placeholder="Seleccione el tamaño" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="MICRO">Micro (1-10 empleados)</SelectItem>
+                      <SelectItem value="SMALL">Pequeña (11-50 empleados)</SelectItem>
+                      <SelectItem value="MEDIUM">Mediana (51-250 empleados)</SelectItem>
+                      <SelectItem value="LARGE">Grande (250+ empleados)</SelectItem>
+                    </SelectContent>
+                  </Select>
                 </div>
 
-                <div className="space-y-3 p-4 border rounded-lg bg-muted/50">
-                  <div className="space-y-2">
-                    <Label className="text-sm font-medium">Usuario</Label>
-                    <div className="flex items-center gap-2">
-                      <Input
-                        value={credentials.username}
-                        onChange={(e) =>
-                          setCredentials({
-                            ...credentials,
-                            username: e.target.value,
-                          })
-                        }
-                        className="font-mono text-sm"
-                        placeholder="Escribe el usuario o genera automáticamente"
-                      />
-                      <Button
-                        type="button"
-                        variant="outline"
-                        size="sm"
-                        onClick={() =>
-                          credentials.username &&
-                          handleCopyToClipboard(
-                            credentials.username,
-                            "username"
-                          )
-                        }
-                        disabled={!credentials.username}
-                      >
-                        {copiedField === "username" ? (
-                          <Check className="h-4 w-4 text-green-600" />
-                        ) : (
-                          <Copy className="h-4 w-4" />
-                        )}
-                      </Button>
-                    </div>
-                  </div>
+                <div className="space-y-2">
+                  <Label htmlFor="foundedYear">Año de Fundación</Label>
+                  <Input
+                    id="foundedYear"
+                    type="number"
+                    value={formData.foundedYear}
+                    onChange={(e) => setFormData({ ...formData, foundedYear: parseInt(e.target.value) })}
+                    min="1900"
+                    max={new Date().getFullYear()}
+                  />
+                </div>
 
-                  <div className="space-y-2">
-                    <Label className="text-sm font-medium">Contraseña</Label>
-                    <div className="flex items-center gap-2">
-                      <Input
-                        value={credentials.password}
-                        onChange={(e) =>
-                          setCredentials({
-                            ...credentials,
-                            password: e.target.value,
-                          })
-                        }
-                        type="password"
-                        className="font-mono text-sm"
-                        placeholder="Escribe la contraseña o genera automáticamente"
-                      />
-                      <Button
-                        type="button"
-                        variant="outline"
-                        size="sm"
-                        onClick={() =>
-                          credentials.password &&
-                          handleCopyToClipboard(
-                            credentials.password,
-                            "password"
-                          )
-                        }
-                        disabled={!credentials.password}
-                      >
-                        {copiedField === "password" ? (
-                          <Check className="h-4 w-4 text-green-600" />
-                        ) : (
-                          <Copy className="h-4 w-4" />
-                        )}
-                      </Button>
-                    </div>
-                  </div>
+                <div className="space-y-2">
+                  <Label htmlFor="phone">Teléfono</Label>
+                  <Input
+                    id="phone"
+                    value={formData.phone}
+                    onChange={(e) => setFormData({ ...formData, phone: e.target.value })}
+                    placeholder="+591 12345678"
+                  />
+                </div>
 
-                  <div className="text-xs text-muted-foreground">
-                    💡 Puedes escribir tus propias credenciales o usar el botón
-                    &ldquo;Generar Credenciales&rdquo; para crearlas
-                    automáticamente.
-                  </div>
+                <div className="space-y-2">
+                  <Label htmlFor="website">Sitio Web</Label>
+                  <Input
+                    id="website"
+                    value={formData.website}
+                    onChange={(e) => setFormData({ ...formData, website: e.target.value })}
+                    placeholder="https://www.empresa.com"
+                  />
+                </div>
+
+                <div className="space-y-2 col-span-2">
+                  <Label htmlFor="address">Dirección</Label>
+                  <Input
+                    id="address"
+                    value={formData.address}
+                    onChange={(e) => setFormData({ ...formData, address: e.target.value })}
+                    placeholder="Dirección completa de la empresa"
+                  />
+                </div>
+
+                <div className="space-y-2 col-span-2">
+                  <Label htmlFor="description">Descripción</Label>
+                  <Textarea
+                    id="description"
+                    value={formData.description}
+                    onChange={(e) => setFormData({ ...formData, description: e.target.value })}
+                    placeholder="Descripción de la empresa y sus actividades"
+                    rows={3}
+                  />
+                </div>
+
+                {/* Login Credentials */}
+                <div className="space-y-2">
+                  <Label htmlFor="username">Usuario de Login *</Label>
+                  <Input
+                    id="username"
+                    value={formData.username}
+                    onChange={(e) => setFormData({ ...formData, username: e.target.value })}
+                    placeholder="usuario_empresa"
+                  />
+                </div>
+
+                <div className="space-y-2">
+                  <Label htmlFor="password">Contraseña *</Label>
+                  <Input
+                    id="password"
+                    type="password"
+                    value={formData.password}
+                    onChange={(e) => setFormData({ ...formData, password: e.target.value })}
+                    placeholder="Contraseña segura"
+                  />
                 </div>
               </div>
-            </div>
-            <div className="flex justify-end gap-2">
-              <Button
-                variant="outline"
-                onClick={() => setIsCreateDialogOpen(false)}
-              >
-                Cancelar
-              </Button>
-              <Button
-                onClick={handleCreateCompany}
-                disabled={createCompanyMutation.isPending}
-              >
-                {createCompanyMutation.isPending
-                  ? "Creando..."
-                  : "Crear Empresa"}
-              </Button>
-            </div>
-          </DialogContent>
-        </Dialog>
+
+              <div className="flex justify-end gap-2 pt-4">
+                <Button
+                  variant="outline"
+                  onClick={() => setIsCreateDialogOpen(false)}
+                >
+                  Cancelar
+                </Button>
+                <Button
+                  onClick={handleCreateCompany}
+                  disabled={createCompanyMutation.isPending || !formData.name || !formData.email || !formData.municipalityId || !formData.username || !formData.password}
+                >
+                  {createCompanyMutation.isPending ? "Creando..." : "Crear Empresa"}
+                </Button>
+              </div>
+            </DialogContent>
+          </Dialog>
+        )}
       </div>
 
-      {/* Estadísticas */}
+      {/* Statistics */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-        <Card className="border-2 hover:shadow-lg transition-shadow">
+        <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">
-              Total Empresas
-            </CardTitle>
+            <CardTitle className="text-sm font-medium">Total Empresas</CardTitle>
             <Building2 className="h-4 w-4 text-primary" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold text-primary">
-              {calculatedStats.totalCompanies}
-            </div>
-            <p className="text-xs text-muted-foreground">
-              Empresas registradas en el sistema
-            </p>
+            <div className="text-2xl font-bold text-primary">{companies.length}</div>
           </CardContent>
         </Card>
 
-        <Card className="border-2 hover:shadow-lg transition-shadow">
+        <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">
-              Empresas Activas
-            </CardTitle>
+            <CardTitle className="text-sm font-medium">Empresas Activas</CardTitle>
             <CheckCircle className="h-4 w-4 text-green-600" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold text-green-600">
-              {calculatedStats.activeCompanies}
-            </div>
-            <p className="text-xs text-muted-foreground">Empresas operativas</p>
+            <div className="text-2xl font-bold text-green-600">{metadata.totalActive}</div>
           </CardContent>
         </Card>
 
-        <Card className="border-2 hover:shadow-lg transition-shadow">
+        <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">
-              Empresas Inactivas
-            </CardTitle>
-            <XCircle className="h-4 w-4 text-red-600" />
+            <CardTitle className="text-sm font-medium">Ofertas de Trabajo</CardTitle>
+            <Briefcase className="h-4 w-4 text-blue-600" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold text-red-600">
-              {calculatedStats.inactiveCompanies}
-            </div>
-            <p className="text-xs text-muted-foreground">
-              Empresas no operativas
-            </p>
+            <div className="text-2xl font-bold text-blue-600">{metadata.totalJobOffers}</div>
           </CardContent>
         </Card>
 
-        <Card className="border-2 hover:shadow-lg transition-shadow">
+        <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Pendientes</CardTitle>
-            <Clock className="h-4 w-4 text-yellow-600" />
+            <CardTitle className="text-sm font-medium">Total Empleados</CardTitle>
+            <Users className="h-4 w-4 text-purple-600" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold text-yellow-600">
-              {calculatedStats.pendingCompanies}
-            </div>
-            <p className="text-xs text-muted-foreground">
-              En proceso de verificación
-            </p>
+            <div className="text-2xl font-bold text-purple-600">{metadata.totalEmployees}</div>
           </CardContent>
         </Card>
       </div>
 
-      {/* Filtros */}
-      <Card className="border-2 hover:shadow-lg transition-shadow">
+      {/* Filters */}
+      <Card>
         <CardHeader>
-          <CardTitle className="text-lg font-semibold text-foreground">
-            Filtros y Búsqueda
-          </CardTitle>
+          <CardTitle>Filtros y Búsqueda</CardTitle>
         </CardHeader>
         <CardContent>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -746,7 +504,7 @@ export default function CompaniesPage() {
               <Label htmlFor="status">Filtrar por Estado</Label>
               <Select value={statusFilter} onValueChange={setStatusFilter}>
                 <SelectTrigger>
-                  <SelectValue placeholder="Todos los estados" />
+                  <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
                   <SelectItem value="all">Todos los estados</SelectItem>
@@ -759,12 +517,10 @@ export default function CompaniesPage() {
         </CardContent>
       </Card>
 
-      {/* Tabla de Empresas */}
-      <Card className="border-2 hover:shadow-lg transition-shadow">
+      {/* Companies Table */}
+      <Card>
         <CardHeader>
-          <CardTitle className="text-lg font-semibold text-foreground">
-            Lista de Empresas ({filteredCompanies.length})
-          </CardTitle>
+          <CardTitle>Lista de Empresas ({filteredCompanies.length})</CardTitle>
         </CardHeader>
         <CardContent>
           <Table>
@@ -775,8 +531,9 @@ export default function CompaniesPage() {
                 <TableHead>Municipio</TableHead>
                 <TableHead>Tamaño</TableHead>
                 <TableHead>Estado</TableHead>
+                <TableHead>Estadísticas</TableHead>
                 <TableHead>Contacto</TableHead>
-                <TableHead>Acciones</TableHead>
+                {canManageCompanies && <TableHead>Acciones</TableHead>}
               </TableRow>
             </TableHeader>
             <TableBody>
@@ -785,11 +542,8 @@ export default function CompaniesPage() {
                   <TableCell>
                     <div className="flex items-center space-x-3">
                       <Avatar className="h-8 w-8">
-                        <AvatarImage
-                          src={`https://ui-avatars.com/api/?name=${company.name}&background=random`}
-                        />
                         <AvatarFallback>
-                          {company.name.charAt(0)}
+                          {company.name.charAt(0).toUpperCase()}
                         </AvatarFallback>
                       </Avatar>
                       <div>
@@ -801,10 +555,7 @@ export default function CompaniesPage() {
                     </div>
                   </TableCell>
                   <TableCell>
-                    <Badge
-                      variant="outline"
-                      className="text-primary border-primary"
-                    >
+                    <Badge variant="outline">
                       {company.businessSector || "N/A"}
                     </Badge>
                   </TableCell>
@@ -815,82 +566,63 @@ export default function CompaniesPage() {
                     </div>
                   </TableCell>
                   <TableCell>
-                    <Badge
-                      variant="secondary"
-                      className="bg-orange-100 text-orange-800"
-                    >
+                    <Badge variant="secondary">
                       {company.companySize || "N/A"}
                     </Badge>
                   </TableCell>
                   <TableCell>
-                    <Badge
-                      variant={company.isActive ? "default" : "destructive"}
-                      className={
-                        company.isActive ? "bg-green-600 text-white" : ""
-                      }
-                    >
+                    <Badge variant={company.isActive ? "default" : "destructive"}>
                       {company.isActive ? "Activa" : "Inactiva"}
                     </Badge>
                   </TableCell>
                   <TableCell>
-                    <div className="space-y-1">
-                      <div className="flex items-center space-x-1 text-sm">
-                        <Mail className="h-3 w-3 text-muted-foreground" />
-                        <span>{company.email || "N/A"}</span>
-                      </div>
-                      <div className="flex items-center space-x-1 text-sm">
-                        <Phone className="h-3 w-3 text-muted-foreground" />
-                        <span>{company.phone || "N/A"}</span>
-                      </div>
+                    <div className="space-y-1 text-sm">
+                      <div>{company.jobOffersCount} ofertas</div>
+                      <div>{company.employeesCount} empleados</div>
                     </div>
                   </TableCell>
                   <TableCell>
-                    <DropdownMenu>
-                      <DropdownMenuTrigger asChild>
-                        <Button variant="ghost" className="h-8 w-8 p-0">
-                          <MoreHorizontal className="h-4 w-4" />
-                        </Button>
-                      </DropdownMenuTrigger>
-                      <DropdownMenuContent align="end">
-                        <DropdownMenuItem
-                          onClick={() => handleEditCompany(company)}
-                        >
-                          <Edit className="mr-2 h-4 w-4" />
-                          Editar
-                        </DropdownMenuItem>
-                        <AlertDialog>
-                          <AlertDialogTrigger asChild>
-                            <DropdownMenuItem
-                              onSelect={(e) => e.preventDefault()}
+                    <div className="space-y-1">
+                      {company.email && (
+                        <div className="flex items-center space-x-1 text-sm">
+                          <Mail className="h-3 w-3 text-muted-foreground" />
+                          <span>{company.email}</span>
+                        </div>
+                      )}
+                      {company.phone && (
+                        <div className="flex items-center space-x-1 text-sm">
+                          <Phone className="h-3 w-3 text-muted-foreground" />
+                          <span>{company.phone}</span>
+                        </div>
+                      )}
+                    </div>
+                  </TableCell>
+                  {canManageCompanies && (
+                    <TableCell>
+                      <DropdownMenu>
+                        <DropdownMenuTrigger asChild>
+                          <Button variant="ghost" className="h-8 w-8 p-0">
+                            <MoreHorizontal className="h-4 w-4" />
+                          </Button>
+                        </DropdownMenuTrigger>
+                        <DropdownMenuContent align="end">
+                          <DropdownMenuItem onClick={() => handleEditCompany(company)}>
+                            <Edit className="mr-2 h-4 w-4" />
+                            Editar
+                          </DropdownMenuItem>
+                          {isSuperAdmin && (
+                            <DropdownMenuItem 
+                              onClick={() => setDeletingCompany(company)}
+                              className="text-red-600 focus:text-red-600"
                             >
                               <Trash2 className="mr-2 h-4 w-4" />
                               Eliminar
                             </DropdownMenuItem>
-                          </AlertDialogTrigger>
-                          <AlertDialogContent>
-                            <AlertDialogHeader>
-                              <AlertDialogTitle>
-                                ¿Estás seguro?
-                              </AlertDialogTitle>
-                              <AlertDialogDescription>
-                                Esta acción no se puede deshacer. Se eliminará
-                                permanentemente la empresa &ldquo;{company.name}
-                                &rdquo;.
-                              </AlertDialogDescription>
-                            </AlertDialogHeader>
-                            <AlertDialogFooter>
-                              <AlertDialogCancel>Cancelar</AlertDialogCancel>
-                              <AlertDialogAction
-                                onClick={() => handleDeleteCompany(company.id)}
-                              >
-                                Eliminar
-                              </AlertDialogAction>
-                            </AlertDialogFooter>
-                          </AlertDialogContent>
-                        </AlertDialog>
-                      </DropdownMenuContent>
-                    </DropdownMenu>
-                  </TableCell>
+                          )}
+                        </DropdownMenuContent>
+                      </DropdownMenu>
+                    </TableCell>
+                  )}
                 </TableRow>
               ))}
             </TableBody>
@@ -898,157 +630,236 @@ export default function CompaniesPage() {
         </CardContent>
       </Card>
 
-      {/* Dialog de Edición */}
-      <Dialog
-        open={!!editingCompany}
-        onOpenChange={() => setEditingCompany(null)}
-      >
-        <DialogContent className="max-w-2xl">
+      {/* Edit Dialog */}
+      <Dialog open={!!editingCompany} onOpenChange={() => setEditingCompany(null)}>
+        <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
           <DialogHeader>
-            <DialogTitle>Editar Empresa</DialogTitle>
+            <DialogTitle>Editar Empresa: {editingCompany?.name}</DialogTitle>
           </DialogHeader>
           <div className="grid grid-cols-2 gap-4">
             <div className="space-y-2">
-              <Label htmlFor="edit-name">Nombre de la Empresa</Label>
+              <Label htmlFor="edit-name">Nombre de la Empresa *</Label>
               <Input
                 id="edit-name"
                 value={formData.name}
-                onChange={(e) =>
-                  setFormData({ ...formData, name: e.target.value })
-                }
+                onChange={(e) => setFormData({ ...formData, name: e.target.value })}
                 placeholder="Ingrese el nombre de la empresa"
               />
             </div>
+            
+            <div className="space-y-2">
+              <Label htmlFor="edit-email">Email *</Label>
+              <Input
+                id="edit-email"
+                type="email"
+                value={formData.email}
+                onChange={(e) => setFormData({ ...formData, email: e.target.value })}
+                placeholder="contacto@empresa.com"
+              />
+            </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="edit-municipalityId">Municipio *</Label>
+              <Select
+                value={formData.municipalityId}
+                onValueChange={(value) => setFormData({ ...formData, municipalityId: value })}
+              >
+                <SelectTrigger>
+                  <SelectValue placeholder="Selecciona un municipio" />
+                </SelectTrigger>
+                <SelectContent>
+                  {municipalities.map((municipality) => (
+                    <SelectItem key={municipality.id} value={municipality.id}>
+                      {municipality.name} - {municipality.department}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+
             <div className="space-y-2">
               <Label htmlFor="edit-businessSector">Sector de Negocio</Label>
               <Input
                 id="edit-businessSector"
                 value={formData.businessSector}
-                onChange={(e) =>
-                  setFormData({ ...formData, businessSector: e.target.value })
-                }
+                onChange={(e) => setFormData({ ...formData, businessSector: e.target.value })}
                 placeholder="Ej: Tecnología, Salud, Educación"
               />
             </div>
+
             <div className="space-y-2">
               <Label htmlFor="edit-companySize">Tamaño de la Empresa</Label>
               <Select
-                value={formData.companySize}
-                onValueChange={(value) =>
-                  setFormData({ ...formData, companySize: value })
-                }
+                value={formData.companySize || ""}
+                onValueChange={(value) => setFormData({ ...formData, companySize: value as any })}
               >
                 <SelectTrigger>
                   <SelectValue placeholder="Seleccione el tamaño" />
                 </SelectTrigger>
                 <SelectContent>
                   <SelectItem value="MICRO">Micro (1-10 empleados)</SelectItem>
-                  <SelectItem value="SMALL">
-                    Pequeña (11-50 empleados)
-                  </SelectItem>
-                  <SelectItem value="MEDIUM">
-                    Mediana (51-250 empleados)
-                  </SelectItem>
+                  <SelectItem value="SMALL">Pequeña (11-50 empleados)</SelectItem>
+                  <SelectItem value="MEDIUM">Mediana (51-250 empleados)</SelectItem>
                   <SelectItem value="LARGE">Grande (250+ empleados)</SelectItem>
                 </SelectContent>
               </Select>
             </div>
+
             <div className="space-y-2">
               <Label htmlFor="edit-foundedYear">Año de Fundación</Label>
               <Input
                 id="edit-foundedYear"
                 type="number"
                 value={formData.foundedYear}
-                onChange={(e) =>
-                  setFormData({
-                    ...formData,
-                    foundedYear: parseInt(e.target.value),
-                  })
-                }
+                onChange={(e) => setFormData({ ...formData, foundedYear: parseInt(e.target.value) })}
                 min="1900"
                 max={new Date().getFullYear()}
               />
             </div>
+
             <div className="space-y-2">
-              <Label htmlFor="edit-email">Email de Contacto</Label>
-              <Input
-                id="edit-email"
-                type="email"
-                value={formData.email}
-                onChange={(e) =>
-                  setFormData({ ...formData, email: e.target.value })
-                }
-                placeholder="contacto@empresa.com"
-              />
-            </div>
-            <div className="space-y-2">
-              <Label htmlFor="edit-phone">Teléfono de Contacto</Label>
+              <Label htmlFor="edit-phone">Teléfono</Label>
               <Input
                 id="edit-phone"
                 value={formData.phone}
-                onChange={(e) =>
-                  setFormData({ ...formData, phone: e.target.value })
-                }
-                placeholder="+1234567890"
+                onChange={(e) => setFormData({ ...formData, phone: e.target.value })}
+                placeholder="+591 12345678"
               />
             </div>
+
             <div className="space-y-2">
               <Label htmlFor="edit-website">Sitio Web</Label>
               <Input
                 id="edit-website"
                 value={formData.website}
-                onChange={(e) =>
-                  setFormData({ ...formData, website: e.target.value })
-                }
+                onChange={(e) => setFormData({ ...formData, website: e.target.value })}
                 placeholder="https://www.empresa.com"
               />
             </div>
+
             <div className="space-y-2 col-span-2">
               <Label htmlFor="edit-address">Dirección</Label>
               <Input
                 id="edit-address"
                 value={formData.address}
-                onChange={(e) =>
-                  setFormData({ ...formData, address: e.target.value })
-                }
+                onChange={(e) => setFormData({ ...formData, address: e.target.value })}
                 placeholder="Dirección completa de la empresa"
               />
             </div>
+
             <div className="space-y-2 col-span-2">
               <Label htmlFor="edit-description">Descripción</Label>
               <Textarea
                 id="edit-description"
                 value={formData.description}
-                onChange={(e) =>
-                  setFormData({ ...formData, description: e.target.value })
-                }
+                onChange={(e) => setFormData({ ...formData, description: e.target.value })}
                 placeholder="Descripción de la empresa y sus actividades"
                 rows={3}
               />
             </div>
+
+            {/* Login Credentials */}
+            <div className="space-y-2">
+              <Label htmlFor="edit-username">Usuario de Login *</Label>
+              <Input
+                id="edit-username"
+                value={formData.username}
+                onChange={(e) => setFormData({ ...formData, username: e.target.value })}
+                placeholder="usuario_empresa"
+              />
+            </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="edit-password">Nueva Contraseña (opcional)</Label>
+              <Input
+                id="edit-password"
+                type="password"
+                value={formData.password}
+                onChange={(e) => setFormData({ ...formData, password: e.target.value })}
+                placeholder="Dejar vacío para mantener la actual"
+              />
+            </div>
+
+            {/* Status Toggle */}
+            <div className="space-y-2 col-span-2">
+              <Label>Estado de la Empresa</Label>
+              <div className="flex items-center space-x-2">
+                <input
+                  type="checkbox"
+                  id="edit-isActive"
+                  checked={formData.isActive ?? editingCompany?.isActive ?? true}
+                  onChange={(e) => setFormData({ ...formData, isActive: e.target.checked })}
+                  className="rounded"
+                />
+                <Label htmlFor="edit-isActive">
+                  {formData.isActive ?? editingCompany?.isActive ? "Empresa Activa" : "Empresa Inactiva"}
+                </Label>
+              </div>
+            </div>
           </div>
-          <div className="flex justify-end gap-2">
-            <Button variant="outline" onClick={() => setEditingCompany(null)}>
+
+          <div className="flex justify-end gap-2 pt-4">
+            <Button 
+              variant="outline" 
+              onClick={() => {
+                setEditingCompany(null);
+                resetForm();
+              }}
+            >
               Cancelar
             </Button>
-            <Button
-              onClick={handleUpdateCompany}
-              disabled={updateCompanyMutation.isPending}
+            <Button 
+              onClick={handleUpdateCompany} 
+              disabled={updateCompanyMutation.isPending || !formData.name || !formData.email || !formData.municipalityId || !formData.username}
             >
-              {updateCompanyMutation.isPending
-                ? "Actualizando..."
-                : "Actualizar Empresa"}
+              {updateCompanyMutation.isPending ? "Actualizando..." : "Actualizar Empresa"}
             </Button>
           </div>
         </DialogContent>
       </Dialog>
 
-      {/* Credentials Modal */}
-      <CredentialsModal
-        isOpen={showCredentialsModal}
-        onClose={handleCredentialsModalClose}
-        credentials={createdCredentials}
-      />
+      {/* Delete Confirmation */}
+      <AlertDialog open={!!deletingCompany} onOpenChange={() => setDeletingCompany(null)}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle className="text-red-600">⚠️ Eliminar Empresa</AlertDialogTitle>
+            <AlertDialogDescription className="space-y-3">
+              <p>
+                <strong>Esta acción no se puede deshacer.</strong> Se eliminará permanentemente la empresa
+                <strong> "{deletingCompany?.name}"</strong> y todos sus datos relacionados:
+              </p>
+              
+              {deletingCompany && (
+                <div className="bg-red-50 p-3 rounded-md border border-red-200">
+                  <h4 className="font-semibold text-red-800 mb-2">Se eliminarán:</h4>
+                  <ul className="text-sm text-red-700 space-y-1">
+                    <li>• {deletingCompany.jobOffersCount} ofertas de trabajo</li>
+                    <li>• Todas las postulaciones a estas ofertas</li>
+                    <li>• Mensajes y comunicaciones relacionadas</li>
+                    <li>• {deletingCompany.employeesCount} perfiles de empleados (se desvinculan)</li>
+                    <li>• Intereses de jóvenes en la empresa</li>
+                    <li>• Preguntas y respuestas de entrevistas</li>
+                  </ul>
+                </div>
+              )}
+              
+              <p className="text-sm text-gray-600">
+                Solo los usuarios con rol SUPERADMIN pueden eliminar empresas.
+              </p>
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancelar</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={handleDeleteCompany}
+              disabled={deleteCompanyMutation.isPending}
+              className="bg-red-600 hover:bg-red-700"
+            >
+              {deleteCompanyMutation.isPending ? "Eliminando..." : "Eliminar Definitivamente"}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 }

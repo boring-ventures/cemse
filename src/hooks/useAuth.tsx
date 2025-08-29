@@ -160,12 +160,22 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const logout = async () => {
     setLoading(true);
     try {
+      console.log('🚪 useAuth.logout - Starting logout');
       await AuthService.logout();
+      console.log('✅ useAuth.logout - AuthService logout completed');
     } catch (error) {
-      console.error('Logout failed:', error);
+      console.error('❌ useAuth.logout - Logout failed:', error);
     } finally {
+      // Clear React state
       setUser(null);
       setLoading(false);
+      console.log('✅ useAuth.logout - React state cleared');
+      
+      // Force redirect to login page
+      if (typeof window !== 'undefined') {
+        console.log('🔄 useAuth.logout - Redirecting to login');
+        window.location.href = '/sign-in';
+      }
     }
   };
 

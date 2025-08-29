@@ -1,116 +1,23 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { getServerSession } from 'next-auth';
-import { authOptions } from '@/lib/auth';
 import { NewsArticle, NewsType, NewsStatus, NewsPriority } from '@/types/news';
-import { API_BASE } from '@/lib/api';
+import { prisma } from '@/lib/prisma';
+import { writeFile, mkdir } from 'fs/promises';
+import { join } from 'path';
+import { v4 as uuidv4 } from 'uuid';
+import jwt from 'jsonwebtoken';
 
-// Mock data - será reemplazado por Prisma
-const mockNews: NewsArticle[] = [
-  {
-    id: '1',
-    title: 'Noticia de ejemplo - Empresa',
-    summary: 'Esta es una noticia de ejemplo de una empresa',
-    content: 'Contenido completo de la noticia de ejemplo de una empresa',
-    category: 'General',
-    authorId: 'company-1',
-    authorName: 'Empresa Ejemplo',
-    authorType: 'COMPANY',
-    status: 'PUBLISHED',
-    priority: 'MEDIUM',
-    featured: false,
-    viewCount: 0,
-    likeCount: 0,
-    commentCount: 0,
-    createdAt: new Date().toISOString(),
-    updatedAt: new Date().toISOString(),
-    publishedAt: new Date().toISOString(),
-    tags: ['ejemplo', 'empresa'],
-    targetAudience: ['YOUTH'],
-    region: 'Nacional',
-    videoUrl: '',
-    relatedLinks: [],
-    imageUrl: ''
-  },
-  {
-    id: '2',
-    title: 'Noticia Municipal - Desarrollo Local',
-    summary: 'Nuevas iniciativas para el desarrollo económico local',
-    content: 'El gobierno municipal ha anunciado nuevas iniciativas para promover el desarrollo económico local, incluyendo programas de apoyo a emprendedores y mejoras en la infraestructura.',
-    category: 'Desarrollo',
-    authorId: 'cmemo5inx00019ybpwv3fu7bk',
-    authorName: 'Diego Rocha',
-    authorType: 'GOVERNMENT',
-    status: 'PUBLISHED',
-    priority: 'HIGH',
-    featured: true,
-    viewCount: 45,
-    likeCount: 12,
-    commentCount: 3,
-    createdAt: new Date().toISOString(),
-    updatedAt: new Date().toISOString(),
-    publishedAt: new Date().toISOString(),
-    tags: ['desarrollo', 'municipal', 'economía'],
-    targetAudience: ['YOUTH', 'COMPANIES'],
-    region: 'Cochabamba',
-    videoUrl: '',
-    relatedLinks: [],
-    imageUrl: ''
-  },
-  {
-    id: '3',
-    title: 'Programa de Empleo Juvenil',
-    summary: 'Nuevo programa para crear oportunidades de empleo para jóvenes',
-    content: 'Se ha lanzado un nuevo programa municipal destinado a crear oportunidades de empleo para jóvenes de la localidad, con el objetivo de reducir el desempleo juvenil.',
-    category: 'Empleo',
-    authorId: 'cmemo5inx00019ybpwv3fu7bk',
-    authorName: 'Diego Rocha',
-    authorType: 'GOVERNMENT',
-    status: 'PUBLISHED',
-    priority: 'URGENT',
-    featured: false,
-    viewCount: 78,
-    likeCount: 23,
-    commentCount: 7,
-    createdAt: new Date().toISOString(),
-    updatedAt: new Date().toISOString(),
-    publishedAt: new Date().toISOString(),
-    tags: ['empleo', 'jóvenes', 'municipal'],
-    targetAudience: ['YOUTH'],
-    region: 'Cochabamba',
-    videoUrl: '',
-    relatedLinks: [],
-    imageUrl: ''
-  },
-  {
-    id: '4',
-    title: 'Noticia en Borrador - Municipal',
-    summary: 'Esta es una noticia en borrador del municipio',
-    content: 'Contenido de la noticia en borrador que aún no ha sido publicada.',
-    category: 'General',
-    authorId: 'cmemo5inx00019ybpwv3fu7bk',
-    authorName: 'Diego Rocha',
-    authorType: 'GOVERNMENT',
-    status: 'DRAFT',
-    priority: 'MEDIUM',
-    featured: false,
-    viewCount: 0,
-    likeCount: 0,
-    commentCount: 0,
-    createdAt: new Date().toISOString(),
-    updatedAt: new Date().toISOString(),
-    publishedAt: '',
-    tags: ['borrador'],
-    targetAudience: ['YOUTH'],
-    region: 'Cochabamba',
-    videoUrl: '',
-    relatedLinks: [],
-    imageUrl: ''
+const JWT_SECRET = process.env.JWT_SECRET || 'dev-secret-key';
+
+// JWT token verification function
+function verifyToken(token: string) {
+  try {
+    return jwt.verify(token, JWT_SECRET) as any;
+  } catch (error) {
+    return null;
   }
-];
+}
 
 // Helper functions
-const generateId = () => Math.random().toString(36).substr(2, 9);
-
 const validateNewsData = (data: any) => {
   const { title, content, summary, category } = data;
 
@@ -124,14 +31,14 @@ const validateNewsData = (data: any) => {
   return { isValid: true };
 };
 
-const checkPermissions = (session: any, authorId?: string) => {
-  if (!session) return false;
+const checkPermissions = (user: any, authorId?: string) => {
+  if (!user) return false;
 
   const allowedRoles = ['COMPANIES', 'MUNICIPAL_GOVERNMENTS', 'SUPERADMIN'];
-  if (!allowedRoles.includes(session.user.role)) return false;
+  if (!allowedRoles.includes(user.role)) return false;
 
   // Si se proporciona authorId, verificar que coincida con el usuario actual
-  if (authorId && session.user.id !== authorId) return false;
+  if (authorId && user.id !== authorId) return false;
 
   return true;
 };
@@ -139,34 +46,89 @@ const checkPermissions = (session: any, authorId?: string) => {
 export async function GET(request: NextRequest) {
   try {
     const { searchParams } = new URL(request.url);
-    
-    // For development, return mock news data instead of calling backend
-    console.log("📰 Returning mock news data for development");
-    
+    const authorId = searchParams.get('authorId');
     const status = searchParams.get('status');
     const category = searchParams.get('category');
     const authorType = searchParams.get('authorType');
     
-    let filteredNews = mockNews;
+    // Build where clause
+    const where: any = {};
     
-    // Apply filters if specified
+    if (authorId) {
+      where.authorId = authorId;
+    }
+    
     if (status) {
-      filteredNews = filteredNews.filter(news => news.status === status);
+      where.status = status.toUpperCase();
     }
+    
     if (category) {
-      filteredNews = filteredNews.filter(news => news.category === category);
+      where.category = category;
     }
+    
     if (authorType) {
-      filteredNews = filteredNews.filter(news => news.authorType === authorType);
+      where.authorType = authorType.toUpperCase();
+    }
+    
+    // Default to published news only if no status filter and no authorId (public view)
+    if (!status && !authorId) {
+      where.status = 'PUBLISHED';
     }
 
-    // Default to published news only
-    if (!status) {
-      filteredNews = filteredNews.filter(news => news.status === 'PUBLISHED');
-    }
+    console.log('📰 Fetching news with filters:', where);
 
-    console.log("📰 Filtered news count:", filteredNews.length);
-    return NextResponse.json(filteredNews);
+    const newsArticles = await prisma.newsArticle.findMany({
+      where,
+      include: {
+        author: {
+          select: {
+            firstName: true,
+            lastName: true,
+            avatarUrl: true,
+            company: {
+              select: {
+                name: true
+              }
+            }
+          }
+        }
+      },
+      orderBy: {
+        createdAt: 'desc'
+      }
+    });
+
+    // Convert to frontend format
+    const responseNews: NewsArticle[] = newsArticles.map(news => ({
+      id: news.id,
+      title: news.title,
+      summary: news.summary,
+      content: news.content,
+      category: news.category,
+      imageUrl: news.imageUrl || '',
+      videoUrl: news.videoUrl || '',
+      authorId: news.authorId,
+      authorName: news.authorName,
+      authorType: news.authorType as NewsType,
+      authorLogo: news.authorLogo || '',
+      status: news.status as NewsStatus,
+      priority: news.priority as NewsPriority,
+      featured: news.featured,
+      tags: news.tags,
+      targetAudience: news.targetAudience,
+      region: news.region || '',
+      relatedLinks: news.relatedLinks as any || [],
+      publishedAt: news.publishedAt?.toISOString() || '',
+      createdAt: news.createdAt.toISOString(),
+      updatedAt: news.updatedAt.toISOString(),
+      viewCount: news.viewCount,
+      likeCount: news.likeCount,
+      commentCount: news.commentCount,
+      expiresAt: news.expiresAt?.toISOString() || ''
+    }));
+
+    console.log("📰 Fetched news count:", responseNews.length);
+    return NextResponse.json(responseNews);
 
   } catch (error) {
     console.error('Error in GET /api/newsarticle:', error);
@@ -179,18 +141,41 @@ export async function GET(request: NextRequest) {
 
 export async function POST(request: NextRequest) {
   try {
-    const session = await getServerSession(authOptions);
-
-    // Verificar autenticación
-    if (!session) {
+    // Get auth token from Authorization header
+    const authHeader = request.headers.get('authorization');
+    if (!authHeader || !authHeader.startsWith('Bearer ')) {
       return NextResponse.json(
-        { message: 'Authentication required' },
+        { message: 'Authorization header required' },
         { status: 401 }
       );
     }
 
+    const token = authHeader.substring(7);
+    const decoded = verifyToken(token);
+    
+    if (!decoded) {
+      return NextResponse.json(
+        { message: 'Invalid or expired token' },
+        { status: 401 }
+      );
+    }
+
+    console.log('📰 POST /api/newsarticle - Authenticated user:', decoded.username);
+
+    // Get user from database
+    const user = await prisma.user.findUnique({
+      where: { id: decoded.id }
+    });
+
+    if (!user || !user.isActive) {
+      return NextResponse.json(
+        { message: 'User not found or inactive' },
+        { status: 404 }
+      );
+    }
+
     // Verificar permisos
-    if (!checkPermissions(session)) {
+    if (!checkPermissions(user)) {
       return NextResponse.json(
         { message: 'Insufficient permissions' },
         { status: 403 }
@@ -220,11 +205,6 @@ export async function POST(request: NextRequest) {
     const relatedLinks = formData.get('relatedLinks') as string;
     const imageFile = formData.get('image') as File;
 
-    // Extraer campos específicos del autor
-    const authorId = formData.get('authorId') as string;
-    const authorName = formData.get('authorName') as string;
-    const authorType = formData.get('authorType') as string;
-
     console.log('📰 Extracted form data:', {
       title,
       summary: summary?.substring(0, 50) + '...',
@@ -240,10 +220,7 @@ export async function POST(request: NextRequest) {
       relatedLinks,
       hasImage: !!imageFile,
       imageSize: imageFile?.size,
-      imageType: imageFile?.type,
-      authorId,
-      authorName,
-      authorType
+      imageType: imageFile?.type
     });
 
     // Validar datos requeridos
@@ -256,8 +233,23 @@ export async function POST(request: NextRequest) {
       );
     }
 
+    // Obtener el perfil del usuario para obtener información adicional
+    const userProfile = await prisma.profile.findUnique({
+      where: { userId: user.id },
+      include: {
+        company: true
+      }
+    });
+
+    if (!userProfile) {
+      return NextResponse.json(
+        { message: 'User profile not found' },
+        { status: 404 }
+      );
+    }
+
     // Procesar imagen si existe
-    let imageUrl = '';
+    let imageUrl: string | null = null;
     if (imageFile && imageFile.size > 0) {
       console.log('📰 Processing image file:', {
         name: imageFile.name,
@@ -265,56 +257,139 @@ export async function POST(request: NextRequest) {
         type: imageFile.type
       });
 
-      // Aquí se procesaría la imagen y se subiría a un servicio de almacenamiento
-      // Por ahora, simulamos una URL completa
-      imageUrl = `${API_BASE}/uploads/${Date.now()}-${imageFile.name}`;
-      console.log('📰 Generated image URL:', imageUrl);
+      try {
+        // Crear directorio de uploads si no existe
+        const uploadsDir = join(process.cwd(), 'public', 'uploads', 'news');
+        await mkdir(uploadsDir, { recursive: true });
+
+        // Generar nombre único para la imagen
+        const fileExtension = imageFile.name.split('.').pop();
+        const uniqueFileName = `${uuidv4()}.${fileExtension}`;
+        const filePath = join(uploadsDir, uniqueFileName);
+
+        // Guardar archivo
+        const bytes = await imageFile.arrayBuffer();
+        const buffer = Buffer.from(bytes);
+        await writeFile(filePath, buffer);
+
+        // Generar URL pública
+        imageUrl = `/uploads/news/${uniqueFileName}`;
+        console.log('📰 Saved image to:', imageUrl);
+      } catch (imageError) {
+        console.error('❌ Error processing image:', imageError);
+        // Continuar sin imagen en caso de error
+      }
     }
 
-    // Crear nueva noticia
-    const newNews: NewsArticle = {
-      id: generateId(),
-      title,
-      summary,
-      content,
-      category,
-      authorId: authorId || (session.user as any)?.id || 'unknown',
-      authorName: authorName || (session.user as any)?.name || 'Unknown Author',
-      authorType: (authorType as NewsType) || ((session.user as any)?.role as NewsType) || 'GOVERNMENT',
-      status: (status as NewsStatus) || 'DRAFT',
-      priority: (priority as NewsPriority) || 'MEDIUM',
-      featured: featured || false,
-      viewCount: 0,
-      likeCount: 0,
-      commentCount: 0,
-      createdAt: new Date().toISOString(),
-      updatedAt: new Date().toISOString(),
-      publishedAt: status === 'PUBLISHED' ? new Date().toISOString() : '',
-      tags: tags ? tags.split(',').map(tag => tag.trim()) : [],
-      targetAudience: targetAudience ? targetAudience.split(',').map(audience => audience.trim()) : ['YOUTH'],
-      region: region || '',
-      videoUrl: videoUrl || '',
-      relatedLinks: relatedLinks ? JSON.parse(relatedLinks) : [],
-      imageUrl
-    };
+    // Procesar tags
+    const tagsArray = tags ? tags.split(',').map(tag => tag.trim()).filter(tag => tag.length > 0) : [];
+    
+    // Procesar target audience
+    const targetAudienceArray = targetAudience 
+      ? targetAudience.split(',').map(audience => audience.trim()).filter(audience => audience.length > 0)
+      : ['YOUTH'];
 
-    console.log('📰 Created news article:', {
+    // Procesar related links
+    let relatedLinksJson = null;
+    if (relatedLinks && relatedLinks.trim()) {
+      try {
+        relatedLinksJson = JSON.parse(relatedLinks);
+      } catch (e) {
+        console.warn('Invalid relatedLinks JSON, ignoring:', relatedLinks);
+      }
+    }
+
+    // Determinar authorType basado en el rol del usuario
+    let authorType: NewsType = 'GOVERNMENT';
+    if (user.role === 'COMPANIES') {
+      authorType = 'COMPANY';
+    } else if (user.role === 'MUNICIPAL_GOVERNMENTS') {
+      authorType = 'GOVERNMENT';
+    } else if (user.role === 'SUPERADMIN') {
+      authorType = 'GOVERNMENT';
+    }
+
+    // Crear nueva noticia usando Prisma
+    const newNews = await prisma.newsArticle.create({
+      data: {
+        title: title.trim(),
+        summary: summary.trim(),
+        content: content.trim(),
+        category: category.trim(),
+        imageUrl,
+        videoUrl: videoUrl?.trim() || null,
+        authorId: userProfile.userId,
+        authorName: userProfile.company?.name || `${userProfile.firstName} ${userProfile.lastName}`.trim() || 'Unknown Author',
+        authorType,
+        authorLogo: userProfile.avatarUrl || null,
+        status: (status as NewsStatus) || 'DRAFT',
+        priority: (priority as NewsPriority) || 'MEDIUM',
+        featured: featured || false,
+        tags: tagsArray,
+        targetAudience: targetAudienceArray,
+        region: region?.trim() || null,
+        relatedLinks: relatedLinksJson,
+        publishedAt: status === 'PUBLISHED' ? new Date() : null,
+        expiresAt: null // Could be added as a form field if needed
+      },
+      include: {
+        author: {
+          select: {
+            firstName: true,
+            lastName: true,
+            avatarUrl: true,
+            company: {
+              select: {
+                name: true
+              }
+            }
+          }
+        }
+      }
+    });
+
+    console.log('📰 Created news article with Prisma:', {
       id: newNews.id,
       title: newNews.title,
       status: newNews.status,
+      authorName: newNews.authorName,
       hasImage: !!newNews.imageUrl
     });
 
-    // Agregar a la lista de noticias
-    mockNews.push(newNews);
+    // Convertir a formato esperado por el frontend
+    const responseNews: NewsArticle = {
+      id: newNews.id,
+      title: newNews.title,
+      summary: newNews.summary,
+      content: newNews.content,
+      category: newNews.category,
+      imageUrl: newNews.imageUrl || '',
+      videoUrl: newNews.videoUrl || '',
+      authorId: newNews.authorId,
+      authorName: newNews.authorName,
+      authorType: newNews.authorType as NewsType,
+      authorLogo: newNews.authorLogo || '',
+      status: newNews.status as NewsStatus,
+      priority: newNews.priority as NewsPriority,
+      featured: newNews.featured,
+      tags: newNews.tags,
+      targetAudience: newNews.targetAudience,
+      region: newNews.region || '',
+      relatedLinks: newNews.relatedLinks as any || [],
+      publishedAt: newNews.publishedAt?.toISOString() || '',
+      createdAt: newNews.createdAt.toISOString(),
+      updatedAt: newNews.updatedAt.toISOString(),
+      viewCount: newNews.viewCount,
+      likeCount: newNews.likeCount,
+      commentCount: newNews.commentCount,
+      expiresAt: newNews.expiresAt?.toISOString() || ''
+    };
 
-    console.log('📰 Successfully added news to mock data');
-
-    return NextResponse.json(newNews, { status: 201 });
+    return NextResponse.json(responseNews, { status: 201 });
   } catch (error) {
     console.error('❌ Error in POST /api/newsarticle:', error);
     return NextResponse.json(
-      { message: 'Internal server error' },
+      { message: error instanceof Error ? error.message : 'Internal server error' },
       { status: 500 }
     );
   }

@@ -170,11 +170,7 @@ export const youthSidebarData: SidebarData = {
           icon: Newspaper,
           url: "/news",
         },
-        {
-          title: "Eventos",
-          icon: Calendar,
-          url: "/events",
-        },
+
       ],
     },
     {
@@ -449,16 +445,7 @@ export const municipalGovernmentSidebarData: SidebarData = {
             },
           ],
         },
-        {
-          title: "Eventos",
-          icon: Calendar,
-          items: [
-            {
-              title: "Gestión de Eventos",
-              url: "/municipalities/events",
-            },
-          ],
-        },
+
         {
           title: "Recursos",
           icon: FileText,
@@ -562,8 +549,7 @@ export const trainingCenterSidebarData: SidebarData = {
               url: "/admin/youth-content",
             },
             {
-              title: "Gestión de Eventos",
-              url: "/admin/entrepreneurship/events",
+
             },
           ],
         },
@@ -670,8 +656,7 @@ export const ngoFoundationSidebarData: SidebarData = {
               url: "/admin/youth-content",
             },
             {
-              title: "Gestión de Eventos",
-              url: "/admin/entrepreneurship/events",
+
             },
           ],
         },
@@ -808,16 +793,7 @@ export const superAdminSidebarData: SidebarData = {
         },
       ],
     },
-    {
-      title: "Eventos",
-      items: [
-        {
-          title: "Gestión de Eventos",
-          url: "/admin/events",
-          icon: Calendar,
-        },
-      ],
-    },
+
     {
       title: "Recursos",
       items: [
@@ -890,6 +866,7 @@ export function getSidebarDataByRole(role: UserRole): SidebarData {
     case "ADOLESCENTES":
       return adolescentSidebarData;
     case "EMPRESAS":
+    case "COMPANIES":
       return companySidebarData;
     case "GOBIERNOS_MUNICIPALES":
       return municipalGovernmentSidebarData;

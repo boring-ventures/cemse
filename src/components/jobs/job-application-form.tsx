@@ -26,7 +26,7 @@ import {
 import { useToast } from "@/hooks/use-toast";
 import { JobQuestion, JobOffer } from "@/types/jobs";
 import { useCVStatus } from "@/hooks/use-cv-status";
-import CVCheckModal from "./cv-check-modal";
+
 import { extractFilePath, buildFileUrl } from "@/lib/utils";
 import { API_BASE, apiCall } from "@/lib/api";
 
@@ -47,7 +47,13 @@ export default function JobApplicationForm({ jobOffer, onSuccess, onCancel }: Jo
   const { hasCV, hasCoverLetter, cvUrl, coverLetterUrl, cvData, checkCVStatus } = useCVStatus();
   const [loading, setLoading] = useState(false);
   const [questions, setQuestions] = useState<JobQuestion[]>([]);
-  const [showCVCheck, setShowCVCheck] = useState(false);
+
+  const [uploadingCV, setUploadingCV] = useState(false);
+  const [uploadingCoverLetter, setUploadingCoverLetter] = useState(false);
+  const [cvFile, setCvFile] = useState<File | null>(null);
+  const [coverLetterFile, setCoverLetterFile] = useState<File | null>(null);
+  const [uploadedCvUrl, setUploadedCvUrl] = useState<string>("");
+  const [uploadedCoverLetterUrl, setUploadedCoverLetterUrl] = useState<string>("");
   const [formData, setFormData] = useState({
     notes: "",
     questionAnswers: [] as QuestionAnswer[],
@@ -61,7 +67,24 @@ export default function JobApplicationForm({ jobOffer, onSuccess, onCancel }: Jo
 
   const fetchQuestions = async () => {
     try {
-      const data = await apiCall(`/jobquestion?jobOfferId=${jobOffer.id}`);
+      // Use direct fetch to Next.js API route with cookies for authentication
+      const response = await fetch(`/api/jobquestion?jobOfferId=${jobOffer.id}`, {
+        method: 'GET',
+        credentials: 'include', // Include cookies for authentication
+        headers: {
+          'Content-Type': 'application/json'
+        }
+      });
+
+      if (!response.ok) {
+        if (response.status === 401) {
+          throw new Error('Authentication failed');
+        }
+        throw new Error(`HTTP error! status: ${response.status}`);
+      }
+
+      const data = await response.json();
+      console.log('🎯 fetchQuestions - Questions loaded:', data);
       setQuestions(data);
       // Initialize question answers
       setFormData(prev => ({
@@ -74,6 +97,29 @@ export default function JobApplicationForm({ jobOffer, onSuccess, onCancel }: Jo
       }));
     } catch (error) {
       console.error("Error fetching questions:", error);
+      // Set some default questions if the API fails
+      const defaultQuestions: JobQuestion[] = [
+        {
+          id: 'default_1',
+          jobOfferId: jobOffer.id,
+          question: '¿Por qué te interesa esta posición?',
+          type: 'text',
+          required: true,
+          orderIndex: 1,
+          options: [],
+          createdAt: new Date().toISOString(),
+          updatedAt: new Date().toISOString()
+        }
+      ];
+      setQuestions(defaultQuestions);
+      setFormData(prev => ({
+        ...prev,
+        questionAnswers: defaultQuestions.map((q) => ({
+          questionId: q.id,
+          question: q.question,
+          answer: ""
+        }))
+      }));
     }
   };
 
@@ -86,18 +132,118 @@ export default function JobApplicationForm({ jobOffer, onSuccess, onCancel }: Jo
     }));
   };
 
-  const validateForm = () => {
-    // Check if user has at least one document (CV or cover letter PDF)
-    if (!hasCV && !hasCoverLetter) {
+  const handleCVFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file && file.type === "application/pdf") {
+      setCvFile(file);
+    } else {
       toast({
         title: "Error",
-        description: "Necesitas al menos un CV o carta de presentación PDF para aplicar",
+        description: "Por favor selecciona un archivo PDF",
+        variant: "destructive",
+      });
+    }
+  };
+
+  const handleCoverLetterFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file && file.type === "application/pdf") {
+      setCoverLetterFile(file);
+    } else {
+      toast({
+        title: "Error",
+        description: "Por favor selecciona un archivo PDF",
+        variant: "destructive",
+      });
+    }
+  };
+
+  const handleUploadCV = async () => {
+    if (!cvFile) return;
+
+    setUploadingCV(true);
+    try {
+      const formData = new FormData();
+      formData.append('cvFile', cvFile);
+
+      const response = await fetch('/api/files/upload/cv', {
+        method: 'POST',
+        credentials: 'include',
+        body: formData
+      });
+
+      if (!response.ok) {
+        throw new Error('Error uploading CV');
+      }
+
+      const result = await response.json();
+      setUploadedCvUrl(result.cvUrl);
+      setCvFile(null);
+
+      toast({
+        title: "¡CV subido exitosamente!",
+        description: "Tu CV ha sido guardado correctamente",
+      });
+    } catch (error) {
+      toast({
+        title: "Error",
+        description: "No se pudo subir el CV. Inténtalo de nuevo.",
+        variant: "destructive",
+      });
+    } finally {
+      setUploadingCV(false);
+    }
+  };
+
+  const handleUploadCoverLetter = async () => {
+    if (!coverLetterFile) return;
+
+    setUploadingCoverLetter(true);
+    try {
+      const formData = new FormData();
+      formData.append('coverLetterFile', coverLetterFile);
+
+      const response = await fetch('/api/files/upload/cover-letter', {
+        method: 'POST',
+        credentials: 'include',
+        body: formData
+      });
+
+      if (!response.ok) {
+        throw new Error('Error uploading cover letter');
+      }
+
+      const result = await response.json();
+      setUploadedCoverLetterUrl(result.coverLetterUrl);
+      setCoverLetterFile(null);
+
+      toast({
+        title: "¡Carta subida exitosamente!",
+        description: "Tu carta de presentación ha sido guardada correctamente",
+      });
+    } catch (error) {
+      toast({
+        title: "Error",
+        description: "No se pudo subir la carta. Inténtalo de nuevo.",
+        variant: "destructive",
+      });
+    } finally {
+      setUploadingCoverLetter(false);
+    }
+  };
+
+  const validateForm = () => {
+    // Check if user has at least one document (existing or uploaded)
+    const hasAnyDocument = hasCV || hasCoverLetter || uploadedCvUrl || uploadedCoverLetterUrl;
+    
+    if (!hasAnyDocument) {
+      toast({
+        title: "Documentos requeridos",
+        description: "Necesitas subir al menos un CV o carta de presentación PDF para aplicar",
         variant: "destructive",
       });
       return false;
     }
-
-
 
     // Check required questions
     const requiredQuestions = questions.filter(q => q.required);
@@ -117,8 +263,22 @@ export default function JobApplicationForm({ jobOffer, onSuccess, onCancel }: Jo
   };
 
   const canSubmit = () => {
-    // Must have at least one document (CV or cover letter PDF)
-    if (!hasCV && !hasCoverLetter) {
+    // Must have at least one document (existing or uploaded)
+    const hasAnyDocument = hasCV || hasCoverLetter || uploadedCvUrl || uploadedCoverLetterUrl;
+    
+    console.log('🔍 canSubmit - Debug info:', {
+      hasCV,
+      hasCoverLetter,
+      uploadedCvUrl,
+      uploadedCoverLetterUrl,
+      hasAnyDocument,
+      questionsCount: questions.length,
+      requiredQuestionsCount: questions.filter(q => q.required).length,
+      answeredQuestionsCount: formData.questionAnswers.filter(qa => qa.answer.trim()).length
+    });
+    
+    if (!hasAnyDocument) {
+      console.log('🔍 canSubmit - No documents available');
       return false;
     }
     
@@ -127,19 +287,23 @@ export default function JobApplicationForm({ jobOffer, onSuccess, onCancel }: Jo
     for (const question of requiredQuestions) {
       const answer = formData.questionAnswers.find(qa => qa.questionId === question.id);
       if (!answer || !answer.answer.trim()) {
+        console.log('🔍 canSubmit - Missing answer for question:', question.question);
         return false;
       }
     }
     
+    console.log('🔍 canSubmit - All validations passed, can submit!');
     return true;
   };
 
     const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     
-    // Check if user has at least one document before proceeding
-    if (!hasCV && !hasCoverLetter) {
-      setShowCVCheck(true);
+    // Check if user has at least one document (existing or newly uploaded) before proceeding
+    const hasAnyDocument = hasCV || hasCoverLetter || uploadedCvUrl || uploadedCoverLetterUrl;
+    if (!hasAnyDocument) {
+      console.log('🚨 No documents available - but we should not show modal anymore');
+      // Instead of showing modal, just prevent submission - the UI already shows upload options
       return;
     }
     
@@ -147,55 +311,67 @@ export default function JobApplicationForm({ jobOffer, onSuccess, onCancel }: Jo
 
     setLoading(true);
     
-    try {
-      // Check authentication first
-      const token = localStorage.getItem('token');
+        try {
+      // Use direct fetch to Next.js API route with cookies for authentication
+      // Prioritize uploaded documents over existing ones
+      const finalCvUrl = uploadedCvUrl || (hasCV ? cvUrl : null);
+      const finalCoverLetterUrl = uploadedCoverLetterUrl || (hasCoverLetter ? coverLetterUrl : null);
       
-      if (!token) {
-        toast({
-          title: "Error de autenticación",
-          description: "No se encontró token de autorización. Por favor, inicia sesión nuevamente.",
-          variant: "destructive",
-        });
-        return;
-      }
-      
-      // Usar directamente las URLs que ya están en el estado del hook
-      // Estas URLs ya fueron obtenidas al subir los archivos previamente
-      
-      // Step 2: Create job application with file URLs
       const applicationData = {
         jobOfferId: jobOffer.id,
-        cvUrl: hasCV ? cvUrl : null,
-        coverLetterUrl: hasCoverLetter ? coverLetterUrl : null,
-        status: 'PENDING',
+        cvUrl: finalCvUrl,
+        coverLetterUrl: finalCoverLetterUrl,
+        status: 'SENT',
         message: formData.notes.trim() || '',
         questionAnswers: formData.questionAnswers.filter(qa => qa.answer.trim())
       };
 
+      console.log('🚀 Submitting application data:', applicationData);
 
-
-      const response = await fetch(`${API_BASE}/jobapplication`, {
+      // Test API endpoint first
+      console.log('🧪 Testing API endpoint...');
+      
+      try {
+        // First test if we can reach the API at all
+        const testResponse = await fetch('/api/auth/me', {
+          method: 'GET',
+          credentials: 'include'
+        });
+        console.log('🧪 Auth test response status:', testResponse.status);
+      } catch (testError) {
+        console.log('🧪 Auth test failed:', testError);
+      }
+      
+      const response = await fetch('/api/jobapplication', {
         method: 'POST',
+        credentials: 'include', // Include cookies for authentication
         headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${localStorage.getItem('token')}`,
+          'Content-Type': 'application/json'
         },
         body: JSON.stringify(applicationData)
       });
 
-             if (response.ok) {
-         const result = await response.json();
-         
-         toast({
-           title: "¡Aplicación enviada!",
-           description: "Tu aplicación ha sido enviada correctamente",
-         });
-         onSuccess?.();
-       } else {
+      if (!response.ok) {
+        if (response.status === 401) {
+          toast({
+            title: "Error de autenticación",
+            description: "Por favor, inicia sesión nuevamente.",
+            variant: "destructive",
+          });
+          return;
+        }
         const errorData = await response.json();
-        throw new Error(errorData.message || "Failed to submit application");
+        console.error('🚨 API Error Response:', errorData);
+        throw new Error(errorData.error || errorData.message || "Failed to submit application");
       }
+
+      const result = await response.json();
+      
+      toast({
+        title: "¡Aplicación enviada!",
+        description: "Tu aplicación ha sido enviada correctamente",
+      });
+      onSuccess?.();
     } catch (error) {
       console.error("Error submitting application:", error);
       toast({
@@ -213,8 +389,10 @@ export default function JobApplicationForm({ jobOffer, onSuccess, onCancel }: Jo
   const renderQuestionInput = (question: JobQuestion) => {
     const answer = formData.questionAnswers.find(qa => qa.questionId === question.id);
     
-    switch (question.type) {
-      case "text":
+    console.log('🎯 renderQuestionInput - Question:', question.question, 'Type:', question.type, 'Answer:', answer?.answer);
+    
+    switch (question.type?.toUpperCase()) {
+      case "TEXT":
         return (
           <Textarea
             value={answer?.answer || ""}
@@ -222,21 +400,21 @@ export default function JobApplicationForm({ jobOffer, onSuccess, onCancel }: Jo
             placeholder="Escribe tu respuesta aquí..."
             rows={3}
             required={question.required}
+            className="w-full"
           />
         );
       
-      case "multiple_choice":
+      case "MULTIPLE_CHOICE":
         return (
           <Select
             value={answer?.answer || ""}
             onValueChange={(value) => handleQuestionAnswer(question.id, value)}
-            required={question.required}
           >
-            <SelectTrigger>
+            <SelectTrigger className="w-full">
               <SelectValue placeholder="Selecciona una opción" />
             </SelectTrigger>
             <SelectContent>
-              {question.options.map((option, index) => (
+              {question.options?.map((option, index) => (
                 <SelectItem key={index} value={option}>
                   {option}
                 </SelectItem>
@@ -245,14 +423,13 @@ export default function JobApplicationForm({ jobOffer, onSuccess, onCancel }: Jo
           </Select>
         );
       
-      case "boolean":
+      case "BOOLEAN":
         return (
           <Select
             value={answer?.answer || ""}
             onValueChange={(value) => handleQuestionAnswer(question.id, value)}
-            required={question.required}
           >
-            <SelectTrigger>
+            <SelectTrigger className="w-full">
               <SelectValue placeholder="Selecciona Sí o No" />
             </SelectTrigger>
             <SelectContent>
@@ -263,7 +440,21 @@ export default function JobApplicationForm({ jobOffer, onSuccess, onCancel }: Jo
         );
       
       default:
-        return null;
+        console.log('🚨 renderQuestionInput - Unknown question type:', question.type);
+        return (
+          <div className="p-3 bg-red-50 rounded border">
+            <p className="text-red-600 text-sm">
+              Tipo de pregunta no soportado: {question.type}
+            </p>
+            <Textarea
+              value={answer?.answer || ""}
+              onChange={(e) => handleQuestionAnswer(question.id, e.target.value)}
+              placeholder="Escribe tu respuesta aquí..."
+              rows={3}
+              className="w-full mt-2"
+            />
+          </div>
+        );
     }
   };
 
@@ -285,103 +476,128 @@ export default function JobApplicationForm({ jobOffer, onSuccess, onCancel }: Jo
                   <FileText className="h-5 w-5" />
                   <h3 className="text-lg font-semibold">Documentos</h3>
                 </div>
-                <Button 
-                  variant="outline" 
-                  size="sm"
-                  onClick={() => setShowCVCheck(true)}
-                >
-                  <Upload className="h-4 w-4 mr-1" />
-                  Gestionar Documentos
-                </Button>
+                <span className="text-sm text-gray-600">
+                  Sube tus documentos directamente aquí
+                </span>
               </div>
               
-              {/* CV Status */}
-              <div className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
-                <div className="flex items-center gap-2">
-                  {hasCV ? (
-                    <CheckCircle className="h-4 w-4 text-green-600" />
-                  ) : (
-                    <AlertCircle className="h-4 w-4 text-orange-600" />
-                  )}
-                  <span className={hasCV ? "text-green-800" : "text-orange-800"}>
-                    CV / Currículum Vitae
-                  </span>
-                </div>
-                <div className="flex gap-2">
-                                     {hasCV && cvUrl && (
-                                           <Button variant="outline" size="sm" onClick={() => {
+              {/* CV Upload Section */}
+              <div className="space-y-3">
+                <div className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
+                  <div className="flex items-center gap-2">
+                    {(hasCV || uploadedCvUrl) ? (
+                      <CheckCircle className="h-4 w-4 text-green-600" />
+                    ) : (
+                      <AlertCircle className="h-4 w-4 text-orange-600" />
+                    )}
+                    <span className={(hasCV || uploadedCvUrl) ? "text-green-800" : "text-orange-800"}>
+                      CV / Currículum Vitae
+                    </span>
+                  </div>
+                  <div className="flex gap-2">
+                    {(hasCV && cvUrl) && (
+                      <Button variant="outline" size="sm" onClick={() => {
                         const fullCVUrl = buildFileUrl(cvUrl);
                         window.open(fullCVUrl, '_blank');
                       }}>
-                       <Download className="h-4 w-4 mr-1" />
-                       Ver CV
-                     </Button>
-                   )}
-                  <Button 
-                    variant="outline" 
-                    size="sm"
-                    onClick={() => setShowCVCheck(true)}
-                  >
-                    <Upload className="h-4 w-4 mr-1" />
-                    Gestionar
-                  </Button>
+                        <Download className="h-4 w-4 mr-1" />
+                        Ver CV Existente
+                      </Button>
+                    )}
+                    {uploadedCvUrl && (
+                      <Button variant="outline" size="sm" onClick={() => {
+                        window.open(uploadedCvUrl, '_blank');
+                      }}>
+                        <Download className="h-4 w-4 mr-1" />
+                        Ver CV Subido
+                      </Button>
+                    )}
+                  </div>
                 </div>
+                
+                {!uploadedCvUrl && (
+                  <div className="flex gap-2">
+                    <Input
+                      type="file"
+                      accept=".pdf"
+                      onChange={handleCVFileChange}
+                      className="flex-1"
+                    />
+                    <Button
+                      type="button"
+                      size="sm"
+                      onClick={handleUploadCV}
+                      disabled={!cvFile || uploadingCV}
+                    >
+                      {uploadingCV ? (
+                        <Loader2 className="h-4 w-4 animate-spin" />
+                      ) : (
+                        <Upload className="h-4 w-4" />
+                      )}
+                    </Button>
+                  </div>
+                )}
               </div>
 
-              {/* Cover Letter Status */}
-              <div className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
-                <div className="flex items-center gap-2">
-                  {hasCoverLetter ? (
-                    <CheckCircle className="h-4 w-4 text-green-600" />
-                  ) : (
-                    <AlertCircle className="h-4 w-4 text-orange-600" />
-                  )}
-                  <span className={hasCoverLetter ? "text-green-800" : "text-orange-800"}>
-                    Carta de Presentación (PDF)
-                  </span>
-                </div>
-                <div className="flex gap-2">
-                                     {hasCoverLetter && coverLetterUrl && (
-                                           <Button variant="outline" size="sm" onClick={() => {
+              {/* Cover Letter Upload Section */}
+              <div className="space-y-3">
+                <div className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
+                  <div className="flex items-center gap-2">
+                    {(hasCoverLetter || uploadedCoverLetterUrl) ? (
+                      <CheckCircle className="h-4 w-4 text-green-600" />
+                    ) : (
+                      <AlertCircle className="h-4 w-4 text-orange-600" />
+                    )}
+                    <span className={(hasCoverLetter || uploadedCoverLetterUrl) ? "text-green-800" : "text-orange-800"}>
+                      Carta de Presentación (PDF)
+                    </span>
+                  </div>
+                  <div className="flex gap-2">
+                    {(hasCoverLetter && coverLetterUrl) && (
+                      <Button variant="outline" size="sm" onClick={() => {
                         const fullCoverLetterUrl = buildFileUrl(coverLetterUrl);
                         window.open(fullCoverLetterUrl, '_blank');
                       }}>
-                       <Download className="h-4 w-4 mr-1" />
-                       Ver Carta
-                     </Button>
-                   )}
-                  <Button 
-                    variant="outline" 
-                    size="sm"
-                    onClick={() => setShowCVCheck(true)}
-                  >
-                    <Upload className="h-4 w-4 mr-1" />
-                    Gestionar
-                  </Button>
+                        <Download className="h-4 w-4 mr-1" />
+                        Ver Carta Existente
+                      </Button>
+                    )}
+                    {uploadedCoverLetterUrl && (
+                      <Button variant="outline" size="sm" onClick={() => {
+                        window.open(uploadedCoverLetterUrl, '_blank');
+                      }}>
+                        <Download className="h-4 w-4 mr-1" />
+                        Ver Carta Subida
+                      </Button>
+                    )}
+                  </div>
                 </div>
+                
+                {!uploadedCoverLetterUrl && (
+                  <div className="flex gap-2">
+                    <Input
+                      type="file"
+                      accept=".pdf"
+                      onChange={handleCoverLetterFileChange}
+                      className="flex-1"
+                    />
+                    <Button
+                      type="button"
+                      size="sm"
+                      onClick={handleUploadCoverLetter}
+                      disabled={!coverLetterFile || uploadingCoverLetter}
+                    >
+                      {uploadingCoverLetter ? (
+                        <Loader2 className="h-4 w-4 animate-spin" />
+                      ) : (
+                        <Upload className="h-4 w-4" />
+                      )}
+                    </Button>
+                  </div>
+                )}
               </div>
 
-                             {(!hasCV && !hasCoverLetter) && (
-                 <div className="p-3 bg-orange-50 rounded-lg">
-                   <div className="flex items-center gap-2 mb-2">
-                     <AlertCircle className="h-4 w-4 text-orange-600" />
-                     <span className="text-orange-800 font-medium">Documentos requeridos</span>
-                   </div>
-                   <p className="text-orange-700 text-sm mb-3">
-                     Necesitas al menos un CV o carta de presentación PDF para aplicar a este empleo.
-                   </p>
-                   <div className="flex gap-2">
-                     <Button 
-                       variant="outline" 
-                       size="sm"
-                       onClick={() => setShowCVCheck(true)}
-                     >
-                       <Upload className="h-4 w-4 mr-1" />
-                       Gestionar Documentos
-                     </Button>
-                   </div>
-                 </div>
-               )}
+
             </div>
 
 
@@ -449,8 +665,8 @@ export default function JobApplicationForm({ jobOffer, onSuccess, onCancel }: Jo
               </div>
             )}
 
-                         {/* Submit Button */}
-             <div className="flex gap-3 pt-4">
+            {/* Submit Button */}
+            <div className="flex gap-3 pt-4">
                {onCancel && (
                  <Button type="button" variant="outline" onClick={onCancel}>
                    Cancelar
@@ -473,16 +689,7 @@ export default function JobApplicationForm({ jobOffer, onSuccess, onCancel }: Jo
                    </>
                  )}
                </Button>
-               {(!hasCV && !hasCoverLetter) && (
-                 <Button 
-                   type="button" 
-                   variant="outline"
-                   onClick={() => setShowCVCheck(true)}
-                 >
-                   <Upload className="mr-2 h-4 w-4" />
-                   Subir Documentos
-                 </Button>
-               )}
+
              </div>
             
             {/* Validation Message */}
@@ -494,10 +701,10 @@ export default function JobApplicationForm({ jobOffer, onSuccess, onCancel }: Jo
                     Para enviar la aplicación necesitas:
                   </span>
                 </div>
-                                 <ul className="mt-2 text-yellow-700 text-sm space-y-1">
-                   {!hasCV && !hasCoverLetter && (
-                     <li>• Al menos un CV o carta de presentación PDF</li>
-                   )}
+                <ul className="mt-2 text-yellow-700 text-sm space-y-1">
+                  {(!hasCV && !hasCoverLetter && !uploadedCvUrl && !uploadedCoverLetterUrl) && (
+                    <li>• Al menos un CV o carta de presentación PDF</li>
+                  )}
                   {questions.filter(q => q.required).map(question => {
                     const answer = formData.questionAnswers.find(qa => qa.questionId === question.id);
                     if (!answer || !answer.answer.trim()) {
@@ -514,25 +721,7 @@ export default function JobApplicationForm({ jobOffer, onSuccess, onCancel }: Jo
         </CardContent>
       </Card>
 
-      {/* CV Check Modal */}
-      <CVCheckModal
-        isOpen={showCVCheck}
-        onClose={() => {
-          setShowCVCheck(false);
-          // Forzar actualización del estado después de cerrar el modal
-          setTimeout(() => {
-            checkCVStatus();
-          }, 100);
-        }}
-        onContinue={() => {
-          setShowCVCheck(false);
-          // Forzar actualización del estado después de continuar
-          setTimeout(() => {
-            checkCVStatus();
-          }, 100);
-        }}
-        jobOfferId={jobOffer.id}
-      />
+
     </div>
   );
 }

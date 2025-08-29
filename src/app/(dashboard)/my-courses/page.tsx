@@ -288,7 +288,7 @@ export default function MyCoursesPage() {
                     <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mt-4">
                       <div className="flex items-center gap-2 text-sm">
                         <Clock className="h-4 w-4 text-muted-foreground" />
-                        <span>{formatTimeSpent(enrollment.course.duration)}</span>
+                        <span>{formatTimeSpent(enrollment.course.duration || 0)}</span>
                       </div>
                       <div className="flex items-center gap-2 text-sm">
                         <Users className="h-4 w-4 text-muted-foreground" />
@@ -318,25 +318,25 @@ export default function MyCoursesPage() {
                       </Button>
                     ) : enrollment.status === "IN_PROGRESS" ? (
                       <Button asChild className="w-full">
-                        <Link href={`/development/courses/${enrollment.id}/learn`}>
+                        <Link href={`/development/courses/${enrollment.id}`}>
                           <Play className="h-4 w-4 mr-2" />
                           Continuar
                         </Link>
                       </Button>
                     ) : (
                       <Button asChild className="w-full">
-                        <Link href={`/development/courses/${enrollment.id}/learn`}>
+                        <Link href={`/development/courses/${enrollment.id}`}>
                           <BookOpen className="h-4 w-4 mr-2" />
-                          Ir al Curso
+                          Comenzar Curso
                         </Link>
                       </Button>
                     )}
 
-                                         <Button variant="outline" asChild className="w-full">
-                       <Link href={`/development/courses/${enrollment.id}`}>
-                         Ver Detalles
-                       </Link>
-                     </Button>
+                    <Button variant="outline" asChild className="w-full">
+                      <Link href={`/courses/${enrollment.courseId}`}>
+                        Ver Detalles
+                      </Link>
+                    </Button>
                   </div>
                 </div>
               </CardContent>

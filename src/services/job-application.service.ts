@@ -320,7 +320,7 @@ export class JobApplicationService {
     try {
       console.log('🏢 JobApplicationService.getApplicationsByJobOffer - Fetching applications for job offer:', jobOfferId);
       
-      let endpoint = `/jobapplication/by-job-offer?jobOfferId=${jobOfferId}`;
+      let endpoint = `/jobapplication?jobOfferId=${jobOfferId}`;
       if (statusFilter && statusFilter !== 'all') {
         endpoint += `&status=${statusFilter}`;
       }
@@ -345,13 +345,25 @@ export class JobApplicationService {
     try {
       console.log('🔍 JobApplicationService.checkIfApplied - Checking application for job offer:', jobOfferId);
       
-      const response = await apiCall(`/jobapplication/check-application/${jobOfferId}`, {
+      // Use direct fetch to Next.js API route with cookies for authentication
+      const response = await fetch(`/api/jobapplication/check-application/${jobOfferId}`, {
         method: 'GET',
-        headers: getAuthHeaders()
+        credentials: 'include', // Include cookies for authentication
+        headers: {
+          'Content-Type': 'application/json'
+        }
       });
 
-      console.log('✅ JobApplicationService.checkIfApplied - Response:', response);
-      return response;
+      if (!response.ok) {
+        if (response.status === 401) {
+          throw new Error('Authentication failed');
+        }
+        throw new Error(`HTTP error! status: ${response.status}`);
+      }
+
+      const data = await response.json();
+      console.log('✅ JobApplicationService.checkIfApplied - Response:', data);
+      return data;
     } catch (error) {
       console.error('❌ JobApplicationService.checkIfApplied - Error:', error);
       throw error;

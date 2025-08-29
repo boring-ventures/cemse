@@ -250,26 +250,38 @@ export class JobOfferService {
     try {
       console.log('🔍 JobOfferService.getJobOffers - Fetching job offers');
 
-      const response = await apiCall('/joboffer', {
+      // Use direct fetch to Next.js API route with cookies for authentication
+      const response = await fetch('/api/joboffer', {
         method: 'GET',
-        headers: getAuthHeaders()
+        credentials: 'include', // Include cookies for authentication
+        headers: {
+          'Content-Type': 'application/json'
+        }
       });
 
-      console.log('✅ JobOfferService.getJobOffers - Job offers fetched:', response);
+      if (!response.ok) {
+        if (response.status === 401) {
+          throw new Error('Authentication failed');
+        }
+        throw new Error(`HTTP error! status: ${response.status}`);
+      }
+
+      const data = await response.json();
+      console.log('✅ JobOfferService.getJobOffers - Job offers fetched:', data);
 
       // Handle both backend response format and mock data format
-      if (response && typeof response === 'object') {
-        if (Array.isArray(response)) {
+      if (data && typeof data === 'object') {
+        if (Array.isArray(data)) {
           // Backend returns array directly
-          return response;
-        } else if (response.jobOffers && Array.isArray(response.jobOffers)) {
+          return data;
+        } else if (data.jobOffers && Array.isArray(data.jobOffers)) {
           // Mock data format: { jobOffers: [...] }
-          return response.jobOffers;
+          return data.jobOffers;
         }
       }
 
       // Fallback: return empty array if response is unexpected
-      console.warn('⚠️ JobOfferService.getJobOffers - Unexpected response format:', response);
+      console.warn('⚠️ JobOfferService.getJobOffers - Unexpected response format:', data);
       return [];
     } catch (error) {
       console.error('❌ JobOfferService.getJobOffers - Error:', error);

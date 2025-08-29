@@ -1,13 +1,39 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
+import { cookies } from 'next/headers';
 import jwt from 'jsonwebtoken';
 
-const JWT_SECRET = process.env.JWT_SECRET || 'dev-secret-key';
+const JWT_SECRET = process.env.JWT_SECRET || 'supersecretkey'; // Same secret as auth/me
 
 function verifyToken(token: string) {
   try {
     return jwt.verify(token, JWT_SECRET) as any;
   } catch (error) {
+    return null;
+  }
+}
+
+// Function to decode JWT token
+function decodeToken(token: string) {
+  try {
+    const tokenParts = token.split(".");
+    if (tokenParts.length !== 3) {
+      return null;
+    }
+
+    const base64Url = tokenParts[1];
+    const base64 = base64Url.replace(/-/g, "+").replace(/_/g, "/");
+    const jsonPayload = decodeURIComponent(
+      atob(base64)
+        .split("")
+        .map(function (c) {
+          return "%" + ("00" + c.charCodeAt(0).toString(16)).slice(-2);
+        })
+        .join("")
+    );
+    return JSON.parse(jsonPayload);
+  } catch (error) {
+    console.error("Error decoding token:", error);
     return null;
   }
 }
@@ -20,21 +46,63 @@ export async function GET(
     const { userId } = await params;
     console.log('📊 API: Fetching dashboard data for user:', userId);
 
-    // Get token from Authorization header
-    const authHeader = request.headers.get('Authorization');
-    if (!authHeader || !authHeader.startsWith('Bearer ')) {
-      return NextResponse.json(
-        { error: 'No token provided' },
-        { status: 401 }
-      );
-    }
+    // First try to get token from Authorization header (for external API calls)
+    let token: string | null = null;
+    let decoded: any = null;
 
-    const token = authHeader.substring(7);
-    const decoded = verifyToken(token);
+    const authHeader = request.headers.get('Authorization');
+    if (authHeader && authHeader.startsWith('Bearer ')) {
+      token = authHeader.substring(7);
+      decoded = verifyToken(token);
+      console.log('📊 API: Using Bearer token from Authorization header');
+    } else {
+      // Fallback to cookie-based authentication
+      console.log('📊 API: No Bearer token, checking cookies');
+      const cookieStore = await cookies();
+      const cookieToken = cookieStore.get('cemse-auth-token')?.value;
+
+      if (!cookieToken) {
+        return NextResponse.json(
+          { error: 'No authentication token found' },
+          { status: 401 }
+        );
+      }
+
+      // Handle different token types
+      if (cookieToken.includes('.') && cookieToken.split('.').length === 3) {
+        // JWT token
+        console.log('📊 API: JWT token found in cookies');
+        decoded = verifyToken(cookieToken);
+        token = cookieToken;
+      } else if (cookieToken.startsWith('auth-token-')) {
+        // Database token format: auth-token-{role}-{userId}-{timestamp}
+        console.log('📊 API: Database token found in cookies');
+        const tokenParts = cookieToken.split('-');
+        
+        if (tokenParts.length >= 4) {
+          const tokenUserId = tokenParts[3];
+          
+          // Verify the user exists and is active
+          const tokenUser = await prisma.user.findUnique({
+            where: { id: tokenUserId, isActive: true }
+          });
+          
+          if (tokenUser) {
+            // Create a mock decoded object for database tokens
+            decoded = {
+              id: tokenUser.id,
+              username: tokenUser.username,
+              role: tokenUser.role
+            };
+            console.log('📊 API: Database token validated for user:', tokenUser.username);
+          }
+        }
+      }
+    }
     
     if (!decoded) {
       return NextResponse.json(
-        { error: 'Invalid token' },
+        { error: 'Invalid or expired token' },
         { status: 401 }
       );
     }

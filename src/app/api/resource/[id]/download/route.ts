@@ -1,96 +1,92 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { getAuthHeaders } from '@/lib/api';
-import { API_BASE } from '@/lib/api';
+import { authenticateToken } from '@/lib/auth-middleware';
+import { prisma } from '@/lib/prisma';
 
-export async function GET(
-  request: NextRequest,
-  { params }: { params: { id: string } }
-) {
-  try {
-    const authHeaders = getAuthHeaders();
-    const response = await fetch(`${API_BASE}/resource/${params.id}/download`, {
-      method: 'GET',
-      headers: {
-        ...authHeaders,
-      },
-    });
-
-    if (!response.ok) {
-      throw new Error(`HTTP error! status: ${response.status}`);
-    }
-
-    // Get the file as a blob
-    const blob = await response.blob();
-    
-    // Get the filename from the response headers or use a default
-    const contentDisposition = response.headers.get('content-disposition');
-    let filename = 'resource';
-    if (contentDisposition) {
-      const filenameMatch = contentDisposition.match(/filename="(.+)"/);
-      if (filenameMatch) {
-        filename = filenameMatch[1];
-      }
-    }
-
-    // Return the file as a blob response
-    return new NextResponse(blob, {
-      headers: {
-        'Content-Type': response.headers.get('content-type') || 'application/octet-stream',
-        'Content-Disposition': `attachment; filename="${filename}"`,
-      },
-    });
-
-  } catch (error) {
-    console.error('Error downloading resource:', error);
-    return NextResponse.json(
-      { success: false, message: 'Error downloading resource' },
-      { status: 500 }
-    );
-  }
-}
-
+// POST /api/resource/[id]/download - Descargar recurso e incrementar contador
 export async function POST(
   request: NextRequest,
   { params }: { params: { id: string } }
 ) {
   try {
-    const authHeaders = getAuthHeaders();
-    const response = await fetch(`${API_BASE}/resource/${params.id}/download`, {
-      method: 'POST',
-      headers: {
-        ...authHeaders,
-      },
+    // Check if resource exists
+    const resource = await prisma.resource.findUnique({
+      where: { id: params.id }
     });
 
-    if (!response.ok) {
-      throw new Error(`HTTP error! status: ${response.status}`);
+    if (!resource) {
+      return NextResponse.json(
+        { success: false, message: 'Resource not found' },
+        { status: 404 }
+      );
     }
 
-    // Get the file as a blob
-    const blob = await response.blob();
-    
-    // Get the filename from the response headers or use a default
-    const contentDisposition = response.headers.get('content-disposition');
-    let filename = 'resource';
-    if (contentDisposition) {
-      const filenameMatch = contentDisposition.match(/filename="(.+)"/);
-      if (filenameMatch) {
-        filename = filenameMatch[1];
+    // Increment download count
+    await prisma.resource.update({
+      where: { id: params.id },
+      data: {
+        downloads: { increment: 1 },
+        updatedAt: new Date()
       }
+    });
+
+    // Return download URL or redirect to external URL
+    if (resource.externalUrl) {
+      return NextResponse.json({
+        success: true,
+        downloadUrl: resource.externalUrl,
+        message: 'Download URL provided'
+      });
+    } else if (resource.downloadUrl) {
+      return NextResponse.json({
+        success: true,
+        downloadUrl: resource.downloadUrl,
+        message: 'Download URL provided'
+      });
+    } else {
+      return NextResponse.json(
+        { success: false, message: 'No download URL available for this resource' },
+        { status: 404 }
+      );
     }
 
-    // Return the file as a blob response
-    return new NextResponse(blob, {
-      headers: {
-        'Content-Type': response.headers.get('content-type') || 'application/octet-stream',
-        'Content-Disposition': `attachment; filename="${filename}"`,
-      },
+  } catch (error) {
+    console.error('Error processing download:', error);
+    return NextResponse.json(
+      { success: false, message: 'Error processing download' },
+      { status: 500 }
+    );
+  }
+}
+
+// GET /api/resource/[id]/download - Obtener información de descarga
+export async function GET(
+  request: NextRequest,
+  { params }: { params: { id: string } }
+) {
+  try {
+    const resource = await prisma.resource.findUnique({
+      where: { id: params.id }
+    });
+
+    if (!resource) {
+      return NextResponse.json(
+        { success: false, message: 'Resource not found' },
+        { status: 404 }
+      );
+    }
+
+    return NextResponse.json({
+      success: true,
+      downloadUrl: resource.downloadUrl || resource.externalUrl,
+      filename: resource.title,
+      filesize: 0, // Not stored in current schema
+      format: resource.format
     });
 
   } catch (error) {
-    console.error('Error downloading resource:', error);
+    console.error('Error getting download info:', error);
     return NextResponse.json(
-      { success: false, message: 'Error downloading resource' },
+      { success: false, message: 'Error retrieving download information' },
       { status: 500 }
     );
   }

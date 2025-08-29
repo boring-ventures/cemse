@@ -109,11 +109,11 @@ export default function CoursePage() {
   const { course } = enrollment;
 
   // Calcular estadísticas reales del curso
-  const totalLessons = course.modules?.reduce((total, module) => 
+  const totalLessons = course.modules?.reduce((total: number, module: any) => 
     total + (module.lessons?.length || 0), 0) || 0;
   
   const totalModules = course.modules?.length || 0;
-  const modulesWithLessons = course.modules?.filter(module => 
+  const modulesWithLessons = course.modules?.filter((module: any) => 
     module.lessons && module.lessons.length > 0).length || 0;
 
   return (
@@ -173,7 +173,7 @@ export default function CoursePage() {
                     <div>
                       <h4 className="font-medium mb-2">Objetivos del Curso:</h4>
                       <ul className="list-disc list-inside space-y-1 text-sm text-muted-foreground">
-                        {course.objectives.map((objective, index) => (
+                        {course.objectives.map((objective: any, index: number) => (
                           <li key={index}>{objective}</li>
                         ))}
                       </ul>
@@ -184,7 +184,7 @@ export default function CoursePage() {
                     <div>
                       <h4 className="font-medium mb-2">Prerrequisitos:</h4>
                       <ul className="list-disc list-inside space-y-1 text-sm text-muted-foreground">
-                        {course.prerequisites.map((prereq, index) => (
+                        {course.prerequisites.map((prereq: any, index: number) => (
                           <li key={index}>{prereq}</li>
                         ))}
                       </ul>
@@ -195,7 +195,7 @@ export default function CoursePage() {
                     <div>
                       <h4 className="font-medium mb-2">Etiquetas:</h4>
                       <div className="flex flex-wrap gap-2">
-                        {course.tags.map((tag, index) => (
+                        {course.tags.map((tag: any, index: number) => (
                           <Badge key={index} variant="secondary" className="text-xs">
                             {tag}
                           </Badge>
@@ -218,7 +218,7 @@ export default function CoursePage() {
               <CardContent>
                 <div className="space-y-4">
                   {course.modules && course.modules.length > 0 ? (
-                    course.modules.map((module, index) => (
+                    course.modules.map((module: any, index: number) => (
                       <div key={module.id} className="border rounded-lg p-4 hover:bg-gray-50 transition-colors">
                         <div className="flex items-start justify-between">
                           <div className="flex-1">
@@ -247,7 +247,7 @@ export default function CoursePage() {
                             {/* Lecciones del módulo */}
                             {module.lessons && module.lessons.length > 0 && (
                               <div className="mt-3 space-y-2">
-                                {module.lessons.map((lesson, lessonIndex) => (
+                                {module.lessons.map((lesson: any, lessonIndex: number) => (
                                   <div key={lesson.id} className="flex items-center gap-2 text-sm">
                                     <div className="w-2 h-2 bg-blue-500 rounded-full"></div>
                                     <span>{lesson.title}</span>

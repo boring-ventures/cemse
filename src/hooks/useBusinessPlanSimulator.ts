@@ -74,8 +74,23 @@ interface SimulatorData {
   breakEvenPoint?: number; // Para compatibilidad con backend
   revenueStreams?: string[]; // Para compatibilidad con backend
   riskAnalysis: string;
-  businessModelCanvas?: BusinessModelCanvas;
+  businessModelCanvas?: BusinessModelCanvas | {
+    keyPartners: string;
+    keyActivities: string;
+    valuePropositions: string;
+    customerRelationships: string;
+    customerSegments: string;
+    keyResources: string;
+    channels: string;
+    costStructure: string;
+    revenueStreams: string;
+  };
   financialCalculator?: FinancialCalculator;
+  costStructure?: {
+    startupCosts: number;
+    monthlyExpenses: number;
+    breakEvenMonth: number;
+  };
   currentStep: number;
   completionPercentage?: number;
   isCompleted?: boolean;
@@ -175,7 +190,7 @@ export const useBusinessPlanSimulator = () => {
   const fetchPlans = useCallback(async () => {
     try {
       setLoading(true);
-      const response = await apiCall('/businessplan');
+      const response = await apiCall('/businessplan/simulator');
       
       if (response.success) {
         // El backend devuelve el objeto directamente, no dentro de result.data

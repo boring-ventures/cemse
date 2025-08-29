@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, use } from "react";
 import { useRouter, useParams } from "next/navigation";
 import {
   ArrowLeft,
@@ -41,13 +41,18 @@ import { ExpressInterestRequest } from "@/services/youth-application.service";
 import YouthApplicationChat from "@/components/youth-applications/YouthApplicationChat";
 import { BACKEND_URL } from "@/lib/api";
 
-export default function YouthApplicationDetailPage() {
+export default function YouthApplicationDetailPage({
+  params,
+}: {
+  params: Promise<{ id: string }>;
+}) {
   const router = useRouter();
-  const params = useParams();
   const { toast } = useToast();
   const { user } = useCurrentUser();
 
-  const applicationId = params.id as string;
+  // Unwrap params Promise using React.use()
+  const resolvedParams = use(params);
+  const applicationId = resolvedParams.id;
   const [activeTab, setActiveTab] = useState("profile");
   const [isExpressingInterest, setIsExpressingInterest] = useState(false);
   const [interestMessage, setInterestMessage] = useState("");

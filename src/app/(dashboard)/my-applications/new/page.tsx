@@ -78,7 +78,6 @@ export default function NewYouthApplicationPage() {
       await createApplication.mutateAsync({
         title: formData.title.trim(),
         description: formData.description.trim(),
-        youthProfileId: profile.id,
         isPublic: formData.isPublic,
         cvFile: cvFile || undefined,
         coverLetterFile: coverLetterFile || undefined,

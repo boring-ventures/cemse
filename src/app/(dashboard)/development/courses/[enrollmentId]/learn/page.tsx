@@ -32,12 +32,13 @@ import {
 import { useCourseEnrollments } from "@/hooks/useCourseEnrollments";
 import { useCourseProgress } from "@/hooks/useCourseProgress";
 import { useQuizSystem } from "@/hooks/useQuizSystem";
-import { VideoPlayer } from "@/components/video/VideoPlayer";
+import { ModernVideoPlayer } from "@/components/video/ModernVideoPlayer";
 import { QuizComponent } from "@/components/courses/QuizComponent";
 import { QuizSelector } from "@/components/courses/QuizSelector";
 import { ResourcesModal } from "@/components/courses/ResourcesModal";
 import { QuizCompletionModal } from "@/components/courses/quiz-completion-modal";
 import { LessonCompletionModal } from "@/components/courses/lesson-completion-modal";
+import { CourseDataInspector } from "@/components/debug/course-data-inspector";
 
 interface Lesson {
   id: string;
@@ -156,17 +157,17 @@ export default function CourseLearningPage() {
               try {
                 // Cargar recursos si no existen
                 if (lesson.resources === undefined) {
-                  const resourcesResponse = await apiCall(
+                  const resourcesResponse = (await apiCall(
                     `/lesson/${lesson.id}/resources`
-                  );
+                  )) as any;
                   lesson.resources = resourcesResponse.resources || [];
                 }
 
                 // Cargar quizzes si no existen
                 if (lesson.quizzes === undefined) {
-                  const quizzesResponse = await apiCall(
+                  const quizzesResponse = (await apiCall(
                     `/lesson/${lesson.id}/quizzes`
-                  );
+                  )) as any;
                   lesson.quizzes = quizzesResponse.quizzes || [];
                 }
               } catch (err) {
@@ -203,11 +204,15 @@ export default function CourseLearningPage() {
 
           // Actualizar el progreso de lecciones
           const lessonProgressMap: Record<string, boolean> = {};
-          progressData.modules.forEach((module: any) => {
-            module.lessons.forEach((lesson: any) => {
-              lessonProgressMap[lesson.id] = lesson.isCompleted;
+          if (progressData.modules && Array.isArray(progressData.modules)) {
+            progressData.modules.forEach((module: any) => {
+              if (module.lessons && Array.isArray(module.lessons)) {
+                module.lessons.forEach((lesson: any) => {
+                  lessonProgressMap[lesson.id] = lesson.isCompleted;
+                });
+              }
             });
-          });
+          }
           setLessonProgress(lessonProgressMap);
         }
 
@@ -389,6 +394,40 @@ export default function CourseLearningPage() {
     }
   };
 
+  const getContentTypeIcon = (contentType: string) => {
+    switch (contentType) {
+      case "VIDEO":
+        return <Video className="h-20 w-20 mx-auto opacity-30" />;
+      case "TEXT":
+        return <FileText className="h-20 w-20 mx-auto opacity-30" />;
+      case "QUIZ":
+        return <Target className="h-20 w-20 mx-auto opacity-30" />;
+      case "EXERCISE":
+        return <BookOpen className="h-20 w-20 mx-auto opacity-30" />;
+      case "DOCUMENT":
+        return <FileText className="h-20 w-20 mx-auto opacity-30" />;
+      default:
+        return <FileText className="h-20 w-20 mx-auto opacity-30" />;
+    }
+  };
+
+  const getContentTypeLabel = (contentType: string) => {
+    switch (contentType) {
+      case "VIDEO":
+        return "Video";
+      case "TEXT":
+        return "Texto";
+      case "QUIZ":
+        return "Quiz";
+      case "EXERCISE":
+        return "Ejercicio";
+      case "DOCUMENT":
+        return "Documento";
+      default:
+        return "Contenido";
+    }
+  };
+
   const isLessonCompleted = (lessonId: string) => {
     return lessonProgress[lessonId] || false;
   };
@@ -439,7 +478,7 @@ export default function CourseLearningPage() {
       );
 
       // Usar el endpoint correcto para completar lección
-      const response = await apiCall("/course-progress/complete-lesson", {
+      const response = (await apiCall("/course-progress/complete-lesson", {
         method: "POST",
         body: JSON.stringify({
           enrollmentId,
@@ -447,7 +486,7 @@ export default function CourseLearningPage() {
           timeSpent: selectedLesson.duration * 60, // Tiempo en segundos
           videoProgress: 1.0, // Video progress completo
         }),
-      });
+      })) as any;
 
       if (response) {
         console.log(
@@ -518,10 +557,23 @@ export default function CourseLearningPage() {
     try {
       console.log("🔍 CourseLearningPage: Updating video progress:", progress);
 
+      // Ensure duration is a valid number, default to 0 if not
+      const validDuration =
+        selectedLesson.duration && !isNaN(selectedLesson.duration)
+          ? selectedLesson.duration
+          : 0;
+      const timeSpentSeconds = validDuration * 60;
+
+      console.log("🔍 CourseLearningPage: Duration validation:", {
+        originalDuration: selectedLesson.duration,
+        validDuration,
+        timeSpentSeconds,
+      });
+
       const result = await updateVideoProgress(
         selectedLesson.id,
         progress,
-        selectedLesson.duration * 60
+        timeSpentSeconds
       );
 
       if (result) {
@@ -691,7 +743,19 @@ export default function CourseLearningPage() {
     );
   }
 
-  if (showQuiz && currentQuiz) {
+  if (showQuiz) {
+    // Show loading if quiz is being loaded
+    if (!currentQuiz) {
+      return (
+        <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+          <div className="text-center">
+            <Loader2 className="h-8 w-8 animate-spin mx-auto mb-4" />
+            <p>Cargando quiz...</p>
+          </div>
+        </div>
+      );
+    }
+
     return (
       <div className="min-h-screen bg-gray-50">
         <div className="bg-white border-b sticky top-0 z-10">
@@ -786,8 +850,8 @@ export default function CourseLearningPage() {
         <div className="flex-1 flex flex-col bg-gray-50 min-h-screen">
           {selectedLesson ? (
             <>
-              {/* Video Player con Navegación */}
-              <div className="relative bg-black h-[400px] min-h-[300px] w-full">
+              {/* Modern Video Player Section */}
+              <div className="relative bg-gradient-to-br from-gray-900 to-black h-[500px] min-h-[400px] w-full">
                 {(() => {
                   console.log(
                     "🎥 CourseLearningPage - selectedLesson:",
@@ -801,75 +865,156 @@ export default function CourseLearningPage() {
                     "🎥 CourseLearningPage - videoUrl:",
                     selectedLesson?.videoUrl
                   );
-                  return (
+
+                  const hasVideo =
                     selectedLesson.contentType === "VIDEO" &&
-                    selectedLesson.videoUrl
-                  );
+                    selectedLesson.videoUrl &&
+                    selectedLesson.videoUrl.trim() !== "";
+
+                  console.log("🎥 CourseLearningPage - hasVideo:", hasVideo);
+
+                  return hasVideo;
                 })() ? (
-                  <div className="relative border-4 border-red-500 bg-red-100">
-                    <div className="absolute top-2 left-2 bg-red-500 text-white px-2 py-1 text-xs z-50">
-                      DEBUG: Video Player Area
-                    </div>
-                    <VideoPlayer
-                      src={selectedLesson.videoUrl}
+                  <div className="relative w-full h-full">
+                    <ModernVideoPlayer
+                      src={selectedLesson.videoUrl || ""}
+                      title={selectedLesson.title}
                       onProgress={handleVideoProgress}
                       onTimeUpdate={(currentTime) => {
-                        // Video time tracking
+                        // Video time tracking with less verbose logging
+                        if (Math.floor(currentTime) % 10 === 0) {
+                          console.log(
+                            `🎥 Video progress: ${Math.floor(currentTime)}s`
+                          );
+                        }
                       }}
+                      onPlay={() => {
+                        console.log("🎥 Video started playing");
+                      }}
+                      onPause={() => {
+                        console.log("🎥 Video paused");
+                      }}
+                      onEnded={() => {
+                        console.log(
+                          "🎥 Video ended - suggesting lesson completion"
+                        );
+                        // Auto-suggest lesson completion when video ends
+                        if (!isLessonCompleted(selectedLesson.id)) {
+                          setTimeout(() => {
+                            setShowLessonCompletionModal(true);
+                          }, 1000); // Small delay for better UX
+                        }
+                      }}
+                      className="w-full h-full"
+                      autoPlay={false}
+                      showControls={true}
                     />
 
-                    {/* Navegación de Lecciones sobre el Video */}
-                    <div className="absolute top-4 left-4 right-4 flex items-center justify-between z-20 pointer-events-none">
-                      <div className="pointer-events-auto">
+                    {/* Lesson Navigation Pills - Bottom */}
+                    <div className="absolute bottom-6 left-1/2 transform -translate-x-1/2 z-30">
+                      <div className="flex items-center gap-3 bg-black/70 backdrop-blur-md rounded-full px-4 py-2 border border-white/20">
                         <Button
                           variant="ghost"
                           size="sm"
                           onClick={navigateToPreviousLesson}
                           disabled={!selectedLesson || !selectedModule}
-                          className="bg-black/80 backdrop-blur-md text-white hover:bg-black/90 border border-white/30 transition-all duration-200 shadow-lg"
+                          className="text-white hover:bg-white/20 rounded-full px-3 py-1 text-xs"
                         >
-                          <ArrowLeft className="h-4 w-4 mr-1" />
+                          <ArrowLeft className="h-3 w-3 mr-1" />
                           Anterior
                         </Button>
-                      </div>
 
-                      <div className="text-center text-white bg-black/80 backdrop-blur-md px-4 py-2 rounded-lg border border-white/30 pointer-events-none shadow-lg">
-                        <p className="text-sm font-semibold">
-                          {selectedLesson.title}
-                        </p>
-                        <p className="text-xs opacity-90">Lección actual</p>
-                      </div>
+                        <div className="text-white text-xs font-medium px-2">
+                          Lección {selectedModule?.orderIndex}.
+                          {selectedLesson.orderIndex}
+                        </div>
 
-                      <div className="pointer-events-auto">
                         <Button
                           variant="ghost"
                           size="sm"
                           onClick={navigateToNextLesson}
                           disabled={!selectedLesson || !selectedModule}
-                          className="bg-black/80 backdrop-blur-md text-white hover:bg-black/90 border border-white/30 transition-all duration-200 shadow-lg"
+                          className="text-white hover:bg-white/20 rounded-full px-3 py-1 text-xs"
                         >
                           Siguiente
-                          <ChevronRight className="h-4 w-4 ml-1" />
+                          <ChevronRight className="h-3 w-3 ml-1" />
                         </Button>
                       </div>
                     </div>
                   </div>
                 ) : (
-                  <div className="flex items-center justify-center h-[300px] bg-gradient-to-br from-gray-900 to-black">
-                    <div className="text-center text-white">
+                  <div className="flex items-center justify-center h-full bg-gradient-to-br from-gray-900 via-gray-800 to-black rounded-lg">
+                    <div className="text-center text-white max-w-md mx-auto p-8">
                       <div className="relative mb-6">
-                        <Video className="h-20 w-20 mx-auto opacity-30" />
-                        <div className="absolute inset-0 animate-pulse">
-                          <Video className="h-20 w-20 mx-auto opacity-10" />
-                        </div>
+                        {selectedLesson.contentType === "VIDEO" ? (
+                          <div className="relative">
+                            <Video className="h-24 w-24 mx-auto opacity-20" />
+                            <div className="absolute inset-0 animate-ping">
+                              <Video className="h-24 w-24 mx-auto opacity-10" />
+                            </div>
+                          </div>
+                        ) : (
+                          <div className="w-24 h-24 mx-auto bg-gradient-to-br from-blue-500/20 to-purple-500/20 rounded-full flex items-center justify-center">
+                            {getContentTypeIcon(selectedLesson.contentType)}
+                          </div>
+                        )}
                       </div>
-                      <h3 className="text-lg font-semibold mb-2">
-                        Sin Video Disponible
+
+                      <h3 className="text-xl font-bold mb-3">
+                        {selectedLesson.contentType === "VIDEO"
+                          ? "Video no disponible"
+                          : `Contenido: ${getContentTypeLabel(selectedLesson.contentType)}`}
                       </h3>
-                      <p className="text-gray-400 max-w-sm">
-                        Esta lección no contiene contenido de video. Revisa la
-                        descripción y recursos de la lección.
+
+                      <p className="text-gray-300 mb-4 leading-relaxed">
+                        {selectedLesson.contentType === "VIDEO"
+                          ? "Esta lección no tiene un video válido configurado. Contacta al instructor para más información."
+                          : "Esta lección contiene contenido de texto y recursos. Revisa la información detallada más abajo."}
                       </p>
+
+                      {selectedLesson.contentType === "VIDEO" && (
+                        <div className="bg-black/30 rounded-lg p-4 mt-6 border border-white/10">
+                          <h4 className="text-sm font-medium text-gray-200 mb-2">
+                            Información técnica:
+                          </h4>
+                          <div className="text-xs text-gray-400 space-y-1">
+                            <p>
+                              URL: {selectedLesson.videoUrl || "No configurada"}
+                            </p>
+                            <p>Tipo: {selectedLesson.contentType}</p>
+                            <p>
+                              Estado:{" "}
+                              {selectedLesson.videoUrl
+                                ? "URL configurada pero no válida"
+                                : "URL no configurada"}
+                            </p>
+                          </div>
+                        </div>
+                      )}
+
+                      {/* Navigation for non-video lessons */}
+                      <div className="flex justify-center gap-3 mt-6">
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          onClick={navigateToPreviousLesson}
+                          disabled={!selectedLesson || !selectedModule}
+                          className="bg-white/10 border-white/20 text-white hover:bg-white/20"
+                        >
+                          <ArrowLeft className="h-4 w-4 mr-2" />
+                          Anterior
+                        </Button>
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          onClick={navigateToNextLesson}
+                          disabled={!selectedLesson || !selectedModule}
+                          className="bg-white/10 border-white/20 text-white hover:bg-white/20"
+                        >
+                          Siguiente
+                          <ChevronRight className="h-4 w-4 ml-2" />
+                        </Button>
+                      </div>
                     </div>
                   </div>
                 )}
@@ -1233,6 +1378,20 @@ export default function CourseLearningPage() {
         nextLesson={getNextLesson()}
         loading={completingLesson}
       />
+
+      {/* Debug Component */}
+      {process.env.NODE_ENV === "development" && (
+        <CourseDataInspector
+          data={{
+            enrollment,
+            selectedLesson,
+            selectedModule,
+            courseProgress,
+            lessonProgress,
+          }}
+          title="Course Learning Debug Data"
+        />
+      )}
     </div>
   );
 }

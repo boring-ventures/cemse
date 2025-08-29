@@ -13,6 +13,10 @@ export interface Municipality {
   email: string;
   phone?: string;
   isActive: boolean;
+  institutionType: "MUNICIPALITY" | "NGO" | "FOUNDATION" | "OTHER";
+  customType?: string;
+  primaryColor?: string;
+  secondaryColor?: string;
   createdAt: string;
   updatedAt: string;
   createdBy?: string;

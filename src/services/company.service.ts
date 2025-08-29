@@ -1,4 +1,4 @@
-// import { prisma } from "@/lib/prisma";
+import { prisma } from "@/lib/prisma";
 import { isMunicipalityRole, isCompanyRole, isSuperAdminRole } from "@/lib/utils";
 
 export class CompanyService {

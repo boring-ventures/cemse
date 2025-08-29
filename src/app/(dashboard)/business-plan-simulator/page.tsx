@@ -29,9 +29,10 @@ import {
   Leaf,
   Heart,
   HelpCircle,
-  Link,
+  ExternalLink,
   Video,
 } from "lucide-react";
+import Link from "next/link";
 import {
   Tooltip,
   TooltipContent,
@@ -85,17 +86,19 @@ interface BackendBusinessPlan {
     longTermImpact: string;
   };
   executiveSummary?: string;
-  businessDescription?: string;
+  missionStatement?: string; // Maps to businessDescription in frontend
+  visionStatement?: string;
   marketAnalysis?: string;
   competitiveAnalysis?: string;
   marketingStrategy?: string;
   operationalPlan?: string;
-  managementTeam?: string;
-  initialInvestment?: string;
-  monthlyExpenses?: string;
+  managementTeam?: any; // JSON object
+  initialInvestment?: any; // Decimal
+  monthlyExpenses?: any; // Decimal
   breakEvenPoint?: number;
   revenueStreams?: string[];
   riskAnalysis?: string;
+  businessModelCanvas?: any; // JSON object from backend
   completionPercentage?: number;
   isCompleted?: boolean;
   lastSection?: string;
@@ -168,6 +171,18 @@ export default function BusinessPlanSimulatorPage() {
   const [activeTab, setActiveTab] = useState("wizard");
   const [autoSaving, setAutoSaving] = useState(false);
 
+  const [businessModelCanvas, setBusinessModelCanvas] = useState({
+    keyPartners: "",
+    keyActivities: "",
+    valuePropositions: "",
+    customerRelationships: "",
+    customerSegments: "",
+    keyResources: "",
+    channels: "",
+    costStructure: "",
+    revenueStreams: "",
+  });
+
   // Use refs to manage autosave timeout and prevent multiple calls
   const autoSaveTimeoutRef = useRef<NodeJS.Timeout | null>(null);
   const lastSavedDataRef = useRef<string>("");
@@ -218,11 +233,13 @@ export default function BusinessPlanSimulatorPage() {
           const currentDataString = JSON.stringify(backendData);
           if (currentDataString !== lastSavedDataRef.current) {
             setAutoSaving(true);
+            console.log('🔄 Auto-saving business plan data:', backendData);
             await saveSimulatorData(backendData, { silent: true });
             lastSavedDataRef.current = currentDataString;
           }
         } catch (error) {
           console.error("Auto-save error:", error);
+          // Don't show error alerts for auto-save failures to avoid interrupting user experience
         } finally {
           setAutoSaving(false);
         }
@@ -247,6 +264,18 @@ export default function BusinessPlanSimulatorPage() {
     },
     [debouncedAutoSave]
   );
+
+  // Sync financial data with business plan when switching tabs
+  useEffect(() => {
+    if (activeTab === "calculator") {
+      // Sync from business plan to calculator
+      setFinancialData((prev) => ({
+        ...prev,
+        initialInvestment: businessPlan.financialProjections.startupCosts || prev.initialInvestment,
+        monthlyRevenue: businessPlan.financialProjections.monthlyRevenue || prev.monthlyRevenue,
+      }));
+    }
+  }, [activeTab, businessPlan.financialProjections]);
 
   // Cleanup timeout on unmount
   useEffect(() => {
@@ -276,12 +305,14 @@ export default function BusinessPlanSimulatorPage() {
             latestPlan.tripleImpactAssessment?.longTermImpact ?? "",
         },
         executiveSummary: latestPlan.executiveSummary || "",
-        businessDescription: latestPlan.businessDescription || "",
+        businessDescription: latestPlan.missionStatement || "",
         marketAnalysis: latestPlan.marketAnalysis || "",
         competitiveAnalysis: latestPlan.competitiveAnalysis || "",
         marketingPlan: latestPlan.marketingStrategy || "",
         operationalPlan: latestPlan.operationalPlan || "",
-        managementTeam: latestPlan.managementTeam || "",
+        managementTeam: typeof latestPlan.managementTeam === 'object' 
+          ? (latestPlan.managementTeam?.description || "") 
+          : (latestPlan.managementTeam || ""),
         financialProjections: {
           startupCosts:
             latestPlan.costStructure?.startupCosts ||
@@ -339,6 +370,32 @@ export default function BusinessPlanSimulatorPage() {
           social: impactAnalysis.social,
           environmental: impactAnalysis.environmental,
         });
+      }
+
+      // Cargar datos del canvas si existen
+      if (latestPlan.businessModelCanvas) {
+        try {
+          const canvasData = typeof latestPlan.businessModelCanvas === 'string' 
+            ? JSON.parse(latestPlan.businessModelCanvas)
+            : latestPlan.businessModelCanvas;
+          
+          // Only update if canvasData has the expected structure
+          if (canvasData && typeof canvasData === 'object' && canvasData.keyPartners !== undefined) {
+            setBusinessModelCanvas({
+              keyPartners: canvasData.keyPartners || "",
+              keyActivities: canvasData.keyActivities || "",
+              valuePropositions: canvasData.valuePropositions || "",
+              customerRelationships: canvasData.customerRelationships || "",
+              customerSegments: canvasData.customerSegments || "",
+              keyResources: canvasData.keyResources || "",
+              channels: canvasData.channels || "",
+              costStructure: canvasData.costStructure || "",
+              revenueStreams: canvasData.revenueStreams || "",
+            });
+          }
+        } catch (error) {
+          console.error("Error parsing business model canvas data:", error);
+        }
       }
     }
   }, [businessPlans, analyzeTripleImpactHook]);
@@ -795,7 +852,7 @@ export default function BusinessPlanSimulatorPage() {
                         <Label>Material de Apoyo</Label>
                         <div className="space-y-2">
                           <div className="flex items-center gap-2">
-                            <Link className="h-4 w-4 text-blue-600" />
+                            <ExternalLink className="h-4 w-4 text-blue-600" />
                             <Input
                               placeholder="URL de recursos adicionales..."
                               className="flex-1"
@@ -817,7 +874,7 @@ export default function BusinessPlanSimulatorPage() {
                     </div>
                   )}
 
-                  {currentStep === 7 && (
+                  {currentStep === 8 && (
                     <div className="space-y-6">
                       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                         <div className="space-y-2">
@@ -908,26 +965,26 @@ export default function BusinessPlanSimulatorPage() {
                             isCompleted: completionPercentage === 100,
                           });
 
-                          if (result.success && result.data) {
-                            alert(
-                              `Plan guardado! Progreso: ${result.data.completionPercentage}%`
-                            );
-                            if (
-                              result.data.impactAnalysis.recommendations
-                                .length > 0
-                            ) {
+                                                      if (result.success && result.data) {
+                              // Show success message with better formatting
+                              let message = `✅ Plan guardado exitosamente!\n\n📊 Progreso: ${result.data.completionPercentage}%`;
+                              
+                              // Check if this is a new entrepreneurship creation
+                              if (result.data.message?.includes('created') && !businessPlan.entrepreneurshipId) {
+                                message = `🎉 ¡Emprendimiento creado automáticamente!\n\n` + message + `\n\n💡 Se ha creado un emprendimiento por defecto para tu plan de negocios. Puedes editarlo más tarde desde tu perfil.`;
+                              }
+                              
+                              if (result.data.impactAnalysis?.recommendations?.length > 0) {
+                                const recommendations = result.data.impactAnalysis.recommendations.join('\n• ');
+                                alert(`${message}\n\n💡 Recomendaciones:\n• ${recommendations}`);
+                              } else {
+                                alert(message);
+                              }
+                            } else {
                               alert(
-                                "Recomendaciones: " +
-                                  result.data.impactAnalysis.recommendations.join(
-                                    ", "
-                                  )
+                                "❌ Error al guardar el plan:\n" + (result.error || "Error desconocido")
                               );
                             }
-                          } else {
-                            alert(
-                              "Error: " + (result.error || "Error desconocido")
-                            );
-                          }
                         }}
                         disabled={loading || autoSaving}
                       >
@@ -947,24 +1004,18 @@ export default function BusinessPlanSimulatorPage() {
                             });
 
                             if (result.success && result.data) {
-                              alert(
-                                `¡Plan finalizado! Progreso: ${result.data.completionPercentage}%`
-                              );
-                              if (
-                                result.data.impactAnalysis.recommendations
-                                  .length > 0
-                              ) {
-                                alert(
-                                  "Recomendaciones: " +
-                                    result.data.impactAnalysis.recommendations.join(
-                                      ", "
-                                    )
-                                );
+                              // Show completion message with better formatting
+                              const message = `🎉 ¡Plan de negocios finalizado!\n\n📊 Progreso: ${result.data.completionPercentage}%\n\n¡Felicitaciones por completar tu plan de negocios!`;
+                              
+                              if (result.data.impactAnalysis?.recommendations?.length > 0) {
+                                const recommendations = result.data.impactAnalysis.recommendations.join('\n• ');
+                                alert(`${message}\n\n💡 Recomendaciones finales:\n• ${recommendations}`);
+                              } else {
+                                alert(message);
                               }
                             } else {
                               alert(
-                                "Error: " +
-                                  (result.error || "Error desconocido")
+                                "❌ Error al finalizar el plan:\n" + (result.error || "Error desconocido")
                               );
                             }
                           }}
@@ -1053,6 +1104,13 @@ export default function BusinessPlanSimulatorPage() {
                   <CardContent className="pt-0">
                     <Textarea
                       placeholder="¿Quiénes son tus socios estratégicos?"
+                      value={businessModelCanvas.keyPartners}
+                      onChange={(e) =>
+                        setBusinessModelCanvas((prev) => ({
+                          ...prev,
+                          keyPartners: e.target.value,
+                        }))
+                      }
                       className="min-h-[100px] border-none p-0 resize-none"
                     />
                   </CardContent>
@@ -1068,6 +1126,13 @@ export default function BusinessPlanSimulatorPage() {
                   <CardContent className="pt-0">
                     <Textarea
                       placeholder="¿Qué actividades son esenciales?"
+                      value={businessModelCanvas.keyActivities}
+                      onChange={(e) =>
+                        setBusinessModelCanvas((prev) => ({
+                          ...prev,
+                          keyActivities: e.target.value,
+                        }))
+                      }
                       className="min-h-[100px] border-none p-0 resize-none"
                     />
                   </CardContent>
@@ -1083,6 +1148,13 @@ export default function BusinessPlanSimulatorPage() {
                   <CardContent className="pt-0">
                     <Textarea
                       placeholder="¿Qué valor único ofreces?"
+                      value={businessModelCanvas.valuePropositions}
+                      onChange={(e) =>
+                        setBusinessModelCanvas((prev) => ({
+                          ...prev,
+                          valuePropositions: e.target.value,
+                        }))
+                      }
                       className="min-h-[200px] border-none p-0 resize-none"
                     />
                   </CardContent>
@@ -1098,6 +1170,13 @@ export default function BusinessPlanSimulatorPage() {
                   <CardContent className="pt-0">
                     <Textarea
                       placeholder="¿Cómo te relacionas con clientes?"
+                      value={businessModelCanvas.customerRelationships}
+                      onChange={(e) =>
+                        setBusinessModelCanvas((prev) => ({
+                          ...prev,
+                          customerRelationships: e.target.value,
+                        }))
+                      }
                       className="min-h-[100px] border-none p-0 resize-none"
                     />
                   </CardContent>
@@ -1113,6 +1192,13 @@ export default function BusinessPlanSimulatorPage() {
                   <CardContent className="pt-0">
                     <Textarea
                       placeholder="¿Quiénes son tus clientes?"
+                      value={businessModelCanvas.customerSegments}
+                      onChange={(e) =>
+                        setBusinessModelCanvas((prev) => ({
+                          ...prev,
+                          customerSegments: e.target.value,
+                        }))
+                      }
                       className="min-h-[200px] border-none p-0 resize-none"
                     />
                   </CardContent>
@@ -1128,6 +1214,13 @@ export default function BusinessPlanSimulatorPage() {
                   <CardContent className="pt-0">
                     <Textarea
                       placeholder="¿Qué recursos necesitas?"
+                      value={businessModelCanvas.keyResources}
+                      onChange={(e) =>
+                        setBusinessModelCanvas((prev) => ({
+                          ...prev,
+                          keyResources: e.target.value,
+                        }))
+                      }
                       className="min-h-[100px] border-none p-0 resize-none"
                     />
                   </CardContent>
@@ -1143,6 +1236,13 @@ export default function BusinessPlanSimulatorPage() {
                   <CardContent className="pt-0">
                     <Textarea
                       placeholder="¿Cómo llegas a tus clientes?"
+                      value={businessModelCanvas.channels}
+                      onChange={(e) =>
+                        setBusinessModelCanvas((prev) => ({
+                          ...prev,
+                          channels: e.target.value,
+                        }))
+                      }
                       className="min-h-[100px] border-none p-0 resize-none"
                     />
                   </CardContent>
@@ -1158,6 +1258,13 @@ export default function BusinessPlanSimulatorPage() {
                   <CardContent className="pt-0">
                     <Textarea
                       placeholder="¿Cuáles son tus principales costos?"
+                      value={businessModelCanvas.costStructure}
+                      onChange={(e) =>
+                        setBusinessModelCanvas((prev) => ({
+                          ...prev,
+                          costStructure: e.target.value,
+                        }))
+                      }
                       className="min-h-[100px] border-none p-0 resize-none"
                     />
                   </CardContent>
@@ -1173,6 +1280,13 @@ export default function BusinessPlanSimulatorPage() {
                   <CardContent className="pt-0">
                     <Textarea
                       placeholder="¿Cómo generas ingresos?"
+                      value={businessModelCanvas.revenueStreams}
+                      onChange={(e) =>
+                        setBusinessModelCanvas((prev) => ({
+                          ...prev,
+                          revenueStreams: e.target.value,
+                        }))
+                      }
                       className="min-h-[100px] border-none p-0 resize-none"
                     />
                   </CardContent>
@@ -1180,11 +1294,58 @@ export default function BusinessPlanSimulatorPage() {
               </div>
 
               <div className="flex justify-end mt-6 gap-2">
-                <Button variant="outline">
+                <Button
+                  variant="outline"
+                  onClick={async () => {
+                    try {
+                      const completionPercentage = calculateCompletion(businessPlan);
+                      
+                      // Format data for backend
+                      const backendData = {
+                        entrepreneurshipId: businessPlan.entrepreneurshipId,
+                        tripleImpactAssessment: businessPlan.tripleImpactAssessment,
+                        executiveSummary: businessPlan.executiveSummary,
+                        businessDescription: businessPlan.businessDescription,
+                        marketAnalysis: businessPlan.marketAnalysis,
+                        competitiveAnalysis: businessPlan.competitiveAnalysis,
+                        marketingStrategy: businessPlan.marketingPlan,
+                        operationalPlan: businessPlan.operationalPlan,
+                        managementTeam: businessPlan.managementTeam,
+                        costStructure: {
+                          startupCosts: businessPlan.financialProjections.startupCosts,
+                          monthlyExpenses: businessPlan.financialProjections.monthlyExpenses,
+                          breakEvenMonth: businessPlan.financialProjections.breakEvenMonth,
+                        },
+                        revenueStreams: businessPlan.financialProjections.revenueStreams,
+                        riskAnalysis: businessPlan.riskAnalysis,
+                        businessModelCanvas,
+                        currentStep,
+                        completionPercentage,
+                        isCompleted: completionPercentage === 100,
+                      };
+                      
+                      const result = await saveSimulatorData(backendData);
+                      if (result.success) {
+                        alert("✅ Canvas guardado exitosamente!");
+                      } else {
+                        alert("❌ Error al guardar: " + (result.error || "Error desconocido"));
+                      }
+                    } catch (error) {
+                      console.error("Error saving canvas:", error);
+                      alert("❌ Error inesperado al guardar el canvas");
+                    }
+                  }}
+                  disabled={loading || autoSaving}
+                >
                   <Save className="h-4 w-4 mr-2" />
-                  Guardar Canvas
+                  {loading || autoSaving ? "Guardando..." : "Guardar Canvas"}
                 </Button>
-                <Button>
+                <Button
+                  onClick={() => {
+                    // TODO: Implement PDF export functionality
+                    alert("Funcionalidad de exportación a PDF en desarrollo");
+                  }}
+                >
                   <Download className="h-4 w-4 mr-2" />
                   Exportar a PDF
                 </Button>
@@ -1210,12 +1371,17 @@ export default function BusinessPlanSimulatorPage() {
                   <Input
                     type="number"
                     value={financialData.initialInvestment}
-                    onChange={(e) =>
+                    onChange={(e) => {
+                      const value = Number(e.target.value);
                       setFinancialData((prev) => ({
                         ...prev,
-                        initialInvestment: Number(e.target.value),
-                      }))
-                    }
+                        initialInvestment: value,
+                      }));
+                      updateBusinessPlan("financialProjections", {
+                        ...businessPlan.financialProjections,
+                        startupCosts: value,
+                      });
+                    }}
                   />
                 </div>
                 <div className="space-y-2">
@@ -1223,12 +1389,17 @@ export default function BusinessPlanSimulatorPage() {
                   <Input
                     type="number"
                     value={financialData.monthlyRevenue}
-                    onChange={(e) =>
+                    onChange={(e) => {
+                      const value = Number(e.target.value);
                       setFinancialData((prev) => ({
                         ...prev,
-                        monthlyRevenue: Number(e.target.value),
-                      }))
-                    }
+                        monthlyRevenue: value,
+                      }));
+                      updateBusinessPlan("financialProjections", {
+                        ...businessPlan.financialProjections,
+                        monthlyRevenue: value,
+                      });
+                    }}
                   />
                 </div>
                 <div className="space-y-2">
@@ -1236,12 +1407,19 @@ export default function BusinessPlanSimulatorPage() {
                   <Input
                     type="number"
                     value={financialData.fixedCosts}
-                    onChange={(e) =>
+                    onChange={(e) => {
+                      const value = Number(e.target.value);
                       setFinancialData((prev) => ({
                         ...prev,
-                        fixedCosts: Number(e.target.value),
-                      }))
-                    }
+                        fixedCosts: value,
+                      }));
+                      // Update monthly expenses in business plan
+                      const totalExpenses = value + financialData.variableCosts;
+                      updateBusinessPlan("financialProjections", {
+                        ...businessPlan.financialProjections,
+                        monthlyExpenses: totalExpenses,
+                      });
+                    }}
                   />
                 </div>
                 <div className="space-y-2">
@@ -1249,12 +1427,19 @@ export default function BusinessPlanSimulatorPage() {
                   <Input
                     type="number"
                     value={financialData.variableCosts}
-                    onChange={(e) =>
+                    onChange={(e) => {
+                      const value = Number(e.target.value);
                       setFinancialData((prev) => ({
                         ...prev,
-                        variableCosts: Number(e.target.value),
-                      }))
-                    }
+                        variableCosts: value,
+                      }));
+                      // Update monthly expenses in business plan
+                      const totalExpenses = financialData.fixedCosts + value;
+                      updateBusinessPlan("financialProjections", {
+                        ...businessPlan.financialProjections,
+                        monthlyExpenses: totalExpenses,
+                      });
+                    }}
                   />
                 </div>
                 <div className="space-y-2">

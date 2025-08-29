@@ -1,7 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { authenticateToken } from '@/lib/auth-middleware';
-import { getAuthHeaders } from '@/lib/api';
-import { API_BASE } from '@/lib/api';
+import { prisma } from '@/lib/prisma';
 
 // GET /api/resource/[id] - Obtener un recurso específico
 export async function GET(
@@ -9,21 +8,18 @@ export async function GET(
   { params }: { params: { id: string } }
 ) {
   try {
-    const authHeaders = getAuthHeaders();
-    const response = await fetch(`${API_BASE}/resource/${params.id}`, {
-      method: 'GET',
-      headers: {
-        'Content-Type': 'application/json',
-        ...authHeaders,
-      },
+    const resource = await prisma.resource.findUnique({
+      where: { id: params.id }
     });
 
-    if (!response.ok) {
-      throw new Error(`HTTP error! status: ${response.status}`);
+    if (!resource) {
+      return NextResponse.json(
+        { success: false, message: 'Resource not found' },
+        { status: 404 }
+      );
     }
 
-    const data = await response.json();
-    return NextResponse.json(data);
+    return NextResponse.json({ success: true, resource });
 
   } catch (error) {
     console.error('Error getting resource:', error);
@@ -40,7 +36,6 @@ export async function PUT(
   { params }: { params: { id: string } }
 ) {
   try {
-    // Verificar autenticación
     const authResult = await authenticateToken(request);
     if (!authResult.success) {
       return NextResponse.json(
@@ -51,28 +46,28 @@ export async function PUT(
 
     const body = await request.json();
 
-    // Agregar información de actualización
-    const updateData = {
-      ...body,
-      updatedAt: new Date().toISOString()
-    };
-
-    const authHeaders = getAuthHeaders();
-    const response = await fetch(`${API_BASE}/resource/${params.id}`, {
-      method: 'PUT',
-      headers: {
-        'Content-Type': 'application/json',
-        ...authHeaders,
-      },
-      body: JSON.stringify(updateData),
+    // Check if resource exists
+    const existingResource = await prisma.resource.findUnique({
+      where: { id: params.id }
     });
 
-    if (!response.ok) {
-      throw new Error(`HTTP error! status: ${response.status}`);
+    if (!existingResource) {
+      return NextResponse.json(
+        { success: false, message: 'Resource not found' },
+        { status: 404 }
+      );
     }
 
-    const data = await response.json();
-    return NextResponse.json(data);
+    // Update resource
+    const resource = await prisma.resource.update({
+      where: { id: params.id },
+      data: {
+        ...body,
+        updatedAt: new Date()
+      }
+    });
+
+    return NextResponse.json({ success: true, resource });
 
   } catch (error) {
     console.error('Error updating resource:', error);
@@ -89,7 +84,6 @@ export async function DELETE(
   { params }: { params: { id: string } }
 ) {
   try {
-    // Verificar autenticación
     const authResult = await authenticateToken(request);
     if (!authResult.success) {
       return NextResponse.json(
@@ -98,20 +92,24 @@ export async function DELETE(
       );
     }
 
-    const authHeaders = getAuthHeaders();
-    const response = await fetch(`${API_BASE}/resource/${params.id}`, {
-      method: 'DELETE',
-      headers: {
-        ...authHeaders,
-      },
+    // Check if resource exists
+    const existingResource = await prisma.resource.findUnique({
+      where: { id: params.id }
     });
 
-    if (!response.ok) {
-      throw new Error(`HTTP error! status: ${response.status}`);
+    if (!existingResource) {
+      return NextResponse.json(
+        { success: false, message: 'Resource not found' },
+        { status: 404 }
+      );
     }
 
-    const data = await response.json();
-    return NextResponse.json(data);
+    // Delete resource
+    await prisma.resource.delete({
+      where: { id: params.id }
+    });
+
+    return NextResponse.json({ success: true, message: 'Resource deleted successfully' });
 
   } catch (error) {
     console.error('Error deleting resource:', error);

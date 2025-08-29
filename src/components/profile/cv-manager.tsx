@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useRef } from "react";
+import { useState, useRef, useEffect, useCallback } from "react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -56,9 +56,28 @@ export function CVManager() {
   const [newSkill, setNewSkill] = useState("");
   const [newInterest, setNewInterest] = useState("");
   const [uploading, setUploading] = useState(false);
-  const [profileImage, setProfileImage] = useState(cvData?.personalInfo?.profileImage || "");
+  const [profileImage, setProfileImage] = useState("");
   const [showImageUpload, setShowImageUpload] = useState(false);
   const [uploadError, setUploadError] = useState("");
+  
+  // Local form state for immediate responsiveness
+  const [localFormData, setLocalFormData] = useState({
+    jobTitle: "",
+    professionalSummary: "",
+    personalInfo: {
+      firstName: "",
+      lastName: "",
+      email: "",
+      phone: "",
+      address: "",
+      addressLine: "",
+      city: "",
+      state: "",
+      country: "",
+      municipality: "",
+      department: "",
+    }
+  });
   
   // Estado para secciones colapsables
   const [collapsedSections, setCollapsedSections] = useState({
@@ -71,6 +90,116 @@ export function CVManager() {
     interests: false
   });
 
+  // Sync profile image with CV data
+  useEffect(() => {
+    if (cvData?.personalInfo?.profileImage) {
+      setProfileImage(cvData.personalInfo.profileImage);
+    }
+  }, [cvData?.personalInfo?.profileImage]);
+
+  // Sync local form data with CV data
+  useEffect(() => {
+    if (cvData) {
+      setLocalFormData({
+        jobTitle: cvData.jobTitle || "",
+        professionalSummary: cvData.professionalSummary || "",
+        personalInfo: {
+          firstName: cvData.personalInfo?.firstName || "",
+          lastName: cvData.personalInfo?.lastName || "",
+          email: cvData.personalInfo?.email || "",
+          phone: cvData.personalInfo?.phone || "",
+          address: cvData.personalInfo?.address || "",
+          addressLine: cvData.personalInfo?.addressLine || "",
+          city: cvData.personalInfo?.city || "",
+          state: cvData.personalInfo?.state || "",
+          country: cvData.personalInfo?.country || "",
+          municipality: cvData.personalInfo?.municipality || "",
+          department: cvData.personalInfo?.department || "",
+        }
+      });
+    }
+  }, [cvData]);
+
+  // Debounce refs for API calls
+  const jobTitleTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+  const professionalSummaryTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+  const personalInfoTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+
+  // Helper function for immediate local updates with debounced API calls
+  const handleJobTitleChange = useCallback((value: string) => {
+    setLocalFormData(prev => ({ ...prev, jobTitle: value }));
+    
+    // Clear existing timeout
+    if (jobTitleTimeoutRef.current) {
+      clearTimeout(jobTitleTimeoutRef.current);
+    }
+    
+    // Set new timeout for API call
+    jobTitleTimeoutRef.current = setTimeout(() => {
+      updateCVData({ jobTitle: value });
+    }, 800);
+  }, [updateCVData]);
+
+  const handleProfessionalSummaryChange = useCallback((value: string) => {
+    setLocalFormData(prev => ({ ...prev, professionalSummary: value }));
+    
+    // Clear existing timeout
+    if (professionalSummaryTimeoutRef.current) {
+      clearTimeout(professionalSummaryTimeoutRef.current);
+    }
+    
+    // Set new timeout for API call
+    professionalSummaryTimeoutRef.current = setTimeout(() => {
+      updateCVData({ professionalSummary: value });
+    }, 800);
+  }, [updateCVData]);
+
+  const handleLocalPersonalInfoChange = useCallback((field: string, value: string) => {
+    // Update local state immediately for responsive UI
+    setLocalFormData(prev => {
+      const newData = {
+        ...prev,
+        personalInfo: {
+          ...prev.personalInfo,
+          [field]: value
+        }
+      };
+      
+      // Clear existing timeout to prevent multiple API calls
+      if (personalInfoTimeoutRef.current) {
+        clearTimeout(personalInfoTimeoutRef.current);
+      }
+      
+      // Debounced API call with the updated local data
+      personalInfoTimeoutRef.current = setTimeout(() => {
+        const updatedPersonalInfo = {
+          ...newData.personalInfo,
+          // Include additional fields that might not be in local state
+          birthDate: cvData?.personalInfo?.birthDate,
+          gender: cvData?.personalInfo?.gender,
+          profileImage: cvData?.personalInfo?.profileImage,
+        };
+
+        updateCVData({
+          personalInfo: updatedPersonalInfo
+        }).catch(error => {
+          console.error('Error updating personal info:', error);
+        });
+      }, 800);
+      
+      return newData;
+    });
+  }, [cvData?.personalInfo?.birthDate, cvData?.personalInfo?.gender, cvData?.personalInfo?.profileImage, updateCVData]);
+
+  // Cleanup timeouts on unmount
+  useEffect(() => {
+    return () => {
+      if (jobTitleTimeoutRef.current) clearTimeout(jobTitleTimeoutRef.current);
+      if (professionalSummaryTimeoutRef.current) clearTimeout(professionalSummaryTimeoutRef.current);
+      if (personalInfoTimeoutRef.current) clearTimeout(personalInfoTimeoutRef.current);
+    };
+  }, []);
+
   const toggleSection = (section: keyof typeof collapsedSections) => {
     setCollapsedSections(prev => ({
       ...prev,
@@ -81,27 +210,37 @@ export function CVManager() {
   const uploadProfileImage = async (file: File) => {
     try {
       setUploading(true);
+      setUploadError("");
+      
       const formData = new FormData();
       formData.append('image', file);
 
-      const response = await fetch(BACKEND_ENDPOINTS.FILES_UPLOAD_PROFILE_IMAGE, {
+      // Use local Next.js API route with cookie authentication
+      const response = await fetch('/api/files/upload/profile-image', {
         method: 'POST',
-        headers: {
-          'Authorization': `Bearer ${localStorage.getItem('token')}`
-        },
+        credentials: 'include', // Include cookies for authentication
         body: formData
       });
 
       if (!response.ok) {
-        throw new Error('Error al subir la imagen');
+        if (response.status === 401) {
+          throw new Error('Authentication failed');
+        }
+        const errorData = await response.json();
+        throw new Error(errorData.error || `HTTP error! status: ${response.status}`);
       }
 
       const data = await response.json();
-      setProfileImage(data.imageUrl);
+      const imageUrl = data.imageUrl || data.url;
+      
+      // Update both local state and CV data
+      setProfileImage(imageUrl);
+      await updateProfileAvatar(imageUrl);
+      
       setShowImageUpload(false);
     } catch (error) {
       console.error('Error uploading image:', error);
-      setUploadError('Error al subir la imagen');
+      setUploadError(error instanceof Error ? error.message : 'Error al subir la imagen');
     } finally {
       setUploading(false);
     }
@@ -109,44 +248,23 @@ export function CVManager() {
 
   const updateProfileAvatar = async (imageUrl: string | null) => {
     try {
-      const response = await fetch(BACKEND_ENDPOINTS.PROFILE_AVATAR, {
-        method: 'PUT',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${localStorage.getItem('token')}`
-        },
-        body: JSON.stringify({ avatarUrl: imageUrl })
+      // Use local form data to avoid conflicts
+      const updatedPersonalInfo = {
+        ...localFormData.personalInfo,
+        // Include additional fields that might not be in local state
+        birthDate: cvData?.personalInfo?.birthDate,
+        gender: cvData?.personalInfo?.gender,
+        profileImage: imageUrl || undefined
+      };
+
+      await updateCVData({
+        personalInfo: updatedPersonalInfo
       });
-
-      if (!response.ok) {
-        throw new Error('Error al actualizar el avatar');
-      }
-
-      const data = await response.json();
-      console.log('Avatar updated:', data);
+      
+      setProfileImage(imageUrl || "");
     } catch (error) {
       console.error('Error updating avatar:', error);
       setUploadError('Error al actualizar el avatar');
-    }
-  };
-
-  const handlePersonalInfoChange = async (field: string, value: string) => {
-    try {
-      await updateCVData({
-        personalInfo: {
-          firstName: cvData?.personalInfo?.firstName || "",
-          lastName: cvData?.personalInfo?.lastName || "",
-          email: cvData?.personalInfo?.email || "",
-          phone: cvData?.personalInfo?.phone || "",
-          address: cvData?.personalInfo?.address || "",
-          municipality: cvData?.personalInfo?.municipality || "",
-          department: cvData?.personalInfo?.department || "",
-          country: cvData?.personalInfo?.country || "",
-          [field]: value
-        }
-      });
-    } catch (error) {
-      console.error('Error updating personal info:', error);
     }
   };
 
@@ -154,6 +272,7 @@ export function CVManager() {
     try {
       const currentEducation = cvData?.education || {
         level: "",
+        institution: "",
         currentInstitution: "",
         graduationYear: 0,
         isStudying: false,
@@ -263,15 +382,50 @@ export function CVManager() {
               </>
             )}
           </Button>
-          <Button variant="outline">
+          <Button 
+            variant="outline"
+            onClick={() => {
+              setActiveTab("cv");
+              setTimeout(() => {
+                const downloadBtn = document.querySelector('[data-cv-download]') as HTMLButtonElement;
+                if (downloadBtn) downloadBtn.click();
+              }, 100);
+            }}
+          >
             <Download className="h-4 w-4 mr-2" />
             Descargar CV
           </Button>
-          <Button variant="outline">
+          <Button 
+            variant="outline"
+            onClick={() => {
+              setActiveTab("cover-letter");
+              setTimeout(() => {
+                const downloadBtn = document.querySelector('[data-cover-letter-download]') as HTMLButtonElement;
+                if (downloadBtn) downloadBtn.click();
+              }, 100);
+            }}
+          >
             <Download className="h-4 w-4 mr-2" />
             Descargar Carta
           </Button>
-          <Button>
+          <Button
+            onClick={() => {
+              // Download both CV and cover letter
+              setActiveTab("cv");
+              setTimeout(() => {
+                const cvDownloadBtn = document.querySelector('[data-cv-download]') as HTMLButtonElement;
+                if (cvDownloadBtn) cvDownloadBtn.click();
+                
+                setTimeout(() => {
+                  setActiveTab("cover-letter");
+                  setTimeout(() => {
+                    const coverLetterDownloadBtn = document.querySelector('[data-cover-letter-download]') as HTMLButtonElement;
+                    if (coverLetterDownloadBtn) coverLetterDownloadBtn.click();
+                  }, 100);
+                }, 1000);
+              }, 100);
+            }}
+          >
             <Download className="h-4 w-4 mr-2" />
             Descargar Todo
           </Button>
@@ -280,7 +434,7 @@ export function CVManager() {
 
       {/* Main Content */}
       <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-6">
-        <TabsList className="grid w-full grid-cols-4">
+        <TabsList className="grid w-full grid-cols-3">
           <TabsTrigger value="edit" className="flex items-center gap-2">
             <User className="h-4 w-4" />
             Editar Datos
@@ -312,8 +466,8 @@ export function CVManager() {
                   <Label htmlFor="jobTitle">Título del Puesto</Label>
                   <Input
                     id="jobTitle"
-                    value={cvData?.jobTitle || ""}
-                    onChange={(e) => updateCVData({ jobTitle: e.target.value })}
+                    value={localFormData.jobTitle}
+                    onChange={(e) => handleJobTitleChange(e.target.value)}
                     placeholder="Desarrollador Frontend"
                   />
                   <p className="text-sm text-gray-500 mt-1">
@@ -354,8 +508,8 @@ export function CVManager() {
                     <Label htmlFor="firstName">Nombre</Label>
                     <Input
                       id="firstName"
-                      value={cvData?.personalInfo?.firstName || ""}
-                      onChange={(e) => handlePersonalInfoChange("firstName", e.target.value)}
+                      value={localFormData.personalInfo.firstName}
+                      onChange={(e) => handleLocalPersonalInfoChange("firstName", e.target.value)}
                       placeholder="Tu nombre"
                     />
                   </div>
@@ -363,8 +517,8 @@ export function CVManager() {
                     <Label htmlFor="lastName">Apellido</Label>
                     <Input
                       id="lastName"
-                      value={cvData?.personalInfo?.lastName || ""}
-                      onChange={(e) => handlePersonalInfoChange("lastName", e.target.value)}
+                      value={localFormData.personalInfo.lastName}
+                      onChange={(e) => handleLocalPersonalInfoChange("lastName", e.target.value)}
                       placeholder="Tu apellido"
                     />
                   </div>
@@ -375,8 +529,8 @@ export function CVManager() {
                   <Input
                     id="email"
                     type="email"
-                    value={cvData?.personalInfo?.email || ""}
-                    onChange={(e) => handlePersonalInfoChange("email", e.target.value)}
+                    value={localFormData.personalInfo.email}
+                    onChange={(e) => handleLocalPersonalInfoChange("email", e.target.value)}
                     placeholder="tu@email.com"
                   />
                 </div>
@@ -385,8 +539,8 @@ export function CVManager() {
                   <Label htmlFor="phone">Teléfono</Label>
                   <Input
                     id="phone"
-                    value={cvData?.personalInfo?.phone || ""}
-                    onChange={(e) => handlePersonalInfoChange("phone", e.target.value)}
+                    value={localFormData.personalInfo.phone}
+                    onChange={(e) => handleLocalPersonalInfoChange("phone", e.target.value)}
                     placeholder="+591 70012345"
                   />
                 </div>
@@ -395,8 +549,8 @@ export function CVManager() {
                   <Label htmlFor="addressLine">Dirección</Label>
                   <Input
                     id="addressLine"
-                    value={cvData?.personalInfo?.addressLine || ""}
-                    onChange={(e) => handlePersonalInfoChange("addressLine", e.target.value)}
+                    value={localFormData.personalInfo.addressLine}
+                    onChange={(e) => handleLocalPersonalInfoChange("addressLine", e.target.value)}
                     placeholder="Av. Principal 123"
                   />
                 </div>
@@ -406,8 +560,8 @@ export function CVManager() {
                     <Label htmlFor="city">Ciudad</Label>
                     <Input
                       id="city"
-                      value={cvData?.personalInfo?.city || ""}
-                      onChange={(e) => handlePersonalInfoChange("city", e.target.value)}
+                      value={localFormData.personalInfo.city}
+                      onChange={(e) => handleLocalPersonalInfoChange("city", e.target.value)}
                       placeholder="La Paz"
                     />
                   </div>
@@ -415,8 +569,8 @@ export function CVManager() {
                     <Label htmlFor="state">Estado</Label>
                     <Input
                       id="state"
-                      value={cvData?.personalInfo?.state || ""}
-                      onChange={(e) => handlePersonalInfoChange("state", e.target.value)}
+                      value={localFormData.personalInfo.state}
+                      onChange={(e) => handleLocalPersonalInfoChange("state", e.target.value)}
                       placeholder="La Paz"
                     />
                   </div>
@@ -424,8 +578,8 @@ export function CVManager() {
                     <Label htmlFor="country">País</Label>
                     <Input
                       id="country"
-                      value={cvData?.personalInfo?.country || ""}
-                      onChange={(e) => handlePersonalInfoChange("country", e.target.value)}
+                      value={localFormData.personalInfo.country}
+                      onChange={(e) => handleLocalPersonalInfoChange("country", e.target.value)}
                       placeholder="Bolivia"
                     />
                   </div>
@@ -447,8 +601,8 @@ export function CVManager() {
                 <Label htmlFor="professionalSummary">Descripción Profesional</Label>
                 <Textarea
                   id="professionalSummary"
-                  value={cvData?.professionalSummary || ""}
-                  onChange={(e) => updateCVData({ professionalSummary: e.target.value })}
+                  value={localFormData.professionalSummary}
+                  onChange={(e) => handleProfessionalSummaryChange(e.target.value)}
                   placeholder="Joven profesional con sólidos conocimientos en desarrollo web y tecnologías modernas. Comprometido con el aprendizaje continuo y el desarrollo de soluciones innovadoras."
                   rows={4}
                   className="resize-none"
@@ -1449,8 +1603,10 @@ export function CVManager() {
               variant="outline" 
               className="gap-2"
               onClick={() => {
-                const cvTab = document.querySelector('[data-value="cv"]') as HTMLElement;
-                if (cvTab) cvTab.click();
+                setActiveTab("cv");
+                setTimeout(() => {
+                  window.print();
+                }, 100);
               }}
             >
               <Printer className="h-4 w-4" />
@@ -1460,8 +1616,10 @@ export function CVManager() {
               variant="outline" 
               className="gap-2"
               onClick={() => {
-                const coverLetterTab = document.querySelector('[data-value="cover-letter"]') as HTMLElement;
-                if (coverLetterTab) coverLetterTab.click();
+                setActiveTab("cover-letter");
+                setTimeout(() => {
+                  window.print();
+                }, 100);
               }}
             >
               <Printer className="h-4 w-4" />
@@ -1471,11 +1629,9 @@ export function CVManager() {
               variant="outline" 
               className="gap-2"
               onClick={() => {
-                const cvTab = document.querySelector('[data-value="cv"]') as HTMLElement;
-                if (cvTab) cvTab.click();
-                // Trigger download after a short delay to allow tab switch
+                setActiveTab("cv");
                 setTimeout(() => {
-                  const downloadBtn = document.querySelector('[data-cv-download]') as HTMLElement;
+                  const downloadBtn = document.querySelector('[data-cv-download]') as HTMLButtonElement;
                   if (downloadBtn) downloadBtn.click();
                 }, 100);
               }}
@@ -1487,11 +1643,9 @@ export function CVManager() {
               variant="outline" 
               className="gap-2"
               onClick={() => {
-                const coverLetterTab = document.querySelector('[data-value="cover-letter"]') as HTMLElement;
-                if (coverLetterTab) coverLetterTab.click();
-                // Trigger download after a short delay to allow tab switch
+                setActiveTab("cover-letter");
                 setTimeout(() => {
-                  const downloadBtn = document.querySelector('[data-cover-letter-download]') as HTMLElement;
+                  const downloadBtn = document.querySelector('[data-cover-letter-download]') as HTMLButtonElement;
                   if (downloadBtn) downloadBtn.click();
                 }, 100);
               }}
@@ -1499,7 +1653,25 @@ export function CVManager() {
               <Download className="h-4 w-4" />
               Descargar Carta PDF
             </Button>
-            <Button className="gap-2">
+            <Button 
+              className="gap-2"
+              onClick={() => {
+                // Download both CV and cover letter
+                setActiveTab("cv");
+                setTimeout(() => {
+                  const cvDownloadBtn = document.querySelector('[data-cv-download]') as HTMLButtonElement;
+                  if (cvDownloadBtn) cvDownloadBtn.click();
+                  
+                  setTimeout(() => {
+                    setActiveTab("cover-letter");
+                    setTimeout(() => {
+                      const coverLetterDownloadBtn = document.querySelector('[data-cover-letter-download]') as HTMLButtonElement;
+                      if (coverLetterDownloadBtn) coverLetterDownloadBtn.click();
+                    }, 100);
+                  }, 1000);
+                }, 100);
+              }}
+            >
               <Download className="h-4 w-4" />
               Descargar Todo (ZIP)
             </Button>

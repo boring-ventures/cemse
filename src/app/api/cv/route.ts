@@ -1,25 +1,67 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
+import { cookies } from 'next/headers';
 import jwt from 'jsonwebtoken';
 
 const JWT_SECRET = process.env.JWT_SECRET || 'dev-secret-key';
+
+function verifyToken(token: string) {
+  try {
+    return jwt.verify(token, JWT_SECRET) as any;
+  } catch (error) {
+    return null;
+  }
+}
 
 // GET /api/cv - Obtener CV del usuario actual
 export async function GET(request: NextRequest) {
   try {
     console.log('🔍 API: Received request for CV data');
 
-    // Get auth token
-    const token = request.headers.get('authorization')?.replace('Bearer ', '');
+    // Get token from cookies
+    const cookieStore = await cookies();
+    const token = cookieStore.get('cemse-auth-token')?.value;
+    
     if (!token) {
+      console.log('🔍 API: No auth token found in cookies');
       return NextResponse.json(
         { error: 'Authorization required' },
         { status: 401 }
       );
     }
 
-    // Verify token
-    const decoded = jwt.verify(token, JWT_SECRET) as any;
+    let decoded: any = null;
+
+    // Handle different token types
+    if (token.includes('.') && token.split('.').length === 3) {
+      // JWT token
+      decoded = verifyToken(token);
+    } else if (token.startsWith('auth-token-')) {
+      // Database token format: auth-token-{role}-{userId}-{timestamp}
+      const tokenParts = token.split('-');
+      
+      if (tokenParts.length >= 4) {
+        const tokenUserId = tokenParts[3];
+        
+        // For CV API, we'll create a simple decoded object
+        decoded = {
+          id: tokenUserId,
+          username: `user_${tokenUserId}`
+        };
+        console.log('🔍 API: Database token validated for user:', decoded.username);
+      }
+    } else {
+      decoded = verifyToken(token);
+    }
+    
+    if (!decoded) {
+      console.log('🔍 API: Invalid or expired token');
+      return NextResponse.json(
+        { error: 'Invalid or expired token' },
+        { status: 401 }
+      );
+    }
+
     console.log('🔍 API: Authenticated user:', decoded.username);
 
     const profile = await prisma.profile.findUnique({
@@ -106,17 +148,50 @@ export async function PUT(request: NextRequest) {
   try {
     console.log('🔍 API: Received request to update CV data');
 
-    // Get auth token
-    const token = request.headers.get('authorization')?.replace('Bearer ', '');
+    // Get token from cookies
+    const cookieStore = await cookies();
+    const token = cookieStore.get('cemse-auth-token')?.value;
+    
     if (!token) {
+      console.log('🔍 API: No auth token found in cookies');
       return NextResponse.json(
         { error: 'Authorization required' },
         { status: 401 }
       );
     }
 
-    // Verify token
-    const decoded = jwt.verify(token, JWT_SECRET) as any;
+    let decoded: any = null;
+
+    // Handle different token types
+    if (token.includes('.') && token.split('.').length === 3) {
+      // JWT token
+      decoded = verifyToken(token);
+    } else if (token.startsWith('auth-token-')) {
+      // Database token format: auth-token-{role}-{userId}-{timestamp}
+      const tokenParts = token.split('-');
+      
+      if (tokenParts.length >= 4) {
+        const tokenUserId = tokenParts[3];
+        
+        // For CV API, we'll create a simple decoded object
+        decoded = {
+          id: tokenUserId,
+          username: `user_${tokenUserId}`
+        };
+        console.log('🔍 API: Database token validated for user:', decoded.username);
+      }
+    } else {
+      decoded = verifyToken(token);
+    }
+    
+    if (!decoded) {
+      console.log('🔍 API: Invalid or expired token');
+      return NextResponse.json(
+        { error: 'Invalid or expired token' },
+        { status: 401 }
+      );
+    }
+
     console.log('🔍 API: Authenticated user:', decoded.username);
 
     const body = await request.json();

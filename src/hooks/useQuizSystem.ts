@@ -83,13 +83,10 @@ export const useQuizSystem = () => {
       setLoading(true);
       setError(null);
       
-      console.log('🔍 useQuizSystem: Loading quiz:', quizId);
+      const response = await apiCall(`/quizzes/${quizId}`) as { quiz?: Quiz } | Quiz;
       
-      const response = await apiCall(`/quizzes/${quizId}`);
-      
-      console.log('🔍 useQuizSystem: Quiz loaded:', response);
-      
-      return response;
+      // The API returns { quiz: quizData }, so we need to extract the quiz property
+      return (response as any).quiz || response as Quiz;
     } catch (err) {
       const errorMessage = err instanceof Error ? err.message : 'Error al cargar el quiz';
       setError(errorMessage);
@@ -127,7 +124,7 @@ export const useQuizSystem = () => {
       
       console.log('🔍 useQuizSystem: Quiz completion response:', response);
       
-      return response;
+      return response as QuizCompletionResult;
     } catch (err) {
       const errorMessage = err instanceof Error ? err.message : 'Error al completar el quiz';
       setError(errorMessage);

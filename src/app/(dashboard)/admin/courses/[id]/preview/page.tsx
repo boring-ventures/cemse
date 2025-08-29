@@ -340,9 +340,11 @@ export default function CoursePreviewPage() {
                                               {lesson.isPreview && (
                                                 <>
                                                   <span>•</span>
-                                                  <Badge variant="secondary" className="text-xs">
-                                                    Vista previa
-                                                  </Badge>
+                                                  <span className="inline-flex">
+                                                    <Badge variant="secondary" className="text-xs">
+                                                      Vista previa
+                                                    </Badge>
+                                                  </span>
                                                 </>
                                               )}
                                             </div>

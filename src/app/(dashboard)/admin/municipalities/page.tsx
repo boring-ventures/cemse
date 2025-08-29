@@ -94,26 +94,41 @@ export default function MunicipalitiesPage() {
   };
 
   const handleDelete = async (municipality: Municipality) => {
-    if (municipality.companies && municipality.companies.length > 0) {
-      toast({
-        title: "No se puede eliminar",
-        description:
-          "Este municipio tiene empresas activas. Desactiva las empresas primero.",
-        variant: "destructive",
-      });
+    // Show confirmation dialog with cascade deletion warning
+    const confirmDelete = window.confirm(
+      `⚠️ ADVERTENCIA: Eliminación Completa\n\n` +
+      `Esta acción eliminará permanentemente:\n` +
+      `• La institución "${municipality.name}"\n` +
+      `• Su cuenta de usuario y credenciales\n` +
+      `• Todas las empresas asociadas (${municipality.companies?.length || 0})\n` +
+      `• Todas las ofertas de trabajo de estas empresas\n` +
+      `• Todas las noticias publicadas por la institución\n` +
+      `• Todos los datos relacionados\n\n` +
+      `Esta acción NO se puede deshacer.\n\n` +
+      `¿Estás seguro de que deseas continuar?`
+    );
+
+    if (!confirmDelete) {
       return;
     }
 
     try {
+      toast({
+        title: "Eliminando institución...",
+        description: "Por favor espera mientras se eliminan todos los datos relacionados.",
+      });
+
       await deleteMunicipality.mutateAsync(municipality.id);
+      
       toast({
         title: "Institución eliminada",
-        description: "La institución ha sido eliminada exitosamente.",
+        description: "La institución y todos sus datos relacionados han sido eliminados exitosamente.",
       });
-    } catch (error) {
+    } catch (error: any) {
+      console.error("Error deleting municipality:", error);
       toast({
-        title: "Error",
-        description: "No se pudo eliminar la institución.",
+        title: "Error al eliminar",
+        description: error?.message || "No se pudo eliminar la institución. Intenta nuevamente.",
         variant: "destructive",
       });
     }

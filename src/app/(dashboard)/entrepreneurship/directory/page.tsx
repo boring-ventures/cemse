@@ -16,11 +16,26 @@ import { apiCall } from "@/lib/api";
 
 interface Institution {
   id: string;
+  userId: string;
   name: string;
-  department: string;
-  region: string;
   institutionType: string;
   customType?: string;
+  serviceArea: string;
+  specialization: string | string[];
+  description: string;
+  email: string;
+  phone: string;
+  address: string;
+  municipality: string;
+  department: string;
+  region: string;
+  country: string;
+  website: string;
+  logo?: string;
+  profileCompletion: number;
+  createdAt: string;
+  updatedAt: string;
+  isActive: boolean;
 }
 
 export default function EntrepreneurshipDirectoryPage() {
@@ -33,8 +48,14 @@ export default function EntrepreneurshipDirectoryPage() {
   // Fetch institutions from the backend
   const fetchInstitutions = async () => {
     try {
-      const data = await apiCall("/municipality/public");
-      setInstitutions(data);
+      const data = await apiCall("/institution/public");
+      // Ensure data is an array and has the expected structure
+      if (Array.isArray(data)) {
+        setInstitutions(data as Institution[]);
+      } else {
+        console.error("Invalid data format received:", data);
+        setInstitutions([]);
+      }
     } catch (err) {
       console.error("Error fetching institutions:", err);
       setError(err instanceof Error ? err.message : "Error desconocido");
@@ -88,9 +109,12 @@ export default function EntrepreneurshipDirectoryPage() {
 
   const getInstitutionTypeLabel = (type: string) => {
     const types: Record<string, string> = {
-      GOBIERNOS_MUNICIPALES: "Gobierno Municipal",
-      CENTROS_DE_FORMACION: "Centro de Formación",
-      ONGS_Y_FUNDACIONES: "ONG/Fundación",
+      MUNICIPALITY: "Gobierno Municipal",
+      NGO: "ONG",
+      FOUNDATION: "Fundación",
+      OTHER: "Otro",
+      CENTRO_CAPACITACION: "Centro de Capacitación",
+      TRAINING_CENTER: "Centro de Formación",
     };
     return types[type] || type;
   };
@@ -201,31 +225,55 @@ export default function EntrepreneurshipDirectoryPage() {
                 <div className="flex items-start justify-between mb-4">
                   <div className="flex-1">
                     <h3 className="text-xl font-semibold mb-2 text-gray-900">
-                      {institution.name}
+                      {institution.name || 'Sin nombre'}
                     </h3>
                     <div className="space-y-2">
                       <div className="flex items-center text-sm text-muted-foreground">
                         <Building className="h-4 w-4 mr-2" />
                         <span>
-                          {getInstitutionTypeLabel(institution.institutionType)}
+                          {getInstitutionTypeLabel(institution.institutionType)} 
+                          {institution.serviceArea && ` - ${institution.serviceArea}`}
                         </span>
                       </div>
                       <div className="flex items-center text-sm text-muted-foreground">
                         <MapPin className="h-4 w-4 mr-2" />
                         <span>
-                          {institution.department}, {institution.region}
+                          {institution.municipality && `${institution.municipality}, `}
+                          {institution.department || 'Sin ubicación'}
                         </span>
                       </div>
+                      {institution.description && (
+                        <p className="text-sm text-muted-foreground mt-2 line-clamp-2">
+                          {institution.description}
+                        </p>
+                      )}
                     </div>
                   </div>
                 </div>
                 <div className="flex justify-between items-center pt-4 border-t border-gray-100">
                   <div className="text-sm text-muted-foreground">
-                    ID: {institution.id}
+                    {institution.specialization && (
+                      <span className="inline-block bg-blue-100 text-blue-800 px-2 py-1 rounded text-xs">
+                        {Array.isArray(institution.specialization) 
+                          ? institution.specialization[0] 
+                          : institution.specialization}
+                      </span>
+                    )}
                   </div>
-                  <Button variant="outline" size="sm">
-                    Ver detalles
-                  </Button>
+                  <div className="flex gap-2">
+                    {institution.website && (
+                      <Button 
+                        variant="outline" 
+                        size="sm"
+                        onClick={() => window.open(institution.website, '_blank')}
+                      >
+                        Sitio web
+                      </Button>
+                    )}
+                    <Button variant="outline" size="sm">
+                      Ver detalles
+                    </Button>
+                  </div>
                 </div>
               </CardContent>
             </Card>

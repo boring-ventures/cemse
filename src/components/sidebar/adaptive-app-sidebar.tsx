@@ -74,98 +74,11 @@ export function AdaptiveAppSidebar({ className }: AdaptiveAppSidebarProps) {
   //     : false,
   // });
 
-  // Definir navegación basada en el rol del usuario
+  // Use sidebar data consistently for all roles
   const getNavigationItems = () => {
-    // Para superadmin, usar la navegación completa del archivo role-based-sidebar-data
-    if (userRole === "SUPER_ADMIN" || userRole === "SUPERADMIN") {
-      return sidebarData.navGroups;
-    }
-
-    switch (userRole) {
-      case "GOBIERNOS_MUNICIPALES":
-        // Usar la estructura definida en role-based-sidebar-data.ts
-        return sidebarData.navGroups;
-
-      case "EMPRESAS":
-        // Usar la estructura definida en role-based-sidebar-data.ts
-        return sidebarData.navGroups;
-
-      case "JOVENES":
-      case "ADOLESCENTES":
-        // Usar la estructura definida en role-based-sidebar-data.ts
-        return sidebarData.navGroups;
-
-      case "CENTROS_DE_FORMACION":
-        return [
-          {
-            title: "Educación",
-            items: [
-              { title: "Dashboard Educativo", url: "/dashboard", icon: Home },
-              {
-                title: "Gestión de Cursos",
-                url: "/admin/courses",
-                icon: BookOpen,
-              },
-              {
-                title: "Estudiantes",
-                url: "/admin/students",
-                icon: GraduationCap,
-              },
-              {
-                title: "Reportes Educativos",
-                url: "/admin/reports",
-                icon: BarChart3,
-              },
-              {
-                title: "Configuración",
-                url: "/admin/settings",
-                icon: Settings,
-              },
-            ],
-          },
-        ];
-
-      case "ONGS_Y_FUNDACIONES":
-        return [
-          {
-            title: "Social",
-            items: [
-              { title: "Dashboard Social", url: "/dashboard", icon: Home },
-              {
-                title: "Programas Sociales",
-                url: "/admin/programs",
-                icon: Heart,
-              },
-              {
-                title: "Beneficiarios",
-                url: "/admin/beneficiaries",
-                icon: Users,
-              },
-              {
-                title: "Reportes Sociales",
-                url: "/admin/reports",
-                icon: BarChart3,
-              },
-              {
-                title: "Configuración",
-                url: "/admin/settings",
-                icon: Settings,
-              },
-            ],
-          },
-        ];
-
-      default:
-        return [
-          {
-            title: "General",
-            items: [
-              { title: "Dashboard", url: "/dashboard", icon: Home },
-              { title: "Mi Perfil", url: "/profile", icon: User },
-            ],
-          },
-        ];
-    }
+    // Always use the data from getSidebarDataByRole function
+    // since it handles all role mappings properly
+    return sidebarData.navGroups;
   };
 
   const navigationItems = getNavigationItems();

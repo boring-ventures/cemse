@@ -3,6 +3,7 @@ export type UserRole =
   | 'JOVENES'
   | 'ADOLESCENTES'
   | 'EMPRESAS'
+  | 'COMPANIES' // Alternative role name for companies
   | 'GOBIERNOS_MUNICIPALES'
   | 'CENTROS_DE_FORMACION'
   | 'ONGS_Y_FUNDACIONES'
@@ -83,6 +84,8 @@ export interface User {
   primaryColor?: string;
   secondaryColor?: string;
   // Organization-specific fields
+  companyId?: string | null;
+  municipalityId?: string | null;
   municipality?: {
     id: string;
     name: string;
@@ -393,23 +396,19 @@ export interface Resource {
   id: string;
   title: string;
   description: string;
-  type: 'DOCUMENT' | 'VIDEO' | 'AUDIO' | 'IMAGE' | 'TEXT';
+  type: string;
   category: string;
   format: string;
-  url?: string;
-  fileUrl?: string;
-  downloadUrl?: string;
-  externalUrl?: string;
-  thumbnail?: string;
-  tags: string[];
+  downloadUrl?: string | null;
+  externalUrl?: string | null;
+  thumbnail: string;
+  author: string;
+  publishedDate: Date | string;
   downloads: number;
-  rating?: number;
-  isPublic: boolean;
-  authorId: string;
-  author?: string;
-  publishedDate?: string;
-  createdAt: string;
-  updatedAt: string;
+  rating: number;
+  tags: string[];
+  createdAt: Date | string;
+  updatedAt: Date | string;
 }
 
 // Business Plan types

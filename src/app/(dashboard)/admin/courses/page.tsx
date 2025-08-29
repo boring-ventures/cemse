@@ -77,15 +77,15 @@ interface CourseStats {
 }
 
 export default function CourseManagementPage() {
-  const { data: courses, loading, error } = useCourses();
+  const { data: courses, isLoading: loading, error } = useCourses();
   const [searchQuery, setSearchQuery] = useState("");
   const [statusFilter, setStatusFilter] = useState<string>("all");
   const [categoryFilter, setCategoryFilter] = useState<string>("all");
   const [selectedCourse, setSelectedCourse] = useState<string | null>(null);
 
   // Fetch modules for selected course
-  const { data: modulesData } = useCourseModules(selectedCourse);
-  const modules = modulesData?.modules || [];
+  const { data: modulesData } = useCourseModules(selectedCourse || undefined);
+  const modules = (modulesData as any)?.modules || [];
 
   // Fetch lessons for all modules
   const [allLessons, setAllLessons] = useState<any[]>([]);
@@ -95,10 +95,10 @@ export default function CourseManagementPage() {
   // Calculate comprehensive stats
   const stats: CourseStats = {
     totalCourses: courses?.length || 0,
-    totalStudents: courses?.reduce((sum, course) => sum + (course.studentCount || 0), 0) || 0,
+    totalStudents: courses?.reduce((sum, course) => sum + (course.studentsCount || 0), 0) || 0,
     totalHours: courses?.reduce((sum, course) => sum + (course.duration || 0), 0) || 0,
-    averageRating: courses?.reduce((sum, course) => sum + (course.rating || 0), 0) / (courses?.length || 1) || 0,
-    completionRate: courses?.reduce((sum, course) => sum + (course.completionRate || 0), 0) / (courses?.length || 1) || 0,
+    averageRating: (courses && courses.length > 0) ? courses.reduce((sum, course) => sum + (Number(course.rating) || 0), 0) / courses.length : 0,
+    completionRate: (courses && courses.length > 0) ? courses.reduce((sum, course) => sum + (Number(course.completionRate) || 0), 0) / courses.length : 0,
     activeCourses: courses?.filter(c => c.isActive).length || 0,
     totalModules: modules.length,
     totalLessons: allLessons.length,
@@ -379,7 +379,7 @@ export default function CourseManagementPage() {
                       <div className="space-y-1">
                         <div className="flex items-center gap-2 text-sm">
                           <Layers className="h-3 w-3 text-muted-foreground" />
-                          <span>{modules.filter(m => m.courseId === course.id).length} módulos</span>
+                          <span>{modules.filter((m: any) => m.courseId === course.id).length} módulos</span>
                         </div>
                         <div className="flex items-center gap-2 text-sm">
                           <FileText className="h-3 w-3 text-muted-foreground" />
@@ -405,14 +405,14 @@ export default function CourseManagementPage() {
 
                     <TableCell>
                       <Badge variant="outline">
-                        {getCategoryLabel(course.category)}
+                        {getCategoryLabel(course.category as CourseCategory)}
                       </Badge>
                     </TableCell>
 
                     <TableCell>
                       <div className="flex items-center gap-1">
                         <Users className="h-4 w-4 text-muted-foreground" />
-                        {(course.studentCount || 0).toLocaleString()}
+                        {(course.studentsCount || 0).toLocaleString()}
                       </div>
                     </TableCell>
 

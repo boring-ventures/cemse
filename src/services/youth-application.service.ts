@@ -1,4 +1,4 @@
-import { apiCall, getAuthHeaders, getToken, getUserFromToken } from '@/lib/api';
+import { apiCall, getAuthHeaders } from '@/lib/api';
 
 // Tipos de datos para las postulaciones de jóvenes
 export interface YouthApplication {
@@ -105,7 +105,7 @@ export interface UpdateYouthApplicationRequest {
 
 export interface SendMessageRequest {
     content: string;
-    senderType: 'YOUTH' | 'COMPANY';
+    senderType?: 'YOUTH' | 'COMPANY'; // Optional - will be determined by API based on user type
 }
 
 export interface ExpressInterestRequest {
@@ -121,16 +121,60 @@ export class YouthApplicationService {
     static async createYouthApplication(data: CreateYouthApplicationRequest): Promise<YouthApplication> {
         try {
             console.log('👥 YouthApplicationService.createYouthApplication - Creating application:', data);
-            console.log('🔐 YouthApplicationService.createYouthApplication - Token check:', {
-                tokenExists: !!getToken(),
-                tokenValue: getToken() ? `${getToken()?.substring(0, 20)}...` : 'null'
-            });
+            console.log('🔐 YouthApplicationService.createYouthApplication - Using cookie-based authentication');
 
-            // Create JSON payload instead of FormData
+            let cvUrl: string | undefined;
+            let coverLetterUrl: string | undefined;
+
+            // Upload CV file if provided
+            if (data.cvFile) {
+                console.log('📄 Uploading CV file:', data.cvFile.name);
+                try {
+                    const cvFormData = new FormData();
+                    cvFormData.append('cvFile', data.cvFile);
+
+                    const cvUploadResponse = await apiCall('/files/upload/cv', {
+                        method: 'POST',
+                        headers: getAuthHeaders(true), // excludeContentType for FormData
+                        body: cvFormData
+                    }) as { cvUrl: string };
+
+                    cvUrl = cvUploadResponse.cvUrl;
+                    console.log('✅ CV file uploaded successfully:', cvUrl);
+                } catch (error) {
+                    console.error('❌ Error uploading CV file:', error);
+                    throw new Error('Error al subir el archivo CV. Por favor, inténtalo de nuevo.');
+                }
+            }
+
+            // Upload cover letter file if provided
+            if (data.coverLetterFile) {
+                console.log('📄 Uploading cover letter file:', data.coverLetterFile.name);
+                try {
+                    const coverLetterFormData = new FormData();
+                    coverLetterFormData.append('coverLetterFile', data.coverLetterFile);
+
+                    const coverLetterUploadResponse = await apiCall('/files/upload/cover-letter', {
+                        method: 'POST',
+                        headers: getAuthHeaders(true), // excludeContentType for FormData
+                        body: coverLetterFormData
+                    }) as { coverLetterUrl: string };
+
+                    coverLetterUrl = coverLetterUploadResponse.coverLetterUrl;
+                    console.log('✅ Cover letter file uploaded successfully:', coverLetterUrl);
+                } catch (error) {
+                    console.error('❌ Error uploading cover letter file:', error);
+                    throw new Error('Error al subir la carta de presentación. Por favor, inténtalo de nuevo.');
+                }
+            }
+
+            // Create application payload with file URLs
             const payload = {
                 title: data.title,
                 description: data.description,
-                isPublic: data.isPublic ?? true
+                isPublic: data.isPublic ?? true,
+                cvUrl: cvUrl || data.cvUrl,
+                coverLetterUrl: coverLetterUrl || data.coverLetterUrl
             };
 
             console.log('🔐 YouthApplicationService.createYouthApplication - Sending payload:', payload);
@@ -277,10 +321,11 @@ export class YouthApplicationService {
         try {
             console.log('👥 YouthApplicationService.sendMessage - Sending message for application:', applicationId, data);
 
+            // The API will determine senderType based on authenticated user's profile
             const response = await apiCall(`/youthapplication/${applicationId}/message`, {
                 method: 'POST',
                 headers: getAuthHeaders(),
-                body: JSON.stringify({ ...data, senderType: data.senderType || 'YOUTH' })
+                body: JSON.stringify({ content: data.content })
             });
 
             console.log('✅ YouthApplicationService.sendMessage - Message sent:', response);
@@ -339,16 +384,8 @@ export class YouthApplicationService {
         try {
             console.log('👥 YouthApplicationService.getMyApplications - Getting my applications');
 
-            // Obtener el ID del usuario actual desde el token
-            const userFromToken = getUserFromToken();
-            if (!userFromToken?.id) {
-                throw new Error('No se pudo obtener el ID del usuario');
-            }
-
-            console.log('👥 YouthApplicationService.getMyApplications - User ID from token:', userFromToken.id);
-
-            // Usar el userId para obtener las aplicaciones del usuario actual
-            const response = await apiCall(`/youthapplication?userId=${userFromToken.id}`, {
+            // Use cookie-based authentication - the API endpoint will handle user identification
+            const response = await apiCall('/youthapplication/my', {
                 method: 'GET',
                 headers: getAuthHeaders()
             });

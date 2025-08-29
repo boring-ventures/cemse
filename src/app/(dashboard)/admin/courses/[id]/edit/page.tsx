@@ -483,7 +483,7 @@ export default function EditCoursePage() {
                                     <p className="font-medium text-sm">
                                       {lesson.title}
                                     </p>
-                                    <p className="text-xs text-muted-foreground">
+                                    <div className="text-xs text-muted-foreground">
                                       {lesson.type === "video"
                                         ? "Video"
                                         : lesson.type === "quiz"
@@ -498,7 +498,7 @@ export default function EditCoursePage() {
                                           Vista previa
                                         </Badge>
                                       )}
-                                    </p>
+                                    </div>
                                   </div>
                                 </div>
 

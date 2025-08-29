@@ -20,6 +20,7 @@ import {
   User,
   Lock,
   Mail,
+  TestTube,
 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 
@@ -34,12 +35,16 @@ interface CredentialsModalProps {
   isOpen: boolean;
   onClose: () => void;
   credentials: Credentials | null;
+  onTestCredentials?: (username: string, password: string) => void;
+  testingCredentials?: boolean;
 }
 
 export function CredentialsModal({
   isOpen,
   onClose,
   credentials,
+  onTestCredentials,
+  testingCredentials = false,
 }: CredentialsModalProps) {
   const [showPassword, setShowPassword] = useState(false);
   const [copiedField, setCopiedField] = useState<string | null>(null);
@@ -301,6 +306,19 @@ La contraseña no se puede recuperar una vez creada la cuenta.`;
               </div>
             </CardContent>
           </Card>
+
+          {/* Test Credentials Button */}
+          {onTestCredentials && (
+            <Button
+              variant="outline"
+              onClick={() => onTestCredentials(credentials.username, credentials.password)}
+              disabled={testingCredentials}
+              className="w-full"
+            >
+              <TestTube className="h-4 w-4 mr-2" />
+              {testingCredentials ? "Probando credenciales..." : "Probar credenciales"}
+            </Button>
+          )}
 
           {/* Download Buttons */}
           <div className="flex gap-2">

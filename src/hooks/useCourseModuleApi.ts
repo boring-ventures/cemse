@@ -128,15 +128,10 @@ export const useDeleteModule = () => {
   return useMutation({
     mutationFn: async (moduleId: string) => {
       const params = new URLSearchParams({ id: moduleId });
-      const response = await apiCall(`/coursemodule?${params}`, {
+      const data = await apiCall(`/coursemodule?${params}`, {
         method: 'DELETE',
       });
-      
-      if (!response.ok) {
-        throw new Error('Failed to delete module');
-      }
-      
-      return response.json();
+      return data;
     },
     onSuccess: () => {
       // Invalidate and refetch all modules

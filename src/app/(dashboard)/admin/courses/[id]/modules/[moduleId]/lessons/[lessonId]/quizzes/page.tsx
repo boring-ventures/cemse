@@ -95,7 +95,7 @@ export default function LessonQuizzesPage() {
 
   // Hooks
   const { data: quizzesData, isLoading: quizzesLoading } = useLessonQuizzes(lessonId);
-  const quizzes = quizzesData?.quizzes || [];
+  const quizzes: Quiz[] = (quizzesData as { quizzes?: Quiz[] })?.quizzes || [];
   const createQuiz = useCreateQuiz();
   const updateQuiz = useUpdateQuiz();
   const deleteQuiz = useDeleteQuiz();

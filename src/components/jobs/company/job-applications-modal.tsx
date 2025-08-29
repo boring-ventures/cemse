@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo, useCallback } from 'react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from '@/components/ui/dialog';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -131,7 +131,7 @@ export default function JobApplicationsModal({ jobOffer, isOpen, onClose }: JobA
     }
   };
 
-  const sendMessage = async () => {
+  const sendMessage = useCallback(async () => {
     if (!selectedApplication || !messageText.trim()) return;
     
     try {
@@ -158,9 +158,9 @@ export default function JobApplicationsModal({ jobOffer, isOpen, onClose }: JobA
     } finally {
       setMessageLoading(false);
     }
-  };
+  }, [selectedApplication, messageText, sendJobMessage, toast]);
 
-  const formatDate = (dateString: string) => {
+  const formatDate = useCallback((dateString: string) => {
     return new Date(dateString).toLocaleDateString('es-ES', {
       year: 'numeric',
       month: 'long',
@@ -168,21 +168,81 @@ export default function JobApplicationsModal({ jobOffer, isOpen, onClose }: JobA
       hour: '2-digit',
       minute: '2-digit'
     });
-  };
+  }, []);
 
-  const getInitials = (firstName: string, lastName: string) => {
+  const getInitials = useCallback((firstName: string, lastName: string) => {
     return `${firstName.charAt(0)}${lastName.charAt(0)}`.toUpperCase();
-  };
+  }, []);
 
-  const filteredApplications = applications.filter(app => {
-    if (statusFilter === 'all') return true;
-    return app.status === statusFilter;
-  });
+  // Memoized message component for better performance
+  const MessageBubble = useMemo(() => {
+    return ({ message, selectedApplication }: { message: any; selectedApplication: any }) => {
+      const isOwnMessage = message.senderType === 'COMPANY';
+      const messageTime = new Date(message.createdAt).toLocaleTimeString('es-ES', {
+        hour: '2-digit',
+        minute: '2-digit'
+      });
+      const messageDate = new Date(message.createdAt).toLocaleDateString('es-ES', {
+        day: '2-digit',
+        month: '2-digit',
+        year: 'numeric'
+      });
+      
+      return (
+        <div className={`flex ${isOwnMessage ? 'justify-end' : 'justify-start'}`}>
+          <div className={`max-w-xs lg:max-w-md ${isOwnMessage ? 'order-2' : 'order-1'}`}>
+            {/* Sender name */}
+            <div className={`text-xs font-medium mb-1 ${
+              isOwnMessage ? 'text-right text-blue-600' : 'text-left text-gray-600'
+            }`}>
+              {isOwnMessage 
+                ? 'Tú (Empresa)' 
+                : `${message.application?.applicant.firstName || selectedApplication?.applicant.firstName} ${message.application?.applicant.lastName || selectedApplication?.applicant.lastName} (Postulante)`
+              }
+            </div>
+            
+            {/* Message bubble */}
+            <div className={`rounded-lg px-3 py-2 ${
+              isOwnMessage 
+                ? 'bg-blue-600 text-white rounded-br-md' 
+                : 'bg-gray-100 text-gray-900 border border-gray-200 rounded-bl-md'
+            }`}>
+              <p className="text-sm whitespace-pre-wrap">{message.content}</p>
+              
+              {/* Message metadata */}
+              <div className={`flex items-center justify-between mt-2 pt-1 border-t ${
+                isOwnMessage 
+                  ? 'border-blue-500/30 text-xs opacity-75' 
+                  : 'border-gray-300/30 text-xs text-gray-500'
+              }`}>
+                <span>{messageTime}</span>
+                <div className="flex items-center gap-1">
+                  {isOwnMessage && (
+                    <span className="text-xs">
+                      {message.readAt ? '✓✓ Leído' : '✓ Enviado'}
+                    </span>
+                  )}
+                  <span className="text-xs">{messageDate}</span>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      );
+    };
+  }, []);
+
+  const filteredApplications = useMemo(() => {
+    return applications.filter(app => {
+      if (statusFilter === 'all') return true;
+      return app.status === statusFilter;
+    });
+  }, [applications, statusFilter]);
 
   return (
     <>
       <Dialog open={isOpen} onOpenChange={onClose}>
-        <DialogContent className="max-w-6xl max-h-[90vh] overflow-y-auto">
+        <DialogContent className="max-w-6xl max-h-[90vh] overflow-hidden flex flex-col">
           <DialogHeader>
             <DialogTitle className="flex items-center gap-2">
               <Users className="w-5 h-5" />
@@ -190,7 +250,7 @@ export default function JobApplicationsModal({ jobOffer, isOpen, onClose }: JobA
             </DialogTitle>
           </DialogHeader>
 
-          <div className="space-y-6">
+          <div className="flex-1 space-y-6 overflow-y-auto" style={{ transform: 'translateZ(0)' }}>
             {/* Filtros */}
             <div className="flex items-center gap-4">
               <Select value={statusFilter} onValueChange={setStatusFilter}>
@@ -447,24 +507,24 @@ export default function JobApplicationsModal({ jobOffer, isOpen, onClose }: JobA
               <MessageSquare className="w-5 h-5" />
               Conversación con {selectedApplication?.applicant.firstName} {selectedApplication?.applicant.lastName}
             </DialogTitle>
-            <DialogDescription className="space-y-1">
-              <div className="flex items-center gap-2 text-sm">
+            <div className="space-y-1 text-sm text-muted-foreground">
+              <div className="flex items-center gap-2">
                 <span className="font-medium">Puesto:</span>
                 <span>{selectedApplication?.jobOffer.title}</span>
               </div>
-              <div className="flex items-center gap-2 text-sm">
+              <div className="flex items-center gap-2">
                 <span className="font-medium">Participantes:</span>
                 <span className="text-blue-600">Tú (Empresa)</span>
                 <span className="text-gray-500">•</span>
                 <span className="text-gray-600">{selectedApplication?.applicant.firstName} {selectedApplication?.applicant.lastName} (Postulante)</span>
               </div>
-            </DialogDescription>
+            </div>
           </DialogHeader>
           
           {selectedApplication && (
             <div className="flex-1 flex flex-col space-y-4">
               {/* Chat Messages Area */}
-              <div className="flex-1 bg-gray-50 rounded-lg p-4 overflow-y-auto min-h-[300px] max-h-[400px]">
+              <div className="flex-1 bg-gray-50 rounded-lg p-4 overflow-y-auto min-h-[300px] max-h-[400px]" style={{ transform: 'translateZ(0)', willChange: 'scroll-position' }}>
                 {messagesLoading ? (
                   <div className="flex items-center justify-center h-full">
                     <div className="w-6 h-6 border-2 border-blue-600 border-t-transparent rounded-full animate-spin" />
@@ -482,60 +542,13 @@ export default function JobApplicationsModal({ jobOffer, isOpen, onClose }: JobA
                   </div>
                 ) : (
                   <div className="space-y-4">
-                    {messages.map((message) => {
-                      const isOwnMessage = message.senderType === 'COMPANY';
-                      const messageTime = new Date(message.createdAt).toLocaleTimeString('es-ES', {
-                        hour: '2-digit',
-                        minute: '2-digit'
-                      });
-                      const messageDate = new Date(message.createdAt).toLocaleDateString('es-ES', {
-                        day: '2-digit',
-                        month: '2-digit',
-                        year: 'numeric'
-                      });
-                      
-                      return (
-                        <div key={message.id} className={`flex ${isOwnMessage ? 'justify-end' : 'justify-start'}`}>
-                          <div className={`max-w-xs lg:max-w-md ${isOwnMessage ? 'order-2' : 'order-1'}`}>
-                            {/* Sender name */}
-                            <div className={`text-xs font-medium mb-1 ${
-                              isOwnMessage ? 'text-right text-blue-600' : 'text-left text-gray-600'
-                            }`}>
-                              {isOwnMessage 
-                                ? 'Tú (Empresa)' 
-                                : `${message.application?.applicant.firstName || selectedApplication?.applicant.firstName} ${message.application?.applicant.lastName || selectedApplication?.applicant.lastName} (Postulante)`
-                              }
-                            </div>
-                            
-                            {/* Message bubble */}
-                            <div className={`rounded-lg px-3 py-2 ${
-                              isOwnMessage 
-                                ? 'bg-blue-600 text-white rounded-br-md' 
-                                : 'bg-gray-100 text-gray-900 border border-gray-200 rounded-bl-md'
-                            }`}>
-                              <p className="text-sm whitespace-pre-wrap">{message.content}</p>
-                              
-                              {/* Message metadata */}
-                              <div className={`flex items-center justify-between mt-2 pt-1 border-t ${
-                                isOwnMessage 
-                                  ? 'border-blue-500/30 text-xs opacity-75' 
-                                  : 'border-gray-300/30 text-xs text-gray-500'
-                              }`}>
-                                <span>{messageTime}</span>
-                                <div className="flex items-center gap-1">
-                                  {isOwnMessage && (
-                                    <span className="text-xs">
-                                      {message.readAt ? '✓✓ Leído' : '✓ Enviado'}
-                                    </span>
-                                  )}
-                                  <span className="text-xs">{messageDate}</span>
-                                </div>
-                              </div>
-                            </div>
-                          </div>
-                        </div>
-                      );
-                    })}
+                    {messages.map((message) => (
+                      <MessageBubble 
+                        key={message.id} 
+                        message={message} 
+                        selectedApplication={selectedApplication}
+                      />
+                    ))}
                   </div>
                 )}
               </div>

@@ -8,22 +8,26 @@ export class ResourceService {
       console.log('🔍 ResourceService.getAllResources - Fetching resources with filters:', filters);
 
       const queryParams = new URLSearchParams();
-      if (filters?.category) queryParams.append('category', filters.category);
-      if (filters?.type) queryParams.append('type', filters.type);
+      if (filters?.category && filters.category !== 'all') queryParams.append('category', filters.category);
+      if (filters?.type && filters.type !== 'all') queryParams.append('type', filters.type);
       if (filters?.search) queryParams.append('search', filters.search);
       if (filters?.municipalityId) queryParams.append('municipalityId', filters.municipalityId);
+      if (filters?.limit) queryParams.append('limit', filters.limit.toString());
+      if (filters?.page) queryParams.append('page', filters.page.toString());
 
       const url = `/resource${queryParams.toString() ? `?${queryParams.toString()}` : ''}`;
-      return await apiCall(url);
+      const response = await apiCall(url);
+      
+      // Handle both direct array response and structured response
+      if (response && typeof response === 'object' && 'resources' in response) {
+        return response.resources;
+      }
+      
+      return Array.isArray(response) ? response : [];
     } catch (error) {
       console.error('❌ ResourceService.getAllResources - Error:', error);
       throw error;
     }
-  }
-
-  // Get user's resources
-  static async getMyResources() {
-    return await apiCall('/resource/my');
   }
 
   // Get specific resource
@@ -33,10 +37,21 @@ export class ResourceService {
 
   // Create resource (without file)
   static async createResource(data: any) {
-    return await apiCall('/resource', {
-      method: 'POST',
-      body: JSON.stringify(data)
-    });
+    // If data is FormData, send as-is; otherwise, send as JSON
+    if (data instanceof FormData) {
+      return await apiCall('/resource', {
+        method: 'POST',
+        body: data
+      });
+    } else {
+      return await apiCall('/resource', {
+        method: 'POST',
+        body: JSON.stringify(data),
+        headers: {
+          'Content-Type': 'application/json'
+        }
+      });
+    }
   }
 
   // Upload resource with file
@@ -71,12 +86,8 @@ export class ResourceService {
 
   // Download resource
   static async downloadResource(id: string) {
-    return await apiCall(`/resource/${id}/download`, { method: 'POST' });
-  }
-
-  // Increment download count
-  static async incrementDownloads(id: string) {
-    return await apiCall(`/resource/${id}/downloads`, { method: 'POST' });
+    const response = await apiCall(`/resource/${id}/download`, { method: 'POST' });
+    return response;
   }
 
   // Rate resource

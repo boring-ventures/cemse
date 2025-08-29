@@ -22,13 +22,13 @@ import {
   Upload,
   Trash2,
 } from "lucide-react";
-import { useAuth } from "@/hooks/use-auth";
+import { useAuthContext } from "@/hooks/use-auth";
 import { useRouter } from "next/navigation";
 import { useEffect, useRef } from "react";
 import { cn } from "@/lib/utils";
 
 export default function ProfilePage() {
-  const { user, isAuthenticated } = useAuth();
+  const { user, isAuthenticated } = useAuthContext();
   const router = useRouter();
   const fileInputRef = useRef<HTMLInputElement>(null);
 
@@ -150,38 +150,38 @@ export default function ProfilePage() {
   }
 
   return (
-    <div className="container mx-auto py-8 px-4">
+    <div className="container mx-auto py-4 sm:py-6 lg:py-8 px-4">
       <div className="max-w-4xl mx-auto">
-        <div className="mb-8">
-          <h1 className="text-3xl font-bold text-gray-900 mb-2">Mi Perfil</h1>
-          <p className="text-gray-600">
+        <div className="mb-6 sm:mb-8">
+          <h1 className="text-2xl sm:text-3xl font-bold text-gray-900 mb-2">Mi Perfil</h1>
+          <p className="text-sm sm:text-base text-gray-600">
             Actualiza tu información personal y foto de perfil
           </p>
         </div>
 
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 sm:gap-6 lg:gap-8">
           {/* Profile Form */}
-          <div className="lg:col-span-2 space-y-6">
+          <div className="lg:col-span-2 space-y-4 sm:space-y-6">
             {/* Avatar Upload */}
             <Card>
-              <CardHeader>
-                <CardTitle className="flex items-center gap-2">
-                  <Camera className="h-5 w-5" />
+              <CardHeader className="pb-3 sm:pb-6">
+                <CardTitle className="flex items-center gap-2 text-base sm:text-lg">
+                  <Camera className="h-4 sm:h-5 w-4 sm:w-5" />
                   Foto de Perfil
                 </CardTitle>
               </CardHeader>
-              <CardContent className="space-y-4">
+              <CardContent className="space-y-3 sm:space-y-4">
                 {/* Current Avatar Display */}
                 {avatarUrl && (
-                  <div className="flex items-center gap-4">
-                    <Avatar className="h-24 w-24">
+                  <div className="flex flex-col sm:flex-row items-center gap-3 sm:gap-4">
+                    <Avatar className="h-20 sm:h-24 w-20 sm:w-24">
                       <AvatarImage
                         src={avatarUrl}
                         alt="Avatar"
                         className="object-cover"
                       />
                       <AvatarFallback>
-                        <User className="h-12 w-12 text-muted-foreground" />
+                        <User className="h-10 sm:h-12 w-10 sm:w-12 text-muted-foreground" />
                       </AvatarFallback>
                     </Avatar>
 
@@ -191,9 +191,9 @@ export default function ProfilePage() {
                         size="sm"
                         onClick={handleRemoveAvatar}
                         disabled={isUploading}
-                        className="w-fit"
+                        className="w-full sm:w-fit text-sm"
                       >
-                        <Trash2 className="h-4 w-4 mr-2" />
+                        <Trash2 className="h-3 sm:h-4 w-3 sm:w-4 mr-2" />
                         Eliminar
                       </Button>
                     </div>
@@ -203,7 +203,7 @@ export default function ProfilePage() {
                 {/* Upload Area */}
                 <div
                   className={cn(
-                    "border-2 border-dashed rounded-lg text-center transition-colors p-6",
+                    "border-2 border-dashed rounded-lg text-center transition-colors p-4 sm:p-6",
                     "border-gray-300 hover:border-gray-400",
                     isUploading && "opacity-50 pointer-events-none"
                   )}
@@ -216,24 +216,24 @@ export default function ProfilePage() {
                     className="hidden"
                   />
 
-                  <div className="space-y-3">
+                  <div className="space-y-2 sm:space-y-3">
                     <div className="flex justify-center">
-                      <div className="rounded-full bg-blue-100 flex items-center justify-center w-12 h-12">
+                      <div className="rounded-full bg-blue-100 flex items-center justify-center w-10 sm:w-12 h-10 sm:h-12">
                         {isUploading ? (
-                          <Loader2 className="text-blue-600 animate-spin w-6 h-6" />
+                          <Loader2 className="text-blue-600 animate-spin w-5 sm:w-6 h-5 sm:h-6" />
                         ) : (
-                          <Camera className="text-blue-600 w-6 h-6" />
+                          <Camera className="text-blue-600 w-5 sm:w-6 h-5 sm:h-6" />
                         )}
                       </div>
                     </div>
 
                     <div>
-                      <h3 className="text-lg font-semibold text-gray-900">
+                      <h3 className="text-base sm:text-lg font-semibold text-gray-900">
                         {avatarUrl
                           ? "Cambiar foto de perfil"
                           : "Subir foto de perfil"}
                       </h3>
-                      <p className="text-sm text-gray-600 mt-1">
+                      <p className="text-xs sm:text-sm text-gray-600 mt-1">
                         Haz clic para seleccionar una imagen
                       </p>
                     </div>
@@ -242,9 +242,10 @@ export default function ProfilePage() {
                       <Button
                         onClick={() => fileInputRef.current?.click()}
                         disabled={isUploading}
-                        className="gap-2"
+                        className="gap-2 text-sm"
+                        size="sm"
                       >
-                        <Upload className="h-4 w-4" />
+                        <Upload className="h-3 sm:h-4 w-3 sm:w-4" />
                         {isUploading ? "Subiendo..." : "Seleccionar Imagen"}
                       </Button>
                     </div>
@@ -261,20 +262,20 @@ export default function ProfilePage() {
 
             {/* Profile Form */}
             <Card>
-              <CardHeader>
-                <CardTitle className="flex items-center gap-2">
-                  <User className="h-5 w-5" />
+              <CardHeader className="pb-3 sm:pb-6">
+                <CardTitle className="flex items-center gap-2 text-base sm:text-lg">
+                  <User className="h-4 sm:h-5 w-4 sm:w-5" />
                   Información Personal
                 </CardTitle>
               </CardHeader>
 
               <CardContent>
-                <form onSubmit={handleSubmit} className="space-y-6">
+                <form onSubmit={handleSubmit} className="space-y-4 sm:space-y-6">
                   {/* Error Message */}
                   {error && (
                     <Alert variant="destructive">
                       <AlertCircle className="h-4 w-4" />
-                      <AlertDescription>{error}</AlertDescription>
+                      <AlertDescription className="text-sm">{error}</AlertDescription>
                     </Alert>
                   )}
 
@@ -282,16 +283,16 @@ export default function ProfilePage() {
                   {saveSuccess && (
                     <Alert>
                       <CheckCircle className="h-4 w-4" />
-                      <AlertDescription>
+                      <AlertDescription className="text-sm">
                         Perfil actualizado exitosamente
                       </AlertDescription>
                     </Alert>
                   )}
 
                   {/* Basic Information */}
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    <div className="space-y-2">
-                      <Label htmlFor="firstName">Nombre</Label>
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4">
+                    <div className="space-y-1 sm:space-y-2">
+                      <Label htmlFor="firstName" className="text-sm">Nombre</Label>
                       <Input
                         id="firstName"
                         value={formData.firstName}
@@ -299,11 +300,12 @@ export default function ProfilePage() {
                           handleInputChange("firstName", e.target.value)
                         }
                         placeholder="Tu nombre"
+                        className="text-sm"
                       />
                     </div>
 
-                    <div className="space-y-2">
-                      <Label htmlFor="lastName">Apellido</Label>
+                    <div className="space-y-1 sm:space-y-2">
+                      <Label htmlFor="lastName" className="text-sm">Apellido</Label>
                       <Input
                         id="lastName"
                         value={formData.lastName}
@@ -311,16 +313,17 @@ export default function ProfilePage() {
                           handleInputChange("lastName", e.target.value)
                         }
                         placeholder="Tu apellido"
+                        className="text-sm"
                       />
                     </div>
                   </div>
 
                   {/* Contact Information */}
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    <div className="space-y-2">
-                      <Label htmlFor="phone">Teléfono</Label>
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4">
+                    <div className="space-y-1 sm:space-y-2">
+                      <Label htmlFor="phone" className="text-sm">Teléfono</Label>
                       <div className="relative">
-                        <Phone className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
+                        <Phone className="absolute left-3 top-2.5 sm:top-3 h-3 sm:h-4 w-3 sm:w-4 text-muted-foreground" />
                         <Input
                           id="phone"
                           value={formData.phone}
@@ -328,15 +331,15 @@ export default function ProfilePage() {
                             handleInputChange("phone", e.target.value)
                           }
                           placeholder="Tu número de teléfono"
-                          className="pl-10"
+                          className="pl-8 sm:pl-10 text-sm"
                         />
                       </div>
                     </div>
 
-                    <div className="space-y-2">
-                      <Label htmlFor="location">Ubicación</Label>
+                    <div className="space-y-1 sm:space-y-2">
+                      <Label htmlFor="location" className="text-sm">Ubicación</Label>
                       <div className="relative">
-                        <MapPin className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
+                        <MapPin className="absolute left-3 top-2.5 sm:top-3 h-3 sm:h-4 w-3 sm:w-4 text-muted-foreground" />
                         <Input
                           id="location"
                           value={formData.location}
@@ -344,18 +347,18 @@ export default function ProfilePage() {
                             handleInputChange("location", e.target.value)
                           }
                           placeholder="Ciudad, Departamento"
-                          className="pl-10"
+                          className="pl-8 sm:pl-10 text-sm"
                         />
                       </div>
                     </div>
                   </div>
 
                   {/* Personal Information */}
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    <div className="space-y-2">
-                      <Label htmlFor="dateOfBirth">Fecha de Nacimiento</Label>
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4">
+                    <div className="space-y-1 sm:space-y-2">
+                      <Label htmlFor="dateOfBirth" className="text-sm">Fecha de Nacimiento</Label>
                       <div className="relative">
-                        <Calendar className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
+                        <Calendar className="absolute left-3 top-2.5 sm:top-3 h-3 sm:h-4 w-3 sm:w-4 text-muted-foreground" />
                         <Input
                           id="dateOfBirth"
                           type="date"
@@ -363,20 +366,20 @@ export default function ProfilePage() {
                           onChange={(e) =>
                             handleInputChange("dateOfBirth", e.target.value)
                           }
-                          className="pl-10"
+                          className="pl-8 sm:pl-10 text-sm"
                         />
                       </div>
                     </div>
 
-                    <div className="space-y-2">
-                      <Label htmlFor="gender">Género</Label>
+                    <div className="space-y-1 sm:space-y-2">
+                      <Label htmlFor="gender" className="text-sm">Género</Label>
                       <select
                         id="gender"
                         value={formData.gender}
                         onChange={(e) =>
                           handleInputChange("gender", e.target.value)
                         }
-                        className="w-full px-3 py-2 border border-input rounded-md bg-background"
+                        className="w-full px-3 py-2 border border-input rounded-md bg-background text-sm"
                       >
                         <option value="">Seleccionar género</option>
                         <option value="masculino">Masculino</option>
@@ -390,21 +393,22 @@ export default function ProfilePage() {
                   </div>
 
                   {/* Bio */}
-                  <div className="space-y-2">
-                    <Label htmlFor="bio">Biografía</Label>
+                  <div className="space-y-1 sm:space-y-2">
+                    <Label htmlFor="bio" className="text-sm">Biografía</Label>
                     <Textarea
                       id="bio"
                       value={formData.bio}
                       onChange={(e) => handleInputChange("bio", e.target.value)}
                       placeholder="Cuéntanos sobre ti..."
                       rows={4}
+                      className="text-sm"
                     />
                   </div>
 
                   {/* Skills and Interests */}
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    <div className="space-y-2">
-                      <Label htmlFor="skills">Habilidades</Label>
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4">
+                    <div className="space-y-1 sm:space-y-2">
+                      <Label htmlFor="skills" className="text-sm">Habilidades</Label>
                       <Input
                         id="skills"
                         value={formData.skills}
@@ -412,17 +416,19 @@ export default function ProfilePage() {
                           handleInputChange("skills", e.target.value)
                         }
                         placeholder="Habilidad 1, Habilidad 2, Habilidad 3"
+                        className="text-sm"
                       />
                       <p className="text-xs text-muted-foreground">
                         Separa las habilidades con comas
                       </p>
                     </div>
 
-                    <div className="space-y-2">
-                      <Label htmlFor="interests">Intereses</Label>
+                    <div className="space-y-1 sm:space-y-2">
+                      <Label htmlFor="interests" className="text-sm">Intereses</Label>
                       <Input
                         id="interests"
                         value={formData.interests}
+                        className="text-sm"
                         onChange={(e) =>
                           handleInputChange("interests", e.target.value)
                         }

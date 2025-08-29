@@ -1,38 +1,115 @@
-import { NextRequest, NextResponse } from 'next/server';
-import { prisma } from '@/lib/prisma';
-import jwt from 'jsonwebtoken';
+import { NextRequest, NextResponse } from "next/server";
+import { prisma } from "@/lib/prisma";
+import { cookies } from "next/headers";
+import jwt from "jsonwebtoken";
 
-const JWT_SECRET = process.env.JWT_SECRET || 'dev-secret-key';
+const JWT_SECRET = process.env.JWT_SECRET || "dev-secret-key";
+
+function verifyToken(token: string) {
+  try {
+    return jwt.verify(token, JWT_SECRET);
+  } catch (error) {
+    return null;
+  }
+}
+
+// Simple test endpoint
+export async function OPTIONS(request: NextRequest) {
+  return new NextResponse(null, {
+    status: 200,
+    headers: {
+      "Access-Control-Allow-Origin": "*",
+      "Access-Control-Allow-Methods": "GET, POST, PUT, DELETE, OPTIONS",
+      "Access-Control-Allow-Headers": "Content-Type, Authorization",
+    },
+  });
+}
 
 export async function GET(request: NextRequest) {
   try {
-    console.log('📚 API: Received request for course enrollments');
-    
-    // Get auth token
-    const token = request.headers.get('authorization')?.replace('Bearer ', '');
+    console.log("📚 API: Received request for course enrollments");
+
+    // Get token from cookies
+    const cookieStore = await cookies();
+    const token = cookieStore.get("cemse-auth-token")?.value;
+
     if (!token) {
+      console.log("📚 API: No auth token found in cookies");
       return NextResponse.json(
-        { error: 'Authorization required' },
+        { error: "Authorization required" },
         { status: 401 }
       );
     }
 
-    // Verify token
-    const decoded = jwt.verify(token, JWT_SECRET) as any;
-    console.log('📚 API: Authenticated user:', decoded.username);
+    let decoded: any = null;
+
+    // Handle different token types
+    if (token.includes(".") && token.split(".").length === 3) {
+      // JWT token
+      console.log("📚 API: JWT token found in cookies");
+      decoded = verifyToken(token);
+    } else if (token.startsWith("auth-token-")) {
+      // Database token format: auth-token-{role}-{userId}-{timestamp}
+      console.log("📚 API: Database token found in cookies");
+      const tokenParts = token.split("-");
+
+      if (tokenParts.length >= 4) {
+        const tokenUserId = tokenParts[3];
+
+        // Verify the user exists and is active
+        const tokenUser = await prisma.user.findUnique({
+          where: { id: tokenUserId, isActive: true },
+        });
+
+        if (tokenUser) {
+          decoded = {
+            id: tokenUser.id,
+            username: tokenUser.username,
+            role: tokenUser.role,
+          };
+          console.log(
+            "📚 API: Database token validated for user:",
+            tokenUser.username
+          );
+        }
+      }
+    } else {
+      // Try to verify as JWT token anyway
+      decoded = verifyToken(token);
+    }
+
+    if (!decoded) {
+      console.log("📚 API: Invalid or expired token");
+      return NextResponse.json(
+        { error: "Invalid or expired token" },
+        { status: 401 }
+      );
+    }
+
+    console.log("📚 API: Authenticated user:", decoded.username || decoded.id);
 
     const { searchParams } = new URL(request.url);
-    const courseId = searchParams.get('courseId');
-    const studentId = searchParams.get('studentId');
+    const courseId = searchParams.get("courseId");
+    const studentId = searchParams.get("studentId");
 
     // Build filter conditions
     const where: any = {};
     if (courseId) where.courseId = courseId;
     if (studentId) where.studentId = studentId;
-    
+
     // If no specific filters, get enrollments for the authenticated user
     if (!courseId && !studentId) {
-      where.studentId = decoded.id;
+      // Get user's profile to use the correct studentId
+      const userProfile = await prisma.profile.findUnique({
+        where: { userId: decoded.id },
+      });
+
+      if (userProfile) {
+        where.studentId = userProfile.userId;
+      } else {
+        // If no profile found, return empty enrollments
+        return NextResponse.json({ enrollments: [] });
+      }
     }
 
     // Get course enrollments from database
@@ -49,7 +126,7 @@ export async function GET(request: NextRequest) {
             duration: true,
             category: true,
             isActive: true,
-          }
+          },
         },
         student: {
           select: {
@@ -57,53 +134,20 @@ export async function GET(request: NextRequest) {
             firstName: true,
             lastName: true,
             email: true,
-          }
-        }
+          },
+        },
       },
-      orderBy: { enrolledAt: 'desc' }
+      orderBy: { enrolledAt: "desc" },
     });
 
-    // If no enrollments found in database, return mock data for development
-    if (enrollments.length === 0) {
-      console.log('📚 API: No enrollments found in database, using mock data');
-      const mockEnrollments = [
-        {
-          id: 'enroll_1',
-          courseId: '1',
-          studentId: decoded.id,
-          enrolledAt: new Date().toISOString(),
-          progress: 25,
-          status: 'ACTIVE',
-          completedAt: null,
-          course: {
-            id: '1',
-            title: 'React para Principiantes',
-            description: 'Aprende React desde cero con proyectos prácticos',
-            thumbnail: '/images/react-course.jpg',
-            level: 'BEGINNER',
-            duration: 480,
-            category: 'TECHNICAL_SKILLS',
-            isActive: true,
-          },
-          student: {
-            id: decoded.id,
-            firstName: 'Usuario',
-            lastName: 'Demo',
-            email: decoded.username + '@email.com',
-          }
-        }
-      ];
+    // Return actual enrollments from database
 
-      console.log('📚 API: Returning', mockEnrollments.length, 'mock enrollments');
-      return NextResponse.json({ enrollments: mockEnrollments });
-    }
-
-    console.log('📚 API: Found', enrollments.length, 'course enrollments');
+    console.log("📚 API: Found", enrollments.length, "course enrollments");
     return NextResponse.json({ enrollments });
   } catch (error) {
-    console.error('Error in course enrollments route:', error);
+    console.error("Error in course enrollments route:", error);
     return NextResponse.json(
-      { message: 'Internal server error' },
+      { message: "Internal server error" },
       { status: 500 }
     );
   }
@@ -111,28 +155,87 @@ export async function GET(request: NextRequest) {
 
 export async function POST(request: NextRequest) {
   try {
-    console.log('📚 API: Received request to create course enrollment');
+    console.log("📚 API: Received request to create course enrollment");
+    console.log("📚 API: POST route is working!");
 
-    // Get auth token
-    const token = request.headers.get('authorization')?.replace('Bearer ', '');
+    // Get token from cookies
+    const cookieStore = await cookies();
+    const token = cookieStore.get("cemse-auth-token")?.value;
+
     if (!token) {
+      console.log("📚 API: No auth token found in cookies");
       return NextResponse.json(
-        { error: 'Authorization required' },
+        { error: "Authorization required" },
         { status: 401 }
       );
     }
 
-    // Verify token
-    const decoded = jwt.verify(token, JWT_SECRET) as any;
-    console.log('📚 API: Authenticated user:', decoded.username);
+    let decoded: any = null;
+
+    // Handle different token types
+    if (token.includes(".") && token.split(".").length === 3) {
+      // JWT token
+      console.log("📚 API: JWT token found in cookies");
+      decoded = verifyToken(token);
+    } else if (token.startsWith("auth-token-")) {
+      // Database token format: auth-token-{role}-{userId}-{timestamp}
+      console.log("📚 API: Database token found in cookies");
+      const tokenParts = token.split("-");
+
+      if (tokenParts.length >= 4) {
+        const tokenUserId = tokenParts[3];
+
+        // Verify the user exists and is active
+        const tokenUser = await prisma.user.findUnique({
+          where: { id: tokenUserId, isActive: true },
+        });
+
+        if (tokenUser) {
+          decoded = {
+            id: tokenUser.id,
+            username: tokenUser.username,
+            role: tokenUser.role,
+          };
+          console.log(
+            "📚 API: Database token validated for user:",
+            tokenUser.username
+          );
+        }
+      }
+    } else {
+      // Try to verify as JWT token anyway
+      decoded = verifyToken(token);
+    }
+
+    if (!decoded) {
+      console.log("📚 API: Invalid or expired token");
+      return NextResponse.json(
+        { error: "Invalid or expired token" },
+        { status: 401 }
+      );
+    }
+
+    console.log("📚 API: Authenticated user:", decoded.username || decoded.id);
 
     const body = await request.json();
     const { courseId } = body;
 
     if (!courseId) {
       return NextResponse.json(
-        { error: 'courseId is required' },
+        { error: "courseId is required" },
         { status: 400 }
+      );
+    }
+
+    // First, check if the user has a profile
+    const userProfile = await prisma.profile.findUnique({
+      where: { userId: decoded.id },
+    });
+
+    if (!userProfile) {
+      return NextResponse.json(
+        { error: "Perfil de usuario no encontrado" },
+        { status: 404 }
       );
     }
 
@@ -140,13 +243,13 @@ export async function POST(request: NextRequest) {
     const existingEnrollment = await prisma.courseEnrollment.findFirst({
       where: {
         courseId,
-        studentId: decoded.id,
-      }
+        studentId: userProfile.userId,
+      },
     });
 
     if (existingEnrollment) {
       return NextResponse.json(
-        { error: 'Ya estás inscrito en este curso' },
+        { error: "Ya estás inscrito en este curso" },
         { status: 400 }
       );
     }
@@ -155,10 +258,10 @@ export async function POST(request: NextRequest) {
     const enrollment = await prisma.courseEnrollment.create({
       data: {
         courseId,
-        studentId: decoded.id,
+        studentId: userProfile.userId,
         enrolledAt: new Date(),
         progress: 0,
-        status: 'ACTIVE',
+        status: "ENROLLED",
       },
       include: {
         course: {
@@ -171,7 +274,7 @@ export async function POST(request: NextRequest) {
             duration: true,
             category: true,
             isActive: true,
-          }
+          },
         },
         student: {
           select: {
@@ -179,17 +282,35 @@ export async function POST(request: NextRequest) {
             firstName: true,
             lastName: true,
             email: true,
-          }
-        }
-      }
+          },
+        },
+      },
     });
 
-    console.log('📚 API: Course enrollment created:', enrollment.id);
+    console.log("📚 API: Course enrollment created:", enrollment.id);
     return NextResponse.json(enrollment, { status: 201 });
   } catch (error) {
-    console.error('Error creating course enrollment:', error);
+    console.error("Error creating course enrollment:", error);
+
+    const errorDetails =
+      error instanceof Error
+        ? {
+            message: error.message,
+            code: (error as any).code,
+            meta: (error as any).meta,
+          }
+        : { message: "Unknown error" };
+
+    console.error("❌ Error details:", errorDetails);
+
     return NextResponse.json(
-      { error: 'Error al crear inscripción al curso' },
+      {
+        error: "Error al crear inscripción al curso",
+        details:
+          process.env.NODE_ENV === "development"
+            ? errorDetails.message
+            : undefined,
+      },
       { status: 500 }
     );
   }

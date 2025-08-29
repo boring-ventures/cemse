@@ -280,7 +280,9 @@ export default function MyApplicationsPage() {
   };
 
   const isOwnMessage = (message: any) => {
-    return message.senderType === "USER" || message.senderId === user?.id;
+    // Check if the message sender is the current user
+    // For applicants: senderType should be "APPLICANT" and senderId should match user.id
+    return message.senderType === "APPLICANT" && message.senderId === user?.id;
   };
 
   if (loading) {
@@ -655,12 +657,31 @@ export default function MyApplicationsPage() {
           <div className="flex-1 overflow-y-auto p-6">
             {messagesLoading ? (
               <div className="flex justify-center items-center h-full">
-                <Skeleton className="h-10 w-10" />
+                <div className="text-center">
+                  <Skeleton className="h-10 w-10 mx-auto mb-2" />
+                  <p className="text-sm text-gray-500">Cargando mensajes...</p>
+                </div>
+              </div>
+            ) : messageError ? (
+              <div className="text-center py-12 text-red-600">
+                <MessageSquare className="w-12 h-12 text-red-400 mb-4 mx-auto" />
+                <p className="mb-2">Error al cargar mensajes</p>
+                <p className="text-sm text-gray-600 mb-4">{messageError}</p>
+                <Button 
+                  variant="outline" 
+                  onClick={refreshMessages}
+                  disabled={messagesLoading}
+                >
+                  Reintentar
+                </Button>
               </div>
             ) : messages.length === 0 ? (
               <div className="text-center py-12 text-gray-600">
-                <MessageSquare className="w-12 h-12 text-gray-400 mb-4" />
+                <MessageSquare className="w-12 h-12 text-gray-400 mb-4 mx-auto" />
                 <p>No hay mensajes en esta conversación.</p>
+                <p className="text-sm text-gray-500 mt-2">
+                  Inicia la conversación enviando un mensaje.
+                </p>
               </div>
             ) : (
               <div className="space-y-4">
@@ -677,9 +698,18 @@ export default function MyApplicationsPage() {
                       }`}
                     >
                       <p className="text-sm">{message.content}</p>
-                      <p className="text-xs text-gray-500 mt-1">
-                        {formatMessageTime(message.createdAt)}
-                      </p>
+                      <div className="flex items-center justify-between mt-1">
+                        <p className={`text-xs mt-1 ${
+                          isOwnMessage(message) ? "text-blue-100" : "text-gray-500"
+                        }`}>
+                          {formatMessageTime(message.createdAt)}
+                        </p>
+                        {isOwnMessage(message) && (
+                          <div className="text-xs text-blue-100">
+                            {message.status === 'READ' ? '✓✓' : '✓'}
+                          </div>
+                        )}
+                      </div>
                     </div>
                   </div>
                 ))}
@@ -687,6 +717,11 @@ export default function MyApplicationsPage() {
             )}
           </div>
           <div className="p-6 pt-0 border-t">
+            {messageError && (
+              <div className="mb-3 p-3 bg-red-50 border border-red-200 rounded-lg">
+                <p className="text-sm text-red-600">{messageError}</p>
+              </div>
+            )}
             <Textarea
               placeholder="Escribe un mensaje..."
               value={newMessage}
@@ -698,15 +733,26 @@ export default function MyApplicationsPage() {
                 }
               }}
               className="min-h-[50px] max-h-[150px] resize-none"
+              disabled={messageSending}
             />
-            <div className="flex justify-end mt-2">
+            <div className="flex justify-between items-center mt-2">
+              <p className="text-xs text-gray-500">
+                Presiona Enter para enviar, Shift+Enter para nueva línea
+              </p>
               <Button
-                variant="outline"
                 size="sm"
                 onClick={handleSendMessage}
                 disabled={messageSending || !newMessage.trim()}
+                className="min-w-[80px]"
               >
-                {messageSending ? "Enviando..." : "Enviar"}
+                {messageSending ? (
+                  <div className="flex items-center">
+                    <div className="w-3 h-3 border border-white border-t-transparent rounded-full animate-spin mr-1"></div>
+                    Enviando...
+                  </div>
+                ) : (
+                  "Enviar"
+                )}
               </Button>
             </div>
           </div>

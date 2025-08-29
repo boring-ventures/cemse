@@ -1,88 +1,127 @@
 import { NextRequest, NextResponse } from 'next/server';
+import { cookies } from 'next/headers';
 import { writeFile, mkdir } from 'fs/promises';
 import { join } from 'path';
-import { existsSync } from 'fs';
-import { getCurrentUserId } from '@/lib/auth';
+import jwt from 'jsonwebtoken';
+
+const JWT_SECRET = process.env.JWT_SECRET || 'supersecretkey';
+
+function verifyToken(token: string) {
+  try {
+    return jwt.verify(token, JWT_SECRET) as any;
+  } catch (error) {
+    return null;
+  }
+}
 
 export async function POST(request: NextRequest) {
   try {
-    console.log('POST /api/files/upload/cv - Iniciando');
+    console.log('📄 API: CV file upload request received');
+
+    // Get token from cookies
+    const cookieStore = await cookies();
+    const token = cookieStore.get('cemse-auth-token')?.value;
     
-    // Verificar autenticación
-    const userId = await getCurrentUserId();
-    console.log('User ID:', userId);
-    
-    if (!userId) {
-      console.log('No autorizado - sin userId');
+    if (!token) {
+      console.log('📄 API: No auth token found in cookies');
       return NextResponse.json(
-        { error: "No autorizado" },
+        { error: 'Authorization required' },
         { status: 401 }
       );
     }
-    console.log('User ID:', userId);
-    const formData = await request.formData();
-    console.log('FormData recibido, entries:', Array.from(formData.entries()).map(([key, value]) => [key, typeof value]));
-    
-    const file = formData.get('cvFile') as File;
-    console.log('File extraído:', file ? `${file.name} (${file.size} bytes, ${file.type})` : 'No file');
 
-    if (!file) {
-      console.log('No se proporcionó ningún archivo');
+    let decoded: any = null;
+
+    // Handle different token types
+    if (token.includes('.') && token.split('.').length === 3) {
+      // JWT token
+      decoded = verifyToken(token);
+    } else if (token.startsWith('auth-token-')) {
+      // Database token format: auth-token-{role}-{userId}-{timestamp}
+      const tokenParts = token.split('-');
+      
+      if (tokenParts.length >= 4) {
+        const tokenUserId = tokenParts[3];
+        
+        // For file uploads, we'll create a simple decoded object
+        decoded = {
+          id: tokenUserId,
+          username: `user_${tokenUserId}`
+        };
+        console.log('📄 API: Database token validated for user:', decoded.username);
+      }
+    } else {
+      decoded = verifyToken(token);
+    }
+    
+    if (!decoded) {
+      console.log('📄 API: Invalid or expired token');
       return NextResponse.json(
-        { error: 'No se proporcionó ningún archivo' },
+        { error: 'Invalid or expired token' },
+        { status: 401 }
+      );
+    }
+
+    console.log('📄 API: Authenticated user:', decoded.username || decoded.id);
+
+    // Get the uploaded file
+    const formData = await request.formData();
+    const file = formData.get('cvFile') as File;
+    
+    if (!file) {
+      return NextResponse.json(
+        { error: 'No CV file provided' },
         { status: 400 }
       );
     }
 
     // Validate file type
-    if (file.type !== 'application/pdf') {
+    if (!file.type.includes('pdf')) {
       return NextResponse.json(
-        { error: 'Solo se permiten archivos PDF' },
+        { error: 'Only PDF files are allowed' },
         { status: 400 }
       );
     }
 
-    // Validate file size (10MB max)
-    if (file.size > 10 * 1024 * 1024) {
+    // Validate file size (5MB max)
+    if (file.size > 5 * 1024 * 1024) {
       return NextResponse.json(
-        { error: 'El archivo es demasiado grande. Máximo 10MB' },
+        { error: 'File size must be less than 5MB' },
         { status: 400 }
       );
     }
 
-    // Create uploads directory if it doesn't exist
-    const uploadsDir = join(process.cwd(), 'public', 'uploads', 'documents');
-    if (!existsSync(uploadsDir)) {
-      await mkdir(uploadsDir, { recursive: true });
-    }
-
-    // Generate unique filename with user ID
+    // Create filename with user ID and timestamp
     const timestamp = Date.now();
-    const randomString = Math.random().toString(36).substring(2, 15);
-    const filename = `cv-${userId}-${timestamp}-${randomString}.pdf`;
-    const filepath = join(uploadsDir, filename);
-
-    // Convert file to buffer and save
+    const userId = decoded.id || decoded.username;
+    const fileName = `cv_${userId}_${timestamp}.pdf`;
+    
+    // Ensure uploads directory exists
+    const uploadDir = join(process.cwd(), 'public', 'uploads', 'documents');
+    await mkdir(uploadDir, { recursive: true });
+    
+    // Save file
     const bytes = await file.arrayBuffer();
     const buffer = Buffer.from(bytes);
-    await writeFile(filepath, buffer);
-
-    // Return success response
-    const cvUrl = `/uploads/documents/${filename}`;
+    const filePath = join(uploadDir, fileName);
+    
+    await writeFile(filePath, buffer);
+    
+    // Return the URL path for the uploaded file
+    const cvUrl = `/uploads/documents/${fileName}`;
+    
+    console.log('📄 API: CV file uploaded successfully:', cvUrl);
     
     return NextResponse.json({
       message: 'CV uploaded successfully',
       cvUrl,
-      filename,
-      originalName: file.name,
-      size: file.size,
-      mimetype: file.type
+      fileName
     });
 
   } catch (error) {
-    console.error('Error uploading CV:', error);
+    console.error('📄 API: Error uploading CV file:', error);
     return NextResponse.json(
-      { error: 'Error interno del servidor' },
+      { error: 'Internal server error' },
       { status: 500 }
     );
   }

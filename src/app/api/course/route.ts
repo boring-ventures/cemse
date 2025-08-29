@@ -1,196 +1,237 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { API_BASE } from '@/lib/api';
+import { prisma } from '@/lib/prisma';
+import jwt from 'jsonwebtoken';
 
-// Mock data for courses
-const getMockCourses = () => ({
-  courses: [
-    {
-      id: '1',
-      title: 'React para Principiantes',
-      slug: 'react-para-principiantes',
-      description: 'Aprende React desde cero con proyectos prácticos',
-      shortDescription: 'Fundamentos de React con proyectos reales',
-      thumbnail: '/images/react-course.jpg',
-      coverImage: '/images/react-course.jpg',
-      videoPreview: null,
-      objectives: ['Entender los conceptos básicos de React', 'Crear componentes reutilizables', 'Manejar estado y props'],
-      prerequisites: ['Conocimientos básicos de JavaScript', 'HTML y CSS'],
-      duration: 480, // 8 horas en minutos
-      level: 'BEGINNER',
-      category: 'TECHNICAL_SKILLS',
-      isMandatory: false,
-      isActive: true,
-      price: 0,
-      rating: 4.5,
-      studentsCount: 150,
-      enrollmentCount: 150,
-      completionRate: 85,
-      totalLessons: 24,
-      totalQuizzes: 6,
-      totalResources: 12,
-      tags: ['React', 'JavaScript', 'Frontend'],
-      certification: true,
-      includedMaterials: ['Código fuente', 'Ejercicios prácticos', 'Certificado'],
-      instructorId: '1',
-      institutionName: 'CEMSE',
-      instructor: {
-        id: '1',
-        name: 'Juan Pérez',
-        title: 'Desarrollador Frontend Senior',
-        avatar: '/avatars/juan-perez.jpg'
-      },
-      organization: {
-        id: '1',
-        name: 'CEMSE',
-        logo: '/logos/cemse.png'
-      },
-      publishedAt: '2024-01-15T00:00:00Z',
-      createdAt: '2024-01-01T00:00:00Z',
-      updatedAt: '2024-01-15T00:00:00Z'
-    },
-    {
-      id: '2',
-      title: 'Diseño UX/UI',
-      slug: 'diseno-ux-ui',
-      description: 'Fundamentos del diseño de experiencia de usuario',
-      shortDescription: 'Aprende a crear interfaces intuitivas y atractivas',
-      thumbnail: '/images/ux-course.jpg',
-      coverImage: '/images/ux-course.jpg',
-      videoPreview: null,
-      objectives: ['Comprender los principios de UX/UI', 'Crear wireframes y prototipos', 'Realizar investigación de usuarios'],
-      prerequisites: ['Creatividad', 'Interés en diseño'],
-      duration: 360, // 6 horas en minutos
-      level: 'INTERMEDIATE',
-      category: 'SOFT_SKILLS',
-      isMandatory: false,
-      isActive: true,
-      price: 0,
-      rating: 4.8,
-      studentsCount: 89,
-      enrollmentCount: 89,
-      completionRate: 92,
-      totalLessons: 18,
-      totalQuizzes: 4,
-      totalResources: 8,
-      tags: ['UX', 'UI', 'Diseño', 'Prototipado'],
-      certification: true,
-      includedMaterials: ['Templates de diseño', 'Herramientas gratuitas', 'Certificado'],
-      instructorId: '2',
-      institutionName: 'CEMSE',
-      instructor: {
-        id: '2',
-        name: 'María García',
-        title: 'UX/UI Designer',
-        avatar: '/avatars/maria-garcia.jpg'
-      },
-      organization: {
-        id: '1',
-        name: 'CEMSE',
-        logo: '/logos/cemse.png'
-      },
-      publishedAt: '2024-01-10T00:00:00Z',
-      createdAt: '2024-01-01T00:00:00Z',
-      updatedAt: '2024-01-10T00:00:00Z'
-    },
-    {
-      id: '3',
-      title: 'Emprendimiento Digital',
-      slug: 'emprendimiento-digital',
-      description: 'Convierte tu idea en un negocio digital exitoso',
-      shortDescription: 'Guía completa para crear y hacer crecer tu startup',
-      thumbnail: '/images/entrepreneurship-course.jpg',
-      coverImage: '/images/entrepreneurship-course.jpg',
-      videoPreview: null,
-      objectives: ['Validar ideas de negocio', 'Crear un plan de negocio', 'Implementar estrategias de marketing digital'],
-      prerequisites: ['Interés en emprender', 'Disposición para aprender'],
-      duration: 600, // 10 horas en minutos
-      level: 'BEGINNER',
-      category: 'ENTREPRENEURSHIP',
-      isMandatory: false,
-      isActive: true,
-      price: 0,
-      rating: 4.7,
-      studentsCount: 234,
-      enrollmentCount: 234,
-      completionRate: 78,
-      totalLessons: 30,
-      totalQuizzes: 8,
-      totalResources: 15,
-      tags: ['Emprendimiento', 'Negocios', 'Marketing', 'Startup'],
-      certification: true,
-      includedMaterials: ['Plantillas de plan de negocio', 'Herramientas de análisis', 'Certificado'],
-      instructorId: '3',
-      institutionName: 'CEMSE',
-      instructor: {
-        id: '3',
-        name: 'Carlos Rodríguez',
-        title: 'Consultor de Emprendimiento',
-        avatar: '/avatars/carlos-rodriguez.jpg'
-      },
-      organization: {
-        id: '1',
-        name: 'CEMSE',
-        logo: '/logos/cemse.png'
-      },
-      publishedAt: '2024-01-20T00:00:00Z',
-      createdAt: '2024-01-01T00:00:00Z',
-      updatedAt: '2024-01-20T00:00:00Z'
-    }
-  ]
-});
+const JWT_SECRET = process.env.JWT_SECRET || 'dev-secret-key';
 
 export async function GET(request: NextRequest) {
   try {
-    console.log('🔍 API: Received request for courses');
-
-    // Check if backend should be used
-    const useBackend = process.env.NEXT_PUBLIC_USE_BACKEND !== 'false';
-
-    if (!useBackend) {
-      console.log('🔍 API: Backend disabled, returning mock data');
-      const mockData = getMockCourses();
-      return NextResponse.json(mockData, { status: 200 });
+    console.log('📚 API: Received request for courses');
+    
+    // Get auth token (optional for public courses)
+    const token = request.headers.get('authorization')?.replace('Bearer ', '');
+    let userId: string | null = null;
+    
+    if (token) {
+      try {
+        const decoded = jwt.verify(token, JWT_SECRET) as any;
+        userId = decoded.id;
+        console.log('📚 API: Authenticated user:', decoded.username);
+      } catch (error) {
+        console.log('📚 API: Invalid token, proceeding without auth');
+      }
     }
 
     const { searchParams } = new URL(request.url);
-
-    // Use mock data for now since we don't have courses in the database yet
-    console.log('🔍 API: Using mock course data');
-    const mockData = getMockCourses();
-    
-    // Apply basic filtering if parameters provided
     const category = searchParams.get('category');
     const level = searchParams.get('level');
     const institutionId = searchParams.get('institutionId');
+    const isActive = searchParams.get('isActive');
     
-    let filteredCourses = mockData.courses;
+    // Build filter conditions
+    const where: any = {};
+    if (category) where.category = category;
+    if (level) where.level = level;
+    if (institutionId) where.instructorId = institutionId;
+    if (isActive !== null) where.isActive = isActive === 'true';
     
-    if (category) {
-      filteredCourses = filteredCourses.filter(course => course.category === category);
-    }
-    
-    if (level) {
-      filteredCourses = filteredCourses.filter(course => course.level === level);
-    }
-    
-    if (institutionId) {
-      filteredCourses = filteredCourses.filter(course => course.organization.id === institutionId);
-    }
+    // Get courses from database
+    const courses = await prisma.course.findMany({
+      where,
+      include: {
+        instructor: {
+          select: {
+            userId: true,
+            firstName: true,
+            lastName: true,
+            avatarUrl: true,
+            jobTitle: true,
+          }
+        },
+        modules: {
+          select: {
+            id: true,
+            title: true,
+            orderIndex: true,
+          },
+          orderBy: { orderIndex: 'asc' }
+        },
+        _count: {
+          select: {
+            enrollments: true,
+            modules: true,
+          }
+        }
+      },
+      orderBy: [
+        { isMandatory: 'desc' },
+        { createdAt: 'desc' }
+      ]
+    });
 
-    console.log('🔍 API: Returning filtered courses:', filteredCourses.length);
-    return NextResponse.json({ ...mockData, courses: filteredCourses }, { status: 200 });
+    // Transform courses to match expected format
+    const transformedCourses = courses.map(course => ({
+      id: course.id,
+      title: course.title,
+      slug: course.slug,
+      description: course.description,
+      shortDescription: course.shortDescription,
+      thumbnail: course.thumbnail,
+      videoPreview: course.videoPreview,
+      objectives: course.objectives,
+      prerequisites: course.prerequisites,
+      duration: course.duration,
+      level: course.level,
+      category: course.category,
+      isMandatory: course.isMandatory,
+      isActive: course.isActive,
+      price: Number(course.price || 0),
+      rating: Number(course.rating || 0),
+      studentsCount: course.studentsCount,
+      enrollmentCount: course._count.enrollments,
+      completionRate: Number(course.completionRate || 0),
+      totalLessons: course.totalLessons,
+      totalQuizzes: course.totalQuizzes,
+      totalResources: course.totalResources,
+      tags: course.tags,
+      certification: course.certification,
+      includedMaterials: course.includedMaterials,
+      instructorId: course.instructorId,
+      institutionName: course.institutionName,
+      instructor: course.instructor ? {
+        id: course.instructor.userId,
+        name: `${course.instructor.firstName || ''} ${course.instructor.lastName || ''}`.trim() || 'Sin nombre',
+        title: course.instructor.jobTitle || 'Instructor',
+        avatar: course.instructor.avatarUrl || '/avatars/default.jpg'
+      } : null,
+      organization: {
+        id: '1',
+        name: course.institutionName || 'CEMSE',
+        logo: '/logos/cemse.png'
+      },
+      publishedAt: course.publishedAt?.toISOString(),
+      createdAt: course.createdAt.toISOString(),
+      updatedAt: course.updatedAt.toISOString()
+    }));
+
+    console.log('📚 API: Returning courses from database:', transformedCourses.length);
+    return NextResponse.json({ courses: transformedCourses }, { status: 200 });
   } catch (error) {
-    console.error('Error in courses route:', error);
-
-    // If backend is not available, return mock data
-    if (error instanceof Error && error.message.includes('fetch failed')) {
-      console.log('🔍 API: Backend not available, returning mock data');
-      const mockData = getMockCourses();
-      return NextResponse.json(mockData, { status: 200 });
-    }
-
+    console.error('❌ Error in courses route:', error);
     return NextResponse.json(
       { message: 'Internal server error' },
+      { status: 500 }
+    );
+  }
+}
+
+export async function POST(request: NextRequest) {
+  try {
+    console.log('📚 API: Received POST request for course creation');
+    
+    // Get auth token
+    const token = request.headers.get('authorization')?.replace('Bearer ', '');
+    if (!token) {
+      return NextResponse.json(
+        { message: 'Authorization required' },
+        { status: 401 }
+      );
+    }
+
+    // Verify token
+    const decoded = jwt.verify(token, JWT_SECRET) as any;
+    console.log('📚 API: Authenticated user:', decoded.username);
+
+    const body = await request.json();
+    console.log('📚 API: Course data received:', body);
+    
+    // Generate unique slug
+    let baseSlug = body.slug || body.title.toLowerCase()
+      .replace(/[^\w\s-]/g, '') // Remove special characters
+      .replace(/\s+/g, '-') // Replace spaces with hyphens
+      .trim();
+    
+    let slug = baseSlug;
+    let counter = 1;
+    
+    // Check for slug uniqueness
+    while (await prisma.course.findUnique({ where: { slug } })) {
+      slug = `${baseSlug}-${counter}`;
+      counter++;
+    }
+    
+    console.log('📚 API: Using slug:', slug);
+
+    // Check if user profile exists
+    const userProfile = await prisma.profile.findUnique({
+      where: { userId: decoded.id }
+    });
+    
+    console.log('📚 API: User profile found:', !!userProfile);
+
+    // Create course in database
+    const course = await prisma.course.create({
+      data: {
+        title: body.title,
+        slug: slug,
+        description: body.description,
+        shortDescription: body.shortDescription || null,
+        thumbnail: body.thumbnail || null,
+        videoPreview: body.videoPreview || null,
+        objectives: body.objectives || [],
+        prerequisites: body.prerequisites || [],
+        duration: parseInt(body.duration) || 0,
+        level: body.level || 'BEGINNER',
+        category: body.category,
+        isMandatory: body.isMandatory || false,
+        isActive: body.isActive !== undefined ? body.isActive : true,
+        price: parseFloat(body.price) || 0,
+        rating: 0,
+        studentsCount: 0,
+        completionRate: 0,
+        totalLessons: 0,
+        totalQuizzes: 0,
+        totalResources: 0,
+        tags: body.tags || [],
+        certification: body.certification !== undefined ? body.certification : true,
+        includedMaterials: body.includedMaterials || [],
+        instructorId: userProfile ? decoded.id : null, // Only set if profile exists
+        institutionName: body.institutionName || 'CEMSE',
+        publishedAt: new Date(), // Set published date
+      },
+      include: {
+        instructor: userProfile ? {
+          select: {
+            userId: true,
+            firstName: true,
+            lastName: true,
+            avatarUrl: true,
+            jobTitle: true,
+          }
+        } : false
+      }
+    });
+
+    console.log('✅ Course created successfully:', course.id);
+    return NextResponse.json({ course }, { status: 201 });
+  } catch (error) {
+    console.error('❌ Error creating course:', error);
+    
+    const errorDetails = error instanceof Error ? {
+      message: error.message,
+      code: (error as any).code,
+      meta: (error as any).meta
+    } : { message: 'Unknown error' };
+    
+    console.error('❌ Error details:', errorDetails);
+    
+    // Return more detailed error for debugging
+    return NextResponse.json(
+      { 
+        message: 'Internal server error',
+        error: process.env.NODE_ENV === 'development' ? errorDetails.message : 'Internal server error',
+        details: process.env.NODE_ENV === 'development' ? errorDetails : undefined
+      },
       { status: 500 }
     );
   }

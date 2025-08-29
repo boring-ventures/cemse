@@ -47,14 +47,15 @@ import {
   QuestionType,
 } from "@/types/courses";
 import { LessonPlayer } from "@/components/courses/lesson-player";
+import { useCourseEnrollments } from "@/hooks/useCourseEnrollments";
 import confetti from "canvas-confetti";
 import { useRouter } from "next/navigation";
+import { apiCall } from "@/lib/api";
 import {
   Collapsible,
   CollapsibleTrigger,
   CollapsibleContent,
 } from "@/components/ui/collapsible";
-import { useCourse } from "@/hooks/useCourseApi";
 
 interface Resource {
   id: string;
@@ -101,7 +102,7 @@ export default function CourseLearnPage({ params }: PageProps) {
 function CourseLearnClient({ params }: PageProps) {
   const router = useRouter();
   const [courseId, setCourseId] = useState<string>("");
-  
+
   // Resolve params on mount
   useEffect(() => {
     const resolveParams = async () => {
@@ -111,7 +112,11 @@ function CourseLearnClient({ params }: PageProps) {
     resolveParams();
   }, [params]);
 
-  const { data: courseData, loading, error } = useCourse(courseId);
+  const {
+    enrollments,
+    loading: enrollmentsLoading,
+    getEnrollmentForLearning,
+  } = useCourseEnrollments();
 
   const [course, setCourse] = useState<ExtendedCourse | null>(null);
   const [currentModuleId, setCurrentModuleId] = useState<string>("");
@@ -119,16 +124,160 @@ function CourseLearnClient({ params }: PageProps) {
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
   const [showCertificate, setShowCertificate] = useState(false);
   const [expandedModules, setExpandedModules] = useState<string[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
 
   const [showMotivationModal, setShowMotivationModal] = useState(false);
   const [motivationMessage, setMotivationMessage] = useState("");
 
-  // Update local course state when data is loaded
+  // Check if user is enrolled in this course
+  const userEnrollment = enrollments.find((e) => e.courseId === courseId);
+  const isEnrolled = !!userEnrollment;
+
+  // Redirect if not enrolled (after loading is complete)
   useEffect(() => {
-    if (courseData) {
-      setCourse(courseData as ExtendedCourse);
+    if (!enrollmentsLoading && !loading && courseId && !isEnrolled) {
+      console.log("❌ User not enrolled in course:", courseId);
+      router.push(`/dashboard/courses/${courseId}?error=not-enrolled`);
     }
-  }, [courseData]);
+  }, [enrollmentsLoading, loading, courseId, isEnrolled, router]);
+
+  // Fetch complete course data with modules and lessons when enrollment is found
+  useEffect(() => {
+    const fetchCourseData = async () => {
+      if (!userEnrollment || !courseId) return;
+
+      try {
+        setLoading(true);
+        setError(null);
+
+        console.log(
+          "🔍 Fetching complete course data for enrollment:",
+          userEnrollment.id
+        );
+
+        // Get complete enrollment data with course modules and lessons
+        let enrollmentData = await getEnrollmentForLearning(userEnrollment.id);
+
+        // If we couldn't get complete data, try to get basic enrollment data
+        if (!enrollmentData || !enrollmentData.course) {
+          console.log("🔍 Trying to get basic enrollment data as fallback");
+          try {
+            const basicData = (await apiCall(
+              `/course-enrollments/${userEnrollment.id}`
+            )) as any;
+            enrollmentData = basicData.enrollment || basicData;
+            console.log("🔍 Basic enrollment data:", enrollmentData);
+          } catch (basicError) {
+            console.error(
+              "❌ Failed to get basic enrollment data:",
+              basicError
+            );
+          }
+        }
+
+        if (!enrollmentData || !enrollmentData.course) {
+          throw new Error("No se pudo cargar la información del curso");
+        }
+
+        console.log("✅ Complete course data received:", enrollmentData);
+        console.log("🔍 Course data structure:", {
+          hasCourse: !!enrollmentData.course,
+          courseTitle: enrollmentData.course?.title,
+          hasModules: !!enrollmentData.course?.modules,
+          modulesCount: enrollmentData.course?.modules?.length || 0,
+          modules:
+            enrollmentData.course?.modules?.map((m: any) => ({
+              id: m.id,
+              title: m.title,
+              lessonsCount: m.lessons?.length || 0,
+            })) || [],
+        });
+
+        // Transform the enrollment course data to match our ExtendedCourse interface
+        const courseData = enrollmentData.course;
+        console.log("🔍 Course data modules:", courseData.modules?.length || 0);
+
+        const extendedCourse: ExtendedCourse = {
+          ...courseData,
+          modules:
+            courseData.modules?.map((module: any) => {
+              console.log(
+                "🔍 Processing module:",
+                module.title,
+                "with lessons:",
+                module.lessons?.length || 0
+              );
+              return {
+                id: module.id,
+                title: module.title,
+                description: module.description || "",
+                order: module.orderIndex || 0,
+                duration: module.estimatedDuration || module.duration || 0,
+                isLocked: module.isLocked || false,
+                completed: false,
+                lessons:
+                  module.lessons?.map((lesson: any) => ({
+                    id: lesson.id,
+                    moduleId: module.id,
+                    title: lesson.title,
+                    description: lesson.description || "",
+                    type: (lesson.contentType ||
+                      lesson.type ||
+                      "TEXT") as LessonType,
+                    content: {
+                      video: lesson.videoUrl
+                        ? {
+                            url: lesson.videoUrl,
+                            duration: lesson.duration || 0,
+                            thumbnail: lesson.thumbnail || "",
+                          }
+                        : undefined,
+                      textContent: lesson.content || "",
+                      ...lesson.content,
+                    },
+                    duration: lesson.duration || 0,
+                    order: lesson.orderIndex || 0,
+                    isPreview: lesson.isPreview || false,
+                    resources: lesson.resources || [],
+                    quiz: lesson.quizzes?.[0] || undefined, // Take first quiz if available
+                    completed: false,
+                    createdAt: lesson.createdAt,
+                    updatedAt: lesson.updatedAt,
+                  })) || [],
+                createdAt: module.createdAt,
+                updatedAt: module.updatedAt,
+              };
+            }) || [],
+          totalProgress: 0,
+        };
+
+        console.log(
+          "✅ Extended course created with modules:",
+          extendedCourse.modules.length
+        );
+
+        setCourse(extendedCourse);
+        console.log("✅ Course state updated with modules and lessons");
+
+        // If no modules/lessons, show a helpful message but don't crash
+        if (extendedCourse.modules.length === 0) {
+          console.log(
+            "ℹ️ Course has no modules - this is okay, just showing course info"
+          );
+        }
+      } catch (err) {
+        console.error("❌ Error fetching course data:", err);
+        setError(
+          err instanceof Error ? err.message : "Error al cargar el curso"
+        );
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchCourseData();
+  }, [userEnrollment, courseId, getEnrollmentForLearning]);
 
   // Initialize current module and lesson when course is loaded
   useEffect(() => {
@@ -333,7 +482,7 @@ function CourseLearnClient({ params }: PageProps) {
   const currentLesson = getCurrentLesson();
   const currentModule = getCurrentModule();
 
-  if (loading) {
+  if (loading || enrollmentsLoading) {
     return (
       <div className="min-h-screen flex items-center justify-center">
         <div className="text-center">
@@ -353,17 +502,15 @@ function CourseLearnClient({ params }: PageProps) {
           </div>
           <h2 className="text-xl font-bold mb-2">Error al cargar el curso</h2>
           <p className="text-muted-foreground mb-4">
-            {error instanceof Error ? error.message : "Error desconocido"}
+            {error || "Error desconocido"}
           </p>
-          <Button onClick={() => router.back()}>
-            Volver
-          </Button>
+          <Button onClick={() => router.back()}>Volver</Button>
         </div>
       </div>
     );
   }
 
-  if (!course || !currentLesson) {
+  if (!course) {
     return (
       <div className="min-h-screen flex items-center justify-center">
         <div className="text-center">
@@ -374,9 +521,7 @@ function CourseLearnClient({ params }: PageProps) {
           <p className="text-muted-foreground mb-4">
             El curso que buscas no existe o no tienes acceso a él.
           </p>
-          <Button onClick={() => router.back()}>
-            Volver
-          </Button>
+          <Button onClick={() => router.back()}>Volver</Button>
         </div>
       </div>
     );
@@ -438,80 +583,93 @@ function CourseLearnClient({ params }: PageProps) {
 
             {/* Course Modules */}
             <ScrollArea className="h-[calc(100vh-300px)]">
-              {course.modules.map((module) => (
-                <Collapsible
-                  key={module.id}
-                  open={expandedModules.includes(module.id)}
-                  onOpenChange={() => toggleModuleExpanded(module.id)}
-                >
-                  <div
-                    className={`p-3 mb-2 rounded-lg ${
-                      module.completed
-                        ? "bg-primary/10"
-                        : module.isLocked
-                          ? "bg-muted/50"
-                          : "bg-card"
-                    }`}
+              {course.modules.length > 0 ? (
+                course.modules.map((module) => (
+                  <Collapsible
+                    key={module.id}
+                    open={expandedModules.includes(module.id)}
+                    onOpenChange={() => toggleModuleExpanded(module.id)}
                   >
-                    <CollapsibleTrigger className="w-full">
-                      <div className="flex items-center justify-between">
-                        <div className="flex items-center gap-2">
-                          {module.completed ? (
-                            <CheckCircle2 className="h-4 w-4 text-primary" />
-                          ) : module.isLocked ? (
-                            <Lock className="h-4 w-4 text-muted-foreground" />
+                    <div
+                      className={`p-3 mb-2 rounded-lg ${
+                        module.completed
+                          ? "bg-primary/10"
+                          : module.isLocked
+                            ? "bg-muted/50"
+                            : "bg-card"
+                      }`}
+                    >
+                      <CollapsibleTrigger className="w-full">
+                        <div className="flex items-center justify-between">
+                          <div className="flex items-center gap-2">
+                            {module.completed ? (
+                              <CheckCircle2 className="h-4 w-4 text-primary" />
+                            ) : module.isLocked ? (
+                              <Lock className="h-4 w-4 text-muted-foreground" />
+                            ) : (
+                              <FileText className="h-4 w-4 text-muted-foreground" />
+                            )}
+                            <span className="text-sm font-medium">
+                              {module.title}
+                            </span>
+                          </div>
+                          {expandedModules.includes(module.id) ? (
+                            <ChevronUp className="h-4 w-4" />
                           ) : (
-                            <FileText className="h-4 w-4 text-muted-foreground" />
+                            <ChevronDown className="h-4 w-4" />
                           )}
-                          <span className="text-sm font-medium">
-                            {module.title}
-                          </span>
                         </div>
-                        {expandedModules.includes(module.id) ? (
-                          <ChevronUp className="h-4 w-4" />
-                        ) : (
-                          <ChevronDown className="h-4 w-4" />
-                        )}
-                      </div>
-                    </CollapsibleTrigger>
-                  </div>
-
-                  <CollapsibleContent>
-                    <div className="pl-4">
-                      {module.lessons.map((lesson) => (
-                        <button
-                          key={lesson.id}
-                          onClick={() => selectLesson(module.id, lesson.id)}
-                          className={`w-full text-left p-2 rounded-lg mb-1 flex items-center gap-2 ${
-                            currentLessonId === lesson.id
-                              ? "bg-primary text-primary-foreground"
-                              : lesson.completed
-                                ? "bg-primary/10"
-                                : "hover:bg-accent"
-                          }`}
-                          disabled={module.isLocked}
-                        >
-                          {lesson.completed ? (
-                            <CheckCircle2 className="h-4 w-4" />
-                          ) : lesson.type === LessonType.VIDEO ? (
-                            <Play className="h-4 w-4" />
-                          ) : (
-                            <FileText className="h-4 w-4" />
-                          )}
-                          <span className="text-sm truncate">
-                            {lesson.title}
-                          </span>
-                          {lesson.isPreview && (
-                            <Badge variant="secondary" className="ml-auto">
-                              Preview
-                            </Badge>
-                          )}
-                        </button>
-                      ))}
+                      </CollapsibleTrigger>
                     </div>
-                  </CollapsibleContent>
-                </Collapsible>
-              ))}
+
+                    <CollapsibleContent>
+                      <div className="pl-4">
+                        {module.lessons.map((lesson) => (
+                          <button
+                            key={lesson.id}
+                            onClick={() => selectLesson(module.id, lesson.id)}
+                            className={`w-full text-left p-2 rounded-lg mb-1 flex items-center gap-2 ${
+                              currentLessonId === lesson.id
+                                ? "bg-primary text-primary-foreground"
+                                : lesson.completed
+                                  ? "bg-primary/10"
+                                  : "hover:bg-accent"
+                            }`}
+                            disabled={module.isLocked}
+                          >
+                            {lesson.completed ? (
+                              <CheckCircle2 className="h-4 w-4" />
+                            ) : lesson.type === LessonType.VIDEO ? (
+                              <Play className="h-4 w-4" />
+                            ) : (
+                              <FileText className="h-4 w-4" />
+                            )}
+                            <span className="text-sm truncate">
+                              {lesson.title}
+                            </span>
+                            {lesson.isPreview && (
+                              <Badge variant="secondary" className="ml-auto">
+                                Preview
+                              </Badge>
+                            )}
+                          </button>
+                        ))}
+                      </div>
+                    </CollapsibleContent>
+                  </Collapsible>
+                ))
+              ) : (
+                <div className="flex flex-col items-center justify-center h-full text-center p-8">
+                  <BookOpen className="h-16 w-16 text-muted-foreground mb-4" />
+                  <h3 className="text-lg font-semibold mb-2">
+                    Contenido en desarrollo
+                  </h3>
+                  <p className="text-muted-foreground text-sm">
+                    Este curso aún no tiene módulos o lecciones disponibles. El
+                    contenido será añadido próximamente.
+                  </p>
+                </div>
+              )}
             </ScrollArea>
           </div>
         )}
@@ -563,6 +721,25 @@ function CourseLearnClient({ params }: PageProps) {
             {/* Lesson Notes */}
             <LessonNotes lessonId={currentLesson.id} />
           </>
+        )}
+
+        {/* Show message when no lesson is available */}
+        {course && !currentLesson && (
+          <div className="flex flex-col items-center justify-center h-full text-center p-8">
+            <BookOpen className="h-16 w-16 text-muted-foreground mb-4" />
+            <h2 className="text-2xl font-bold mb-2">{course.title}</h2>
+            <p className="text-muted-foreground mb-4">{course.description}</p>
+            {course.modules.length === 0 ? (
+              <p className="text-sm text-muted-foreground">
+                Este curso está en desarrollo. El contenido será añadido
+                próximamente.
+              </p>
+            ) : (
+              <p className="text-sm text-muted-foreground">
+                Selecciona un módulo del menú lateral para comenzar.
+              </p>
+            )}
+          </div>
         )}
 
         {/* Course Completion Certificate */}

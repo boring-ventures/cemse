@@ -61,23 +61,29 @@ export async function checkFileAccess(filePath: string, token?: string): Promise
 }
 
 /**
- * Descarga un archivo con autenticación
+ * Descarga un archivo con autenticación basada en cookies
  */
 export async function downloadFileWithAuth(filePath: string, filename?: string): Promise<void> {
   try {
-    const token = localStorage.getItem('token');
-    if (!token) {
-      throw new Error('No se encontró token de autorización');
-    }
-
+    console.log('🔍 downloadFileWithAuth - Attempting to download:', filePath);
+    
+    // Use cookies for authentication instead of localStorage token
     const fullUrl = buildFileUrl(filePath);
+    console.log('🔍 downloadFileWithAuth - Full URL:', fullUrl);
+    
     const response = await fetch(fullUrl, {
+      method: 'GET',
+      credentials: 'include', // Include cookies for authentication
       headers: {
-        'Authorization': `Bearer ${token}`,
+        'Content-Type': 'application/pdf'
       }
     });
 
+    console.log('🔍 downloadFileWithAuth - Response status:', response.status);
+
     if (!response.ok) {
+      const errorText = await response.text();
+      console.error('🔍 downloadFileWithAuth - Error response:', errorText);
       throw new Error(`Error ${response.status}: ${response.statusText}`);
     }
 
@@ -90,8 +96,10 @@ export async function downloadFileWithAuth(filePath: string, filename?: string):
     a.click();
     window.URL.revokeObjectURL(url);
     document.body.removeChild(a);
+    
+    console.log('✅ downloadFileWithAuth - File downloaded successfully');
   } catch (error) {
-    console.error('Error downloading file:', error);
+    console.error('❌ downloadFileWithAuth - Error:', error);
     throw error;
   }
 }

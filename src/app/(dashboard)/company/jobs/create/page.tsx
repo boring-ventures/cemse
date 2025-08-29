@@ -43,7 +43,7 @@ export default function CreateJobOfferPage() {
     workSchedule: "",
     workModality: "ON_SITE" as WorkModality,
     experienceLevel: "ENTRY_LEVEL" as ExperienceLevel,
-    companyId: user?.company?.id || "",
+    companyId: user?.company?.id || (user as any)?.companyId || user?.id || "",
     salaryMin: undefined,
     salaryMax: undefined,
     benefits: "",
@@ -88,15 +88,19 @@ export default function CreateJobOfferPage() {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     
-    if (!user?.company?.id) {
+    // Get company ID from either company object or companyId field as fallback
+    const companyId = user?.company?.id || (user as any)?.companyId || user?.id;
+    
+    if (!companyId) {
       console.error("No se pudo identificar la empresa");
+      alert("Error: No se pudo identificar la empresa. Por favor, inicie sesión nuevamente.");
       return;
     }
 
     try {
       const jobOfferData: CreateJobOfferRequest = {
         ...formData,
-        companyId: user.company.id,
+        companyId: companyId,
         salaryMin: formData.salaryMin ? Number(formData.salaryMin) : undefined,
         salaryMax: formData.salaryMax ? Number(formData.salaryMax) : undefined,
         skillsRequired: formData.skillsRequired || [],

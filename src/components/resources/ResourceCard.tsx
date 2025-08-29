@@ -4,6 +4,12 @@ import { useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from '@/components/ui/dropdown-menu';
 import { 
   Download, 
   Star, 
@@ -14,7 +20,10 @@ import {
   File,
   Calendar,
   User,
-  Eye
+  Eye,
+  Edit,
+  Trash2,
+  MoreVertical
 } from 'lucide-react';
 import { Resource } from '@/types/api';
 
@@ -22,9 +31,19 @@ interface ResourceCardProps {
   resource: Resource;
   onDownload?: (resource: Resource) => void;
   onRate?: (resource: Resource, rating: number) => void;
+  onEdit?: (resource: Resource) => void;
+  onDelete?: (resource: Resource) => void;
+  showActions?: boolean;
 }
 
-export function ResourceCard({ resource, onDownload, onRate }: ResourceCardProps) {
+export function ResourceCard({ 
+  resource, 
+  onDownload, 
+  onRate, 
+  onEdit, 
+  onDelete, 
+  showActions = false 
+}: ResourceCardProps) {
   const [rating, setRating] = useState(resource.rating || 0);
   const [userRating, setUserRating] = useState(0);
 
@@ -39,8 +58,9 @@ export function ResourceCard({ resource, onDownload, onRate }: ResourceCardProps
     }
   };
 
-  const formatDate = (dateString: string) => {
-    return new Date(dateString).toLocaleDateString('es-ES', {
+  const formatDate = (dateString: string | Date) => {
+    const date = typeof dateString === 'string' ? new Date(dateString) : dateString;
+    return date.toLocaleDateString('es-ES', {
       year: 'numeric',
       month: 'short',
       day: 'numeric'
@@ -70,9 +90,33 @@ export function ResourceCard({ resource, onDownload, onRate }: ResourceCardProps
               {resource.type}
             </Badge>
           </div>
-          <Badge variant="secondary" className="text-xs">
-            {resource.category}
-          </Badge>
+          <div className="flex items-center gap-2">
+            <Badge variant="secondary" className="text-xs">
+              {resource.category}
+            </Badge>
+            {showActions && (
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                  <Button variant="ghost" size="sm" className="h-8 w-8 p-0">
+                    <MoreVertical className="h-4 w-4" />
+                  </Button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent align="end">
+                  <DropdownMenuItem onClick={() => onEdit?.(resource)}>
+                    <Edit className="h-4 w-4 mr-2" />
+                    Editar
+                  </DropdownMenuItem>
+                  <DropdownMenuItem 
+                    onClick={() => onDelete?.(resource)}
+                    className="text-destructive"
+                  >
+                    <Trash2 className="h-4 w-4 mr-2" />
+                    Eliminar
+                  </DropdownMenuItem>
+                </DropdownMenuContent>
+              </DropdownMenu>
+            )}
+          </div>
         </div>
         <CardTitle className="text-lg line-clamp-2">{resource.title}</CardTitle>
       </CardHeader>
@@ -89,7 +133,7 @@ export function ResourceCard({ resource, onDownload, onRate }: ResourceCardProps
           </div>
           <div className="flex items-center gap-2 text-xs text-muted-foreground">
             <Calendar className="h-3 w-3" />
-            <span>{formatDate(resource.createdAt)}</span>
+            <span>{formatDate(resource.publishedDate || resource.createdAt)}</span>
           </div>
           <div className="flex items-center gap-2 text-xs text-muted-foreground">
             <Download className="h-3 w-3" />
@@ -144,7 +188,8 @@ export function ResourceCard({ resource, onDownload, onRate }: ResourceCardProps
           <Button 
             variant="outline" 
             size="sm"
-            onClick={() => window.open(resource.downloadUrl || resource.fileUrl, '_blank')}
+            onClick={() => window.open(resource.downloadUrl || resource.externalUrl, '_blank')}
+            disabled={!resource.downloadUrl && !resource.externalUrl}
           >
             <Eye className="h-4 w-4" />
           </Button>

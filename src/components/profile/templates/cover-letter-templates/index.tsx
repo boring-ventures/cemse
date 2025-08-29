@@ -1016,7 +1016,12 @@ export function CoverLetterTemplateSelector() {
 
   const handleSave = async () => {
     try {
-      await saveCoverLetterData(currentContent, selectedTemplate, currentRecipient, currentSubject);
+      await saveCoverLetterData({
+        content: currentContent,
+        template: selectedTemplate,
+        recipient: currentRecipient,
+        subject: currentSubject
+      });
       setIsEditing(false);
     } catch (error) {
       console.error("Error saving cover letter:", error);
@@ -1158,7 +1163,7 @@ export function CoverLetterTemplateSelector() {
                     <Printer className="h-4 w-4 mr-2" />
                     Imprimir
                   </Button>
-                  <Button onClick={handleDownloadPDF}>
+                  <Button onClick={handleDownloadPDF} data-cover-letter-download>
                     <Download className="h-4 w-4 mr-2" />
                     Descargar PDF
                   </Button>

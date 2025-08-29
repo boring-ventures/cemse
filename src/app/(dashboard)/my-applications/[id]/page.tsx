@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, use } from "react";
 import { useRouter } from "next/navigation";
 import {
   ArrowLeft,
@@ -33,15 +33,20 @@ import YouthApplicationChat from "@/components/youth-applications/YouthApplicati
 export default function YouthApplicationDetailPage({
   params,
 }: {
-  params: { id: string };
+  params: Promise<{ id: string }>;
 }) {
   const router = useRouter();
   const { toast } = useToast();
+  
+  // Unwrap params Promise using React.use()
+  const resolvedParams = use(params);
+  const applicationId = resolvedParams.id;
+  
   const {
     data: application,
     isLoading,
     error,
-  } = useYouthApplication(params.id as string);
+  } = useYouthApplication(applicationId);
 
   const [activeTab, setActiveTab] = useState<
     "details" | "messages" | "interests"
@@ -334,7 +339,7 @@ export default function YouthApplicationDetailPage({
                 <CardTitle>Mensajes</CardTitle>
               </CardHeader>
               <CardContent>
-                <YouthApplicationChat applicationId={application.id} />
+                <YouthApplicationChat applicationId={applicationId} />
               </CardContent>
             </Card>
           )}
@@ -345,7 +350,7 @@ export default function YouthApplicationDetailPage({
                 <CardTitle>Intereses de Empresas</CardTitle>
               </CardHeader>
               <CardContent>
-                <CompanyInterestsList applicationId={application.id} />
+                <CompanyInterestsList applicationId={applicationId} />
               </CardContent>
             </Card>
           )}
@@ -361,7 +366,7 @@ export default function YouthApplicationDetailPage({
             <CardContent className="space-y-3">
               <Button
                 onClick={() =>
-                  router.push(`/my-applications/${application.id}/edit`)
+                  router.push(`/my-applications/${applicationId}/edit`)
                 }
                 className="w-full"
               >

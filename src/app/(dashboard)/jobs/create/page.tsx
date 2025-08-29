@@ -38,6 +38,7 @@ import {
 
 } from "@/types/jobs";
 import { useAuthContext } from "@/hooks/use-auth";
+import { useJobCreation } from "@/hooks/use-job-creation";
 
 import { ImageIcon, Trash } from "lucide-react";
 import { useRef } from "react";
@@ -69,10 +70,10 @@ export default function CreateJobPage() {
   const params = useParams();
   const { toast } = useToast();
   const { user } = useAuthContext();
+  const { isLoading, createJob } = useJobCreation();
   const fileInputRef = useRef<HTMLInputElement>(null);
-     const [images, setImages] = useState<File[]>([]);
-   const [imageUrls, setImageUrls] = useState<string[]>([]);
-  const [loading, setLoading] = useState(false);
+  const [images, setImages] = useState<File[]>([]);
+  const [imageUrls, setImageUrls] = useState<string[]>([]);
   const [preview, setPreview] = useState(false);
   const [showTermsModal, setShowTermsModal] = useState(false);
 
@@ -126,6 +127,7 @@ export default function CreateJobPage() {
   });
 
   const [skillInput, setSkillInput] = useState("");
+  const [desiredSkillInput, setDesiredSkillInput] = useState("");
   const [benefitInput, setBenefitInput] = useState("");
   const [requirementInput, setRequirementInput] = useState("");
   const [responsibilityInput, setResponsibilityInput] = useState("");
@@ -175,61 +177,51 @@ export default function CreateJobPage() {
 
 
 
-           const validateForm = () => {
-      console.log('🔍 validateForm called');
-      console.log('🔍 jobData for validation:', jobData);
-      
-      const required = [
-        "title",
-        "description",
-        "contractType",
-        "workModality",
-        "experienceLevel",
-        "location",
-      ];
-
-      for (const field of required) {
-        const value = jobData[field as keyof typeof jobData];
-        console.log(`🔍 Checking field ${field}:`, value);
-        if (!value) {
-          console.log(`❌ Field ${field} is empty`);
-          toast({
-            title: "Campos requeridos",
-            description: `Por favor completa el campo: ${field}`,
-            variant: "destructive",
-          });
-          return false;
-        }
-      }
-
-      // Ensure workSchedule has a value (it's required by backend)
-      if (!jobData.workSchedule || jobData.workSchedule.trim() === '') {
-        console.log('❌ workSchedule is empty');
-        toast({
-          title: "Horario requerido",
-          description: "Por favor especifica el horario de trabajo",
-          variant: "destructive",
-        });
-        return false;
-      }
-
-      console.log('✅ Form validation passed');
-      return true;
+  // Improved validation function
+  const validateForm = (): boolean => {
+    const requiredFields = {
+      title: "Título del empleo",
+      description: "Descripción del empleo", 
+      contractType: "Tipo de contrato",
+      workModality: "Modalidad de trabajo",
+      experienceLevel: "Nivel de experiencia",
+      location: "Ubicación",
+      workSchedule: "Horario de trabajo"
     };
 
-    const handleSubmit = async (status: JobStatus) => {
-    console.log('🔍 handleSubmit called with status:', status);
-    console.log('🔍 Current jobData:', jobData);
-    console.log('🔍 Current user:', user);
-    
-    if (!validateForm()) {
-      console.log('❌ Form validation failed');
-      return;
+    const errors: string[] = [];
+
+    // Check required string fields
+    Object.entries(requiredFields).forEach(([field, label]) => {
+      const value = jobData[field as keyof JobFormData];
+      if (!value || (typeof value === 'string' && value.trim() === '')) {
+        errors.push(label);
+      }
+    });
+
+    // Check required skills array
+    if (!jobData.requiredSkills || jobData.requiredSkills.length === 0) {
+      errors.push("Habilidades requeridas");
     }
 
-    // Check if user is authenticated and has company info
-    if (!user || !user.id) {
-      console.log('❌ User authentication check failed:', { user: !!user, userId: user?.id });
+    if (errors.length > 0) {
+      toast({
+        title: "Campos requeridos",
+        description: `Por favor completa: ${errors.join(', ')}`,
+        variant: "destructive",
+      });
+      return false;
+    }
+
+    return true;
+  };
+
+  // Simplified submit handler using the custom hook
+  const handleSubmit = async (status: JobStatus) => {
+    // Early validation
+    if (!validateForm()) return;
+    
+    if (!user?.id) {
       toast({
         title: "Error de autenticación",
         description: "Debes estar autenticado como empresa para crear empleos",
@@ -238,161 +230,23 @@ export default function CreateJobPage() {
       return;
     }
 
-        setLoading(true);
-    console.log('🔍 Starting API request...');
-          try {
-      // Check if we have images to upload
-      const hasImages = images.length > 0;
-      
-      if (hasImages) {
-        // Use FormData for image uploads
-        const formDataToSend = new FormData();
-        
-        // Add basic data
-        formDataToSend.append('title', jobData.title);
-        formDataToSend.append('description', jobData.description);
-        formDataToSend.append('requirements', jobData.requirements.length > 0 ? jobData.requirements.join(', ') : "Sin requisitos específicos");
-        formDataToSend.append('location', jobData.location);
-        formDataToSend.append('contractType', jobData.contractType);
-        formDataToSend.append('workSchedule', jobData.workSchedule || "Horario a definir");
-        formDataToSend.append('workModality', jobData.workModality);
-        formDataToSend.append('experienceLevel', jobData.experienceLevel);
-        formDataToSend.append('municipality', "Cochabamba");
-        formDataToSend.append('companyId', user.id);
-        
-        // Add optional data
-        if (jobData.salaryMin) formDataToSend.append('salaryMin', jobData.salaryMin);
-        if (jobData.salaryMax) formDataToSend.append('salaryMax', jobData.salaryMax);
-        if (jobData.benefits.length > 0) formDataToSend.append('benefits', jobData.benefits.join(', '));
-        if (jobData.closingDate) formDataToSend.append('applicationDeadline', jobData.closingDate);
-                 if (jobData.coordinates) {
-           formDataToSend.append('latitude', jobData.coordinates[0].toString());
-           formDataToSend.append('longitude', jobData.coordinates[1].toString());
-         }
-         if (jobData.department) formDataToSend.append('department', jobData.department);
-         if (jobData.educationRequired) formDataToSend.append('educationRequired', jobData.educationRequired);
-        
-        // Add arrays as JSON strings
-        if (jobData.requiredSkills.length > 0) {
-          formDataToSend.append('skillsRequired', JSON.stringify(jobData.requiredSkills));
-        } else {
-          formDataToSend.append('skillsRequired', JSON.stringify(["Sin especificar"]));
-        }
-        
-        if (jobData.desiredSkills.length > 0) {
-          formDataToSend.append('desiredSkills', JSON.stringify(jobData.desiredSkills));
-        }
-        
-                 // Add images directly as files
-         for (let index = 0; index < images.length; index++) {
-           const file = images[index];
-           formDataToSend.append('images', file);
-           console.log(`🔍 Added image ${index + 1}/${images.length}: ${file.name}`);
-         }
-        
-        console.log('🔍 Using FormData for image upload');
-        console.log('🔍 Making request to /api/joboffer with FormData');
-        console.log('🔍 FormData entries count:', Array.from(formDataToSend.entries()).length);
-        
-        const token = localStorage.getItem('token') || '';
-        console.log('🔍 Authorization token:', token ? 'Present' : 'Missing');
-
-        const response = await fetch("/api/joboffer", {
-          method: "POST",
-          headers: {
-            "Authorization": `Bearer ${token}`,
-          },
-          body: formDataToSend,
-        });
-
-        console.log('🔍 Response received:', response.status, response.statusText);
-        
-        if (!response.ok) {
-          const errorText = await response.text();
-          console.log('❌ Response error text:', errorText);
-          throw new Error(`HTTP ${response.status}: ${errorText}`);
-        }
-
-        if (response.ok) {
-          toast({
-            title: "Empleo creado",
-            description: `El empleo ha sido ${status === "ACTIVE" ? "publicado" : "guardado como borrador"}`,
-          });
-          router.push("/company/jobs");
-        } else {
-          throw new Error("Error creating job");
-        }
-      } else {
-        // Use JSON for requests without images
-        const newJob = {
-          title: jobData.title,
-          description: jobData.description,
-          requirements: jobData.requirements.length > 0 ? jobData.requirements.join(', ') : "Sin requisitos específicos",
-          location: jobData.location,
-          contractType: jobData.contractType,
-          workSchedule: jobData.workSchedule || "Horario a definir",
-          workModality: jobData.workModality,
-          experienceLevel: jobData.experienceLevel,
-          municipality: "Cochabamba",
-          companyId: user.id,
-          salaryMin: jobData.salaryMin ? parseInt(jobData.salaryMin) : undefined,
-          salaryMax: jobData.salaryMax ? parseInt(jobData.salaryMax) : undefined,
-          benefits: jobData.benefits.length > 0 ? jobData.benefits.join(', ') : undefined,
-          skillsRequired: jobData.requiredSkills.length > 0 ? jobData.requiredSkills : ["Sin especificar"],
-          desiredSkills: jobData.desiredSkills,
-          applicationDeadline: jobData.closingDate || undefined,
-                     latitude: jobData.coordinates ? jobData.coordinates[0] : undefined,
-           longitude: jobData.coordinates ? jobData.coordinates[1] : undefined,
-           department: jobData.department || undefined,
-           educationRequired: jobData.educationRequired || undefined,
-        };
-
-        console.log('🔍 Prepared job data:', newJob);
-        console.log('🔍 Making request to /api/joboffer with JSON');
-        
-        const token = localStorage.getItem('token') || '';
-        console.log('🔍 Authorization token:', token ? 'Present' : 'Missing');
-
-        const response = await fetch("/api/joboffer", {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-            "Authorization": `Bearer ${token}`,
-          },
-          body: JSON.stringify(newJob),
-        });
-
-        console.log('🔍 Response received:', response.status, response.statusText);
-        
-        if (!response.ok) {
-          const errorText = await response.text();
-          console.log('❌ Response error text:', errorText);
-          throw new Error(`HTTP ${response.status}: ${errorText}`);
-        }
-
-        if (response.ok) {
-          toast({
-            title: "Empleo creado",
-            description: `El empleo ha sido ${status === "ACTIVE" ? "publicado" : "guardado como borrador"}`,
-          });
-          router.push("/company/jobs");
-        } else {
-          throw new Error("Error creating job");
-        }
-      }
-    } catch (error) {
-      toast({
-        title: "Error",
-        description: "No se pudo crear el empleo. Inténtalo de nuevo.",
-        variant: "destructive",
-      });
-    } finally {
-      setLoading(false);
-    }
+    await createJob(jobData, user, images, status);
   };
+
+  // Debug user authentication
+  console.log('🔍 Job Create Page - User authentication check:', {
+    user: !!user,
+    userObject: user,
+    role: user?.role,
+    isLoading,
+    userId: user?.id,
+    companyId: user?.company?.id,
+    companyInfo: user?.company
+  });
 
   // Check if user is authenticated and is a company
   if (!user) {
+    console.log('❌ No user found - showing authentication error');
     return (
       <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
         <div className="text-center">
@@ -402,12 +256,19 @@ export default function CreateJobPage() {
           <p className="text-gray-600">
             Debes estar autenticado para crear empleos.
           </p>
+          <div className="mt-4">
+            <p className="text-sm text-gray-500">
+              Debug: Usuario no encontrado. Verifica que hayas iniciado sesión.
+            </p>
+          </div>
         </div>
       </div>
     );
   }
 
-  if (user.role !== 'EMPRESAS') {
+  const isCompanyUser = user.role === 'COMPANIES' || user.role === 'EMPRESAS';
+  if (!isCompanyUser) {
+    console.log('❌ User role mismatch - Current role:', user.role, 'Expected: COMPANIES or EMPRESAS');
     return (
       <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
         <div className="text-center">
@@ -417,6 +278,11 @@ export default function CreateJobPage() {
           <p className="text-gray-600">
             Solo las empresas pueden crear empleos.
           </p>
+          <div className="mt-4">
+            <p className="text-sm text-gray-500">
+              Debug: Tu rol actual es "{user.role}" pero necesitas ser "COMPANIES" o "EMPRESAS"
+            </p>
+          </div>
         </div>
       </div>
     );
@@ -435,11 +301,11 @@ export default function CreateJobPage() {
             <Button
               variant="outline"
               onClick={() => handleSubmit("DRAFT")}
-              disabled={loading}
+              disabled={isLoading}
             >
               Guardar borrador
             </Button>
-            <Button onClick={() => handleSubmit("ACTIVE")} disabled={loading}>
+            <Button onClick={() => handleSubmit("ACTIVE")} disabled={isLoading}>
               Publicar empleo
             </Button>
           </div>
@@ -575,6 +441,29 @@ export default function CreateJobPage() {
           </div>
         </div>
         <div className="space-x-2">
+          <Button 
+            variant="secondary" 
+            onClick={async () => {
+              try {
+                const response = await fetch('/api/debug/user-info');
+                const debugInfo = await response.json();
+                console.log('🔍 DEBUG USER INFO:', debugInfo);
+                toast({
+                  title: "Debug Info",
+                  description: "Check browser console for detailed user information",
+                });
+              } catch (error) {
+                console.error('Debug error:', error);
+                toast({
+                  title: "Debug Error",
+                  description: "Failed to get debug info",
+                  variant: "destructive"
+                });
+              }
+            }}
+          >
+            Debug User
+          </Button>
           <Button variant="outline" onClick={() => setPreview(true)}>
             <Eye className="w-4 h-4 mr-2" />
             Vista previa
@@ -858,19 +747,19 @@ export default function CreateJobPage() {
               <div className="flex space-x-2 mt-2">
                 <Input
                   placeholder="Ej: TypeScript, Docker, etc."
-                  value={skillInput}
-                  onChange={(e) => setSkillInput(e.target.value)}
+                  value={desiredSkillInput}
+                  onChange={(e) => setDesiredSkillInput(e.target.value)}
                   onKeyPress={(e) => {
                     if (e.key === "Enter") {
                       e.preventDefault();
-                      addToArray("desiredSkills", skillInput, setSkillInput);
+                      addToArray("desiredSkills", desiredSkillInput, setDesiredSkillInput);
                     }
                   }}
                 />
                 <Button
                   type="button"
                   onClick={() =>
-                    addToArray("desiredSkills", skillInput, setSkillInput)
+                    addToArray("desiredSkills", desiredSkillInput, setDesiredSkillInput)
                   }
                 >
                   Agregar
@@ -1116,12 +1005,12 @@ export default function CreateJobPage() {
           <Button
             variant="outline"
             onClick={() => handleSubmit("DRAFT")}
-            disabled={loading}
+            disabled={isLoading}
           >
             <Save className="w-4 h-4 mr-2" />
             Guardar borrador
           </Button>
-          <Button onClick={handlePublishClick} disabled={loading}>
+          <Button onClick={handlePublishClick} disabled={isLoading}>
             Publicar empleo
           </Button>
         </div>

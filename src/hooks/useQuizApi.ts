@@ -117,7 +117,7 @@ export const useLessonQuizzes = (lessonId?: string) => {
       if (!lessonId) return { quizzes: [] };
       
       const params = new URLSearchParams({ lessonId });
-      const data = await apiCall(`/quiz?${params}`);
+      const data = await apiCall(`/quizzes?${params}`);
       
       if (Array.isArray(data)) {
         return { quizzes: data };
@@ -137,7 +137,7 @@ export const useCourseQuizzes = (courseId?: string) => {
       if (!courseId) return { quizzes: [] };
       
       const params = new URLSearchParams({ courseId });
-      const data = await apiCall(`/quiz?${params}`);
+      const data = await apiCall(`/quizzes?${params}`);
       
       if (Array.isArray(data)) {
         return { quizzes: data };
@@ -149,6 +149,8 @@ export const useCourseQuizzes = (courseId?: string) => {
   });
 };
 
+
+
 // Obtener un quiz específico con sus preguntas
 export const useQuiz = (quizId?: string) => {
   return useQuery({
@@ -156,7 +158,7 @@ export const useQuiz = (quizId?: string) => {
     queryFn: async () => {
       if (!quizId) return null;
       
-      const data = await apiCall(`/quiz/${quizId}`);
+      const data = await apiCall(`/quizzes/${quizId}`);
       return data;
     },
     enabled: !!quizId,
@@ -169,7 +171,7 @@ export const useCreateQuiz = () => {
   
   return useMutation({
     mutationFn: async (quizData: CreateQuizData) => {
-      const data = await apiCall('/quiz', {
+      const data = await apiCall('/quizzes', {
         method: 'POST',
         body: JSON.stringify(quizData),
       });
@@ -198,7 +200,7 @@ export const useUpdateQuiz = () => {
   
   return useMutation({
     mutationFn: async (quizData: UpdateQuizData) => {
-      const data = await apiCall(`/quiz/${quizData.id}`, {
+      const data = await apiCall(`/quizzes/${quizData.id}`, {
         method: 'PUT',
         body: JSON.stringify(quizData),
       });
@@ -219,7 +221,7 @@ export const useDeleteQuiz = () => {
   
   return useMutation({
     mutationFn: async (quizId: string) => {
-      const data = await apiCall(`/quiz/${quizId}`, {
+      const data = await apiCall(`/quizzes/${quizId}`, {
         method: 'DELETE',
       });
       

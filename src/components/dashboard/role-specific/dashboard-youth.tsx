@@ -424,21 +424,21 @@ export function DashboardYouth() {
   ];
 
   return (
-    <div className="space-y-8 px-10 py-4">
+    <div className="space-y-6 sm:space-y-8 px-4 sm:px-6 lg:px-10 py-4">
       {/* Welcome Section with Animation */}
       <motion.div
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.5 }}
-        className="bg-gradient-to-r from-gray-600 to-gray-700 rounded-2xl p-8 text-white shadow-lg"
+        className="bg-gradient-to-r from-gray-600 to-gray-700 rounded-xl sm:rounded-2xl p-4 sm:p-6 lg:p-8 text-white shadow-lg"
       >
         <div className="flex items-center justify-between">
-          <div className="space-y-2">
+          <div className="space-y-1 sm:space-y-2">
             <motion.h1
               initial={{ opacity: 0, x: -20 }}
               animate={{ opacity: 1, x: 0 }}
               transition={{ delay: 0.2, duration: 0.5 }}
-              className="text-4xl font-bold"
+              className="text-2xl sm:text-3xl lg:text-4xl font-bold"
             >
               ¡Hola! 👋
             </motion.h1>
@@ -446,7 +446,7 @@ export function DashboardYouth() {
               initial={{ opacity: 0, x: -20 }}
               animate={{ opacity: 1, x: 0 }}
               transition={{ delay: 0.3, duration: 0.5 }}
-              className="text-xl text-gray-200"
+              className="text-sm sm:text-lg lg:text-xl text-gray-200"
             >
               ¿Qué quieres hacer hoy?
             </motion.p>
@@ -455,9 +455,9 @@ export function DashboardYouth() {
             initial={{ scale: 0 }}
             animate={{ scale: 1 }}
             transition={{ delay: 0.4, type: "spring", stiffness: 200 }}
-            className="hidden md:block"
+            className="hidden sm:block"
           >
-            <BrainCircuit className="w-24 h-24 text-gray-200" />
+            <BrainCircuit className="w-16 sm:w-20 lg:w-24 h-16 sm:h-20 lg:h-24 text-gray-200" />
           </motion.div>
         </div>
       </motion.div>
@@ -472,7 +472,7 @@ export function DashboardYouth() {
       </motion.div>
 
       {/* Quick Stats with Animation - Single Row */}
-      <div className="grid grid-cols-2 md:grid-cols-4 gap-6">
+      <div className="grid grid-cols-2 gap-3 sm:gap-4 md:gap-6 md:grid-cols-4">
         {isLoading
           ? // Loading skeleton for stats
             [...Array(4)].map((_, i) => (
@@ -481,12 +481,12 @@ export function DashboardYouth() {
                 initial={{ opacity: 0, y: 20 }}
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ delay: 0.1 * i, duration: 0.5 }}
-                className="bg-gray-600 rounded-2xl p-6 text-white shadow-lg"
+                className="bg-gray-600 rounded-xl sm:rounded-2xl p-3 sm:p-4 lg:p-6 text-white shadow-lg"
               >
-                <div className="flex flex-col items-center text-center space-y-3">
-                  <Skeleton className="w-14 h-14 rounded-xl bg-white/20" />
-                  <Skeleton className="h-8 w-16 bg-white/80" />
-                  <Skeleton className="h-4 w-20 bg-white/60" />
+                <div className="flex flex-col items-center text-center space-y-2 sm:space-y-3">
+                  <Skeleton className="w-10 sm:w-12 lg:w-14 h-10 sm:h-12 lg:h-14 rounded-xl bg-white/20" />
+                  <Skeleton className="h-6 sm:h-8 w-12 sm:w-16 bg-white/80" />
+                  <Skeleton className="h-3 sm:h-4 w-16 sm:w-20 bg-white/60" />
                 </div>
               </motion.div>
             ))
@@ -496,25 +496,25 @@ export function DashboardYouth() {
                 initial={{ opacity: 0, y: 20 }}
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ delay: 0.1 * index, duration: 0.5 }}
-                whileHover={{ scale: 1.05 }}
-                className={`${module.color} rounded-2xl p-6 text-white shadow-lg`}
+                whileHover={{ scale: 1.02 }}
+                className={`${module.color} rounded-xl sm:rounded-2xl p-3 sm:p-4 lg:p-6 text-white shadow-lg`}
               >
-                <div className="flex flex-col items-center text-center space-y-3">
+                <div className="flex flex-col items-center text-center space-y-2 sm:space-y-3">
                   <motion.div
                     whileHover={{ rotate: 10 }}
-                    className="bg-white/20 rounded-xl p-3"
+                    className="bg-white/20 rounded-lg sm:rounded-xl p-2 sm:p-3"
                   >
-                    <module.metric.icon className="w-8 h-8" />
+                    <module.metric.icon className="w-6 sm:w-7 lg:w-8 h-6 sm:h-7 lg:h-8" />
                   </motion.div>
-                  <p className="text-3xl font-bold">{module.metric.value}</p>
-                  <p className="text-sm text-white/90">{module.metric.label}</p>
+                  <p className="text-xl sm:text-2xl lg:text-3xl font-bold">{module.metric.value}</p>
+                  <p className="text-xs sm:text-sm text-white/90">{module.metric.label}</p>
                 </div>
               </motion.div>
             ))}
       </div>
 
       {/* Main Modules with Animation */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+      <div className="grid grid-cols-1 gap-4 sm:gap-6 sm:grid-cols-2 lg:grid-cols-4">
         {modules.map((module, index) => {
           const Icon = module.icon;
           return (
@@ -524,38 +524,38 @@ export function DashboardYouth() {
               animate={{ opacity: 1, y: 0 }}
               transition={{ delay: 0.1 * index, duration: 0.5 }}
             >
-              <Card className="group cursor-pointer hover:shadow-xl transition-all duration-300">
-                <CardHeader>
-                  <div className="flex items-center gap-4">
+              <Card className="group cursor-pointer hover:shadow-xl transition-all duration-300 h-full">
+                <CardHeader className="pb-3 sm:pb-6">
+                  <div className="flex flex-col sm:flex-row sm:items-center gap-3 sm:gap-4">
                     <motion.div
-                      whileHover={{ scale: 1.1, rotate: 5 }}
-                      className={`w-16 h-16 ${module.color} rounded-2xl flex items-center justify-center`}
+                      whileHover={{ scale: 1.05, rotate: 5 }}
+                      className={`w-12 sm:w-14 lg:w-16 h-12 sm:h-14 lg:h-16 ${module.color} rounded-xl sm:rounded-2xl flex items-center justify-center mx-auto sm:mx-0`}
                     >
-                      <Icon className="w-8 h-8 text-white" />
+                      <Icon className="w-6 sm:w-7 lg:w-8 h-6 sm:h-7 lg:h-8 text-white" />
                     </motion.div>
-                    <div>
-                      <CardTitle className="text-2xl">{module.title}</CardTitle>
-                      <CardDescription className="text-base">
+                    <div className="text-center sm:text-left">
+                      <CardTitle className="text-lg sm:text-xl lg:text-2xl">{module.title}</CardTitle>
+                      <CardDescription className="text-sm sm:text-base">
                         {module.description}
                       </CardDescription>
                     </div>
                   </div>
                 </CardHeader>
 
-                <CardContent>
+                <CardContent className="pt-0">
                   {/* Actions */}
-                  <div className="flex gap-3">
-                    {module.actions.map((action, index) => (
+                  <div className="flex flex-col sm:flex-row gap-2 sm:gap-3">
+                    {module.actions.map((action, actionIndex) => (
                       <Button
-                        key={index}
-                        variant={index === 0 ? "default" : "outline"}
-                        size="lg"
-                        className="flex-1"
+                        key={actionIndex}
+                        variant={actionIndex === 0 ? "default" : "outline"}
+                        size="sm"
+                        className="flex-1 text-xs sm:text-sm"
                         asChild
                       >
-                        <Link href={action.href}>
-                          {action.label}
-                          <ArrowRight className="w-4 h-4 ml-2" />
+                        <Link href={action.href} className="flex items-center justify-center">
+                          <span className="truncate">{action.label}</span>
+                          <ArrowRight className="w-3 h-3 sm:w-4 sm:h-4 ml-1 sm:ml-2 flex-shrink-0" />
                         </Link>
                       </Button>
                     ))}
@@ -574,26 +574,26 @@ export function DashboardYouth() {
         transition={{ delay: 0.6, duration: 0.5 }}
       >
         <Card>
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2 text-2xl">
-              <FileText className="w-8 h-8" />
+          <CardHeader className="pb-3 sm:pb-6">
+            <CardTitle className="flex items-center gap-2 text-lg sm:text-xl lg:text-2xl">
+              <FileText className="w-6 sm:w-7 lg:w-8 h-6 sm:h-7 lg:h-8" />
               Actividad Reciente
             </CardTitle>
           </CardHeader>
           <CardContent>
-            <motion.div className="space-y-4">
+            <motion.div className="space-y-3 sm:space-y-4">
               {isLoading ? (
                 // Loading skeleton for activities
                 [...Array(3)].map((_, i) => (
                   <motion.div
                     key={i}
-                    className="flex items-center justify-between p-4 bg-gray-50 rounded-xl"
+                    className="flex flex-col sm:flex-row sm:items-center sm:justify-between p-3 sm:p-4 bg-gray-50 rounded-lg sm:rounded-xl gap-2 sm:gap-0"
                   >
                     <div className="flex items-center gap-3">
-                      <Skeleton className="w-6 h-6 rounded" />
-                      <Skeleton className="h-6 w-64" />
+                      <Skeleton className="w-5 sm:w-6 h-5 sm:h-6 rounded" />
+                      <Skeleton className="h-5 sm:h-6 w-48 sm:w-64" />
                     </div>
-                    <Skeleton className="h-6 w-20" />
+                    <Skeleton className="h-5 sm:h-6 w-16 sm:w-20 ml-8 sm:ml-0" />
                   </motion.div>
                 ))
               ) : activities.length > 0 ? (
@@ -601,22 +601,24 @@ export function DashboardYouth() {
                 activities.slice(0, 3).map((activity, index) => (
                   <motion.div
                     key={activity.id}
-                    whileHover={{ x: 5 }}
-                    className="flex items-center justify-between p-4 bg-gray-50 rounded-xl"
+                    whileHover={{ x: 2 }}
+                    className="flex flex-col sm:flex-row sm:items-center sm:justify-between p-3 sm:p-4 bg-gray-50 rounded-lg sm:rounded-xl gap-2 sm:gap-0"
                   >
                     <div className="flex items-center gap-3">
-                      <div className="w-6 h-6 text-gray-600">
+                      <div className="w-5 sm:w-6 h-5 sm:h-6 text-gray-600 flex-shrink-0">
                         {activity.icon}
                       </div>
-                      <span className="text-lg">{activity.title}</span>
+                      <span className="text-sm sm:text-base lg:text-lg">{activity.title}</span>
                     </div>
-                    <Badge variant="secondary">{activity.timestamp}</Badge>
+                    <Badge variant="secondary" className="self-start sm:self-center text-xs">
+                      {activity.timestamp}
+                    </Badge>
                   </motion.div>
                 ))
               ) : (
                 // No activities
-                <div className="text-center py-8">
-                  <FileText className="w-12 h-12 text-gray-300 mx-auto mb-3" />
+                <div className="text-center py-6 sm:py-8">
+                  <FileText className="w-10 sm:w-12 h-10 sm:h-12 text-gray-300 mx-auto mb-3" />
                   <p className="text-sm text-gray-500">
                     No hay actividades recientes
                   </p>

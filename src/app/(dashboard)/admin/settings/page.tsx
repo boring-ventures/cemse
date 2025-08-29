@@ -47,12 +47,12 @@ import { AlertCircle } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { useCurrentMunicipality } from "@/hooks/useMunicipalityApi";
 import { useUpdateMunicipality } from "@/hooks/useMunicipalityApi";
-import { useAuth } from "@/hooks/use-auth";
+import { useAuthContext } from "@/hooks/use-auth";
 import type { Municipality } from "@/types/municipality";
 
 export default function MunicipalProfilePage() {
   const { toast } = useToast();
-  const { user, isAuthenticated } = useAuth();
+  const { user, isAuthenticated } = useAuthContext();
   
   console.log("🏛️ MunicipalProfilePage - Auth debug:", {
     user: !!user,

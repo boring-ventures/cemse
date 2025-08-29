@@ -8,7 +8,6 @@ import {
 } from "react";
 import { AuthService } from "@/services/auth.service";
 import { User, LoginResponse } from "@/types/api";
-import { getToken, clearTokens } from "@/lib/api";
 import { mapBackendRoleToFrontend } from "@/lib/utils";
 
 interface AuthContextType {
@@ -36,7 +35,7 @@ export function useAuth() {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    // Check if user is authenticated on mount
+    // Check if user is authenticated on mount using real session
     const initAuth = async () => {
       // Only run on client side
       if (typeof window === "undefined") {
@@ -44,70 +43,22 @@ export function useAuth() {
         return;
       }
 
-      const token = getToken();
-      console.log("🔐 initAuth - Token exists:", !!token);
+      console.log("🔐 initAuth - Checking session from server");
 
-      if (token) {
-        try {
-          // Decode token to get user information directly
-          const base64Url = token.split(".")[1];
-          const base64 = base64Url.replace(/-/g, "+").replace(/_/g, "/");
-          const jsonPayload = decodeURIComponent(
-            atob(base64)
-              .split("")
-              .map(function (c) {
-                return "%" + ("00" + c.charCodeAt(0).toString(16)).slice(-2);
-              })
-              .join("")
-          );
-          const decoded = JSON.parse(jsonPayload);
-          console.log("🔐 initAuth - Decoded token:", decoded);
-
-          // Check if token is expired
-          if (decoded.exp && Date.now() > decoded.exp * 1000) {
-            console.log("🔐 Token expired, clearing tokens");
-            clearTokens();
-            setUser(null);
-            router.push("/login");
-            setLoading(false);
-            return;
-          }
-
-          // Create user object from token data
-          const userFromToken = {
-            id: decoded.id,
-            username: decoded.username,
-            role: decoded.type || decoded.role,
-            firstName: decoded.name || decoded.firstName,
-            lastName: decoded.lastName || "",
-            email: decoded.email,
-            phone: decoded.phone,
-            profilePicture: null,
-            isActive: true,
-            createdAt: new Date().toISOString(),
-            updatedAt: new Date().toISOString(),
-            municipality:
-              decoded.type === "municipality" ||
-              decoded.type === "GOBIERNOS_MUNICIPALES"
-                ? {
-                    id: decoded.id,
-                    name: decoded.name,
-                    department: decoded.department,
-                  }
-                : undefined,
-          };
-
-          console.log("🔐 initAuth - User from token:", userFromToken);
-          setUser(userFromToken);
-        } catch (error) {
-          console.error("🔐 initAuth - Failed to decode token:", error);
-          clearTokens();
+      try {
+        // Get current user from session API (which reads cookies)
+        const result = await AuthService.getCurrentUser();
+        setUser(result.user);
+      } catch (error) {
+        // Handle expected unauthenticated state silently
+        if (error instanceof Error && error.message === 'UNAUTHENTICATED') {
           setUser(null);
-          router.push("/login");
+        } else {
+          console.log("🔐 initAuth - Session check failed:", error);
+          setUser(null);
         }
-      } else {
-        console.log("🔐 initAuth - No token found, user not authenticated");
       }
+      
       setLoading(false);
     };
 
@@ -115,15 +66,15 @@ export function useAuth() {
   }, [router]);
 
   /**
-   * Login with backend authentication
+   * Login with cookie-based authentication
    */
   const login = async (credentials: { username: string; password: string }) => {
     try {
-      console.log("🔐 useAuth.login - Starting backend login...");
+      console.log("🔐 useAuth.login - Starting cookie-based login...");
       const response = await AuthService.login(credentials);
       console.log("🔐 useAuth.login - Login successful:", response);
 
-      // Store the user information from the backend response
+      // Handle different response types from the backend
       if (response.user) {
         // Handle regular users (including youth)
         const userData = response.user;
@@ -133,13 +84,12 @@ export function useAuth() {
         const normalizedUser = {
           id: userData.id,
           username: userData.username,
-          role: mapBackendRoleToFrontend(userData.role || response.role), // Map backend role to frontend role
+          role: mapBackendRoleToFrontend(userData.role || response.role),
           firstName: userData.firstName || userData.first_name || "",
           lastName: userData.lastName || userData.last_name || "",
           email: userData.email,
           phone: userData.phone,
-          profilePicture:
-            userData.profilePicture || userData.profile_picture || null,
+          profilePicture: userData.profilePicture || userData.profile_picture || null,
           isActive: userData.isActive !== undefined ? userData.isActive : true,
           createdAt: userData.createdAt || userData.created_at,
           updatedAt: userData.updatedAt || userData.updated_at,
@@ -147,7 +97,6 @@ export function useAuth() {
 
         setUser(normalizedUser);
         console.log("🔐 User set from login response (user):", normalizedUser);
-        console.log("🔐 User role:", normalizedUser.role);
       } else if (response.municipality) {
         // Convert municipality to user format
         const municipalityUser = {
@@ -166,17 +115,8 @@ export function useAuth() {
           secondaryColor: response.municipality.secondaryColor,
         };
 
-        console.log("🔐 Municipality login - Colors from response:", {
-          primaryColor: response.municipality.primaryColor,
-          secondaryColor: response.municipality.secondaryColor,
-        });
-
-        console.log(
-          "🔐 Municipality login - User object with colors:",
-          municipalityUser
-        );
-
         setUser(municipalityUser);
+        console.log("🔐 Municipality user set:", municipalityUser);
       } else if (response.company) {
         // Convert company to user format
         const companyUser = {
@@ -194,6 +134,7 @@ export function useAuth() {
           company: response.company,
         };
         setUser(companyUser);
+        console.log("🔐 Company user set:", companyUser);
       }
 
       console.log("🔐 useAuth.login - User set successfully");
@@ -223,12 +164,28 @@ export function useAuth() {
 
   const signOut = async () => {
     try {
-      await AuthService.logout();
-    } catch (error) {
-      console.error("Logout failed:", error);
-    } finally {
+      console.log("🚪 useAuth.signOut - Starting logout process");
+      
+      // Set loading state to prevent race conditions
+      setLoading(true);
+      
+      // Clear React state immediately
       setUser(null);
-      router.push("/");
+      
+      // Call the AuthService logout which handles cookies and redirect
+      await AuthService.logout();
+      console.log("✅ useAuth.signOut - Logout completed");
+      
+    } catch (error) {
+      console.error("❌ useAuth.signOut - Logout failed:", error);
+      
+      // Even if logout API fails, clear state and redirect
+      setUser(null);
+      if (typeof window !== 'undefined') {
+        window.location.href = '/';
+      }
+    } finally {
+      setLoading(false);
     }
   };
 

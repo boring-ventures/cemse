@@ -396,18 +396,18 @@ export function LocalNewsCarousel() {
   }
 
   return (
-    <div className="space-y-8 px-10 py-4">
+    <div className="space-y-6 sm:space-y-8 px-4 sm:px-6 lg:px-10 py-4">
       {/* Enhanced Header */}
-      <div className="text-center space-y-4">
-        <div className="flex items-center justify-center gap-3 mb-4">
-          <div className="w-12 h-12 bg-gradient-to-br from-blue-500 to-purple-600 rounded-full flex items-center justify-center">
-            <Newspaper className="w-6 h-6 text-white" />
+      <div className="text-center space-y-3 sm:space-y-4">
+        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-center gap-3 mb-4">
+          <div className="w-10 sm:w-12 h-10 sm:h-12 bg-gradient-to-br from-blue-500 to-purple-600 rounded-full flex items-center justify-center mx-auto sm:mx-0">
+            <Newspaper className="w-5 sm:w-6 h-5 sm:h-6 text-white" />
           </div>
-          <div className="text-left">
-            <h2 className="text-3xl font-bold text-gray-900">
+          <div className="text-center sm:text-left">
+            <h2 className="text-2xl sm:text-3xl font-bold text-gray-900">
               Centro de Noticias
             </h2>
-            <p className="text-muted-foreground">
+            <p className="text-sm sm:text-base text-muted-foreground">
               Mantente informado sobre las últimas oportunidades y anuncios
               importantes
             </p>
@@ -415,53 +415,53 @@ export function LocalNewsCarousel() {
         </div>
 
         {/* Quick Stats */}
-        <div className="flex items-center justify-center gap-6 text-sm text-muted-foreground">
+        <div className="flex flex-col sm:flex-row items-center justify-center gap-3 sm:gap-6 text-xs sm:text-sm text-muted-foreground">
           <div className="flex items-center gap-1">
-            <Building2 className="w-4 h-4" />
-            {companyNews.length} Noticias Empresariales
+            <Building2 className="w-3 sm:w-4 h-3 sm:h-4" />
+            <span>{companyNews.length} Noticias Empresariales</span>
           </div>
           <div className="flex items-center gap-1">
-            <Shield className="w-4 h-4" />
-            {governmentNews.length} Noticias Oficiales
+            <Shield className="w-3 sm:w-4 h-3 sm:h-4" />
+            <span>{governmentNews.length} Noticias Oficiales</span>
           </div>
           <div className="flex items-center gap-1">
-            <Clock className="w-4 h-4" />
-            Actualizado hoy
+            <Clock className="w-3 sm:w-4 h-3 sm:h-4" />
+            <span>Actualizado hoy</span>
           </div>
         </div>
       </div>
 
       {/* Enhanced News Grid */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+      <div className="grid grid-cols-1 gap-6 sm:gap-8 lg:grid-cols-2">
         {/* Company News Column */}
-        <div className="space-y-6">
-          <div className="flex items-center justify-between">
-            <div className="flex items-center gap-3">
-              <div className="w-10 h-10 bg-blue-500 rounded-lg flex items-center justify-center">
-                <Building2 className="w-5 h-5 text-white" />
+        <div className="space-y-4 sm:space-y-6">
+          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
+            <div className="flex flex-col sm:flex-row sm:items-center gap-3">
+              <div className="w-8 sm:w-10 h-8 sm:h-10 bg-blue-500 rounded-lg flex items-center justify-center mx-auto sm:mx-0">
+                <Building2 className="w-4 sm:w-5 h-4 sm:h-5 text-white" />
               </div>
-              <div>
-                <h3 className="text-xl font-semibold text-gray-900">
+              <div className="text-center sm:text-left">
+                <h3 className="text-lg sm:text-xl font-semibold text-gray-900">
                   Noticias Empresariales
                 </h3>
-                <p className="text-sm text-gray-600">
+                <p className="text-xs sm:text-sm text-gray-600">
                   Oportunidades laborales y novedades corporativas
                 </p>
               </div>
             </div>
             {companyNews.length > 3 && (
-              <div className="flex gap-1">
+              <div className="flex gap-1 justify-center sm:justify-start">
                 <Button variant="outline" size="sm" onClick={prevCompany}>
-                  <ChevronLeft className="w-4 h-4" />
+                  <ChevronLeft className="w-3 sm:w-4 h-3 sm:h-4" />
                 </Button>
                 <Button variant="outline" size="sm" onClick={nextCompany}>
-                  <ChevronRight className="w-4 h-4" />
+                  <ChevronRight className="w-3 sm:w-4 h-3 sm:h-4" />
                 </Button>
               </div>
             )}
           </div>
 
-          <div className="space-y-4">
+          <div className="space-y-3 sm:space-y-4">
             {companyNews.length > 0 ? (
               <>
                 {/* Featured article */}
@@ -471,7 +471,7 @@ export function LocalNewsCarousel() {
                 />
 
                 {/* Compact articles */}
-                <div className="grid grid-cols-1 gap-4">
+                <div className="grid grid-cols-1 gap-3 sm:gap-4">
                   {companyNews
                     .slice(companyIndex + 1, companyIndex + 3)
                     .map((article) => (
@@ -484,17 +484,17 @@ export function LocalNewsCarousel() {
                 </div>
               </>
             ) : (
-              <Card className="p-8 text-center border-dashed">
-                <Building2 className="w-16 h-16 text-gray-300 mx-auto mb-4" />
-                <h4 className="font-medium text-gray-900 mb-2">
+              <Card className="p-6 sm:p-8 text-center border-dashed">
+                <Building2 className="w-12 sm:w-16 h-12 sm:h-16 text-gray-300 mx-auto mb-3 sm:mb-4" />
+                <h4 className="font-medium text-gray-900 mb-2 text-sm sm:text-base">
                   Sin noticias empresariales
                 </h4>
-                <p className="text-sm text-muted-foreground mb-4">
+                <p className="text-xs sm:text-sm text-muted-foreground mb-3 sm:mb-4">
                   No hay noticias empresariales disponibles en este momento
                 </p>
                 <Button variant="outline" size="sm">
-                  <Search className="w-4 h-4 mr-2" />
-                  Explorar Empleos
+                  <Search className="w-3 sm:w-4 h-3 sm:h-4 mr-2" />
+                  <span className="text-xs sm:text-sm">Explorar Empleos</span>
                 </Button>
               </Card>
             )}
@@ -502,34 +502,34 @@ export function LocalNewsCarousel() {
         </div>
 
         {/* Government/NGO News Column */}
-        <div className="space-y-6">
-          <div className="flex items-center justify-between">
-            <div className="flex items-center gap-3">
-              <div className="w-10 h-10 bg-green-500 rounded-lg flex items-center justify-center">
-                <Shield className="w-5 h-5 text-white" />
+        <div className="space-y-4 sm:space-y-6">
+          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
+            <div className="flex flex-col sm:flex-row sm:items-center gap-3">
+              <div className="w-8 sm:w-10 h-8 sm:h-10 bg-green-500 rounded-lg flex items-center justify-center mx-auto sm:mx-0">
+                <Shield className="w-4 sm:w-5 h-4 sm:h-5 text-white" />
               </div>
-              <div>
-                <h3 className="text-xl font-semibold text-gray-900">
+              <div className="text-center sm:text-left">
+                <h3 className="text-lg sm:text-xl font-semibold text-gray-900">
                   Noticias Oficiales
                 </h3>
-                <p className="text-sm text-gray-600">
+                <p className="text-xs sm:text-sm text-gray-600">
                   Anuncios gubernamentales y programas sociales
                 </p>
               </div>
             </div>
             {governmentNews.length > 3 && (
-              <div className="flex gap-1">
+              <div className="flex gap-1 justify-center sm:justify-start">
                 <Button variant="outline" size="sm" onClick={prevGovernment}>
-                  <ChevronLeft className="w-4 h-4" />
+                  <ChevronLeft className="w-3 sm:w-4 h-3 sm:h-4" />
                 </Button>
                 <Button variant="outline" size="sm" onClick={nextGovernment}>
-                  <ChevronRight className="w-4 h-4" />
+                  <ChevronRight className="w-3 sm:w-4 h-3 sm:h-4" />
                 </Button>
               </div>
             )}
           </div>
 
-          <div className="space-y-4">
+          <div className="space-y-3 sm:space-y-4">
             {governmentNews.length > 0 ? (
               <>
                 {/* Featured article */}
@@ -539,7 +539,7 @@ export function LocalNewsCarousel() {
                 />
 
                 {/* Compact articles */}
-                <div className="grid grid-cols-1 gap-4">
+                <div className="grid grid-cols-1 gap-3 sm:gap-4">
                   {governmentNews
                     .slice(governmentIndex + 1, governmentIndex + 3)
                     .map((article) => (
@@ -552,17 +552,17 @@ export function LocalNewsCarousel() {
                 </div>
               </>
             ) : (
-              <Card className="p-8 text-center border-dashed">
-                <Shield className="w-16 h-16 text-gray-300 mx-auto mb-4" />
-                <h4 className="font-medium text-gray-900 mb-2">
+              <Card className="p-6 sm:p-8 text-center border-dashed">
+                <Shield className="w-12 sm:w-16 h-12 sm:h-16 text-gray-300 mx-auto mb-3 sm:mb-4" />
+                <h4 className="font-medium text-gray-900 mb-2 text-sm sm:text-base">
                   Sin noticias oficiales
                 </h4>
-                <p className="text-sm text-muted-foreground mb-4">
+                <p className="text-xs sm:text-sm text-muted-foreground mb-3 sm:mb-4">
                   No hay noticias gubernamentales disponibles en este momento
                 </p>
                 <Button variant="outline" size="sm">
-                  <Target className="w-4 h-4 mr-2" />
-                  Ver Programas
+                  <Target className="w-3 sm:w-4 h-3 sm:h-4 mr-2" />
+                  <span className="text-xs sm:text-sm">Ver Programas</span>
                 </Button>
               </Card>
             )}
@@ -571,15 +571,15 @@ export function LocalNewsCarousel() {
       </div>
 
       {/* Enhanced View More Section */}
-      <div className="text-center space-y-4">
-        <div className="flex items-center justify-center gap-4">
-          <Button size="lg" className="px-6">
-            <Newspaper className="w-4 h-4 mr-2" />
-            Ver Todas las Noticias
+      <div className="text-center space-y-3 sm:space-y-4">
+        <div className="flex flex-col sm:flex-row items-center justify-center gap-3 sm:gap-4">
+          <Button size="sm" className="px-4 sm:px-6 w-full sm:w-auto">
+            <Newspaper className="w-3 sm:w-4 h-3 sm:h-4 mr-2" />
+            <span className="text-sm">Ver Todas las Noticias</span>
           </Button>
-          <Button variant="outline" size="lg">
-            <Star className="w-4 h-4 mr-2" />
-            Noticias Destacadas
+          <Button variant="outline" size="sm" className="w-full sm:w-auto">
+            <Star className="w-3 sm:w-4 h-3 sm:h-4 mr-2" />
+            <span className="text-sm">Noticias Destacadas</span>
           </Button>
         </div>
         <p className="text-xs text-muted-foreground">
@@ -630,27 +630,27 @@ export function DashboardAdolescent() {
   const activities = dashboardData?.recentActivities || [];
 
   return (
-    <div className="space-y-8">
+    <div className="space-y-6 sm:space-y-8 p-4 sm:p-6">
       {/* Welcome Section */}
-      <div className="bg-gradient-to-r from-green-600 to-blue-600 rounded-lg p-6 text-white">
+      <div className="bg-gradient-to-r from-green-600 to-blue-600 rounded-lg sm:rounded-xl p-4 sm:p-6 text-white">
         <div className="flex items-center justify-between">
           <div>
-            <h1 className="text-3xl font-bold mb-2">¡Bienvenido Joven!</h1>
-            <p className="text-gray-200">
+            <h1 className="text-2xl sm:text-3xl font-bold mb-2">¡Bienvenido Joven!</h1>
+            <p className="text-sm sm:text-base text-gray-200">
               Explora oportunidades, desarrolla tus habilidades y construye tu
               futuro profesional
             </p>
           </div>
-          <div className="hidden md:flex">
-            <GraduationCap className="w-16 h-16 text-gray-200" />
+          <div className="hidden sm:flex">
+            <GraduationCap className="w-12 sm:w-16 h-12 sm:h-16 text-gray-200" />
           </div>
         </div>
       </div>
 
       {/* Parental Consent Notice */}
-      <div className="bg-amber-50 border border-amber-200 rounded-lg p-4">
-        <div className="flex items-center gap-3">
-          <Shield className="w-5 h-5 text-amber-600" />
+      <div className="bg-amber-50 border border-amber-200 rounded-lg p-3 sm:p-4">
+        <div className="flex flex-col sm:flex-row sm:items-center gap-3">
+          <Shield className="w-5 h-5 text-amber-600 flex-shrink-0" />
           <div>
             <h3 className="text-sm font-medium text-amber-800">
               Recordatorio Importante
@@ -667,22 +667,22 @@ export function DashboardAdolescent() {
       <LocalNewsCarousel />
 
       {/* Quick Access Modules */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+      <div className="grid grid-cols-1 gap-4 sm:gap-6 sm:grid-cols-2 lg:grid-cols-3">
         <Card className="hover:shadow-lg transition-shadow cursor-pointer">
           <CardHeader className="pb-3">
-            <div className="flex items-center gap-3">
-              <div className="w-10 h-10 bg-gray-600 rounded-lg flex items-center justify-center">
+            <div className="flex flex-col sm:flex-row sm:items-center gap-3 text-center sm:text-left">
+              <div className="w-10 h-10 bg-gray-600 rounded-lg flex items-center justify-center mx-auto sm:mx-0">
                 <Search className="w-5 h-5 text-white" />
               </div>
-              <CardTitle className="text-lg">Búsqueda de Empleo</CardTitle>
+              <CardTitle className="text-base sm:text-lg">Búsqueda de Empleo</CardTitle>
             </div>
           </CardHeader>
           <CardContent>
-            <p className="text-sm text-muted-foreground mb-4">
+            <p className="text-sm text-muted-foreground mb-4 text-center sm:text-left">
               Encuentra oportunidades laborales apropiadas para jóvenes
             </p>
             <Button asChild size="sm" className="w-full">
-              <Link href="/jobs">
+              <Link href="/jobs" className="flex items-center justify-center">
                 Explorar Ofertas
                 <ArrowRight className="w-4 h-4 ml-2" />
               </Link>
@@ -692,19 +692,19 @@ export function DashboardAdolescent() {
 
         <Card className="hover:shadow-lg transition-shadow cursor-pointer">
           <CardHeader className="pb-3">
-            <div className="flex items-center gap-3">
-              <div className="w-10 h-10 bg-gray-600 rounded-lg flex items-center justify-center">
+            <div className="flex flex-col sm:flex-row sm:items-center gap-3 text-center sm:text-left">
+              <div className="w-10 h-10 bg-gray-600 rounded-lg flex items-center justify-center mx-auto sm:mx-0">
                 <GraduationCap className="w-5 h-5 text-white" />
               </div>
-              <CardTitle className="text-lg">Capacitación</CardTitle>
+              <CardTitle className="text-base sm:text-lg">Capacitación</CardTitle>
             </div>
           </CardHeader>
           <CardContent>
-            <p className="text-sm text-muted-foreground mb-4">
+            <p className="text-sm text-muted-foreground mb-4 text-center sm:text-left">
               Desarrolla nuevas habilidades y obtén certificaciones
             </p>
             <Button asChild size="sm" className="w-full">
-              <Link href="/courses">
+              <Link href="/courses" className="flex items-center justify-center">
                 Ver Cursos
                 <ArrowRight className="w-4 h-4 ml-2" />
               </Link>
@@ -714,19 +714,19 @@ export function DashboardAdolescent() {
 
         <Card className="hover:shadow-lg transition-shadow cursor-pointer">
           <CardHeader className="pb-3">
-            <div className="flex items-center gap-3">
-              <div className="w-10 h-10 bg-gray-600 rounded-lg flex items-center justify-center">
+            <div className="flex flex-col sm:flex-row sm:items-center gap-3 text-center sm:text-left">
+              <div className="w-10 h-10 bg-gray-600 rounded-lg flex items-center justify-center mx-auto sm:mx-0">
                 <Target className="w-5 h-5 text-white" />
               </div>
-              <CardTitle className="text-lg">Emprendimiento</CardTitle>
+              <CardTitle className="text-base sm:text-lg">Emprendimiento</CardTitle>
             </div>
           </CardHeader>
           <CardContent>
-            <p className="text-sm text-muted-foreground mb-4">
+            <p className="text-sm text-muted-foreground mb-4 text-center sm:text-left">
               Desarrolla ideas de negocio y habilidades empresariales
             </p>
             <Button asChild size="sm" className="w-full">
-              <Link href="/entrepreneurship">
+              <Link href="/entrepreneurship" className="flex items-center justify-center">
                 Explorar Ideas
                 <ArrowRight className="w-4 h-4 ml-2" />
               </Link>
@@ -737,8 +737,8 @@ export function DashboardAdolescent() {
 
       {/* Recent Activity */}
       <Card>
-        <CardHeader>
-          <CardTitle className="flex items-center gap-2">
+        <CardHeader className="pb-3 sm:pb-6">
+          <CardTitle className="flex items-center gap-2 text-lg sm:text-xl">
             <FileText className="w-5 h-5" />
             Actividad Reciente
           </CardTitle>
@@ -750,13 +750,13 @@ export function DashboardAdolescent() {
               [...Array(3)].map((_, i) => (
                 <div
                   key={i}
-                  className="flex items-center justify-between p-3 bg-gray-50 rounded-lg"
+                  className="flex flex-col sm:flex-row sm:items-center sm:justify-between p-3 bg-gray-50 rounded-lg gap-2 sm:gap-0"
                 >
                   <div className="flex items-center gap-3">
                     <Skeleton className="w-4 h-4 rounded" />
-                    <Skeleton className="h-4 w-64" />
+                    <Skeleton className="h-4 w-48 sm:w-64" />
                   </div>
-                  <Skeleton className="h-6 w-20" />
+                  <Skeleton className="h-6 w-16 sm:w-20 ml-7 sm:ml-0" />
                 </div>
               ))
             ) : activities.length > 0 ? (
@@ -764,19 +764,21 @@ export function DashboardAdolescent() {
               activities.slice(0, 5).map((activity) => (
                 <div
                   key={activity.id}
-                  className="flex items-center justify-between p-3 bg-gray-50 rounded-lg"
+                  className="flex flex-col sm:flex-row sm:items-center sm:justify-between p-3 bg-gray-50 rounded-lg gap-2 sm:gap-0"
                 >
                   <div className="flex items-center gap-3">
-                    <div className="w-4 h-4 text-gray-600">{activity.icon}</div>
+                    <div className="w-4 h-4 text-gray-600 flex-shrink-0">{activity.icon}</div>
                     <span className="text-sm">{activity.title}</span>
                   </div>
-                  <Badge variant="secondary">{activity.timestamp}</Badge>
+                  <Badge variant="secondary" className="self-start sm:self-center text-xs">
+                    {activity.timestamp}
+                  </Badge>
                 </div>
               ))
             ) : (
               // No activities
-              <div className="text-center py-8">
-                <FileText className="w-12 h-12 text-gray-300 mx-auto mb-3" />
+              <div className="text-center py-6 sm:py-8">
+                <FileText className="w-10 sm:w-12 h-10 sm:h-12 text-gray-300 mx-auto mb-3" />
                 <p className="text-sm text-gray-500">
                   No hay actividades recientes
                 </p>
@@ -791,20 +793,20 @@ export function DashboardAdolescent() {
 
       {/* Enhanced Personal Metrics */}
       <Card className="border border-gray-200 bg-gradient-to-br from-gray-50/50 to-gray-100/50">
-        <CardHeader>
-          <div className="flex items-center justify-between">
-            <div className="flex items-center gap-3">
-              <div className="w-12 h-12 bg-gradient-to-br from-gray-500 to-gray-600 rounded-full flex items-center justify-center">
-                <TrendingUp className="w-6 h-6 text-white" />
+        <CardHeader className="pb-3 sm:pb-6">
+          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+            <div className="flex flex-col sm:flex-row sm:items-center gap-3">
+              <div className="w-10 sm:w-12 h-10 sm:h-12 bg-gradient-to-br from-gray-500 to-gray-600 rounded-full flex items-center justify-center mx-auto sm:mx-0">
+                <TrendingUp className="w-5 sm:w-6 h-5 sm:h-6 text-white" />
               </div>
-              <div>
-                <CardTitle className="text-xl">Progreso Personal</CardTitle>
-                <CardDescription>
+              <div className="text-center sm:text-left">
+                <CardTitle className="text-lg sm:text-xl">Progreso Personal</CardTitle>
+                <CardDescription className="text-sm">
                   Un vistazo completo a tu actividad y avances en la plataforma
                 </CardDescription>
               </div>
             </div>
-            <Button variant="outline" size="sm">
+            <Button variant="outline" size="sm" className="w-full sm:w-auto">
               <Eye className="w-4 h-4 mr-2" />
               Ver Detalles
             </Button>
@@ -813,30 +815,30 @@ export function DashboardAdolescent() {
         <CardContent>
           {isLoading ? (
             // Loading skeleton for metrics
-            <div className="grid grid-cols-2 md:grid-cols-4 gap-6">
+            <div className="grid grid-cols-2 gap-4 sm:gap-6 md:grid-cols-4">
               {[...Array(4)].map((_, i) => (
-                <div key={i} className="text-center space-y-3">
-                  <Skeleton className="w-16 h-16 rounded-xl mx-auto" />
+                <div key={i} className="text-center space-y-2 sm:space-y-3">
+                  <Skeleton className="w-12 sm:w-16 h-12 sm:h-16 rounded-xl mx-auto" />
                   <div>
-                    <Skeleton className="h-8 w-12 mx-auto mb-2" />
-                    <Skeleton className="h-4 w-32 mx-auto mb-2" />
+                    <Skeleton className="h-6 sm:h-8 w-8 sm:w-12 mx-auto mb-2" />
+                    <Skeleton className="h-3 sm:h-4 w-24 sm:w-32 mx-auto mb-2" />
                     <Skeleton className="h-2 w-full rounded-full" />
-                    <Skeleton className="h-3 w-24 mx-auto mt-1" />
+                    <Skeleton className="h-2 sm:h-3 w-16 sm:w-24 mx-auto mt-1" />
                   </div>
                 </div>
               ))}
             </div>
           ) : (
-            <div className="grid grid-cols-2 md:grid-cols-4 gap-6">
-              <div className="text-center space-y-3">
-                <div className="flex items-center justify-center w-16 h-16 bg-gray-100 rounded-xl mx-auto">
-                  <Search className="w-8 h-8 text-gray-600" />
+            <div className="grid grid-cols-2 gap-4 sm:gap-6 md:grid-cols-4">
+              <div className="text-center space-y-2 sm:space-y-3">
+                <div className="flex items-center justify-center w-12 sm:w-16 h-12 sm:h-16 bg-gray-100 rounded-xl mx-auto">
+                  <Search className="w-6 sm:w-8 h-6 sm:h-8 text-gray-600" />
                 </div>
                 <div>
-                  <div className="text-3xl font-bold text-gray-900">
+                  <div className="text-2xl sm:text-3xl font-bold text-gray-900">
                     {stats.userJobApplications}
                   </div>
-                  <p className="text-sm font-medium text-gray-600">
+                  <p className="text-xs sm:text-sm font-medium text-gray-600">
                     Postulaciones Activas
                   </p>
                   <div className="w-full bg-gray-100 rounded-full h-2 mt-2">
@@ -855,15 +857,15 @@ export function DashboardAdolescent() {
                 </div>
               </div>
 
-              <div className="text-center space-y-3">
-                <div className="flex items-center justify-center w-16 h-16 bg-gray-100 rounded-xl mx-auto">
-                  <GraduationCap className="w-8 h-8 text-gray-600" />
+              <div className="text-center space-y-2 sm:space-y-3">
+                <div className="flex items-center justify-center w-12 sm:w-16 h-12 sm:h-16 bg-gray-100 rounded-xl mx-auto">
+                  <GraduationCap className="w-6 sm:w-8 h-6 sm:h-8 text-gray-600" />
                 </div>
                 <div>
-                  <div className="text-3xl font-bold text-gray-900">
+                  <div className="text-2xl sm:text-3xl font-bold text-gray-900">
                     {stats.userCourses}
                   </div>
-                  <p className="text-sm font-medium text-gray-600">
+                  <p className="text-xs sm:text-sm font-medium text-gray-600">
                     Cursos en Progreso
                   </p>
                   <div className="w-full bg-gray-100 rounded-full h-2 mt-2">
@@ -880,15 +882,15 @@ export function DashboardAdolescent() {
                 </div>
               </div>
 
-              <div className="text-center space-y-3">
-                <div className="flex items-center justify-center w-16 h-16 bg-purple-100 rounded-xl mx-auto">
-                  <Target className="w-8 h-8 text-purple-600" />
+              <div className="text-center space-y-2 sm:space-y-3">
+                <div className="flex items-center justify-center w-12 sm:w-16 h-12 sm:h-16 bg-purple-100 rounded-xl mx-auto">
+                  <Target className="w-6 sm:w-8 h-6 sm:h-8 text-purple-600" />
                 </div>
                 <div>
-                  <div className="text-3xl font-bold text-gray-900">
+                  <div className="text-2xl sm:text-3xl font-bold text-gray-900">
                     {stats.userEntrepreneurships}
                   </div>
-                  <p className="text-sm font-medium text-gray-600">
+                  <p className="text-xs sm:text-sm font-medium text-gray-600">
                     Proyecto Emprendimiento
                   </p>
                   <div className="w-full bg-purple-100 rounded-full h-2 mt-2">
@@ -907,13 +909,13 @@ export function DashboardAdolescent() {
                 </div>
               </div>
 
-              <div className="text-center space-y-3">
-                <div className="flex items-center justify-center w-16 h-16 bg-orange-100 rounded-xl mx-auto">
-                  <Award className="w-8 h-8 text-orange-600" />
+              <div className="text-center space-y-2 sm:space-y-3">
+                <div className="flex items-center justify-center w-12 sm:w-16 h-12 sm:h-16 bg-orange-100 rounded-xl mx-auto">
+                  <Award className="w-6 sm:w-8 h-6 sm:h-8 text-orange-600" />
                 </div>
                 <div>
-                  <div className="text-3xl font-bold text-gray-900">4</div>
-                  <p className="text-sm font-medium text-gray-600">
+                  <div className="text-2xl sm:text-3xl font-bold text-gray-900">4</div>
+                  <p className="text-xs sm:text-sm font-medium text-gray-600">
                     Certificados Obtenidos
                   </p>
                   <div className="w-full bg-orange-100 rounded-full h-2 mt-2">
@@ -931,13 +933,13 @@ export function DashboardAdolescent() {
           )}
 
           {/* Additional Metrics Row */}
-          <div className="grid grid-cols-2 md:grid-cols-3 gap-4 mt-8 pt-6 border-t border-gray-200">
+          <div className="grid grid-cols-1 gap-3 sm:gap-4 sm:grid-cols-2 lg:grid-cols-3 mt-6 sm:mt-8 pt-4 sm:pt-6 border-t border-gray-200">
             <div className="flex items-center gap-3 p-3 bg-white rounded-lg">
-              <div className="w-10 h-10 bg-yellow-100 rounded-lg flex items-center justify-center">
-                <Clock className="w-5 h-5 text-yellow-600" />
+              <div className="w-8 sm:w-10 h-8 sm:h-10 bg-yellow-100 rounded-lg flex items-center justify-center flex-shrink-0">
+                <Clock className="w-4 sm:w-5 h-4 sm:h-5 text-yellow-600" />
               </div>
               <div>
-                <div className="text-lg font-semibold text-gray-900">12h</div>
+                <div className="text-base sm:text-lg font-semibold text-gray-900">12h</div>
                 <p className="text-xs text-gray-600">
                   Tiempo de estudio esta semana
                 </p>
@@ -945,23 +947,23 @@ export function DashboardAdolescent() {
             </div>
 
             <div className="flex items-center gap-3 p-3 bg-white rounded-lg">
-              <div className="w-10 h-10 bg-indigo-100 rounded-lg flex items-center justify-center">
-                <Users className="w-5 h-5 text-indigo-600" />
+              <div className="w-8 sm:w-10 h-8 sm:h-10 bg-indigo-100 rounded-lg flex items-center justify-center flex-shrink-0">
+                <Users className="w-4 sm:w-5 h-4 sm:h-5 text-indigo-600" />
               </div>
               <div>
-                <div className="text-lg font-semibold text-gray-900">8</div>
+                <div className="text-base sm:text-lg font-semibold text-gray-900">8</div>
                 <p className="text-xs text-gray-600">
                   Conexiones profesionales
                 </p>
               </div>
             </div>
 
-            <div className="flex items-center gap-3 p-3 bg-white rounded-lg">
-              <div className="w-10 h-10 bg-pink-100 rounded-lg flex items-center justify-center">
-                <Star className="w-5 h-5 text-pink-600" />
+            <div className="flex items-center gap-3 p-3 bg-white rounded-lg sm:col-span-2 lg:col-span-1">
+              <div className="w-8 sm:w-10 h-8 sm:h-10 bg-pink-100 rounded-lg flex items-center justify-center flex-shrink-0">
+                <Star className="w-4 sm:w-5 h-4 sm:h-5 text-pink-600" />
               </div>
               <div>
-                <div className="text-lg font-semibold text-gray-900">4.8</div>
+                <div className="text-base sm:text-lg font-semibold text-gray-900">4.8</div>
                 <p className="text-xs text-gray-600">Calificación promedio</p>
               </div>
             </div>
@@ -971,10 +973,10 @@ export function DashboardAdolescent() {
 
       {/* Support Section */}
       <Card className="border-dashed">
-        <CardContent className="p-6 text-center">
-          <Heart className="w-8 h-8 text-pink-500 mx-auto mb-4" />
-          <h3 className="text-lg font-medium mb-2">¿Necesitas ayuda?</h3>
-          <p className="text-gray-600 mb-4">
+        <CardContent className="p-4 sm:p-6 text-center">
+          <Heart className="w-6 sm:w-8 h-6 sm:h-8 text-pink-500 mx-auto mb-3 sm:mb-4" />
+          <h3 className="text-base sm:text-lg font-medium mb-2">¿Necesitas ayuda?</h3>
+          <p className="text-sm sm:text-base text-gray-600 mb-4">
             Estamos aquí para apoyarte en tu desarrollo académico y profesional
           </p>
           <div className="flex flex-col sm:flex-row gap-2 justify-center">

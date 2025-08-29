@@ -1,4 +1,4 @@
-import { apiCall, getToken } from '@/lib/api';
+import { apiCall } from '@/lib/api';
 
 export interface Company {
   id: string;
@@ -12,6 +12,10 @@ export interface Company {
   phone: string | null;
   address: string | null;
   isActive: boolean;
+  // Company credentials (matching Prisma schema)
+  username?: string;
+  password?: string; // This will be the original password in responses for credentials display
+  loginEmail?: string;
   municipality: {
     id: string;
     name: string;
@@ -30,16 +34,16 @@ export interface Company {
 export interface CreateCompanyRequest {
   name: string;
   description?: string;
-  businessSector: string;
+  businessSector?: string;
   companySize?: string;
   foundedYear?: number;
   website?: string;
-  email?: string;
+  email: string; // Make email required
   phone?: string;
   address?: string;
   municipalityId: string;
-  username?: string;
-  password?: string;
+  username: string; // Make username required
+  password: string; // Make password required
 }
 
 export interface UpdateCompanyRequest {
@@ -58,18 +62,13 @@ export interface UpdateCompanyRequest {
 
 export class CompanyApiService {
   /**
-   * Get all companies
+   * Get all companies (admin endpoint - requires SUPERADMIN role)
    */
   static async getAll(): Promise<Company[]> {
-    console.log("📞 CompanyApiService.getAll() - Calling apiCall('/company')");
-
-    // Debug: Check token status
-    const token = getToken();
-    console.log("🔐 CompanyApiService.getAll() - Token exists:", !!token);
-    console.log("🔐 CompanyApiService.getAll() - Token value:", token ? `${token.substring(0, 20)}...` : 'null');
+    console.log("📞 CompanyApiService.getAll() - Calling apiCall('/admin/companies')");
 
     try {
-      const result = await apiCall('/company') as Record<string, unknown>;
+      const result = await apiCall('/admin/companies') as Record<string, unknown>;
       console.log("✅ CompanyApiService.getAll() - Success:", result);
 
       // Handle different response formats
@@ -106,22 +105,33 @@ export class CompanyApiService {
    * Create new company
    */
   static async create(data: CreateCompanyRequest): Promise<Company> {
-    console.log("📞 CompanyApiService.create() - Calling apiCall('/company') with data:", data);
+    console.log("📞 CompanyApiService.create() - Calling apiCall('/company') with data:", {
+      ...data,
+      password: data.password ? '[REDACTED]' : 'undefined' // Don't log passwords
+    });
 
-    // Debug: Check token status
-    const token = getToken();
-    console.log("🔐 CompanyApiService.create() - Token exists:", !!token);
-    console.log("🔐 CompanyApiService.create() - Token value:", token ? `${token.substring(0, 20)}...` : 'null');
-    console.log("🔐 CompanyApiService.create() - Full token:", token);
-    console.log("🔐 CompanyApiService.create() - Authorization header that should be sent:", `Bearer ${token}`);
-
-    // Debug: Check localStorage directly
-    console.log("🔐 CompanyApiService.create() - localStorage token:", localStorage.getItem('token'));
-    console.log("🔐 CompanyApiService.create() - localStorage refreshToken:", localStorage.getItem('refreshToken'));
-    console.log("🔐 CompanyApiService.create() - All localStorage keys:", Object.keys(localStorage));
+    // Validate required fields on frontend
+    if (!data.name || data.name.trim() === '') {
+      throw new Error("Company name is required");
+    }
+    
+    if (!data.email || data.email.trim() === '') {
+      throw new Error("Company email is required");
+    }
+    
+    if (!data.municipalityId || data.municipalityId.trim() === '') {
+      throw new Error("Municipality ID is required");
+    }
+    
+    if (!data.username || data.username.trim() === '') {
+      throw new Error("Username is required");
+    }
+    
+    if (!data.password || data.password.trim() === '') {
+      throw new Error("Password is required");
+    }
 
     try {
-      console.log("🔐 CompanyApiService.create() - About to call apiCall");
       const result = await apiCall('/company', {
         method: 'POST',
         body: JSON.stringify(data)
@@ -153,15 +163,39 @@ export class CompanyApiService {
   }
 
   /**
-   * Delete company
+   * Delete company with cascade deletion
    */
-  static async delete(id: string): Promise<void> {
+  static async delete(id: string): Promise<{
+    message: string;
+    deletedData: {
+      company: string;
+      municipality: string;
+      jobOffers: number;
+      jobApplications: number;
+      jobQuestions: number;
+      disconnectedProfiles: number;
+      youthApplicationInterests: number;
+    };
+    requiresSessionRefresh?: boolean;
+  }> {
     console.log("📞 CompanyApiService.delete() - Calling apiCall(`/company/${id}`)");
     try {
-      await apiCall(`/company/${id}`, {
+      const result = await apiCall(`/company/${id}`, {
         method: 'DELETE'
-      });
-      console.log("✅ CompanyApiService.delete() - Success");
+      }) as {
+        message: string;
+        deletedData: {
+          company: string;
+          municipality: string;
+          jobOffers: number;
+          jobApplications: number;
+          jobQuestions: number;
+          disconnectedProfiles: number;
+          youthApplicationInterests: number;
+        };
+      };
+      console.log("✅ CompanyApiService.delete() - Success:", result);
+      return result;
     } catch (error) {
       console.error("❌ CompanyApiService.delete() - Error:", error);
       throw error;

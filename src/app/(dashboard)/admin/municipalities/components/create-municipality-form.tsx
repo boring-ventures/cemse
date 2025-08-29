@@ -125,11 +125,11 @@ export function CreateMunicipalityForm({
       setShowCredentialsModal(true);
 
       reset();
-    } catch {
+    } catch (error: any) {
+      console.error("Error creating municipality:", error);
       toast({
-        title: "Error",
-        description:
-          "No se pudo crear la institución. Verifica que el usuario y email no existan.",
+        title: "Error al crear institución",
+        description: error?.message || "No se pudo crear la institución. Verifica que el nombre, usuario y email no existan.",
         variant: "destructive",
       });
     } finally {

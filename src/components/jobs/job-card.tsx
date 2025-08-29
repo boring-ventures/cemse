@@ -234,156 +234,154 @@ export const JobCard = ({ job, viewMode }: JobCardProps) => {
     return (
       <Link href={`/jobs/${job.id}`}>
         <Card className="hover:shadow-md transition-shadow cursor-pointer">
-          <CardContent className="p-6">
-            <div className="flex items-start justify-between">
-              <div className="flex-1">
-                <div className="flex items-start space-x-4">
-                  <Avatar className="w-12 h-12 flex-shrink-0">
-                    <AvatarImage
-                      src={job.company?.logo || "/images/companies/default-logo.png"}
-                      alt={job.company?.name || "Empresa"}
-                    />
-                    <AvatarFallback>
-                      {job.company?.name?.charAt(0) || "E"}
-                    </AvatarFallback>
-                  </Avatar>
+          <CardContent className="p-3 sm:p-4 lg:p-6">
+            <div className="flex flex-col sm:flex-row items-start gap-3 sm:gap-4">
+              <Avatar className="w-10 sm:w-12 h-10 sm:h-12 flex-shrink-0 mx-auto sm:mx-0">
+                <AvatarImage
+                  src={job.company?.logo || "/images/companies/default-logo.png"}
+                  alt={job.company?.name || "Empresa"}
+                />
+                <AvatarFallback>
+                  {job.company?.name?.charAt(0) || "E"}
+                </AvatarFallback>
+              </Avatar>
 
-                  <div className="flex-1 min-w-0">
-                    <div className="flex items-start justify-between">
-                      <div className="flex-1">
-                        <h3 className="text-lg font-semibold text-gray-900 mb-1">
-                          {job.title}
-                          {job.featured && (
-                            <Star className="inline-block w-4 h-4 text-yellow-500 ml-2" />
-                          )}
-                        </h3>
+              <div className="flex-1 min-w-0 w-full">
+                <div className="flex flex-col lg:flex-row lg:items-start lg:justify-between gap-3">
+                  <div className="flex-1">
+                    <div className="text-center sm:text-left">
+                      <h3 className="text-base sm:text-lg font-semibold text-gray-900 mb-1">
+                        {job.title}
+                        {job.featured && (
+                          <Star className="inline-block w-3 sm:w-4 h-3 sm:h-4 text-yellow-500 ml-1 sm:ml-2" />
+                        )}
+                      </h3>
 
-                        <div className="flex items-center space-x-4 text-sm text-gray-600 mb-2">
-                          <span className="font-medium">
-                            {job.company?.name || "Empresa"}
-                          </span>
-                          {job.company?.rating && (
-                            <div className="flex items-center space-x-1">
-                              <Star className="w-3 h-3 fill-yellow-400 text-yellow-400" />
-                              <span>{job.company.rating}</span>
-                              <span>({job.company.reviewCount || 0})</span>
-                            </div>
-                          )}
+                      <div className="flex flex-col sm:flex-row sm:items-center gap-1 sm:gap-4 text-xs sm:text-sm text-gray-600 mb-2">
+                        <span className="font-medium">
+                          {job.company?.name || "Empresa"}
+                        </span>
+                        {job.company?.rating && (
+                          <div className="flex items-center justify-center sm:justify-start gap-1">
+                            <Star className="w-3 h-3 fill-yellow-400 text-yellow-400" />
+                            <span>{job.company.rating}</span>
+                            <span>({job.company.reviewCount || 0})</span>
+                          </div>
+                        )}
+                      </div>
+
+                      <div className="grid grid-cols-2 sm:flex sm:items-center sm:flex-wrap gap-2 sm:gap-4 text-xs sm:text-sm text-gray-600 mb-2 sm:mb-3">
+                        <div className="flex items-center justify-center sm:justify-start gap-1">
+                          <MapPin className="w-3 sm:w-4 h-3 sm:h-4" />
+                          <span className="truncate">{job.location}</span>
                         </div>
-
-                        <div className="flex items-center flex-wrap gap-4 text-sm text-gray-600 mb-3">
-                          <div className="flex items-center space-x-1">
-                            <MapPin className="w-4 h-4" />
-                            <span>{job.location}</span>
-                          </div>
-                          <div className="flex items-center space-x-1">
-                            <Clock className="w-4 h-4" />
-                            <span>{getModalityLabel(job.workModality)}</span>
-                          </div>
-                          <div className="flex items-center space-x-1">
-                            <Users className="w-4 h-4" />
-                            <span>{job.applicationCount || 0} aplicaciones</span>
-                          </div>
-                          <div className="flex items-center space-x-1">
-                            <Eye className="w-4 h-4" />
-                            <span>{job.viewCount || 0} vistas</span>
-                          </div>
+                        <div className="flex items-center justify-center sm:justify-start gap-1">
+                          <Clock className="w-3 sm:w-4 h-3 sm:h-4" />
+                          <span>{getModalityLabel(job.workModality)}</span>
                         </div>
-
-                        <p className="text-gray-700 mb-3 line-clamp-2">
-                          {truncateText(job.description, 150)}
-                        </p>
-
-                        <div className="flex items-center flex-wrap gap-2 mb-3">
-                          <Badge variant="secondary">
-                            {getContractTypeLabel(job.contractType)}
-                          </Badge>
-                          <Badge variant="outline">
-                            {getExperienceLabel(job.experienceLevel)}
-                          </Badge>
-                          {job.requiredSkills?.slice(0, 3).map((skill) => (
-                            <Badge
-                              key={skill}
-                              variant="outline"
-                              className="text-xs"
-                            >
-                              {skill}
-                            </Badge>
-                          ))}
-                          {job.requiredSkills && job.requiredSkills.length > 3 && (
-                            <Badge variant="outline" className="text-xs">
-                              +{job.requiredSkills.length - 3} más
-                            </Badge>
-                          )}
+                        <div className="flex items-center justify-center sm:justify-start gap-1">
+                          <Users className="w-3 sm:w-4 h-3 sm:h-4" />
+                          <span>{job.applicationCount || 0} aplicaciones</span>
+                        </div>
+                        <div className="flex items-center justify-center sm:justify-start gap-1">
+                          <Eye className="w-3 sm:w-4 h-3 sm:h-4" />
+                          <span>{job.viewCount || 0} vistas</span>
                         </div>
                       </div>
 
-                      <div className="flex flex-col items-end space-y-2 ml-4">
-                        <div className="text-right">
-                          <p className="font-semibold text-gray-900">
-                            {formatSalary(
-                              job.salaryMin,
-                              job.salaryMax,
-                            )}
-                          </p>
-                          <p className="text-sm text-gray-500">
-                            {formatDate(job.publishedAt)}
-                          </p>
-                          {expiresAt && (
-                            <p className="text-sm text-gray-400 flex items-center justify-end">
-                              <Calendar className="w-4 h-4 mr-1" />
-                              Vence el{" "}
-                              {format(expiresAt, "dd 'de' MMMM", {
-                                locale: es,
-                              })}
-                            </p>
-                          )}
-                        </div>
+                      <p className="text-xs sm:text-sm text-gray-700 mb-2 sm:mb-3 line-clamp-2 text-center sm:text-left">
+                        {truncateText(job.description, 150)}
+                      </p>
 
-                        <div className="flex space-x-2">
-                          <Button
+                      <div className="flex items-center justify-center sm:justify-start flex-wrap gap-1 sm:gap-2 mb-3">
+                        <Badge variant="secondary" className="text-xs">
+                          {getContractTypeLabel(job.contractType)}
+                        </Badge>
+                        <Badge variant="outline" className="text-xs">
+                          {getExperienceLabel(job.experienceLevel)}
+                        </Badge>
+                        {job.requiredSkills?.slice(0, 2).map((skill) => (
+                          <Badge
+                            key={skill}
                             variant="outline"
-                            size="sm"
-                            onClick={handleSaveJob}
-                            className="w-10 h-10 p-0"
+                            className="text-xs"
                           >
-                            {isSaved ? (
-                              <BookmarkCheck className="w-4 h-4 text-blue-600" />
-                            ) : (
-                              <Bookmark className="w-4 h-4" />
-                            )}
-                          </Button>
-                          
-                          {applicationStatus.loading ? (
-                            <Button size="sm" className="min-w-[80px]" disabled>
-                              <Loader2 className="w-4 h-4 animate-spin" />
-                            </Button>
-                          ) : applicationStatus.hasApplied ? (
-                            <div className="flex flex-col space-y-1">
-                              <Badge className={`text-xs ${getApplicationStatusColor(applicationStatus.application?.status)}`}>
-                                {getApplicationStatusLabel(applicationStatus.application?.status)}
-                              </Badge>
-                              <Button
-                                onClick={handleCancelApplication}
-                                size="sm"
-                                variant="outline"
-                                className="min-w-[80px] text-xs"
-                              >
-                                <XCircle className="w-3 h-3 mr-1" />
-                                Cancelar
-                              </Button>
-                            </div>
-                          ) : (
-                            <Button
-                              onClick={handleApplyClick}
-                              size="sm"
-                              className="min-w-[80px]"
-                            >
-                              Aplicar
-                            </Button>
-                          )}
-                        </div>
+                            {skill}
+                          </Badge>
+                        ))}
+                        {job.requiredSkills && job.requiredSkills.length > 2 && (
+                          <Badge variant="outline" className="text-xs">
+                            +{job.requiredSkills.length - 2} más
+                          </Badge>
+                        )}
                       </div>
+                    </div>
+                  </div>
+
+                  <div className="flex flex-col items-center lg:items-end gap-2 sm:gap-3 w-full sm:w-auto lg:ml-4">
+                    <div className="text-center lg:text-right">
+                      <p className="text-sm sm:text-base font-semibold text-gray-900">
+                        {formatSalary(
+                          job.salaryMin,
+                          job.salaryMax,
+                        )}
+                      </p>
+                      <p className="text-xs sm:text-sm text-gray-500">
+                        {formatDate(job.publishedAt)}
+                      </p>
+                      {expiresAt && (
+                        <p className="text-xs sm:text-sm text-gray-400 flex items-center justify-center lg:justify-end">
+                          <Calendar className="w-3 sm:w-4 h-3 sm:h-4 mr-1" />
+                          Vence el{" "}
+                          {format(expiresAt, "dd 'de' MMMM", {
+                            locale: es,
+                          })}
+                        </p>
+                      )}
+                    </div>
+
+                    <div className="flex gap-2 w-full sm:w-auto">
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={handleSaveJob}
+                        className="w-8 sm:w-10 h-8 sm:h-10 p-0"
+                      >
+                        {isSaved ? (
+                          <BookmarkCheck className="w-3 sm:w-4 h-3 sm:h-4 text-blue-600" />
+                        ) : (
+                          <Bookmark className="w-3 sm:w-4 h-3 sm:h-4" />
+                        )}
+                      </Button>
+                      
+                      {applicationStatus.loading ? (
+                        <Button size="sm" className="flex-1 sm:min-w-[80px] sm:flex-none" disabled>
+                          <Loader2 className="w-3 sm:w-4 h-3 sm:h-4 animate-spin" />
+                        </Button>
+                      ) : applicationStatus.hasApplied ? (
+                        <div className="flex flex-col gap-1 flex-1 sm:flex-none">
+                          <Badge className={`text-xs justify-center ${getApplicationStatusColor(applicationStatus.application?.status)}`}>
+                            {getApplicationStatusLabel(applicationStatus.application?.status)}
+                          </Badge>
+                          <Button
+                            onClick={handleCancelApplication}
+                            size="sm"
+                            variant="outline"
+                            className="text-xs"
+                          >
+                            <XCircle className="w-3 h-3 mr-1" />
+                            Cancelar
+                          </Button>
+                        </div>
+                      ) : (
+                        <Button
+                          onClick={handleApplyClick}
+                          size="sm"
+                          className="flex-1 sm:min-w-[80px] sm:flex-none text-xs sm:text-sm"
+                        >
+                          Aplicar
+                        </Button>
+                      )}
                     </div>
                   </div>
                 </div>
@@ -400,58 +398,54 @@ export const JobCard = ({ job, viewMode }: JobCardProps) => {
     <>
       <Link href={`/jobs/${job.id}`}>
         <Card className="hover:shadow-lg transition-shadow cursor-pointer h-full">
-          <CardHeader className="pb-3">
+          <CardHeader className="pb-2 sm:pb-3 p-3 sm:p-6">
             <div className="flex items-start justify-between">
-              <div className="flex items-start space-x-3">
-                <Avatar className="w-10 h-10">
+              <div className="flex items-start gap-2 sm:gap-3 flex-1 min-w-0">
+                <Avatar className="w-8 sm:w-10 h-8 sm:h-10 flex-shrink-0">
                   <AvatarImage src={job.company?.logo || "/images/companies/default-logo.png"} alt={job.company?.name || "Empresa"} />
-                  <AvatarFallback>{job.company?.name?.charAt(0) || "E"}</AvatarFallback>
+                  <AvatarFallback className="text-xs sm:text-sm">{job.company?.name?.charAt(0) || "E"}</AvatarFallback>
                 </Avatar>
                 <div className="flex-1 min-w-0">
-                  <div className="flex items-start justify-between">
-                    <div className="flex-1">
-                      <h3 className="font-semibold text-gray-900 mb-1 line-clamp-1">
-                        {job.title}
-                        {job.featured && (
-                          <Star className="inline-block w-4 h-4 text-yellow-500 ml-2" />
-                        )}
-                      </h3>
-                      <p className="text-sm text-gray-600 mb-2">
-                        {job.company?.name || "Empresa"}
-                      </p>
-                    </div>
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      onClick={handleSaveJob}
-                      className="w-8 h-8 p-0 ml-2"
-                    >
-                      {isSaved ? (
-                        <BookmarkCheck className="w-4 h-4 text-blue-600" />
-                      ) : (
-                        <Bookmark className="w-4 h-4" />
-                      )}
-                    </Button>
-                  </div>
+                  <h3 className="text-sm sm:text-base font-semibold text-gray-900 mb-1 line-clamp-1">
+                    {job.title}
+                    {job.featured && (
+                      <Star className="inline-block w-3 sm:w-4 h-3 sm:h-4 text-yellow-500 ml-1 sm:ml-2" />
+                    )}
+                  </h3>
+                  <p className="text-xs sm:text-sm text-gray-600 mb-2 truncate">
+                    {job.company?.name || "Empresa"}
+                  </p>
                 </div>
               </div>
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={handleSaveJob}
+                className="w-6 sm:w-8 h-6 sm:h-8 p-0 ml-1 sm:ml-2 flex-shrink-0"
+              >
+                {isSaved ? (
+                  <BookmarkCheck className="w-3 sm:w-4 h-3 sm:h-4 text-blue-600" />
+                ) : (
+                  <Bookmark className="w-3 sm:w-4 h-3 sm:h-4" />
+                )}
+              </Button>
             </div>
           </CardHeader>
-          <CardContent className="pt-0">
-            <div className="space-y-3">
-              <div className="flex items-center flex-wrap gap-2 text-sm text-gray-600">
-                <div className="flex items-center space-x-1">
+          <CardContent className="pt-0 p-3 sm:p-6">
+            <div className="space-y-2 sm:space-y-3">
+              <div className="flex items-center flex-wrap gap-1 sm:gap-2 text-xs sm:text-sm text-gray-600">
+                <div className="flex items-center gap-1">
                   <MapPin className="w-3 h-3" />
-                  <span>{job.location}</span>
+                  <span className="truncate">{job.location}</span>
                 </div>
-                <div className="flex items-center space-x-1">
+                <div className="flex items-center gap-1">
                   <Clock className="w-3 h-3" />
                   <span>{getModalityLabel(job.workModality)}</span>
                 </div>
               </div>
 
-              <p className="text-gray-700 text-sm line-clamp-3">
-                {truncateText(job.description, 120)}
+              <p className="text-gray-700 text-xs sm:text-sm line-clamp-3">
+                {truncateText(job.description, 100)}
               </p>
 
               <div className="flex flex-wrap gap-1">
@@ -464,21 +458,21 @@ export const JobCard = ({ job, viewMode }: JobCardProps) => {
               </div>
 
               <div className="flex flex-wrap gap-1">
-                {job.requiredSkills?.slice(0, 4).map((skill) => (
+                {job.requiredSkills?.slice(0, 3).map((skill) => (
                   <Badge key={skill} variant="outline" className="text-xs">
                     {skill}
                   </Badge>
                 ))}
-                {job.requiredSkills && job.requiredSkills.length > 4 && (
+                {job.requiredSkills && job.requiredSkills.length > 3 && (
                   <Badge variant="outline" className="text-xs">
-                    +{job.requiredSkills.length - 4}
+                    +{job.requiredSkills.length - 3}
                   </Badge>
                 )}
               </div>
 
-              <div className="flex items-center justify-between pt-2 border-t">
+              <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between pt-2 border-t gap-2 sm:gap-0">
                 <div>
-                  <p className="font-semibold text-gray-900 text-sm">
+                  <p className="font-semibold text-gray-900 text-xs sm:text-sm">
                     {formatSalary(
                       job.salaryMin,
                       job.salaryMax,
@@ -493,12 +487,12 @@ export const JobCard = ({ job, viewMode }: JobCardProps) => {
                   </p>
                 </div>
 
-                <div className="flex items-center space-x-3 text-xs text-gray-500">
-                  <div className="flex items-center space-x-1">
+                <div className="flex items-center justify-center sm:justify-end gap-3 text-xs text-gray-500">
+                  <div className="flex items-center gap-1">
                     <Users className="w-3 h-3" />
                     <span>{job.applicationCount || 0}</span>
                   </div>
-                  <div className="flex items-center space-x-1">
+                  <div className="flex items-center gap-1">
                     <Eye className="w-3 h-3" />
                     <span>{job.viewCount || 0}</span>
                   </div>
@@ -507,12 +501,12 @@ export const JobCard = ({ job, viewMode }: JobCardProps) => {
 
               {applicationStatus.loading ? (
                 <Button className="w-full" size="sm" disabled>
-                  <Loader2 className="w-4 h-4 animate-spin mr-2" />
-                  Cargando...
+                  <Loader2 className="w-3 sm:w-4 h-3 sm:h-4 animate-spin mr-2" />
+                  <span className="text-xs sm:text-sm">Cargando...</span>
                 </Button>
               ) : applicationStatus.hasApplied ? (
                 <div className="space-y-2">
-                  <Badge className={`w-full justify-center ${getApplicationStatusColor(applicationStatus.application?.status)}`}>
+                  <Badge className={`w-full justify-center text-xs ${getApplicationStatusColor(applicationStatus.application?.status)}`}>
                     <CheckCircle className="w-3 h-3 mr-1" />
                     {getApplicationStatusLabel(applicationStatus.application?.status)}
                   </Badge>
@@ -522,13 +516,13 @@ export const JobCard = ({ job, viewMode }: JobCardProps) => {
                     size="sm" 
                     variant="outline"
                   >
-                    <XCircle className="w-4 h-4 mr-2" />
-                    Cancelar Aplicación
+                    <XCircle className="w-3 sm:w-4 h-3 sm:h-4 mr-2" />
+                    <span className="text-xs sm:text-sm">Cancelar Aplicación</span>
                   </Button>
                 </div>
               ) : (
                 <Button onClick={handleApplyClick} className="w-full" size="sm">
-                  Aplicar ahora
+                  <span className="text-xs sm:text-sm">Aplicar ahora</span>
                 </Button>
               )}
             </div>
@@ -538,10 +532,10 @@ export const JobCard = ({ job, viewMode }: JobCardProps) => {
 
       {/* Job Application Modal */}
       <Dialog open={showApplicationModal} onOpenChange={setShowApplicationModal}>
-        <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
+        <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto mx-4 sm:mx-8">
           <DialogHeader>
-            <DialogTitle>Aplicar a: {job.title}</DialogTitle>
-            <DialogDescription>
+            <DialogTitle className="text-base sm:text-lg">Aplicar a: {job.title}</DialogTitle>
+            <DialogDescription className="text-sm">
               Completa el formulario para aplicar a este empleo
             </DialogDescription>
           </DialogHeader>

@@ -1,5 +1,5 @@
-import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { apiCall } from '@/lib/api';
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import { apiCall } from "@/lib/api";
 
 export interface Lesson {
   id: string;
@@ -7,7 +7,7 @@ export interface Lesson {
   title: string;
   description?: string;
   content: string;
-  contentType: 'VIDEO' | 'TEXT' | 'QUIZ' | 'ASSIGNMENT' | 'LIVE';
+  contentType: "VIDEO" | "TEXT" | "QUIZ" | "ASSIGNMENT" | "LIVE";
   videoUrl?: string;
   duration?: number;
   orderIndex: number;
@@ -24,7 +24,7 @@ export interface CreateLessonData {
   title: string;
   description?: string;
   content: string;
-  contentType: 'VIDEO' | 'TEXT' | 'QUIZ' | 'ASSIGNMENT' | 'LIVE';
+  contentType: "VIDEO" | "TEXT" | "QUIZ" | "ASSIGNMENT" | "LIVE";
   videoUrl?: string;
   duration?: number;
   orderIndex: number;
@@ -35,12 +35,13 @@ export interface CreateLessonData {
 
 export interface UpdateLessonData extends Partial<CreateLessonData> {
   id: string;
+  moduleId?: string; // Added for proper query invalidation
 }
 
 // Fetch lessons for a module
 export const useLessons = (moduleId?: string) => {
   return useQuery({
-    queryKey: ['lessons', moduleId],
+    queryKey: ["lessons", moduleId],
     queryFn: async () => {
       if (!moduleId) return { lessons: [] };
 
@@ -64,14 +65,16 @@ export const useCreateLesson = () => {
 
   return useMutation({
     mutationFn: async (lessonData: CreateLessonData) => {
-      const data = await apiCall('/lesson', {
-        method: 'POST',
+      const data = await apiCall("/lesson", {
+        method: "POST",
         body: JSON.stringify(lessonData),
       });
       return data;
     },
     onSuccess: (data, variables) => {
-      queryClient.invalidateQueries({ queryKey: ['lessons', variables.moduleId] });
+      queryClient.invalidateQueries({
+        queryKey: ["lessons", variables.moduleId],
+      });
     },
   });
 };
@@ -82,14 +85,24 @@ export const useUpdateLesson = () => {
 
   return useMutation({
     mutationFn: async (lessonData: UpdateLessonData) => {
+      const { moduleId, ...dataToSend } = lessonData;
       const data = await apiCall(`/lesson/${lessonData.id}`, {
-        method: 'PUT',
-        body: JSON.stringify(lessonData),
+        method: "PUT",
+        body: JSON.stringify(dataToSend),
       });
       return data;
     },
     onSuccess: (data, variables) => {
-      queryClient.invalidateQueries({ queryKey: ['lessons', variables.moduleId] });
+      // Invalidate queries for the specific module
+      if (variables.moduleId) {
+        queryClient.invalidateQueries({
+          queryKey: ["lessons", variables.moduleId],
+        });
+      }
+      // Also invalidate general lessons queries
+      queryClient.invalidateQueries({
+        queryKey: ["lessons"],
+      });
     },
   });
 };
@@ -101,12 +114,18 @@ export const useDeleteLesson = () => {
   return useMutation({
     mutationFn: async (id: string) => {
       const data = await apiCall(`/lesson/${id}`, {
-        method: 'DELETE',
+        method: "DELETE",
       });
       return data;
     },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['lessons'] });
+    onSuccess: (data) => {
+      // Invalidate all lessons queries to refresh the list
+      queryClient.invalidateQueries({ queryKey: ["lessons"] });
+
+      // If we have moduleId from the response, invalidate specific module lessons
+      if (data?.moduleId) {
+        queryClient.invalidateQueries({ queryKey: ["lessons", data.moduleId] });
+      }
     },
   });
-}; 
+};

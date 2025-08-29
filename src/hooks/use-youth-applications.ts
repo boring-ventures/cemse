@@ -167,24 +167,11 @@ export const useOptimisticMessage = () => {
             // Snapshot del valor anterior
             const previousMessages = queryClient.getQueryData(YOUTH_APPLICATION_KEYS.messages(applicationId));
 
-            // Optimistic update
-            const optimisticMessage = {
-                id: `temp-${Date.now()}`,
-                applicationId,
-                senderId: 'current-user', // Esto se actualizará con el ID real
-                senderType: 'YOUTH' as const, // O 'COMPANY' según el contexto
-                content: data.content,
-                messageType: 'TEXT' as const,
-                status: 'SENT' as const,
-                createdAt: new Date().toISOString(),
-            };
+            // Note: We don't create optimistic updates for messages since sender type 
+            // needs to be determined by the API based on user profile
+            // The API will handle the message creation and we'll refetch
 
-            queryClient.setQueryData(YOUTH_APPLICATION_KEYS.messages(applicationId), (old: unknown) => [
-                ...((old as unknown[]) || []),
-                optimisticMessage,
-            ]);
-
-            return { previousMessages, optimisticMessage };
+            return { previousMessages };
         },
         onError: (err, { applicationId }, context) => {
             // Revertir en caso de error

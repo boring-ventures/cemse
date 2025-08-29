@@ -77,6 +77,7 @@ export default function CertificatesPage() {
     loadCourseCertificates,
     downloadCertificate,
     previewCertificate,
+    generateMissingCertificates,
     setError
   } = useCertificates();
 
@@ -85,7 +86,6 @@ export default function CertificatesPage() {
   const [moduleCertificates, setModuleCertificates] = useState<ModuleCertificate[]>([]);
   const [courseCertificates, setCourseCertificates] = useState<CourseCertificate[]>([]);
   const [isInitialized, setIsInitialized] = useState(false);
-  const [debugInfo, setDebugInfo] = useState<string>('');
 
   useEffect(() => {
     loadCertificates();
@@ -95,31 +95,19 @@ export default function CertificatesPage() {
     try {
       setIsInitialized(true);
       setError(null);
-      setDebugInfo('Iniciando carga de certificados...');
       
       // Cargar certificados de módulos
-      setDebugInfo('Cargando certificados de módulos...');
       const moduleCerts = await loadModuleCertificates();
       setModuleCertificates(moduleCerts);
-      setDebugInfo(`Módulos cargados: ${moduleCerts.length}`);
 
       // Cargar certificados de cursos
-      setDebugInfo('Cargando certificados de cursos...');
       const courseCerts = await loadCourseCertificates();
       setCourseCertificates(courseCerts);
-      setDebugInfo(`Cursos cargados: ${courseCerts.length}`);
 
     } catch (err) {
       console.error('Error loading certificates:', err);
       const errorMessage = err instanceof Error ? err.message : 'Error desconocido';
-      
-      if (errorMessage.includes('fetch failed') || errorMessage.includes('Backend not available')) {
-        setError('No se pudo conectar con el servidor. Verificando datos locales...');
-        setDebugInfo('Usando datos de ejemplo mientras el servidor no esté disponible');
-      } else {
-        setError('Error al cargar los certificados. Inténtalo de nuevo.');
-        setDebugInfo(`Error: ${errorMessage}`);
-      }
+      setError('Error al cargar los certificados. Verifica tu conexión e inténtalo de nuevo.');
     }
   };
 
@@ -147,47 +135,19 @@ export default function CertificatesPage() {
     }
   };
 
-  // Función de prueba para certificados de cursos
-  const testCourseCertificate = async () => {
-    const testCertificate: CourseCertificate = {
-      id: 'test_cert_1',
-      userId: 'user_123',
-      courseId: 'course_1',
-      template: 'default',
-      issuedAt: '2024-01-15T10:00:00Z',
-      verificationCode: 'CERT-TEST-001',
-      digitalSignature: 'sha256-test-signature',
-      isValid: true,
-      url: 'https://example.com/certificates/test-cert.pdf',
-      course: {
-        id: 'course_1',
-        title: 'Curso de Prueba',
-        description: 'Este es un curso de prueba para verificar la generación de PDFs'
-      },
-      user: {
-        id: 'user_123',
-        firstName: 'Juan',
-        lastName: 'Pérez',
-        email: 'juan.perez@example.com'
-      }
-    };
-
+  const handleGenerateMissing = async () => {
     try {
-      console.log('🧪 Testing course certificate generation...');
-      console.log('🧪 Test certificate data:', JSON.stringify(testCertificate, null, 2));
-      const success = await downloadCertificate(testCertificate);
+      const success = await generateMissingCertificates();
       if (success) {
-        console.log('✅ Test certificate generated successfully');
-        alert('✅ Certificado de prueba generado exitosamente');
-      } else {
-        console.log('❌ Test certificate generation failed');
-        alert('❌ Error al generar certificado de prueba. Revisa la consola para más detalles.');
+        // Reload certificates after generation
+        await loadCertificates();
       }
-    } catch (error) {
-      console.error('❌ Test certificate error:', error);
-      alert('❌ Error en prueba de certificado. Revisa la consola para más detalles.');
+    } catch (err) {
+      console.error('Error generating missing certificates:', err);
     }
   };
+
+
 
   const formatDate = (dateString: string) => {
     return new Date(dateString).toLocaleDateString('es-ES', {
@@ -222,27 +182,9 @@ export default function CertificatesPage() {
               </div>
               <div>
                 <h1 className="text-3xl font-bold text-gray-900">Mis Certificados</h1>
-                                 <p className="text-gray-600 mt-1">
-                   {totalCertificates} certificado{totalCertificates !== 1 ? 's' : ''} obtenido{totalCertificates !== 1 ? 's' : ''}
-                 </p>
-                 <Button 
-                   onClick={testCourseCertificate}
-                   variant="outline"
-                   size="sm"
-                   className="mt-2"
-                 >
-                   🧪 Probar Certificado de Curso
-                 </Button>
-                {debugInfo && (
-                  <p className="text-xs text-blue-600 mt-1">Debug: {debugInfo}</p>
-                )}
-                {debugInfo && debugInfo.includes('datos de ejemplo') && (
-                  <div className="mt-2 p-2 bg-yellow-50 border border-yellow-200 rounded-md">
-                    <p className="text-xs text-yellow-800">
-                      ⚠️ Mostrando datos de ejemplo. El servidor no está disponible.
-                    </p>
-                  </div>
-                )}
+                                                 <p className="text-gray-600 mt-1">
+                  {totalCertificates} certificado{totalCertificates !== 1 ? 's' : ''} obtenido{totalCertificates !== 1 ? 's' : ''}
+                </p>
                 
                 {/* Resumen de cursos inscritos */}
                 {enrolledCourses.length > 0 && (
@@ -255,9 +197,12 @@ export default function CertificatesPage() {
                       <p>📚 Inscrito en: {enrolledCourses.length} curso{enrolledCourses.length !== 1 ? 's' : ''}</p>
                       <p>✅ Completados: {completedCourses.length} curso{completedCourses.length !== 1 ? 's' : ''}</p>
                       <p>🔄 En progreso: {enrolledCourses.length - completedCourses.length} curso{(enrolledCourses.length - completedCourses.length) !== 1 ? 's' : ''}</p>
+                      <p>🏆 Certificados: {totalCertificates}</p>
                     </div>
                   </div>
                 )}
+                
+
               </div>
             </div>
           </div>
@@ -273,7 +218,6 @@ export default function CertificatesPage() {
               <div className="text-center py-12">
                 <Loader2 className="h-8 w-8 animate-spin mx-auto mb-4" />
                 <p>Cargando certificados...</p>
-                <p className="text-sm text-gray-500 mt-2">{debugInfo}</p>
               </div>
             </CardContent>
           </Card>
@@ -291,19 +235,9 @@ export default function CertificatesPage() {
                   Error al cargar certificados
                 </h3>
                 <p className="text-red-600 mb-4">{error}</p>
-                <div className="space-y-2">
-                  <Button onClick={loadCertificates} className="bg-red-600 hover:bg-red-700">
-                    Reintentar
-                  </Button>
-                  <Button onClick={testCourseCertificate} variant="outline" className="ml-2">
-                    Probar Generación
-                  </Button>
-                </div>
-                {debugInfo && (
-                  <div className="mt-4 p-3 bg-gray-100 rounded text-sm text-gray-700">
-                    <strong>Debug Info:</strong> {debugInfo}
-                  </div>
-                )}
+                <Button onClick={loadCertificates} className="bg-red-600 hover:bg-red-700">
+                  Reintentar
+                </Button>
               </div>
             </CardContent>
           </Card>
@@ -384,19 +318,28 @@ export default function CertificatesPage() {
                       <h3 className="text-lg font-semibold text-gray-900 mb-2">
                         No tienes certificados de módulos aún
                       </h3>
-                                             <p className="text-gray-600 mb-4">
-                         Completa módulos de cursos para obtener certificados
-                       </p>
-                       <div className="space-y-2">
-                         {enrolledCourses.length > 0 && (
-                           <p className="text-sm text-blue-600">
-                             📚 Ya estás inscrito en {enrolledCourses.length} curso{enrolledCourses.length !== 1 ? 's' : ''}
-                           </p>
-                         )}
-                         <Button variant="outline" onClick={() => window.location.href = '/courses'}>
-                           Explorar Cursos
-                         </Button>
-                       </div>
+                      <p className="text-gray-600 mb-4">
+                        Completa módulos de cursos para obtener certificados individuales por cada módulo
+                      </p>
+                      <div className="space-y-2">
+                        {enrolledCourses.length > 0 ? (
+                          <div className="space-y-2">
+                            <p className="text-sm text-blue-600">
+                              📚 Ya estás inscrito en {enrolledCourses.length} curso{enrolledCourses.length !== 1 ? 's' : ''}
+                            </p>
+                            <p className="text-sm text-gray-600">
+                              Continúa estudiando para obtener certificados de módulos
+                            </p>
+                          </div>
+                        ) : (
+                          <p className="text-sm text-gray-600">
+                            Primero inscríbete en un curso para comenzar a obtener certificados
+                          </p>
+                        )}
+                        <Button variant="outline" onClick={() => window.location.href = '/courses'}>
+                          {enrolledCourses.length > 0 ? 'Ver Mis Cursos' : 'Explorar Cursos'}
+                        </Button>
+                      </div>
                     </div>
                   </CardContent>
                 </Card>
@@ -480,24 +423,64 @@ export default function CertificatesPage() {
                       <h3 className="text-lg font-semibold text-gray-900 mb-2">
                         No tienes certificados de cursos completos aún
                       </h3>
-                                             <p className="text-gray-600 mb-4">
-                         Completa cursos enteros para obtener certificados de graduación
-                       </p>
-                       <div className="space-y-2">
-                         {completedCourses.length > 0 && (
-                           <p className="text-sm text-green-600">
-                             ✅ Has completado {completedCourses.length} curso{completedCourses.length !== 1 ? 's' : ''}
-                           </p>
-                         )}
-                         <div className="flex gap-2 justify-center">
-                           <Button variant="outline" onClick={() => window.location.href = '/courses'}>
-                             Explorar Cursos
-                           </Button>
-                           <Button variant="outline" onClick={testCourseCertificate}>
-                             Probar Generación
-                           </Button>
-                         </div>
-                       </div>
+                      <p className="text-gray-600 mb-4">
+                        Completa cursos enteros para obtener certificados oficiales de graduación
+                      </p>
+                      <div className="space-y-2">
+                        {completedCourses.length > 0 ? (
+                          <div className="space-y-3">
+                            <p className="text-sm text-green-600">
+                              ✅ Has completado {completedCourses.length} curso{completedCourses.length !== 1 ? 's' : ''}
+                            </p>
+                            <p className="text-sm text-gray-600">
+                              Parece que tus certificados no se generaron automáticamente
+                            </p>
+                            <div className="flex gap-2">
+                              <Button 
+                                onClick={handleGenerateMissing}
+                                disabled={loading}
+                                className="bg-green-600 hover:bg-green-700"
+                              >
+                                {loading ? (
+                                  <>
+                                    <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                                    Generando...
+                                  </>
+                                ) : (
+                                  <>
+                                    <Award className="h-4 w-4 mr-2" />
+                                    Generar Certificados
+                                  </>
+                                )}
+                              </Button>
+                              <Button variant="outline" onClick={() => window.location.href = '/my-courses'}>
+                                Ver Mis Cursos
+                              </Button>
+                            </div>
+                          </div>
+                        ) : enrolledCourses.length > 0 ? (
+                          <div className="space-y-2">
+                            <p className="text-sm text-blue-600">
+                              📚 Tienes {enrolledCourses.length} curso{enrolledCourses.length !== 1 ? 's' : ''} en progreso
+                            </p>
+                            <p className="text-sm text-gray-600">
+                              Completa todos los módulos para obtener tu certificado oficial
+                            </p>
+                            <Button variant="outline" onClick={() => window.location.href = '/my-courses'}>
+                              Continuar Mis Cursos
+                            </Button>
+                          </div>
+                        ) : (
+                          <div className="space-y-2">
+                            <p className="text-sm text-gray-600">
+                              Inscríbete en cursos y completa todos los módulos para obtener certificados
+                            </p>
+                            <Button variant="outline" onClick={() => window.location.href = '/courses'}>
+                              Explorar Cursos
+                            </Button>
+                          </div>
+                        )}
+                      </div>
                     </div>
                   </CardContent>
                 </Card>

@@ -69,7 +69,15 @@ export async function GET(request: NextRequest) {
         municipality: {
           select: {
             id: true,
-            name: true
+            name: true,
+            department: true
+          }
+        },
+        creator: {
+          select: {
+            id: true,
+            username: true,
+            role: true,
           }
         }
       },
@@ -79,7 +87,29 @@ export async function GET(request: NextRequest) {
     });
 
     console.log('🔍 API: Companies found:', companies.length);
-    return NextResponse.json({ companies }, { status: 200 });
+    
+    // Transform the data to match the expected format
+    const transformedCompanies = companies.map(company => ({
+      id: company.id,
+      name: company.name,
+      description: company.description,
+      businessSector: company.businessSector,
+      companySize: company.companySize,
+      foundedYear: company.foundedYear,
+      website: company.website,
+      email: company.email,
+      phone: company.phone,
+      address: company.address,
+      isActive: company.isActive,
+      username: company.username,
+      loginEmail: company.loginEmail,
+      municipality: company.municipality,
+      creator: company.creator,
+      createdAt: company.createdAt.toISOString(),
+      updatedAt: company.updatedAt.toISOString(),
+    }));
+    
+    return NextResponse.json({ companies: transformedCompanies }, { status: 200 });
   } catch (error) {
     console.error('Error in company search route:', error);
     return NextResponse.json(

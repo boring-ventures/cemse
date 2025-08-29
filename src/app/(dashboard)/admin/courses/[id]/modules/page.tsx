@@ -65,9 +65,9 @@ import {
   Search,
 } from "lucide-react";
 import { useCourseModules, useCreateModule, useUpdateModule, useDeleteModule } from "@/hooks/useCourseModuleApi";
-import { useModuleLessons } from "@/hooks/useLessonApi";
-import { useLessonResources } from "@/hooks/useLessonResourceApi";
-import { useModuleCertificates } from "@/hooks/useModuleCertificateApi";
+// import { useModuleLessons } from "@/hooks/useLessonApi";
+// import { useLessonResources } from "@/hooks/useLessonResourceApi";
+// import { useModuleCertificates } from "@/hooks/useModuleCertificateApi";
 import { toast } from "sonner";
 
 export default function CourseModulesPage() {
@@ -93,7 +93,7 @@ export default function CourseModulesPage() {
 
   // Hooks
   const { data: modulesData, isLoading: modulesLoading, error } = useCourseModules(courseId);
-  const modules = modulesData?.modules || [];
+  const modules = (modulesData as any)?.modules || [];
   
   // Debug logs
   console.log('Course ID:', courseId);
@@ -106,11 +106,17 @@ export default function CourseModulesPage() {
   const deleteModule = useDeleteModule();
 
   // Filter modules
-  const filteredModules = modules.filter((module) =>
+  const filteredModules = modules.filter((module: any) =>
     module.title.toLowerCase().includes(searchQuery.toLowerCase())
   );
 
   const handleCreateModule = async () => {
+    // Validation
+    if (!formData.title.trim()) {
+      toast.error("El título del módulo es requerido");
+      return;
+    }
+    
     try {
       await createModule.mutateAsync({
         courseId,
@@ -129,12 +135,19 @@ export default function CourseModulesPage() {
       });
       toast.success("Módulo creado exitosamente");
     } catch (error) {
+      console.error("Error creating module:", error);
       toast.error("Error al crear el módulo");
     }
   };
 
   const handleEditModule = async () => {
     if (!editingModule) return;
+    
+    // Validation
+    if (!formData.title.trim()) {
+      toast.error("El título del módulo es requerido");
+      return;
+    }
     
     try {
       await updateModule.mutateAsync({
@@ -155,6 +168,7 @@ export default function CourseModulesPage() {
       });
       toast.success("Módulo actualizado exitosamente");
     } catch (error) {
+      console.error("Error updating module:", error);
       toast.error("Error al actualizar el módulo");
     }
   };
@@ -165,6 +179,7 @@ export default function CourseModulesPage() {
         await deleteModule.mutateAsync(moduleId);
         toast.success("Módulo eliminado exitosamente");
       } catch (error) {
+        console.error("Error deleting module:", error);
         toast.error("Error al eliminar el módulo");
       }
     }
@@ -185,13 +200,13 @@ export default function CourseModulesPage() {
   };
 
   const getModuleStats = (moduleId: string) => {
-    // Mock stats - in real implementation, fetch from API
+    const module = modules.find((m: any) => m.id === moduleId);
     return {
-      lessons: 5,
-      resources: 12,
-      certificates: 3,
-      duration: 120,
-      students: 45,
+      lessons: module?.lessons?.length || 0,
+      resources: module?.totalResources || 0,
+      certificates: module?.hasCertificate ? 1 : 0,
+      duration: module?.estimatedDuration || 0,
+      students: 0, // Will be implemented when enrollment system is ready
     };
   };
 
@@ -362,7 +377,7 @@ export default function CourseModulesPage() {
                 </TableRow>
               </TableHeader>
               <TableBody>
-                {filteredModules.map((module) => {
+                {filteredModules.map((module: any) => {
                   const stats = getModuleStats(module.id);
                   return (
                     <TableRow key={module.id}>

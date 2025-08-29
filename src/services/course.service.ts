@@ -7,7 +7,8 @@ export class CourseService {
     try {
       const result = await apiCall('/course');
       console.log("✅ CourseService.getAll() - Success:", result);
-      return result;
+      // Extract courses array from the response object
+      return result.courses || result || [];
     } catch (error) {
       console.error("❌ CourseService.getAll() - Error:", error);
       throw error;

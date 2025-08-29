@@ -43,8 +43,17 @@ export default function LoginPage() {
       await login({ username: username.trim(), password });
       console.log('🔐 Login completed, redirecting...');
       
-      // Redirection will be handled by AuthRedirect component based on user role
-      router.replace("/dashboard");
+      // Check if there's a redirect URL from the login URL params
+      const urlParams = new URLSearchParams(window.location.search);
+      const redirectTo = urlParams.get('redirect');
+      
+      if (redirectTo && redirectTo !== '/') {
+        console.log('🔐 Redirecting to saved URL:', redirectTo);
+        router.replace(redirectTo);
+      } else {
+        // Redirection will be handled by AuthRedirect component based on user role
+        router.replace("/dashboard");
+      }
     } catch (err: any) {
       console.error("Login error:", err);
       setError(err?.message || "Error al iniciar sesión. Verifica tus credenciales.");

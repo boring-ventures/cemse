@@ -92,9 +92,9 @@ export default function YouthApplicationChat({
   };
 
   const isCurrentUserMessage = (message: YouthApplicationMessage) => {
-    return (
-      message.senderType === (user?.type === "company" ? "COMPANY" : "YOUTH")
-    );
+    // Determine current user's sender type based on their role
+    const currentUserSenderType = user?.role === "COMPANIES" ? "COMPANY" : "YOUTH";
+    return message.senderType === currentUserSenderType;
   };
 
   if (isLoading) {
@@ -174,7 +174,7 @@ export default function YouthApplicationChat({
                       />
                       <AvatarFallback className="text-xs">
                         {isCurrentUser
-                          ? user?.type === "company"
+                          ? user?.role === "COMPANIES"
                             ? "EM"
                             : "JD"
                           : youthProfile

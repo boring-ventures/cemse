@@ -89,12 +89,28 @@ export const useCreateCompany = () => {
         return result;
       } catch (error) {
         console.error("❌ useCreateCompany - Error:", error);
+        
+        // Provide more specific error messages
+        if (error instanceof Error) {
+          if (error.message === 'Authentication failed') {
+            throw new Error('Tu sesión ha expirado. Por favor, inicia sesión nuevamente.');
+          } else if (error.message.includes('Insufficient permissions')) {
+            throw new Error('No tienes permisos suficientes para crear empresas. Contacta al administrador.');
+          } else if (error.message.includes('Required roles')) {
+            throw new Error('Tu rol actual no permite crear empresas. Se requiere rol de administrador.');
+          }
+        }
+        
         throw error;
       }
     },
     onSuccess: () => {
+      // Invalidate all company-related queries
       queryClient.invalidateQueries({ queryKey: COMPANY_KEYS.lists() });
       queryClient.invalidateQueries({ queryKey: COMPANY_KEYS.stats() });
+      // Also invalidate all municipality-specific company queries
+      queryClient.invalidateQueries({ queryKey: COMPANY_KEYS.all });
+      console.log("✅ useCreateCompany - Cache invalidated after successful creation");
     },
   });
 };

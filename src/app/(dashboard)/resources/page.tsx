@@ -15,16 +15,29 @@ import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Search } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import {
-  usePublicResources,
+  useResources,
   useSearchResources,
   useResourcesByType,
   useResourcesByCategory,
+  useDeleteResource,
 } from "@/hooks/useResourceApi";
 import { Resource } from "@/types/api";
 import { ResourceCard } from "@/components/resources/ResourceCard";
+import { CreateResourceDialog } from "@/components/resources/CreateResourceDialog";
+import { EditResourceDialog } from "@/components/resources/EditResourceDialog";
 import { useCurrentUser } from "@/hooks/use-current-user";
 import { useCurrentMunicipality } from "@/hooks/useMunicipalityApi";
 import { isMunicipalityRole } from "@/lib/utils";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 
 export default function ResourcesPage() {
   const { toast } = useToast();
@@ -32,6 +45,9 @@ export default function ResourcesPage() {
   const [selectedType, setSelectedType] = useState<string>("all");
   const [selectedCategory, setSelectedCategory] = useState<string>("all");
   const [activeTab, setActiveTab] = useState("all");
+  const [editingResource, setEditingResource] = useState<Resource | null>(null);
+  const [deletingResource, setDeletingResource] = useState<Resource | null>(null);
+  const [showCreateDialog, setShowCreateDialog] = useState(false);
 
   // Get current user and municipality info for filtering
   const { profile } = useCurrentUser();
@@ -41,9 +57,9 @@ export default function ResourcesPage() {
   const isMunicipality = isMunicipalityRole(profile?.role);
   const municipalityId = isMunicipality ? currentMunicipality?.id : undefined;
 
-  // Hooks para obtener recursos con municipality filtering
-  const { data: publicResources = [], isLoading: loadingPublic } =
-    usePublicResources(municipalityId);
+  // Hooks para obtener recursos
+  const { data: allResources = [], isLoading: loadingAll, refetch: refetchAll } = useResources();
+  const { mutateAsync: deleteResource } = useDeleteResource();
   const {
     mutateAsync: searchResources,
     data: searchResults = [],
@@ -64,62 +80,31 @@ export default function ResourcesPage() {
   // Función para descargar recurso
   const handleDownload = async (resource: Resource) => {
     try {
-      // Si el recurso tiene una URL de descarga directa, usarla
-      if (resource.downloadUrl) {
-        const response = await fetch(resource.downloadUrl, {
-          method: "GET",
-          headers: {
-            Authorization: `Bearer ${localStorage.getItem("token")}`,
-          },
-        });
+      // Use the download API endpoint to get the download URL and increment counter
+      const response = await fetch(`/api/resource/${resource.id}/download`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+      });
 
-        if (response.ok) {
-          const blob = await response.blob();
-          const url = window.URL.createObjectURL(blob);
-          const a = document.createElement("a");
-          a.href = url;
-          a.download = resource.title || "resource";
-          document.body.appendChild(a);
-          a.click();
-          window.URL.revokeObjectURL(url);
-          document.body.removeChild(a);
-
+      if (response.ok) {
+        const data = await response.json();
+        
+        if (data.success && data.downloadUrl) {
+          // Open the download URL in a new tab
+          window.open(data.downloadUrl, '_blank');
+          
           // Show success message
           toast({
-            title: "Descarga exitosa",
-            description: "El recurso se ha descargado correctamente",
+            title: "Descarga iniciada",
+            description: "El recurso se está descargando",
           });
         } else {
-          throw new Error(`HTTP error! status: ${response.status}`);
+          throw new Error('No download URL provided');
         }
       } else {
-        // Si no tiene URL directa, usar el endpoint de descarga
-        const response = await fetch(`/api/resource/${resource.id}/download`, {
-          method: "GET",
-          headers: {
-            Authorization: `Bearer ${localStorage.getItem("token")}`,
-          },
-        });
-
-        if (response.ok) {
-          const blob = await response.blob();
-          const url = window.URL.createObjectURL(blob);
-          const a = document.createElement("a");
-          a.href = url;
-          a.download = resource.title || "resource";
-          document.body.appendChild(a);
-          a.click();
-          window.URL.revokeObjectURL(url);
-          document.body.removeChild(a);
-
-          // Show success message
-          toast({
-            title: "Descarga exitosa",
-            description: "El recurso se ha descargado correctamente",
-          });
-        } else {
-          throw new Error(`HTTP error! status: ${response.status}`);
-        }
+        throw new Error(`HTTP error! status: ${response.status}`);
       }
     } catch (error) {
       console.error("Error downloading resource:", error);
@@ -134,16 +119,82 @@ export default function ResourcesPage() {
   // Función para calificar recurso
   const handleRate = async (resource: Resource, rating: number) => {
     try {
-      await fetch(`/api/resource/${resource.id}/rate`, {
+      const response = await fetch(`/api/resource/${resource.id}/rate`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
         },
         body: JSON.stringify({ rating }),
       });
+
+      if (response.ok) {
+        const data = await response.json();
+        if (data.success) {
+          toast({
+            title: "Calificación enviada",
+            description: "Tu calificación se ha registrado correctamente",
+          });
+          
+          // Invalidate queries to refresh the data
+          // This will trigger a refetch of the resources
+          window.location.reload();
+        }
+      } else {
+        throw new Error(`HTTP error! status: ${response.status}`);
+      }
     } catch (error) {
       console.error("Error rating resource:", error);
+      toast({
+        title: "Error al calificar",
+        description: "No se pudo enviar la calificación. Inténtalo de nuevo.",
+        variant: "destructive",
+      });
     }
+  };
+
+  // Función para editar recurso
+  const handleEdit = (resource: Resource) => {
+    setEditingResource(resource);
+  };
+
+  // Función para eliminar recurso
+  const handleDelete = (resource: Resource) => {
+    setDeletingResource(resource);
+  };
+
+  // Confirmar eliminación
+  const confirmDelete = async () => {
+    if (!deletingResource) return;
+
+    try {
+      await deleteResource(deletingResource.id);
+      
+      toast({
+        title: "Recurso eliminado",
+        description: "El recurso se ha eliminado exitosamente",
+      });
+
+      setDeletingResource(null);
+      refetchAll(); // Refresh the resources list
+    } catch (error) {
+      console.error("Error deleting resource:", error);
+      toast({
+        title: "Error al eliminar",
+        description: "No se pudo eliminar el recurso. Inténtalo de nuevo.",
+        variant: "destructive",
+      });
+    }
+  };
+
+  // Manejar creación de recurso
+  const handleResourceCreated = () => {
+    refetchAll(); // Refresh the resources list
+  };
+
+  // Manejar actualización de recurso
+  const handleResourceUpdated = () => {
+    refetchAll(); // Refresh the resources list
+    setEditingResource(null);
   };
 
   // Obtener recursos según la pestaña activa
@@ -156,24 +207,36 @@ export default function ResourcesPage() {
       case "category":
         return (categoryResources as Resource[]) || [];
       default:
-        return (publicResources as Resource[]) || [];
+        return (allResources as Resource[]) || [];
     }
   };
 
   const currentResources = getCurrentResources();
   const isLoading =
-    loadingPublic || loadingSearch || loadingType || loadingCategory;
+    loadingAll || loadingSearch || loadingType || loadingCategory;
+
+  // Check if user can manage resources (create, edit, delete)
+  const canManageResources = profile?.role === 'SUPERADMIN' || 
+    profile?.role === 'EMPRESAS' || 
+    profile?.role === 'GOBIERNOS_MUNICIPALES' || 
+    profile?.role === 'CENTROS_DE_FORMACION' || 
+    profile?.role === 'ONGS_Y_FUNDACIONES';
 
   return (
     <div className="container mx-auto px-4 py-8">
-      <div className="mb-8">
-        <h1 className="text-3xl font-bold text-gray-900 mb-2">
-          Recursos Educativos
-        </h1>
-        <p className="text-gray-600">
-          Explora y descarga recursos educativos para tu desarrollo personal y
-          profesional
-        </p>
+      <div className="mb-8 flex justify-between items-start">
+        <div>
+          <h1 className="text-3xl font-bold text-gray-900 mb-2">
+            Recursos Educativos
+          </h1>
+          <p className="text-gray-600">
+            Explora y descarga recursos educativos para tu desarrollo personal y
+            profesional
+          </p>
+        </div>
+        {canManageResources && (
+          <CreateResourceDialog onResourceCreated={handleResourceCreated} />
+        )}
       </div>
 
       {/* Filtros y búsqueda */}
@@ -280,10 +343,40 @@ export default function ResourcesPage() {
               resource={resource}
               onDownload={handleDownload}
               onRate={handleRate}
+              onEdit={handleEdit}
+              onDelete={handleDelete}
+              showActions={canManageResources}
             />
           ))}
         </div>
       )}
+
+      {/* Edit Resource Dialog */}
+      <EditResourceDialog
+        resource={editingResource}
+        open={!!editingResource}
+        onOpenChange={(open) => !open && setEditingResource(null)}
+        onResourceUpdated={handleResourceUpdated}
+      />
+
+      {/* Delete Confirmation Dialog */}
+      <AlertDialog open={!!deletingResource} onOpenChange={(open) => !open && setDeletingResource(null)}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>¿Estás seguro?</AlertDialogTitle>
+            <AlertDialogDescription>
+              Esta acción no se puede deshacer. Se eliminará permanentemente el recurso
+              "{deletingResource?.title}" del sistema.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancelar</AlertDialogCancel>
+            <AlertDialogAction onClick={confirmDelete} className="bg-destructive text-destructive-foreground">
+              Eliminar
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 }
