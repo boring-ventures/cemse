@@ -61,7 +61,7 @@ const nextConfig = {
       },
     ],
   },
-  output: "standalone",
+  // output: "standalone", // Disabled on Windows due to symlink permission issues
   // Security headers configuration
   async headers() {
     return [
