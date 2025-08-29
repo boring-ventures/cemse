@@ -1,9 +1,11 @@
 import { NextRequest, NextResponse } from "next/server";
 import { cookies } from "next/headers";
-import jwt from 'jsonwebtoken';
+import jwt from "jsonwebtoken";
 import { prisma } from "@/lib/prisma";
 
-const BACKEND_URL = process.env.NEXT_PUBLIC_BACKEND_URL || "https://cemse-back-production.up.railway.app";
+const BACKEND_URL =
+  process.env.NEXT_PUBLIC_BACKEND_URL ||
+  "https://cemse-back-production.up.railway.app";
 const JWT_SECRET = process.env.JWT_SECRET || "supersecretkey"; // Same secret as external backend
 
 // Function to decode JWT token
@@ -48,64 +50,65 @@ export async function GET(request: NextRequest) {
     }
 
     // Handle different token types - JWT vs database auth vs mock
-    if (token.includes('.') && token.split('.').length === 3) {
+    if (token.includes(".") && token.split(".").length === 3) {
       console.log("🔍 Session API - JWT token detected");
-      
+
       try {
         const payload = jwt.verify(token, JWT_SECRET) as any;
         console.log("🔍 Session API - JWT payload:", {
           id: payload.id,
           username: payload.username,
           role: payload.role,
-          type: payload.type
+          type: payload.type,
         });
-        
+
         // Get user from database using JWT payload
         const user = await prisma.user.findUnique({
-          where: { id: payload.id }
+          where: { id: payload.id },
         });
-        
+
         let profile = null;
         if (user) {
           profile = await prisma.profile.findUnique({
-            where: { userId: user.id }
+            where: { userId: user.id },
           });
         }
-        
+
         if (user && user.isActive) {
           const dbUser = {
             id: user.id,
             username: user.username,
             firstName: profile?.firstName || user.username,
-            lastName: profile?.lastName || '',
+            lastName: profile?.lastName || "",
             email: profile?.email || `${user.username}@cemse.dev`,
             role: user.role,
             profilePicture: profile?.avatarUrl || null,
             isActive: user.isActive,
             createdAt: user.createdAt,
             updatedAt: user.updatedAt,
-            companyId: user.role === 'COMPANIES' ? user.id : null,
+            companyId: user.role === "COMPANIES" ? user.id : null,
             // Add full company object for company users
-            ...(user.role === 'COMPANIES' && {
+            ...(user.role === "COMPANIES" && {
               company: {
                 id: user.id,
-                name: profile?.companyName || profile?.firstName || 'Mi Empresa',
+                name:
+                  profile?.companyName || profile?.firstName || "Mi Empresa",
                 email: profile?.email || `${user.username}@cemse.dev`,
                 phone: profile?.phone || null,
-                description: profile?.companyDescription || '',
-                businessSector: profile?.businessSector || '',
-                companySize: profile?.companySize || 'SMALL',
-                foundedYear: profile?.foundedYear?.toString() || '',
-                website: profile?.website || '',
-                address: profile?.address || '',
+                description: profile?.companyDescription || "",
+                businessSector: profile?.businessSector || "",
+                companySize: profile?.companySize || "SMALL",
+                foundedYear: profile?.foundedYear?.toString() || "",
+                website: profile?.website || "",
+                address: profile?.address || "",
                 taxId: profile?.taxId || null,
                 createdAt: user.createdAt.toISOString(),
                 updatedAt: user.updatedAt.toISOString(),
                 isActive: user.isActive,
-              }
+              },
             }),
           };
-          
+
           console.log("🔍 Session API - JWT user validated:", dbUser);
           return NextResponse.json({ user: dbUser });
         } else {
@@ -122,52 +125,58 @@ export async function GET(request: NextRequest) {
           { status: 401 }
         );
       }
-    } else if (token.startsWith('auth-token-')) {
+    } else if (token.startsWith("auth-token-")) {
       console.log("🔍 Session API - Database auth token detected");
       console.log("🔍 Session API - Full token:", token);
-      
+
       // Database token format: auth-token-{role}-{userId}-{timestamp}
-      const tokenParts = token.split('-');
+      const tokenParts = token.split("-");
       console.log("🔍 Session API - Token parts:", tokenParts);
-      
+
       if (tokenParts.length >= 4) {
         const roleFromToken = tokenParts[2].toUpperCase();
         const userId = tokenParts[3];
-        
-        console.log("🔍 Session API - Role from database token:", roleFromToken);
+
+        console.log(
+          "🔍 Session API - Role from database token:",
+          roleFromToken
+        );
         console.log("🔍 Session API - User ID from database token:", userId);
-        
+
         // Get user from database to ensure data consistency
         try {
           const user = await prisma.user.findUnique({
-            where: { id: userId }
+            where: { id: userId },
           });
-          
+
           // Try to get profile separately
           let profile = null;
           if (user) {
             try {
               profile = await prisma.profile.findUnique({
-                where: { userId: user.id }
+                where: { userId: user.id },
               });
             } catch (profileError) {
-              console.log("🔍 Session API - Profile not found or error:", profileError);
+              console.log(
+                "🔍 Session API - Profile not found or error:",
+                profileError
+              );
             }
           }
-          
+
           if (user && user.isActive) {
             console.log("🔍 Session API - Found user in database:", {
               id: user.id,
               username: user.username,
-              role: user.role
+              role: user.role,
             });
-            
+
             const dbUser = {
               id: user.id,
               username: user.username,
               role: user.role, // Use actual role from database
               firstName: profile?.firstName || user.username,
-              lastName: profile?.lastName || '',
+              lastName: profile?.lastName || "",
               email: profile?.email || `${user.username}@cemse.dev`,
               phone: profile?.phone || null,
               profilePicture: profile?.avatarUrl || null,
@@ -175,37 +184,40 @@ export async function GET(request: NextRequest) {
               createdAt: user.createdAt.toISOString(),
               updatedAt: user.updatedAt.toISOString(),
               municipalityId: null,
-              companyId: user.role === 'COMPANIES' ? user.id : null,
+              companyId: user.role === "COMPANIES" ? user.id : null,
               // Add full company object for company users
-              ...(user.role === 'COMPANIES' && {
+              ...(user.role === "COMPANIES" && {
                 company: {
                   id: user.id,
-                  name: profile?.companyName || profile?.firstName || 'Mi Empresa',
+                  name:
+                    profile?.companyName || profile?.firstName || "Mi Empresa",
                   email: profile?.email || `${user.username}@cemse.dev`,
                   phone: profile?.phone || null,
-                  description: profile?.companyDescription || '',
-                  businessSector: profile?.businessSector || '',
-                  companySize: profile?.companySize || 'SMALL',
-                  foundedYear: profile?.foundedYear?.toString() || '',
-                  website: profile?.website || '',
-                  address: profile?.address || '',
+                  description: profile?.companyDescription || "",
+                  businessSector: profile?.businessSector || "",
+                  companySize: profile?.companySize || "SMALL",
+                  foundedYear: profile?.foundedYear?.toString() || "",
+                  website: profile?.website || "",
+                  address: profile?.address || "",
                   taxId: profile?.taxId || null,
                   createdAt: user.createdAt.toISOString(),
                   updatedAt: user.updatedAt.toISOString(),
                   isActive: user.isActive,
-                }
+                },
               }),
             };
-            
+
             console.log("🔍 Session API - Database user returned:", {
               id: dbUser.id,
               username: dbUser.username,
-              role: dbUser.role
+              role: dbUser.role,
             });
-            
+
             return NextResponse.json({ user: dbUser });
           } else {
-            console.log("🔍 Session API - User not found or inactive in database");
+            console.log(
+              "🔍 Session API - User not found or inactive in database"
+            );
             return NextResponse.json(
               { error: "User not found or inactive" },
               { status: 401 }
@@ -225,20 +237,26 @@ export async function GET(request: NextRequest) {
           { status: 401 }
         );
       }
-    } else if (token.startsWith('mock-dev-token-')) {
+    } else if (token.startsWith("mock-dev-token-")) {
       // In production, reject all mock tokens
-      const isProduction = process.env.NODE_ENV === 'production';
+      const isProduction = process.env.NODE_ENV === "production";
       if (isProduction) {
-        console.error("🔍 Session API - Mock token detected in production environment");
+        console.error(
+          "🔍 Session API - Mock token detected in production environment"
+        );
         return NextResponse.json(
           { error: "Invalid authentication token for production" },
           { status: 401 }
         );
       }
-      
-      console.log("🔍 Session API - Mock development token detected (development only)");
-      console.warn("⚠️ Using mock authentication - this should not happen in production!");
-      
+
+      console.log(
+        "🔍 Session API - Mock development token detected (development only)"
+      );
+      console.warn(
+        "⚠️ Using mock authentication - this should not happen in production!"
+      );
+
       // Only allow mock tokens in development
       return NextResponse.json(
         { error: "Mock authentication is disabled" },
@@ -265,74 +283,111 @@ export async function GET(request: NextRequest) {
       );
     }
 
-    console.log("🔍 Session API - Valid token found, getting user details from backend");
+    console.log(
+      "🔍 Session API - Valid token found, getting user details from backend"
+    );
 
     // Always use token data as fallback for reliability
-    console.log("🔍 Session API - Using token data for authentication (reliable mode)");
-    
+    console.log(
+      "🔍 Session API - Using token data for authentication (reliable mode)"
+    );
+
     try {
       // For now, we'll skip the external backend call and use token data directly
       // This prevents hanging requests and ensures reliable authentication
-      console.log("🔍 Session API - Skipping external backend call, using token fallback");
+      console.log(
+        "🔍 Session API - Skipping external backend call, using token fallback"
+      );
       throw new Error("Using token fallback for reliability");
     } catch (error) {
       console.error("🔍 Session API - Backend call failed:", error);
-      
+
       // If backend fails, use token data as fallback
       console.log("🔍 Session API - Using token data as fallback");
-      
+
       // Create a comprehensive fallback user based on token
-      const userId = decoded.id || decoded.userId || decoded.sub || decoded.username || 'unknown';
-      
+      const userId =
+        decoded.id ||
+        decoded.userId ||
+        decoded.sub ||
+        decoded.username ||
+        "unknown";
+
       // Map roles to match sidebar expectations
-      let userRole = decoded.type || decoded.role || decoded.userType || "SUPERADMIN";
+      let userRole =
+        decoded.type || decoded.role || decoded.userType || "SUPERADMIN";
       if (userRole === "ADMIN") userRole = "SUPERADMIN"; // Convert generic ADMIN to SUPERADMIN
       if (userRole === "COMPANY") userRole = "COMPANIES"; // Ensure company role consistency
-      
+
       const fallbackUser = {
         id: userId,
-        username: decoded.username || decoded.email || decoded.sub || `user_${userId}`,
+        username:
+          decoded.username || decoded.email || decoded.sub || `user_${userId}`,
         role: userRole,
-        firstName: decoded.firstName || decoded.name || decoded.given_name || decoded.first_name || "Usuario",
-        lastName: decoded.lastName || decoded.family_name || decoded.last_name || "Sistema",
+        firstName:
+          decoded.firstName ||
+          decoded.name ||
+          decoded.given_name ||
+          decoded.first_name ||
+          "Usuario",
+        lastName:
+          decoded.lastName ||
+          decoded.family_name ||
+          decoded.last_name ||
+          "Sistema",
         email: decoded.email || `${userId}@sistema.local`,
         phone: decoded.phone || null,
         profilePicture: decoded.picture || decoded.avatar || null,
         isActive: true,
-        createdAt: decoded.iat ? new Date(decoded.iat * 1000).toISOString() : new Date().toISOString(),
+        createdAt: decoded.iat
+          ? new Date(decoded.iat * 1000).toISOString()
+          : new Date().toISOString(),
         updatedAt: new Date().toISOString(),
         // Additional fields that might be in the token
-        municipalityId: decoded.municipalityId || decoded.municipality_id || null,
+        municipalityId:
+          decoded.municipalityId || decoded.municipality_id || null,
         companyId: decoded.companyId || decoded.company_id || null,
         // Add full company object for company users
-        ...(userRole === 'COMPANIES' && {
+        ...(userRole === "COMPANIES" && {
           company: {
             id: decoded.companyId || decoded.company_id || userId,
-            name: decoded.companyName || decoded.company_name || decoded.firstName || decoded.name || 'Mi Empresa',
+            name:
+              decoded.companyName ||
+              decoded.company_name ||
+              decoded.firstName ||
+              decoded.name ||
+              "Mi Empresa",
             email: decoded.email || `${userId}@sistema.local`,
             phone: decoded.phone || null,
-            description: decoded.companyDescription || decoded.company_description || '',
-            businessSector: decoded.businessSector || decoded.business_sector || '',
-            companySize: decoded.companySize || decoded.company_size || 'SMALL',
-            foundedYear: decoded.foundedYear || decoded.founded_year || '',
-            website: decoded.website || '',
-            address: decoded.address || '',
+            description:
+              decoded.companyDescription || decoded.company_description || "",
+            businessSector:
+              decoded.businessSector || decoded.business_sector || "",
+            companySize: decoded.companySize || decoded.company_size || "SMALL",
+            foundedYear: decoded.foundedYear || decoded.founded_year || "",
+            website: decoded.website || "",
+            address: decoded.address || "",
             taxId: decoded.taxId || decoded.tax_id || null,
-            createdAt: decoded.iat ? new Date(decoded.iat * 1000).toISOString() : new Date().toISOString(),
+            createdAt: decoded.iat
+              ? new Date(decoded.iat * 1000).toISOString()
+              : new Date().toISOString(),
             updatedAt: new Date().toISOString(),
             isActive: true,
-          }
+          },
         }),
       };
 
-      console.log("🔍 Session API - Created fallback user with ID:", fallbackUser.id);
+      console.log(
+        "🔍 Session API - Created fallback user with ID:",
+        fallbackUser.id
+      );
 
       console.log("🔍 Session API - Returning fallback user:", {
         id: fallbackUser.id,
         username: fallbackUser.username,
         role: fallbackUser.role,
         hasFirstName: !!fallbackUser.firstName,
-        hasEmail: !!fallbackUser.email
+        hasEmail: !!fallbackUser.email,
       });
 
       return NextResponse.json({ user: fallbackUser });
