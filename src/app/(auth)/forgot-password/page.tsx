@@ -4,6 +4,8 @@ import AuthLayout from "@/components/auth/auth-layout";
 import { ForgotPasswordForm } from "@/components/auth/forgot-password/components/forgot-password-form";
 import Link from "next/link";
 
+export const dynamic = 'force-dynamic';
+
 export const metadata: Metadata = {
   title: "Forgot Password",
   description: "Reset your password",

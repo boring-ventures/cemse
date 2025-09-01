@@ -3,6 +3,8 @@ import { Card } from "@/components/ui/card";
 import AuthLayout from "@/components/auth/auth-layout";
 import { ResetPasswordForm } from "@/components/auth/reset-password/components/reset-password-form";
 
+export const dynamic = 'force-dynamic';
+
 export const metadata: Metadata = {
   title: "Reset Password",
   description: "Enter your new password",

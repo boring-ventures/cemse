@@ -51,7 +51,6 @@ export function ResetPasswordForm({
   const router = useRouter();
   const [isLoading, setIsLoading] = useState(false);
   const [password, setPassword] = useState("");
-  const supabase = createClientComponentClient();
 
   const form = useForm<FormValues>({
     resolver: zodResolver(formSchema),
@@ -69,6 +68,9 @@ export function ResetPasswordForm({
   async function onSubmit(data: FormValues) {
     try {
       setIsLoading(true);
+
+      // Create Supabase client only when needed
+      const supabase = createClientComponentClient();
 
       // Get the current user
       const { data: userData, error: userError } =
