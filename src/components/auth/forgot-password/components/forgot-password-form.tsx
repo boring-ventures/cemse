@@ -35,6 +35,7 @@ export function ForgotPasswordForm({
 }: ForgotPasswordFormProps) {
   const [isLoading, setIsLoading] = useState(false);
   const [isSuccess, setIsSuccess] = useState(false);
+  const supabase = createClientComponentClient();
 
   const form = useForm<FormValues>({
     resolver: zodResolver(formSchema),
@@ -47,14 +48,9 @@ export function ForgotPasswordForm({
     try {
       setIsLoading(true);
 
-      // Create Supabase client only when needed
-      const supabase = createClientComponentClient();
-
       // Get the site URL from the environment or current location
-      // Handle SSR/build time by checking if window exists
       const siteUrl =
-        process.env.NEXT_PUBLIC_SITE_URL ||
-        (typeof window !== "undefined" ? window.location.origin : "https://localhost:3000");
+        process.env.NEXT_PUBLIC_SITE_URL || window.location.origin;
 
       // Call Supabase's resetPasswordForEmail method
       const { error } = await supabase.auth.resetPasswordForEmail(data.email, {
