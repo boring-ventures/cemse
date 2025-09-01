@@ -59,18 +59,13 @@ export const youthSidebarData: SidebarData = {
           icon: LayoutDashboard,
         },
         {
-          title: "Buscar Empleos",
+          title: "Empleos",
           url: "/jobs",
           icon: Search,
         },
         {
-          title: "Mis Aplicaciones",
+          title: "Postulaciones",
           url: "/my-applications",
-          icon: FileText,
-        },
-        {
-          title: "Mis Postulaciones de Joven",
-          url: "/my-youth-applications",
           icon: FileText,
         },
       ],
@@ -93,21 +88,7 @@ export const youthSidebarData: SidebarData = {
           url: "/entrepreneurship",
           icon: Lightbulb,
         },
-        {
-          title: "Simulador de Plan de Negocios",
-          url: "/business-plan-simulator",
-          icon: Lightbulb,
-        },
-        {
-          title: "Centro de Recursos",
-          url: "/resources",
-          icon: Lightbulb,
-        },
-        {
-          title: "Publicar mi Emprendimiento",
-          url: "/publish-entrepreneurship",
-          icon: Lightbulb,
-        },
+
         {
           title: "Mis Emprendimientos",
           url: "/my-entrepreneurships",
@@ -182,12 +163,12 @@ export const adolescentSidebarData: SidebarData = {
           icon: LayoutDashboard,
         },
         {
-          title: "Buscar Empleos",
+          title: "Empleos",
           url: "/jobs",
           icon: Search,
         },
         {
-          title: "Mis Postulaciones",
+          title: "Postulaciones",
           url: "/my-applications",
           icon: FileText,
         },
@@ -348,10 +329,10 @@ export const municipalGovernmentSidebarData: SidebarData = {
   teams: commonTeams,
   navGroups: [
     {
-      title: "Administración",
+      title: "Principal",
       items: [
         {
-          title: "Dashboard Administrativo",
+          title: "Dashboard",
           url: "/dashboard",
           icon: LayoutDashboard,
         },
@@ -371,28 +352,8 @@ export const municipalGovernmentSidebarData: SidebarData = {
           icon: GraduationCap,
         },
         {
-          title: "Crear Curso",
-          url: "/admin/courses/create",
-          icon: GraduationCap,
-        },
-        {
-          title: "Estudiantes",
-          url: "/admin/students",
-          icon: Users,
-        },
-        {
-          title: "Gestión de Contenido",
-          url: "/admin/youth-content",
-          icon: Lightbulb,
-        },
-        {
           title: "Gestión de Recursos",
           url: "/municipalities/resources",
-          icon: FileText,
-        },
-        {
-          title: "Crear Recurso",
-          url: "/resources/create",
           icon: FileText,
         },
       ],
@@ -408,10 +369,10 @@ export const municipalGovernmentSidebarData: SidebarData = {
       ],
     },
     {
-      title: "Sistema",
+      title: "Personal",
       items: [
         {
-          title: "Perfil",
+          title: "Mi Perfil",
           url: "/admin/settings",
           icon: Settings,
         },
@@ -430,7 +391,7 @@ export const trainingCenterSidebarData: SidebarData = {
   teams: commonTeams,
   navGroups: [
     {
-      title: "Administración",
+      title: "Principal",
       items: [
         {
           title: "Dashboard",
@@ -453,28 +414,8 @@ export const trainingCenterSidebarData: SidebarData = {
           icon: GraduationCap,
         },
         {
-          title: "Crear Curso",
-          url: "/admin/courses/create",
-          icon: GraduationCap,
-        },
-        {
-          title: "Estudiantes",
-          url: "/admin/students",
-          icon: Users,
-        },
-        {
-          title: "Gestión de Contenido",
-          url: "/admin/youth-content",
-          icon: Lightbulb,
-        },
-        {
           title: "Ver Recursos",
           url: "/resources",
-          icon: FileText,
-        },
-        {
-          title: "Crear Recurso",
-          url: "/resources/create",
           icon: FileText,
         },
       ],
@@ -490,7 +431,7 @@ export const trainingCenterSidebarData: SidebarData = {
       ],
     },
     {
-      title: "Sistema",
+      title: "Personal",
       items: [
         {
           title: "Configuración",
@@ -512,7 +453,7 @@ export const ngoFoundationSidebarData: SidebarData = {
   teams: commonTeams,
   navGroups: [
     {
-      title: "Administración",
+      title: "Principal",
       items: [
         {
           title: "Dashboard",
@@ -534,21 +475,6 @@ export const ngoFoundationSidebarData: SidebarData = {
           url: "/admin/courses",
           icon: GraduationCap,
         },
-        {
-          title: "Crear Curso",
-          url: "/admin/courses/create",
-          icon: GraduationCap,
-        },
-        {
-          title: "Estudiantes",
-          url: "/admin/students",
-          icon: Users,
-        },
-        {
-          title: "Gestión de Contenido",
-          url: "/admin/youth-content",
-          icon: Lightbulb,
-        },
       ],
     },
     {
@@ -564,15 +490,10 @@ export const ngoFoundationSidebarData: SidebarData = {
           url: "/resources",
           icon: FileText,
         },
-        {
-          title: "Crear Recurso",
-          url: "/resources/create",
-          icon: FileText,
-        },
       ],
     },
     {
-      title: "Sistema",
+      title: "Personal",
       items: [
         {
           title: "Configuración",
@@ -594,10 +515,10 @@ export const superAdminSidebarData: SidebarData = {
   teams: commonTeams,
   navGroups: [
     {
-      title: "Administración",
+      title: "Principal",
       items: [
         {
-          title: "Dashboard Administrativo",
+          title: "Dashboard",
           url: "/dashboard",
           icon: LayoutDashboard,
         },
@@ -625,16 +546,6 @@ export const superAdminSidebarData: SidebarData = {
           title: "Gestión de Cursos",
           url: "/admin/courses",
           icon: GraduationCap,
-        },
-        {
-          title: "Crear Curso",
-          url: "/admin/courses/create",
-          icon: GraduationCap,
-        },
-        {
-          title: "Estudiantes",
-          url: "/admin/students",
-          icon: Users,
         },
       ],
     },
@@ -671,11 +582,6 @@ export const superAdminSidebarData: SidebarData = {
           url: "/resources",
           icon: FileText,
         },
-        {
-          title: "Crear Recurso",
-          url: "/resources/create",
-          icon: FileText,
-        },
       ],
     },
     {
@@ -689,10 +595,10 @@ export const superAdminSidebarData: SidebarData = {
       ],
     },
     {
-      title: "Sistema",
+      title: "Personal",
       items: [
         {
-          title: "Configuración del Sistema",
+          title: "Configuración",
           url: "/admin/settings",
           icon: Settings,
         },
@@ -746,13 +652,13 @@ export const youthSidebarItems: SidebarItem[] = [
         href: "/dashboard",
       },
       {
-        title: "Buscar Empleos",
-        icon: Briefcase,
+        title: "Empleos",
+        icon: Search,
         href: "/jobs",
       },
       {
-        title: "Mis Postulaciones",
-        icon: Briefcase,
+        title: "Postulaciones",
+        icon: FileText,
         href: "/my-applications",
       },
     ],

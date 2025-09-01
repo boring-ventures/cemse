@@ -35,11 +35,10 @@ import { LocationMap } from "@/components/jobs/location-map";
 import { useAuthContext } from "@/hooks/use-auth";
 import { JobApplicationService } from "@/services/job-application.service";
 import { useToast } from "@/hooks/use-toast";
+import { useJobOffer } from "@/hooks/useJobOfferApi";
 import { CheckCircle, XCircle, Loader2 } from "lucide-react";
 
 export default function JobDetailPage() {
-  const [job, setJob] = useState<JobOffer | null>(null);
-  const [loading, setLoading] = useState(true);
   const [isSaved, setIsSaved] = useState(false);
   const [showApplicationModal, setShowApplicationModal] = useState(false);
   const [applicationStatus, setApplicationStatus] = useState<{
@@ -57,6 +56,15 @@ export default function JobDetailPage() {
   const params = useParams();
   const router = useRouter();
   const jobId = params.id as string;
+
+  // Use the proper hook for fetching job data
+  const { data: job, isLoading: loading, error } = useJobOffer(jobId);
+
+  // Debug logging
+  console.log("🔍 JobDetailPage - jobId:", jobId);
+  console.log("🔍 JobDetailPage - loading:", loading);
+  console.log("🔍 JobDetailPage - error:", error);
+  console.log("🔍 JobDetailPage - job data:", job);
 
   // Check if current user is the company that created this job
   // Temporarily show owner actions for any company user for testing
@@ -106,41 +114,6 @@ export default function JobDetailPage() {
 
     checkApplicationStatus();
   }, [user, job]);
-
-  useEffect(() => {
-    const fetchJobDetail = async () => {
-      try {
-        console.log("🔍 JobDetailPage: Fetching job with ID:", jobId);
-
-        const token = localStorage.getItem("token");
-        const headers: Record<string, string> = {
-          "Content-Type": "application/json",
-        };
-
-        if (token) {
-          headers["Authorization"] = `Bearer ${token}`;
-        }
-
-        const response = await fetch(`/api/joboffer/${jobId}`, {
-          headers,
-        });
-
-        if (response.ok) {
-          const jobData = await response.json();
-          console.log("🔍 JobDetailPage: Job data received:", jobData);
-          setJob(jobData);
-        } else {
-          console.error("Job not found");
-        }
-      } catch (error) {
-        console.error("Error fetching job details:", error);
-      } finally {
-        setLoading(false);
-      }
-    };
-
-    fetchJobDetail();
-  }, [jobId]);
 
   const formatSalary = (min?: number, max?: number) => {
     if (!min && !max) return "Salario a convenir";
@@ -316,6 +289,22 @@ export default function JobDetailPage() {
             <Skeleton className="h-48 sm:h-60 w-full" />
           </div>
         </div>
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 sm:py-12 text-center">
+        <h1 className="text-xl sm:text-2xl font-bold text-gray-900 mb-4">
+          Error al cargar el empleo
+        </h1>
+        <p className="text-sm sm:text-base text-gray-600 mb-6">
+          Lo sentimos, no pudimos cargar la información del empleo.
+        </p>
+        <Button onClick={() => router.push("/jobs")} size="sm">
+          Volver a la búsqueda
+        </Button>
       </div>
     );
   }

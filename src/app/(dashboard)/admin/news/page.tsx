@@ -28,21 +28,34 @@ export default function AdminNewsPage() {
   const [selectedNews, setSelectedNews] = useState<NewsArticle | null>(null);
 
   // Obtener el usuario actual
-  const { profile } = useCurrentUser();
+  const { profile: currentUser } = useCurrentUser();
 
-  // Hooks para noticias - Super Admin puede ver todas las noticias del sistema
+  // Hooks para noticias - Filtrar por usuario actual
   const { data: news = [], isLoading } = useNewsArticles();
   const createNewsMutation = useCreateNewsArticleWithImage();
   const updateNewsMutation = useUpdateNewsArticleWithImage();
   const deleteNewsMutation = useDeleteNewsArticle();
 
-  // Estadísticas calculadas
+  // Filtrar noticias para mostrar solo las del usuario actual
+  const userNews = news.filter(article => 
+    article.authorId === currentUser?.id
+  );
+
+  // Estadísticas calculadas basadas en las noticias del usuario
   const stats = {
-    totalNews: news.length,
-    publishedNews: news.filter((n) => n.status === "PUBLISHED").length,
-    draftNews: news.filter((n) => n.status === "DRAFT").length,
-    featuredNews: news.filter((n) => n.featured).length,
+    totalNews: userNews.length,
+    publishedNews: userNews.filter((n) => n.status === "PUBLISHED").length,
+    draftNews: userNews.filter((n) => n.status === "DRAFT").length,
+    featuredNews: userNews.filter((n) => n.featured).length,
   };
+
+  // Debug logging
+  console.log('🔍 News filtering:', {
+    totalNews: news.length,
+    currentUserId: currentUser?.id,
+    userNewsCount: userNews.length,
+    userNews: userNews.map(n => ({ id: n.id, title: n.title, authorId: n.authorId }))
+  });
 
   // Handlers
   const handleCreateNews = async (newsData: any, imageFile?: File) => {
@@ -72,7 +85,7 @@ export default function AdminNewsPage() {
 
     // Agregar campos específicos para Super Admin
     formData.append("authorType", "SUPERADMIN");
-    formData.append("authorId", profile?.id || "");
+    formData.append("authorId", currentUser?.id || "");
 
     // Verificar contenido del FormData antes de enviar
     console.log("📰 FormData contents:");
@@ -118,7 +131,7 @@ export default function AdminNewsPage() {
 
     // Agregar campos específicos para Super Admin
     formData.append("authorType", "SUPERADMIN");
-    formData.append("authorId", profile?.id || "");
+    formData.append("authorId", currentUser?.id || "");
 
     // Verificar contenido del FormData antes de enviar
     console.log("📰 FormData contents for update:");
@@ -153,12 +166,29 @@ export default function AdminNewsPage() {
     setSelectedNews(news);
   };
 
-  if (isLoading) {
+  if (isLoading || !currentUser) {
     return (
       <div className="flex items-center justify-center h-64">
         <div className="text-center">
           <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary mx-auto"></div>
           <p className="mt-2 text-muted-foreground">Cargando noticias...</p>
+        </div>
+      </div>
+    );
+  }
+
+  // If no user is authenticated, show a message
+  if (!currentUser) {
+    return (
+      <div className="flex items-center justify-center h-64">
+        <div className="text-center">
+          <FileText className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
+          <h3 className="text-lg font-semibold mb-2">
+            Acceso requerido
+          </h3>
+          <p className="text-muted-foreground">
+            Debes iniciar sesión para ver tus noticias
+          </p>
         </div>
       </div>
     );
@@ -170,10 +200,13 @@ export default function AdminNewsPage() {
       <div className="flex items-center justify-between">
         <div>
           <h1 className="text-3xl font-bold text-foreground">
-            Gestión de Noticias
+            Mis Noticias
           </h1>
           <p className="text-muted-foreground">
-            Administra las noticias del sistema como Super Administrador
+            Administra las noticias que has creado
+          </p>
+          <p className="text-xs text-muted-foreground mt-1">
+            Solo se muestran las noticias que has publicado
           </p>
         </div>
 
@@ -200,7 +233,7 @@ export default function AdminNewsPage() {
               {stats.totalNews}
             </div>
             <p className="text-xs text-muted-foreground">
-              Noticias en el sistema
+              Noticias que has creado
             </p>
           </CardContent>
         </Card>
@@ -214,7 +247,7 @@ export default function AdminNewsPage() {
             <div className="text-2xl font-bold text-green-600">
               {stats.publishedNews}
             </div>
-            <p className="text-xs text-muted-foreground">Noticias publicadas</p>
+            <p className="text-xs text-muted-foreground">Tus noticias publicadas</p>
           </CardContent>
         </Card>
 
@@ -228,7 +261,7 @@ export default function AdminNewsPage() {
               {stats.draftNews}
             </div>
             <p className="text-xs text-muted-foreground">
-              Noticias en borrador
+              Tus noticias en borrador
             </p>
           </CardContent>
         </Card>
@@ -242,7 +275,7 @@ export default function AdminNewsPage() {
             <div className="text-2xl font-bold text-blue-600">
               {stats.featuredNews}
             </div>
-            <p className="text-xs text-muted-foreground">Noticias destacadas</p>
+            <p className="text-xs text-muted-foreground">Tus noticias destacadas</p>
           </CardContent>
         </Card>
       </div>
@@ -251,17 +284,33 @@ export default function AdminNewsPage() {
       <Card className="border-2 hover:shadow-lg transition-shadow">
         <CardHeader>
           <CardTitle className="text-lg font-semibold text-foreground">
-            Lista de Noticias ({news.length})
+            Mis Noticias ({userNews.length})
           </CardTitle>
         </CardHeader>
         <CardContent>
-          <NewsTable
-            news={news}
-            onEdit={handleEditNews}
-            onDelete={handleDeleteNews}
-            onView={handleViewNews}
-            isLoading={deleteNewsMutation.isPending}
-          />
+          {userNews.length === 0 ? (
+            <div className="text-center py-12">
+              <FileText className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
+              <h3 className="text-lg font-semibold mb-2">
+                No tienes noticias creadas
+              </h3>
+              <p className="text-muted-foreground mb-4">
+                Comienza creando tu primera noticia para compartir información importante
+              </p>
+              <Button onClick={() => setIsCreateDialogOpen(true)}>
+                <Plus className="h-4 w-4 mr-2" />
+                Crear Noticia
+              </Button>
+            </div>
+          ) : (
+            <NewsTable
+              news={userNews}
+              onEdit={handleEditNews}
+              onDelete={handleDeleteNews}
+              onView={handleViewNews}
+              isLoading={deleteNewsMutation.isPending}
+            />
+          )}
         </CardContent>
       </Card>
 

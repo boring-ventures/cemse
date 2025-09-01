@@ -1,135 +1,191 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { API_BASE } from '@/lib/api';
+import { prisma } from '@/lib/prisma';
+import { cookies } from 'next/headers';
+import jwt from 'jsonwebtoken';
+
+const JWT_SECRET = process.env.JWT_SECRET || 'supersecretkey';
+
+function verifyToken(token: string) {
+  try {
+    console.log('🔍 verifyToken - Attempting to verify token');
+    
+    // Handle mock development tokens
+    if (token.startsWith('mock-dev-token-')) {
+      console.log('🔍 verifyToken - Mock development token detected');
+      const tokenParts = token.split('-');
+      const userId = tokenParts.length >= 3 ? tokenParts.slice(3, -1).join('-') || 'mock-user' : 'mock-user';
+      const isCompanyToken = token.includes('mock-dev-token-company-') || userId.includes('company');
+      
+      return {
+        id: userId,
+        userId: userId,
+        username: isCompanyToken ? `company_${userId}` : userId,
+        role: isCompanyToken ? 'COMPANIES' : 'SUPERADMIN',
+        type: 'mock',
+        companyId: isCompanyToken ? userId : null,
+      };
+    }
+    
+    // For JWT tokens, use jwt.verify
+    console.log('🔍 verifyToken - Attempting JWT verification');
+    const decoded = jwt.verify(token, JWT_SECRET) as any;
+    console.log('🔍 verifyToken - JWT verified successfully');
+    return decoded;
+  } catch (error) {
+    console.log('🔍 verifyToken - Token verification failed:', error instanceof Error ? error.message : 'Unknown error');
+    return null;
+  }
+}
 
 export async function GET(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
-    const jobId = params.id;
-    console.log('🔍 API: Received GET request for job offer:', jobId);
+    const resolvedParams = await params;
+    console.log('🔍 API: Received GET request for job offer:', resolvedParams.id);
     
-    const response = await fetch(`${API_BASE}/joboffer/${jobId}`, {
-      headers: {
-        'Authorization': request.headers.get('authorization') || '',
-        'Content-Type': 'application/json',
-      },
-    });
-
-    console.log('🔍 API: Backend response status:', response.status);
+    // Get token from cookies
+    const cookieStore = await cookies();
+    const token = cookieStore.get('cemse-auth-token')?.value;
     
-    if (!response.ok) {
-      const errorText = await response.text();
-      console.error('🔍 API: Backend error:', errorText);
-      return NextResponse.json(
-        { message: `Backend error: ${response.status} ${errorText}` },
-        { status: response.status }
-      );
+    if (!token) {
+      console.log('🔍 API: No auth token found in cookies');
+      return NextResponse.json({ message: 'Authorization required' }, { status: 401 });
     }
 
-    const data = await response.json();
-    console.log('🔍 API: Backend data received for job offer:', jobId);
-    return NextResponse.json(data, { status: response.status });
+    const decoded = verifyToken(token);
+    if (!decoded) {
+      console.log('🔍 API: Token verification failed');
+      return NextResponse.json({ message: 'Invalid token' }, { status: 401 });
+    }
+
+    // Get job offer from database
+    const jobOffer = await prisma.jobOffer.findUnique({
+      where: { id: resolvedParams.id },
+      include: {
+        company: {
+          select: {
+            id: true,
+            name: true,
+            logo: true,
+            description: true,
+            website: true,
+            sector: true,
+            size: true,
+            location: true,
+            rating: true,
+            reviewCount: true,
+            images: true,
+            email: true,
+          }
+        }
+      }
+    });
+
+    if (!jobOffer) {
+      console.log('🔍 API: Job offer not found:', resolvedParams.id);
+      return NextResponse.json({ message: 'Job offer not found' }, { status: 404 });
+    }
+
+    console.log('✅ API: Job offer found:', resolvedParams.id);
+    return NextResponse.json(jobOffer, { status: 200 });
   } catch (error) {
     console.error('Error in job offer GET route:', error);
-    return NextResponse.json(
-      { message: 'Internal server error' },
-      { status: 500 }
-    );
+    return NextResponse.json({ message: 'Internal server error' }, { status: 500 });
   }
 }
 
 export async function PUT(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
-    const jobId = params.id;
-    console.log('🔍 API: Received PUT request for job offer update:', jobId);
+    const resolvedParams = await params;
+    const body = await request.json();
+    console.log('🔍 API: Received PUT request for job offer:', resolvedParams.id);
+    console.log('🔍 API: Update data:', body);
     
-    // Check if the request is FormData or JSON
-    const contentType = request.headers.get('content-type') || '';
-    console.log('🔍 API: Content-Type:', contentType);
+    // Get token from cookies
+    const cookieStore = await cookies();
+    const token = cookieStore.get('cemse-auth-token')?.value;
     
-    let body: any;
-    let isFormData = false;
-    
-    if (contentType.includes('multipart/form-data')) {
-      // Handle FormData
-      console.log('🔍 API: Processing FormData update request');
-      isFormData = true;
-      const formData = await request.formData();
-      
-             // Convert FormData to object for logging
-       const formDataObj: any = {};
-       for (const [key, value] of formData.entries()) {
-         if (typeof value === 'object' && value !== null && 'name' in value && 'type' in value) {
-           formDataObj[key] = `File: ${(value as any).name} (${(value as any).type})`;
-         } else {
-           formDataObj[key] = value;
-         }
-       }
-       console.log('🔍 API: FormData received for update:', formDataObj);
-      
-             // Forward FormData directly to backend
-       console.log('🔍 API: Sending FormData to backend at:', `${API_BASE}/joboffer/${jobId}`);
-       console.log('🔍 API: Authorization header present:', !!request.headers.get('authorization'));
-       
-       const response = await fetch(`${API_BASE}/joboffer/${jobId}`, {
-         method: 'PUT',
-         headers: {
-           'Authorization': request.headers.get('authorization') || '',
-         },
-         body: formData, // Send FormData directly
-       });
-      
-      console.log('🔍 API: Backend response status:', response.status);
-      
-      if (!response.ok) {
-        const errorText = await response.text();
-        console.error('🔍 API: Backend error:', errorText);
-        return NextResponse.json(
-          { message: `Backend error: ${response.status} ${errorText}` },
-          { status: response.status }
-        );
-      }
-      
-      const data = await response.json();
-      console.log('🔍 API: Backend data received for job offer update (FormData)');
-      return NextResponse.json(data, { status: response.status });
-      
-    } else {
-      // Handle JSON
-      console.log('🔍 API: Processing JSON update request');
-      body = await request.json();
-      
-      console.log('🔍 API: Forwarding to backend:', `${API_BASE}/joboffer/${jobId}`);
-      console.log('🔍 API: Authorization header:', request.headers.get('authorization') ? 'Present' : 'Missing');
-
-      const response = await fetch(`${API_BASE}/joboffer/${jobId}`, {
-        method: 'PUT',
-        headers: {
-          'Authorization': request.headers.get('authorization') || '',
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify(body),
-      });
-
-      console.log('🔍 API: Backend response status:', response.status);
-      
-      if (!response.ok) {
-        const errorText = await response.text();
-        console.error('🔍 API: Backend error:', errorText);
-        return NextResponse.json(
-          { message: `Backend error: ${response.status} ${errorText}` },
-          { status: response.status }
-        );
-      }
-
-      const data = await response.json();
-      console.log('🔍 API: Backend data received for job offer update (JSON)');
-      return NextResponse.json(data, { status: response.status });
+    if (!token) {
+      console.log('🔍 API: No auth token found in cookies');
+      return NextResponse.json({ message: 'Authorization required' }, { status: 401 });
     }
+
+    const decoded = verifyToken(token);
+    if (!decoded) {
+      console.log('🔍 API: Token verification failed');
+      return NextResponse.json({ message: 'Invalid token' }, { status: 401 });
+    }
+
+    // Check if job offer exists
+    const existingJobOffer = await prisma.jobOffer.findUnique({
+      where: { id: resolvedParams.id },
+      select: { companyId: true }
+    });
+
+    if (!existingJobOffer) {
+      return NextResponse.json({ message: 'Job offer not found' }, { status: 404 });
+    }
+
+    // Authorization check - only company owners can update their job offers
+    const isCompanyOwner = decoded.role === 'COMPANIES' && 
+                          (decoded.id === existingJobOffer.companyId || 
+                           decoded.companyId === existingJobOffer.companyId);
+    const isAdmin = decoded.role === 'SUPERADMIN' || decoded.role === 'INSTRUCTOR';
+    
+    if (!isCompanyOwner && !isAdmin) {
+      console.log('🔍 API: Insufficient permissions for user:', decoded.username);
+      return NextResponse.json({ message: 'Insufficient permissions' }, { status: 403 });
+    }
+
+    // Update job offer
+    const updatedJobOffer = await prisma.jobOffer.update({
+      where: { id: resolvedParams.id },
+      data: {
+        ...(body.title && { title: body.title }),
+        ...(body.description && { description: body.description }),
+        ...(body.requirements && { requirements: body.requirements }),
+        ...(body.location && { location: body.location }),
+        ...(body.contractType && { contractType: body.contractType }),
+        ...(body.workSchedule && { workSchedule: body.workSchedule }),
+        ...(body.workModality && { workModality: body.workModality }),
+        ...(body.experienceLevel && { experienceLevel: body.experienceLevel }),
+        ...(body.salaryMin !== undefined && { salaryMin: body.salaryMin }),
+        ...(body.salaryMax !== undefined && { salaryMax: body.salaryMax }),
+        ...(body.benefits && { benefits: body.benefits }),
+        ...(body.skillsRequired && { skillsRequired: body.skillsRequired }),
+        ...(body.desiredSkills && { desiredSkills: body.desiredSkills }),
+        ...(body.applicationDeadline && { applicationDeadline: body.applicationDeadline }),
+        ...(body.status && { status: body.status }),
+        ...(body.isActive !== undefined && { isActive: body.isActive }),
+        updatedAt: new Date(),
+      },
+      include: {
+        company: {
+          select: {
+            id: true,
+            name: true,
+            logo: true,
+            description: true,
+            website: true,
+            sector: true,
+            size: true,
+            location: true,
+            rating: true,
+            reviewCount: true,
+            images: true,
+            email: true,
+          }
+        }
+      }
+    });
+
+    console.log('✅ API: Job offer updated successfully:', resolvedParams.id);
+    return NextResponse.json(updatedJobOffer, { status: 200 });
   } catch (error) {
     console.error('Error in job offer update route:', error);
     return NextResponse.json(
@@ -147,33 +203,49 @@ export async function DELETE(
     const resolvedParams = await params;
     console.log('🔍 API: Received DELETE request for job offer:', resolvedParams.id);
     
-    const url = new URL(`${API_BASE}/joboffer/${resolvedParams.id}`);
-
-    console.log('🔍 API: Forwarding to backend:', url.toString());
-    console.log('🔍 API: Authorization header:', request.headers.get('authorization') ? 'Present' : 'Missing');
-
-    const response = await fetch(url.toString(), {
-      method: 'DELETE',
-      headers: {
-        'Authorization': request.headers.get('authorization') || '',
-        'Content-Type': 'application/json',
-      },
-    });
-
-    console.log('🔍 API: Backend response status:', response.status);
+    // Get token from cookies
+    const cookieStore = await cookies();
+    const token = cookieStore.get('cemse-auth-token')?.value;
     
-    if (!response.ok) {
-      const errorText = await response.text();
-      console.error('🔍 API: Backend error:', errorText);
-      return NextResponse.json(
-        { message: `Backend error: ${response.status} ${errorText}` },
-        { status: response.status }
-      );
+    if (!token) {
+      console.log('🔍 API: No auth token found in cookies');
+      return NextResponse.json({ message: 'Authorization required' }, { status: 401 });
     }
 
-    const data = await response.json();
-    console.log('🔍 API: Backend data received for job offer deletion:', resolvedParams.id);
-    return NextResponse.json(data, { status: response.status });
+    const decoded = verifyToken(token);
+    if (!decoded) {
+      console.log('🔍 API: Token verification failed');
+      return NextResponse.json({ message: 'Invalid token' }, { status: 401 });
+    }
+
+    // Check if job offer exists and user has permission
+    const existingJobOffer = await prisma.jobOffer.findUnique({
+      where: { id: resolvedParams.id },
+      select: { companyId: true }
+    });
+
+    if (!existingJobOffer) {
+      return NextResponse.json({ message: 'Job offer not found' }, { status: 404 });
+    }
+
+    // Authorization check - only company owners can delete their job offers
+    const isCompanyOwner = decoded.role === 'COMPANIES' && 
+                          (decoded.id === existingJobOffer.companyId || 
+                           decoded.companyId === existingJobOffer.companyId);
+    const isAdmin = decoded.role === 'SUPERADMIN';
+    
+    if (!isCompanyOwner && !isAdmin) {
+      console.log('🔍 API: Insufficient permissions for user:', decoded.username);
+      return NextResponse.json({ message: 'Insufficient permissions' }, { status: 403 });
+    }
+
+    // Delete job offer
+    await prisma.jobOffer.delete({
+      where: { id: resolvedParams.id }
+    });
+
+    console.log('✅ API: Job offer deleted successfully:', resolvedParams.id);
+    return NextResponse.json({ message: 'Job offer deleted successfully' }, { status: 200 });
   } catch (error) {
     console.error('Error in job offer deletion route:', error);
     return NextResponse.json(
