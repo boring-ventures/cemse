@@ -68,16 +68,18 @@ export async function GET(
           select: {
             id: true,
             name: true,
-            logo: true,
             description: true,
             website: true,
-            sector: true,
-            size: true,
-            location: true,
-            rating: true,
-            reviewCount: true,
-            images: true,
+            businessSector: true,
+            companySize: true,
             email: true,
+            phone: true,
+            address: true,
+            foundedYear: true,
+            isActive: true,
+            municipalityId: true,
+            createdAt: true,
+            updatedAt: true,
           }
         }
       }
@@ -169,16 +171,18 @@ export async function PUT(
           select: {
             id: true,
             name: true,
-            logo: true,
             description: true,
             website: true,
-            sector: true,
-            size: true,
-            location: true,
-            rating: true,
-            reviewCount: true,
-            images: true,
+            businessSector: true,
+            companySize: true,
             email: true,
+            phone: true,
+            address: true,
+            foundedYear: true,
+            isActive: true,
+            municipalityId: true,
+            createdAt: true,
+            updatedAt: true,
           }
         }
       }

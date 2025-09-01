@@ -90,10 +90,7 @@ export default function MyApplicationsPage() {
   const { toast } = useToast();
   const { user } = useAuthContext();
 
-  // Chat hook for the selected application - only use when there's a selected application
-  const chatHook = selectedApplication?.id ? useJobMessages(selectedApplication.id) : null;
-  
-  // Destructure with safe defaults when no application is selected
+  // Chat hook for the selected application
   const {
     messages,
     loading: messagesLoading,
@@ -102,15 +99,14 @@ export default function MyApplicationsPage() {
     sendMessage: sendJobMessage,
     markAsRead,
     refreshMessages,
-  } = chatHook || {
-    messages: [],
-    loading: false,
-    sending: false,
-    error: null,
-    sendMessage: async () => { throw new Error('No application selected') },
-    markAsRead: async () => {},
-    refreshMessages: async () => {},
-  };
+  } = useJobMessages(selectedApplication?.id || "");
+
+  // Debug logging for user and messages
+  useEffect(() => {
+    console.log('🔍 Debug - User object:', user);
+    console.log('🔍 Debug - Messages:', messages);
+    console.log('🔍 Debug - Selected application:', selectedApplication);
+  }, [user, messages, selectedApplication]);
 
   // Update chat when application changes - REMOVED to prevent multiple requests
   // useEffect(() => {
@@ -839,34 +835,62 @@ export default function MyApplicationsPage() {
               </div>
             ) : (
               <div className="space-y-4">
-                {messages.map((message) => (
-                  <div
-                    key={message.id}
-                    className={`flex ${isOwnMessage(message) ? "justify-end" : "justify-start"}`}
-                  >
+                {messages.map((message) => {
+                  const isOwnMessage = message.senderType === "APPLICANT" && message.senderId === user?.id;
+                  const isCompanyMessage = message.senderType === "COMPANY";
+                  
+                  // Debug logging
+                  console.log('🔍 Message debug:', {
+                    messageId: message.id,
+                    senderType: message.senderType,
+                    senderId: message.senderId,
+                    userId: user?.id,
+                    isOwnMessage,
+                    isCompanyMessage,
+                    content: message.content?.substring(0, 50)
+                  });
+                  
+                  return (
                     <div
-                      className={`max-w-[70%] p-3 rounded-lg ${
-                        isOwnMessage(message)
-                          ? "bg-blue-500 text-white"
-                          : "bg-gray-200 text-gray-800"
-                      }`}
+                      key={message.id}
+                      className={`flex ${isOwnMessage ? "justify-end" : "justify-start"}`}
                     >
-                      <p className="text-sm">{message.content}</p>
-                      <div className="flex items-center justify-between mt-1">
-                        <p className={`text-xs mt-1 ${
-                          isOwnMessage(message) ? "text-blue-100" : "text-gray-500"
+                      <div className={`max-w-[70%] ${isOwnMessage ? "order-2" : "order-1"}`}>
+                        {/* Sender info */}
+                        <div className={`text-xs mb-1 ${
+                          isOwnMessage ? "text-right text-blue-600" : "text-left text-gray-600"
                         }`}>
-                          {formatMessageTime(message.createdAt)}
-                        </p>
-                        {isOwnMessage(message) && (
-                          <div className="text-xs text-blue-100">
-                            {message.status === 'READ' ? '✓✓' : '✓'}
+                          {isOwnMessage ? "Tú" : 
+                           isCompanyMessage ? selectedApplication?.jobOffer?.company?.name || "Empresa" : 
+                           "Usuario"}
+                        </div>
+                        
+                        {/* Message bubble */}
+                        <div
+                          className={`p-3 rounded-lg ${
+                            isOwnMessage
+                              ? "bg-blue-500 text-white"
+                              : "bg-gray-200 text-gray-800"
+                          }`}
+                        >
+                          <p className="text-sm">{message.content}</p>
+                          <div className="flex items-center justify-between mt-1">
+                            <p className={`text-xs mt-1 ${
+                              isOwnMessage ? "text-blue-100" : "text-gray-500"
+                            }`}>
+                              {formatMessageTime(message.createdAt)}
+                            </p>
+                            {isOwnMessage && (
+                              <div className="text-xs text-blue-100">
+                                {message.status === 'READ' ? '✓✓' : '✓'}
+                              </div>
+                            )}
                           </div>
-                        )}
+                        </div>
                       </div>
                     </div>
-                  </div>
-                ))}
+                  );
+                })}
               </div>
             )}
           </div>

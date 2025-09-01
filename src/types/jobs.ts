@@ -26,16 +26,18 @@ export interface JobSearchFilters {
 export interface Company {
   id: string;
   name: string;
-  logo?: string;
   description?: string;
   website?: string;
-  sector?: string;
-  size?: string;
-  location?: string;
-  rating?: number;
-  reviewCount?: number;
-  images?: string[];
+  businessSector?: string;
+  companySize?: string;
   email?: string;
+  phone?: string;
+  address?: string;
+  foundedYear?: number;
+  isActive?: boolean;
+  municipalityId?: string;
+  createdAt?: string;
+  updatedAt?: string;
 }
 
 export interface JobOffer {
@@ -53,6 +55,8 @@ export interface JobOffer {
   location: string;
   latitude?: number;
   longitude?: number;
+  images: string[]; // Array de URLs de imágenes
+  logo?: string; // Logo de la empresa para la oferta
   municipality: string;
   department: string;
   experienceLevel: ExperienceLevel;
