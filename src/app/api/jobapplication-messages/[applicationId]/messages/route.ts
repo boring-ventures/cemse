@@ -41,6 +41,7 @@ export async function GET(
   request: NextRequest,
   { params }: { params: Promise<{ applicationId: string }> }
 ) {
+  console.log('🔍 GET Messages API - Route called');
   try {
     const resolvedParams = await params;
     console.log('🔍 GET Messages API - Application ID:', resolvedParams.applicationId);
@@ -113,6 +114,7 @@ export async function POST(
   request: NextRequest,
   { params }: { params: Promise<{ applicationId: string }> }
 ) {
+  console.log('🔍 POST Messages API - Route called');
   try {
     const resolvedParams = await params;
     const body = await request.json();

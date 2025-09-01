@@ -38,10 +38,17 @@ export function useJobMessages(applicationId: string) {
   const [sending, setSending] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
+  // Helper function to check if applicationId is valid
+  const isValidApplicationId = (id: string) => {
+    return id && id.trim() !== '' && id !== 'undefined' && id !== 'null';
+  };
+
   // Fetch messages
   const fetchMessages = async () => {
-    if (!applicationId || applicationId.trim() === '') {
+    if (!isValidApplicationId(applicationId)) {
       console.log('🔍 useJobMessages - Skipping fetchMessages: invalid applicationId:', applicationId);
+      setMessages([]);
+      setLoading(false);
       return;
     }
     
@@ -81,7 +88,7 @@ export function useJobMessages(applicationId: string) {
 
   // Send message
   const sendMessage = async (messageData: SendMessageData) => {
-    if (!applicationId || applicationId.trim() === '' || !messageData.content.trim()) {
+    if (!isValidApplicationId(applicationId) || !messageData.content.trim()) {
       console.log('🔍 useJobMessages - Skipping sendMessage: invalid applicationId:', applicationId);
       throw new Error('ID de aplicación inválido o mensaje vacío');
     }
@@ -126,7 +133,7 @@ export function useJobMessages(applicationId: string) {
 
   // Mark message as read
   const markAsRead = async (messageId: string) => {
-    if (!applicationId || applicationId.trim() === '') {
+    if (!isValidApplicationId(applicationId)) {
       console.log('🔍 useJobMessages - Skipping markAsRead: invalid applicationId:', applicationId);
       return;
     }
@@ -173,8 +180,12 @@ export function useJobMessages(applicationId: string) {
   // Fetch messages when applicationId changes
   useEffect(() => {
     console.log('🔍 useJobMessages - useEffect triggered with applicationId:', applicationId);
-    if (!applicationId || applicationId.trim() === '') {
+    
+    if (!isValidApplicationId(applicationId)) {
       console.log('🔍 useJobMessages - Skipping useEffect: invalid applicationId');
+      setMessages([]);
+      setLoading(false);
+      setError(null);
       return;
     }
     
@@ -183,7 +194,9 @@ export function useJobMessages(applicationId: string) {
     
     // Set up auto-refresh every 30 seconds
     const interval = setInterval(() => {
-      fetchMessages();
+      if (isValidApplicationId(applicationId)) {
+        fetchMessages();
+      }
     }, 30000);
     
     return () => clearInterval(interval);

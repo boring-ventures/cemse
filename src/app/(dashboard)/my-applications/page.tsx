@@ -90,7 +90,10 @@ export default function MyApplicationsPage() {
   const { toast } = useToast();
   const { user } = useAuthContext();
 
-  // Chat hook for the selected application
+  // Chat hook for the selected application - only use when there's a selected application
+  const chatHook = selectedApplication?.id ? useJobMessages(selectedApplication.id) : null;
+  
+  // Destructure with safe defaults when no application is selected
   const {
     messages,
     loading: messagesLoading,
@@ -99,7 +102,15 @@ export default function MyApplicationsPage() {
     sendMessage: sendJobMessage,
     markAsRead,
     refreshMessages,
-  } = useJobMessages(selectedApplication?.id || "");
+  } = chatHook || {
+    messages: [],
+    loading: false,
+    sending: false,
+    error: null,
+    sendMessage: async () => { throw new Error('No application selected') },
+    markAsRead: async () => {},
+    refreshMessages: async () => {},
+  };
 
   // Update chat when application changes - REMOVED to prevent multiple requests
   // useEffect(() => {
