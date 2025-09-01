@@ -40,13 +40,18 @@ export function useJobMessages(applicationId: string) {
 
   // Fetch messages
   const fetchMessages = async () => {
-    if (!applicationId) return;
+    if (!applicationId || applicationId.trim() === '') {
+      console.log('🔍 useJobMessages - Skipping fetchMessages: invalid applicationId:', applicationId);
+      return;
+    }
     
     try {
       setLoading(true);
       setError(null);
       
-      const response = await fetch(`/api/jobapplication-messages/${applicationId}/messages`, {
+      const url = `/api/jobapplication-messages/${applicationId}/messages`;
+      console.log('🔍 useJobMessages - Fetching messages from URL:', url);
+      const response = await fetch(url, {
         method: 'GET',
         credentials: 'include', // Use cookies for authentication
         headers: {
@@ -76,13 +81,18 @@ export function useJobMessages(applicationId: string) {
 
   // Send message
   const sendMessage = async (messageData: SendMessageData) => {
-    if (!applicationId || !messageData.content.trim()) return;
+    if (!applicationId || applicationId.trim() === '' || !messageData.content.trim()) {
+      console.log('🔍 useJobMessages - Skipping sendMessage: invalid applicationId:', applicationId);
+      throw new Error('ID de aplicación inválido o mensaje vacío');
+    }
     
     try {
       setSending(true);
       setError(null);
       
-      const response = await fetch(`/api/jobapplication-messages/${applicationId}/messages`, {
+      const url = `/api/jobapplication-messages/${applicationId}/messages`;
+      console.log('🔍 useJobMessages - Sending message to URL:', url);
+      const response = await fetch(url, {
         method: 'POST',
         credentials: 'include', // Use cookies for authentication
         headers: {
@@ -116,6 +126,11 @@ export function useJobMessages(applicationId: string) {
 
   // Mark message as read
   const markAsRead = async (messageId: string) => {
+    if (!applicationId || applicationId.trim() === '') {
+      console.log('🔍 useJobMessages - Skipping markAsRead: invalid applicationId:', applicationId);
+      return;
+    }
+    
     try {
       await fetch(`/api/jobapplication-messages/${applicationId}/messages/${messageId}/read`, {
         method: 'PUT',
@@ -157,7 +172,11 @@ export function useJobMessages(applicationId: string) {
 
   // Fetch messages when applicationId changes
   useEffect(() => {
-    if (!applicationId || applicationId.trim() === '') return;
+    console.log('🔍 useJobMessages - useEffect triggered with applicationId:', applicationId);
+    if (!applicationId || applicationId.trim() === '') {
+      console.log('🔍 useJobMessages - Skipping useEffect: invalid applicationId');
+      return;
+    }
     
     // Initial fetch
     fetchMessages();
