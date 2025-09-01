@@ -31,6 +31,11 @@ export const isValidImageUrl = (url: string | null | undefined): boolean => {
     return false;
   }
 
+  // Check if it's a local uploaded image (starts with /uploads/)
+  if (url.startsWith('/uploads/')) {
+    return true;
+  }
+
   try {
     const parsedUrl = new URL(url);
     return parsedUrl.protocol === "http:" || parsedUrl.protocol === "https:";
@@ -40,18 +45,18 @@ export const isValidImageUrl = (url: string | null | undefined): boolean => {
 };
 
 export const getCourseThumbnail = (course: any): string => {
-  // Try thumbnail first
-  if (isValidImageUrl(course.thumbnail)) {
+  // Try thumbnail first - check if it exists and is valid
+  if (course.thumbnail && (isValidImageUrl(course.thumbnail) || course.thumbnail.startsWith('/uploads/'))) {
     return course.thumbnail;
   }
 
   // Try coverImage as fallback
-  if (isValidImageUrl(course.coverImage)) {
+  if (course.coverImage && (isValidImageUrl(course.coverImage) || course.coverImage.startsWith('/uploads/'))) {
     return course.coverImage;
   }
 
-  // Return default course image
-  return "/images/courses/default-course.jpg";
+  // Return default course image - use an existing SVG as fallback
+  return "/file.svg";
 };
 
 export const getCourseVideoPreview = (course: any): string | null => {

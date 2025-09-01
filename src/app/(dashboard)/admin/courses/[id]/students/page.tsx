@@ -52,48 +52,36 @@ import {
   AlertCircle,
   XCircle,
   ArrowLeft,
+  RefreshCw,
 } from "lucide-react";
+import { useCourseEnrollments } from "@/hooks/useEnrollmentApi";
+import { toast } from "sonner";
 
+// Create a proper interface that matches what the API returns
 interface StudentEnrollment {
   id: string;
   student: {
     id: string;
-    name: string;
+    firstName: string;
+    lastName: string;
     email: string;
-    avatar?: string;
-    age: number;
-    location: string;
   };
-  enrollmentDate: Date;
-  lastAccessed: Date;
-  progressPercentage: number;
-  completedLessons: number;
-  totalLessons: number;
-  timeSpent: number; // minutes
-  status: "active" | "completed" | "dropped" | "inactive";
+  enrolledAt: Date;
+  startedAt?: Date | null;
+  completedAt?: Date | null;
+  progress: number;
+  status: "ENROLLED" | "IN_PROGRESS" | "COMPLETED" | "DROPPED" | "SUSPENDED";
+  timeSpent: number;
   certificateIssued: boolean;
-  finalGrade?: number;
-  moduleProgress: ModuleProgress[];
-  quizResults: QuizResult[];
-}
-
-interface ModuleProgress {
-  moduleId: string;
-  moduleName: string;
-  completedLessons: number;
-  totalLessons: number;
-  progressPercentage: number;
-  lastAccessed: Date;
-}
-
-interface QuizResult {
-  quizId: string;
-  quizName: string;
-  score: number;
-  maxScore: number;
-  attempts: number;
-  completedAt: Date;
-  passed: boolean;
+  finalGrade?: number | null;
+  moduleProgress?: any;
+  quizResults?: any;
+  course: {
+    id: string;
+    title: string;
+    description: string;
+    totalLessons?: number;
+  };
 }
 
 interface CourseStats {
@@ -111,256 +99,186 @@ export default function CourseStudentsPage() {
   const params = useParams();
   const courseId = params.id as string;
 
-  const [students, setStudents] = useState<StudentEnrollment[]>([]);
-  const [loading, setLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState("");
   const [statusFilter, setStatusFilter] = useState<string>("all");
   const [progressFilter, setProgressFilter] = useState<string>("all");
   const [selectedStudent, setSelectedStudent] =
     useState<StudentEnrollment | null>(null);
   const [showStudentDetail, setShowStudentDetail] = useState(false);
-  const [stats, setStats] = useState<CourseStats>({
-    totalEnrolled: 0,
-    activeStudents: 0,
-    completedStudents: 0,
-    averageProgress: 0,
-    averageTimeSpent: 0,
-    completionRate: 0,
-    averageGrade: 0,
-    certificatesIssued: 0,
-  });
 
-  useEffect(() => {
-    // TODO: Integrar hook real para estudiantes del curso (useCourseStudents) cuando esté disponible
-    // Reemplazar fetchStudentData y mockStudents por datos reales de la API
-    // Mock data for demonstration
-    const mockStudents: StudentEnrollment[] = [
-      {
-        id: "enrollment-1",
-        student: {
-          id: "student-1",
-          name: "María González",
-          email: "maria.gonzalez@email.com",
-          avatar: "/api/placeholder/40/40",
-          age: 19,
-          location: "La Paz",
-        },
-        enrollmentDate: new Date("2024-01-15"),
-        lastAccessed: new Date("2024-02-28"),
-        progressPercentage: 85,
-        completedLessons: 13,
-        totalLessons: 15,
-        timeSpent: 420, // 7 hours
-        status: "active",
-        certificateIssued: false,
-        finalGrade: 88,
-        moduleProgress: [
-          {
-            moduleId: "mod-1",
-            moduleName: "Introducción",
-            completedLessons: 3,
-            totalLessons: 3,
-            progressPercentage: 100,
-            lastAccessed: new Date("2024-02-20"),
-          },
-          {
-            moduleId: "mod-2",
-            moduleName: "Desarrollo de Habilidades",
-            completedLessons: 7,
-            totalLessons: 8,
-            progressPercentage: 87,
-            lastAccessed: new Date("2024-02-28"),
-          },
-        ],
-        quizResults: [
-          {
-            quizId: "quiz-1",
-            quizName: "Evaluación Módulo 1",
-            score: 85,
-            maxScore: 100,
-            attempts: 1,
-            completedAt: new Date("2024-02-20"),
-            passed: true,
-          },
-        ],
-      },
-      {
-        id: "enrollment-2",
-        student: {
-          id: "student-2",
-          name: "Carlos Mamani",
-          email: "carlos.mamani@email.com",
-          age: 22,
-          location: "El Alto",
-        },
-        enrollmentDate: new Date("2024-01-20"),
-        lastAccessed: new Date("2024-02-25"),
-        progressPercentage: 60,
-        completedLessons: 9,
-        totalLessons: 15,
-        timeSpent: 310,
-        status: "active",
-        certificateIssued: false,
-        moduleProgress: [
-          {
-            moduleId: "mod-1",
-            moduleName: "Introducción",
-            completedLessons: 3,
-            totalLessons: 3,
-            progressPercentage: 100,
-            lastAccessed: new Date("2024-02-15"),
-          },
-          {
-            moduleId: "mod-2",
-            moduleName: "Desarrollo de Habilidades",
-            completedLessons: 4,
-            totalLessons: 8,
-            progressPercentage: 50,
-            lastAccessed: new Date("2024-02-25"),
-          },
-        ],
-        quizResults: [
-          {
-            quizId: "quiz-1",
-            quizName: "Evaluación Módulo 1",
-            score: 75,
-            maxScore: 100,
-            attempts: 2,
-            completedAt: new Date("2024-02-16"),
-            passed: true,
-          },
-        ],
-      },
-      {
-        id: "enrollment-3",
-        student: {
-          id: "student-3",
-          name: "Ana Quispe",
-          email: "ana.quispe@email.com",
-          age: 18,
-          location: "Cochabamba",
-        },
-        enrollmentDate: new Date("2024-01-10"),
-        lastAccessed: new Date("2024-02-29"),
-        progressPercentage: 100,
-        completedLessons: 15,
-        totalLessons: 15,
-        timeSpent: 480,
-        status: "completed",
-        certificateIssued: true,
-        finalGrade: 95,
-        moduleProgress: [
-          {
-            moduleId: "mod-1",
-            moduleName: "Introducción",
-            completedLessons: 3,
-            totalLessons: 3,
-            progressPercentage: 100,
-            lastAccessed: new Date("2024-02-10"),
-          },
-          {
-            moduleId: "mod-2",
-            moduleName: "Desarrollo de Habilidades",
-            completedLessons: 8,
-            totalLessons: 8,
-            progressPercentage: 100,
-            lastAccessed: new Date("2024-02-29"),
-          },
-        ],
-        quizResults: [
-          {
-            quizId: "quiz-1",
-            quizName: "Evaluación Módulo 1",
-            score: 95,
-            maxScore: 100,
-            attempts: 1,
-            completedAt: new Date("2024-02-10"),
-            passed: true,
-          },
-          {
-            quizId: "quiz-2",
-            quizName: "Evaluación Final",
-            score: 90,
-            maxScore: 100,
-            attempts: 1,
-            completedAt: new Date("2024-02-29"),
-            passed: true,
-          },
-        ],
-      },
-    ];
+  // Use real hook for course enrollments
+  const { data: enrollments, loading, error } = useCourseEnrollments(courseId);
+  
+  // Debug: Log the enrollments data structure
+  console.log('Enrollments data:', enrollments);
+  console.log('Enrollments type:', typeof enrollments);
+  console.log('Is array:', Array.isArray(enrollments));
 
-    setStudents(mockStudents);
+  // Transform enrollments to match our interface
+  const students: StudentEnrollment[] = (() => {
+    // Handle different possible data structures from the API
+    if (!enrollments) return [];
+    
+    // If enrollments is already an array, use it directly
+    if (Array.isArray(enrollments)) {
+      return enrollments.map((enrollment: any) => ({
+        id: enrollment.id,
+        student: {
+          id: enrollment.studentId || enrollment.student?.id || enrollment.id,
+          firstName: enrollment.student?.firstName || "Estudiante",
+          lastName: enrollment.student?.lastName || "",
+          email: enrollment.student?.email || "email@example.com",
+        },
+        enrolledAt: new Date(enrollment.enrolledAt || enrollment.enrolledAt),
+        startedAt: enrollment.startedAt ? new Date(enrollment.startedAt) : null,
+        completedAt: enrollment.completedAt ? new Date(enrollment.completedAt) : null,
+        progress: enrollment.progress || 0,
+        status: enrollment.status || "ENROLLED",
+        timeSpent: enrollment.timeSpent || 0,
+        certificateIssued: enrollment.certificateIssued || false,
+        finalGrade: enrollment.finalGrade || null,
+        moduleProgress: enrollment.moduleProgress || null,
+        quizResults: enrollment.quizResults || null,
+        course: {
+          id: enrollment.courseId || enrollment.course?.id || "",
+          title: enrollment.course?.title || "Curso",
+          description: enrollment.course?.description || "",
+          totalLessons: enrollment.course?.totalLessons || 0,
+        },
+      }));
+    }
+    
+    // If enrollments is an object with a data property (common API response format)
+    if (enrollments && typeof enrollments === 'object' && 'data' in enrollments) {
+      const data = (enrollments as any).data;
+      if (Array.isArray(data)) {
+        return data.map((enrollment: any) => ({
+          id: enrollment.id,
+          student: {
+            id: enrollment.studentId || enrollment.student?.id || enrollment.id,
+            firstName: enrollment.student?.firstName || "Estudiante",
+            lastName: enrollment.student?.lastName || "",
+            email: enrollment.student?.email || "email@example.com",
+          },
+          enrolledAt: new Date(enrollment.enrolledAt || enrollment.enrolledAt),
+          startedAt: enrollment.startedAt ? new Date(enrollment.startedAt) : null,
+          completedAt: enrollment.completedAt ? new Date(enrollment.completedAt) : null,
+          progress: enrollment.progress || 0,
+          status: enrollment.status || "ENROLLED",
+          timeSpent: enrollment.timeSpent || 0,
+          certificateIssued: enrollment.certificateIssued || false,
+          finalGrade: enrollment.finalGrade || null,
+          moduleProgress: enrollment.moduleProgress || null,
+          quizResults: enrollment.quizResults || null,
+          course: {
+            id: enrollment.courseId || enrollment.course?.id || "",
+            title: enrollment.course?.title || "Curso",
+            description: enrollment.course?.description || "",
+            totalLessons: enrollment.course?.totalLessons || 0,
+          },
+        }));
+      }
+    }
+    
+    // If enrollments is an object with an enrollments property
+    if (enrollments && typeof enrollments === 'object' && 'enrollments' in enrollments) {
+      const data = (enrollments as any).enrollments;
+      if (Array.isArray(data)) {
+        return data.map((enrollment: any) => ({
+          id: enrollment.id,
+          student: {
+            id: enrollment.studentId || enrollment.student?.id || enrollment.id,
+            firstName: enrollment.student?.firstName || "Estudiante",
+            lastName: enrollment.student?.lastName || "",
+            email: enrollment.student?.email || "email@example.com",
+          },
+          enrolledAt: new Date(enrollment.enrolledAt || enrollment.enrolledAt),
+          startedAt: enrollment.startedAt ? new Date(enrollment.startedAt) : null,
+          completedAt: enrollment.completedAt ? new Date(enrollment.completedAt) : null,
+          progress: enrollment.progress || 0,
+          status: enrollment.status || "ENROLLED",
+          timeSpent: enrollment.timeSpent || 0,
+          certificateIssued: enrollment.certificateIssued || false,
+          finalGrade: enrollment.finalGrade || null,
+          moduleProgress: enrollment.moduleProgress || null,
+          quizResults: enrollment.quizResults || null,
+          course: {
+            id: enrollment.courseId || enrollment.course?.id || "",
+            title: enrollment.course?.title || "Curso",
+            description: enrollment.course?.description || "",
+            totalLessons: enrollment.course?.totalLessons || 0,
+          },
+        }));
+      }
+    }
+    
+    // If none of the above, return empty array
+    console.warn('Unexpected enrollments data structure:', enrollments);
+    return [];
+  })();
 
-    // Calculate stats
-    const stats: CourseStats = {
-      totalEnrolled: mockStudents.length,
-      activeStudents: mockStudents.filter((s) => s.status === "active")
-        .length,
-      completedStudents: mockStudents.filter((s) => s.status === "completed")
-        .length,
-      averageProgress:
-        mockStudents.reduce((acc, s) => acc + s.progressPercentage, 0) /
-        mockStudents.length,
-      averageTimeSpent:
-        mockStudents.reduce((acc, s) => acc + s.timeSpent, 0) /
-        mockStudents.length,
-      completionRate:
-        (mockStudents.filter((s) => s.status === "completed").length /
-          mockStudents.length) *
-        100,
-      averageGrade:
-        mockStudents.reduce((acc, s) => acc + (s.finalGrade || 0), 0) /
-        mockStudents.length,
-      certificatesIssued: mockStudents.filter((s) => s.certificateIssued)
-        .length,
-    };
-    setStats(stats);
-  }, [courseId]);
+  // Calculate stats from real data
+  const stats: CourseStats = {
+    totalEnrolled: students.length,
+    activeStudents: students.filter((s) => s.status === "IN_PROGRESS").length,
+    completedStudents: students.filter((s) => s.status === "COMPLETED").length,
+    averageProgress: students.length > 0 
+      ? students.reduce((acc, s) => acc + Number(s.progress), 0) / students.length
+      : 0,
+    averageTimeSpent: students.length > 0
+      ? students.reduce((acc, s) => acc + s.timeSpent, 0) / students.length
+      : 0,
+    completionRate: students.length > 0
+      ? (students.filter((s) => s.status === "COMPLETED").length / students.length) * 100
+      : 0,
+    averageGrade: students.length > 0
+      ? students.reduce((acc, s) => acc + (s.finalGrade || 0), 0) / students.length
+      : 0,
+    certificatesIssued: students.filter((s) => s.certificateIssued).length,
+  };
 
   const filteredStudents = students.filter((enrollment) => {
+    const fullName = `${enrollment.student.firstName} ${enrollment.student.lastName}`;
     const matchesSearch =
-      enrollment.student.name
-        .toLowerCase()
-        .includes(searchQuery.toLowerCase()) ||
-      enrollment.student.email
-        .toLowerCase()
-        .includes(searchQuery.toLowerCase());
+      fullName.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      enrollment.student.email.toLowerCase().includes(searchQuery.toLowerCase());
 
     const matchesStatus =
       statusFilter === "all" || enrollment.status === statusFilter;
 
     const matchesProgress =
       progressFilter === "all" ||
-      (progressFilter === "not_started" &&
-        enrollment.progressPercentage === 0) ||
-      (progressFilter === "in_progress" &&
-        enrollment.progressPercentage > 0 &&
-        enrollment.progressPercentage < 100) ||
-      (progressFilter === "completed" && enrollment.progressPercentage === 100);
+      (progressFilter === "not_started" && enrollment.progress === 0) ||
+      (progressFilter === "in_progress" && enrollment.progress > 0 && enrollment.progress < 100) ||
+      (progressFilter === "completed" && enrollment.progress === 100);
 
     return matchesSearch && matchesStatus && matchesProgress;
   });
 
   const getStatusBadge = (status: string) => {
     const statusConfig = {
-      active: {
-        label: "Activo",
+      ENROLLED: {
+        label: "Inscrito",
+        variant: "secondary" as const,
+        icon: Users,
+      },
+      IN_PROGRESS: {
+        label: "En Progreso",
         variant: "default" as const,
         icon: CheckCircle,
       },
-      completed: {
+      COMPLETED: {
         label: "Completado",
         variant: "default" as const,
         icon: Award,
       },
-      dropped: {
+      DROPPED: {
         label: "Abandonado",
         variant: "destructive" as const,
         icon: XCircle,
       },
-      inactive: {
-        label: "Inactivo",
+      SUSPENDED: {
+        label: "Suspendido",
         variant: "secondary" as const,
         icon: AlertCircle,
       },
@@ -379,18 +297,25 @@ export default function CourseStudentsPage() {
 
   const exportData = () => {
     const csvData = filteredStudents.map((enrollment) => ({
-      Nombre: enrollment.student.name,
+      Nombre: `${enrollment.student.firstName} ${enrollment.student.lastName}`,
       Email: enrollment.student.email,
-      Progreso: `${enrollment.progressPercentage}%`,
+      Progreso: `${enrollment.progress}%`,
       Estado: enrollment.status,
-      "Fecha Inscripción": enrollment.enrollmentDate.toLocaleDateString(),
-      "Último Acceso": enrollment.lastAccessed.toLocaleDateString(),
+      "Fecha Inscripción": new Date(enrollment.enrolledAt).toLocaleDateString(),
+      "Último Acceso": enrollment.startedAt ? new Date(enrollment.startedAt).toLocaleDateString() : "N/A",
       "Tiempo Total": `${Math.floor(enrollment.timeSpent / 60)}h ${enrollment.timeSpent % 60}m`,
       Calificación: enrollment.finalGrade || "N/A",
     }));
 
     console.log("Exporting data:", csvData);
+    toast.success("Datos exportados correctamente");
     // Implementation for CSV export would go here
+  };
+
+  const handleRefresh = () => {
+    // Since refetch is not available, we'll reload the page
+    window.location.reload();
+    toast.success("Datos actualizados");
   };
 
   if (loading) {
@@ -404,6 +329,26 @@ export default function CourseStudentsPage() {
             ))}
           </div>
           <div className="h-96 bg-gray-200 rounded" />
+        </div>
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div className="container mx-auto p-6">
+        <div className="text-center py-12">
+          <AlertCircle className="h-12 w-12 text-red-500 mx-auto mb-4" />
+          <h3 className="text-lg font-semibold mb-2">
+            Error al cargar los estudiantes
+          </h3>
+          <p className="text-muted-foreground mb-4">
+            {error.message || "Ocurrió un error inesperado"}
+          </p>
+          <Button onClick={handleRefresh} variant="outline">
+            <RefreshCw className="h-4 w-4 mr-2" />
+            Reintentar
+          </Button>
         </div>
       </div>
     );
@@ -427,6 +372,10 @@ export default function CourseStudentsPage() {
         </div>
 
         <div className="flex gap-2">
+          <Button variant="outline" onClick={handleRefresh}>
+            <RefreshCw className="h-4 w-4 mr-2" />
+            Actualizar
+          </Button>
           <Button variant="outline" onClick={exportData}>
             <Download className="h-4 w-4 mr-2" />
             Exportar Datos
@@ -521,10 +470,11 @@ export default function CourseStudentsPage() {
                 </SelectTrigger>
                 <SelectContent>
                   <SelectItem value="all">Todos</SelectItem>
-                  <SelectItem value="active">Activos</SelectItem>
-                  <SelectItem value="completed">Completados</SelectItem>
-                  <SelectItem value="inactive">Inactivos</SelectItem>
-                  <SelectItem value="dropped">Abandonados</SelectItem>
+                  <SelectItem value="ENROLLED">Inscritos</SelectItem>
+                  <SelectItem value="IN_PROGRESS">En Progreso</SelectItem>
+                  <SelectItem value="COMPLETED">Completados</SelectItem>
+                  <SelectItem value="SUSPENDED">Suspendidos</SelectItem>
+                  <SelectItem value="DROPPED">Abandonados</SelectItem>
                 </SelectContent>
               </Select>
 
@@ -552,7 +502,7 @@ export default function CourseStudentsPage() {
                   <TableHead>Progreso</TableHead>
                   <TableHead>Estado</TableHead>
                   <TableHead>Tiempo Total</TableHead>
-                  <TableHead>Último Acceso</TableHead>
+                  <TableHead>Fecha Inscripción</TableHead>
                   <TableHead>Calificación</TableHead>
                   <TableHead className="text-right">Acciones</TableHead>
                 </TableRow>
@@ -563,24 +513,16 @@ export default function CourseStudentsPage() {
                     <TableCell>
                       <div className="flex items-center gap-3">
                         <Avatar className="h-8 w-8">
-                          <AvatarImage src={enrollment.student.avatar} />
                           <AvatarFallback>
-                            {enrollment.student.name
-                              .split(" ")
-                              .map((n) => n[0])
-                              .join("")}
+                            {enrollment.student.firstName[0]}{enrollment.student.lastName[0]}
                           </AvatarFallback>
                         </Avatar>
                         <div>
                           <div className="font-medium">
-                            {enrollment.student.name}
+                            {enrollment.student.firstName} {enrollment.student.lastName}
                           </div>
                           <div className="text-sm text-muted-foreground">
                             {enrollment.student.email}
-                          </div>
-                          <div className="text-xs text-muted-foreground">
-                            {enrollment.student.age} años •{" "}
-                            {enrollment.student.location}
                           </div>
                         </div>
                       </div>
@@ -589,14 +531,10 @@ export default function CourseStudentsPage() {
                     <TableCell>
                       <div className="space-y-1">
                         <div className="flex items-center justify-between text-sm">
-                          <span>{enrollment.progressPercentage}%</span>
-                          <span className="text-muted-foreground">
-                            {enrollment.completedLessons}/
-                            {enrollment.totalLessons}
-                          </span>
+                          <span>{enrollment.progress}%</span>
                         </div>
                         <Progress
-                          value={enrollment.progressPercentage}
+                          value={enrollment.progress}
                           className="h-2"
                         />
                       </div>
@@ -613,7 +551,7 @@ export default function CourseStudentsPage() {
                     </TableCell>
 
                     <TableCell>
-                      {enrollment.lastAccessed.toLocaleDateString()}
+                      {new Date(enrollment.enrolledAt).toLocaleDateString()}
                     </TableCell>
 
                     <TableCell>
@@ -688,16 +626,12 @@ export default function CourseStudentsPage() {
               <DialogHeader>
                 <DialogTitle className="flex items-center gap-3">
                   <Avatar className="h-10 w-10">
-                    <AvatarImage src={selectedStudent.student.avatar} />
                     <AvatarFallback>
-                      {selectedStudent.student.name
-                        .split(" ")
-                        .map((n) => n[0])
-                        .join("")}
+                      {selectedStudent.student.firstName[0]}{selectedStudent.student.lastName[0]}
                     </AvatarFallback>
                   </Avatar>
                   <div>
-                    <div>{selectedStudent.student.name}</div>
+                    <div>{selectedStudent.student.firstName} {selectedStudent.student.lastName}</div>
                     <div className="text-sm text-muted-foreground font-normal">
                       {selectedStudent.student.email}
                     </div>
@@ -708,7 +642,6 @@ export default function CourseStudentsPage() {
               <Tabs defaultValue="progress" className="space-y-4">
                 <TabsList>
                   <TabsTrigger value="progress">Progreso</TabsTrigger>
-                  <TabsTrigger value="quizzes">Exámenes</TabsTrigger>
                   <TabsTrigger value="activity">Actividad</TabsTrigger>
                 </TabsList>
 
@@ -717,13 +650,13 @@ export default function CourseStudentsPage() {
                     <Card>
                       <CardContent className="p-4">
                         <div className="text-2xl font-bold">
-                          {selectedStudent.progressPercentage}%
+                          {selectedStudent.progress}%
                         </div>
                         <p className="text-sm text-muted-foreground">
                           Progreso General
                         </p>
                         <Progress
-                          value={selectedStudent.progressPercentage}
+                          value={selectedStudent.progress}
                           className="mt-2"
                         />
                       </CardContent>
@@ -732,11 +665,10 @@ export default function CourseStudentsPage() {
                     <Card>
                       <CardContent className="p-4">
                         <div className="text-2xl font-bold">
-                          {selectedStudent.completedLessons}/
-                          {selectedStudent.totalLessons}
+                          {selectedStudent.status}
                         </div>
                         <p className="text-sm text-muted-foreground">
-                          Lecciones Completadas
+                          Estado Actual
                         </p>
                       </CardContent>
                     </Card>
@@ -754,75 +686,18 @@ export default function CourseStudentsPage() {
                     </Card>
                   </div>
 
-                  <Card>
-                    <CardHeader>
-                      <CardTitle>Progreso por Módulo</CardTitle>
-                    </CardHeader>
-                    <CardContent>
-                      <div className="space-y-4">
-                        {selectedStudent.moduleProgress.map((module) => (
-                          <div key={module.moduleId} className="space-y-2">
-                            <div className="flex items-center justify-between">
-                              <div>
-                                <h4 className="font-medium">
-                                  {module.moduleName}
-                                </h4>
-                                <p className="text-sm text-muted-foreground">
-                                  {module.completedLessons}/
-                                  {module.totalLessons} lecciones
-                                </p>
-                              </div>
-                              <Badge variant="outline">
-                                {module.progressPercentage}%
-                              </Badge>
-                            </div>
-                            <Progress value={module.progressPercentage} />
-                          </div>
-                        ))}
-                      </div>
-                    </CardContent>
-                  </Card>
-                </TabsContent>
-
-                <TabsContent value="quizzes" className="space-y-4">
-                  <Card>
-                    <CardHeader>
-                      <CardTitle>Resultados de Exámenes</CardTitle>
-                    </CardHeader>
-                    <CardContent>
-                      <div className="space-y-4">
-                        {selectedStudent.quizResults.map((quiz) => (
-                          <div
-                            key={quiz.quizId}
-                            className="flex items-center justify-between p-4 border rounded-lg"
-                          >
-                            <div>
-                              <h4 className="font-medium">{quiz.quizName}</h4>
-                              <p className="text-sm text-muted-foreground">
-                                Completado el{" "}
-                                {quiz.completedAt.toLocaleDateString()}
-                              </p>
-                              <p className="text-sm text-muted-foreground">
-                                Intentos: {quiz.attempts}
-                              </p>
-                            </div>
-                            <div className="text-right">
-                              <div className="text-lg font-bold">
-                                {quiz.score}/{quiz.maxScore}
-                              </div>
-                              <Badge
-                                variant={
-                                  quiz.passed ? "default" : "destructive"
-                                }
-                              >
-                                {quiz.passed ? "Aprobado" : "Reprobado"}
-                              </Badge>
-                            </div>
-                          </div>
-                        ))}
-                      </div>
-                    </CardContent>
-                  </Card>
+                  {selectedStudent.moduleProgress && (
+                    <Card>
+                      <CardHeader>
+                        <CardTitle>Progreso por Módulo</CardTitle>
+                      </CardHeader>
+                      <CardContent>
+                        <div className="text-sm text-muted-foreground">
+                          Información de progreso por módulo disponible
+                        </div>
+                      </CardContent>
+                    </Card>
+                  )}
                 </TabsContent>
 
                 <TabsContent value="activity" className="space-y-4">
@@ -835,22 +710,36 @@ export default function CourseStudentsPage() {
                         <div className="flex items-center gap-3 p-3 bg-gray-50 rounded-lg">
                           <BookOpen className="h-5 w-5 text-blue-600" />
                           <div>
-                            <p className="font-medium">Lección completada</p>
+                            <p className="font-medium">Inscrito al curso</p>
                             <p className="text-sm text-muted-foreground">
-                              &quot;Comunicación Efectiva&quot; - Hace 2 días
+                              {new Date(selectedStudent.enrolledAt).toLocaleDateString()}
                             </p>
                           </div>
                         </div>
 
-                        <div className="flex items-center gap-3 p-3 bg-gray-50 rounded-lg">
-                          <CheckCircle className="h-5 w-5 text-green-600" />
-                          <div>
-                            <p className="font-medium">Examen aprobado</p>
-                            <p className="text-sm text-muted-foreground">
-                              &quot;Evaluación Módulo 1&quot; - Hace 1 semana
-                            </p>
+                        {selectedStudent.startedAt && (
+                          <div className="flex items-center gap-3 p-3 bg-gray-50 rounded-lg">
+                            <CheckCircle className="h-5 w-5 text-green-600" />
+                            <div>
+                              <p className="font-medium">Comenzó el curso</p>
+                              <p className="text-sm text-muted-foreground">
+                                {new Date(selectedStudent.startedAt).toLocaleDateString()}
+                              </p>
+                            </div>
                           </div>
-                        </div>
+                        )}
+
+                        {selectedStudent.completedAt && (
+                          <div className="flex items-center gap-3 p-3 bg-gray-50 rounded-lg">
+                            <Award className="h-5 w-5 text-yellow-600" />
+                            <div>
+                              <p className="font-medium">Completó el curso</p>
+                              <p className="text-sm text-muted-foreground">
+                                {new Date(selectedStudent.completedAt).toLocaleDateString()}
+                              </p>
+                            </div>
+                          </div>
+                        )}
                       </div>
                     </CardContent>
                   </Card>

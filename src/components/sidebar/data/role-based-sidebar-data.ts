@@ -65,78 +65,53 @@ export const youthSidebarData: SidebarData = {
         },
         {
           title: "Mis Aplicaciones",
+          url: "/my-applications",
           icon: FileText,
-          items: [
-            {
-              title: "Ver Mis Aplicaciones",
-              url: "/my-applications",
-            },
-          ],
         },
         {
           title: "Mis Postulaciones de Joven",
+          url: "/my-youth-applications",
           icon: FileText,
-          items: [
-            {
-              title: "Ver Mis Postulaciones",
-              url: "/my-youth-applications",
-            },
-            {
-              title: "Nueva Postulación",
-              url: "/my-applications/new",
-            },
-          ],
         },
-
       ],
     },
     {
       title: "Desarrollo",
       items: [
         {
-          title: "Capacitación",
+          title: "Cursos",
+          url: "/courses",
           icon: GraduationCap,
-          items: [
-            {
-              title: "Explorar Cursos",
-              url: "/courses",
-            },
-            {
-              title: "Mis Cursos",
-              url: "/my-courses",
-            },
-            {
-              title: "Certificados",
-              url: "/certificates",
-            },
-          ],
         },
         {
-          title: "Emprendimiento",
+          title: "Certificados",
+          url: "/certificates",
+          icon: GraduationCap,
+        },
+        {
+          title: "Hub de Emprendimiento",
+          url: "/entrepreneurship",
           icon: Lightbulb,
-          items: [
-            {
-              title: "Hub de Emprendimiento",
-              url: "/entrepreneurship",
-            },
-            {
-              title: "Simulador de Plan de Negocios",
-              url: "/business-plan-simulator",
-            },
-            {
-              title: "Centro de Recursos",
-              url: "/resources",
-            },
-            {
-              title: "Publicar mi Emprendimiento",
-              url: "/publish-entrepreneurship",
-            },
-            {
-              title: "Mis Emprendimientos",
-              url: "/my-entrepreneurships",
-            },
-
-          ],
+        },
+        {
+          title: "Simulador de Plan de Negocios",
+          url: "/business-plan-simulator",
+          icon: Lightbulb,
+        },
+        {
+          title: "Centro de Recursos",
+          url: "/resources",
+          icon: Lightbulb,
+        },
+        {
+          title: "Publicar mi Emprendimiento",
+          url: "/publish-entrepreneurship",
+          icon: Lightbulb,
+        },
+        {
+          title: "Mis Emprendimientos",
+          url: "/my-entrepreneurships",
+          icon: Lightbulb,
         },
       ],
     },
@@ -148,7 +123,6 @@ export const youthSidebarData: SidebarData = {
           url: "/entrepreneurship/directory",
           icon: Building2,
         },
-
       ],
     },
     {
@@ -159,7 +133,6 @@ export const youthSidebarData: SidebarData = {
           url: "/entrepreneurship/network",
           icon: Users,
         },
-
       ],
     },
     {
@@ -170,7 +143,6 @@ export const youthSidebarData: SidebarData = {
           icon: Newspaper,
           url: "/news",
         },
-
       ],
     },
     {
@@ -186,11 +158,6 @@ export const youthSidebarData: SidebarData = {
           url: "/cv-builder",
           icon: FileText,
         },
-        // {
-        //   title: "Reportes Personales",
-        //   url: "/reports/personal",
-        //   icon: BarChart3,
-        // },
       ],
     },
   ],
@@ -230,62 +197,44 @@ export const adolescentSidebarData: SidebarData = {
       title: "Desarrollo",
       items: [
         {
-          title: "Capacitación",
+          title: "Cursos",
+          url: "/courses",
           icon: GraduationCap,
-          items: [
-            {
-              title: "Cursos Disponibles",
-              url: "/courses",
-            },
-            {
-              title: "Mis Cursos",
-              url: "/my-courses",
-            },
-            {
-              title: "Certificados",
-              url: "/certificates",
-            },
-          ],
         },
         {
-          title: "Emprendimiento",
+          title: "Certificados",
+          url: "/certificates",
+          icon: GraduationCap,
+        },
+        {
+          title: "Hub de Emprendimiento",
+          url: "/entrepreneurship",
           icon: Lightbulb,
-          items: [
-            {
-              title: "Hub de Emprendimiento",
-              url: "/entrepreneurship",
-            },
-            {
-              title: "Simulador de Plan de Negocios",
-              url: "/business-plan-simulator",
-            },
-            {
-              title: "Centro de Recursos",
-              url: "/entrepreneurship/resources",
-            },
-            // {
-            //   title: "Directorio de Instituciones",
-            //   url: "/entrepreneurship/directory",
-            // },
-            {
-              title: "Publicar mi Emprendimiento",
-              url: "/publish-entrepreneurship",
-            },
-            {
-              title: "Mis Emprendimientos",
-              url: "/my-entrepreneurships",
-            },
-            // {
-            //   title: "Red de Contactos",
-            //   url: "/entrepreneurship/network",
-            // },
-            {
-              title: "Mensajería",
-              url: "/entrepreneurship/messaging",
-              icon: MessageCircle,
-            },
-
-          ],
+        },
+        {
+          title: "Simulador de Plan de Negocios",
+          url: "/business-plan-simulator",
+          icon: Lightbulb,
+        },
+        {
+          title: "Centro de Recursos",
+          url: "/entrepreneurship/resources",
+          icon: Lightbulb,
+        },
+        {
+          title: "Publicar mi Emprendimiento",
+          url: "/publish-entrepreneurship",
+          icon: Lightbulb,
+        },
+        {
+          title: "Mis Emprendimientos",
+          url: "/my-entrepreneurships",
+          icon: Lightbulb,
+        },
+        {
+          title: "Mensajería",
+          url: "/entrepreneurship/messaging",
+          icon: MessageCircle,
         },
       ],
     },
@@ -297,7 +246,6 @@ export const adolescentSidebarData: SidebarData = {
           url: "/profile",
           icon: User,
         },
-        // Note: No Reports for adolescents per permission matrix
       ],
     },
   ],
@@ -418,47 +366,34 @@ export const municipalGovernmentSidebarData: SidebarData = {
       title: "Programas",
       items: [
         {
-          title: "Capacitación",
+          title: "Gestión de Cursos",
+          url: "/admin/courses",
           icon: GraduationCap,
-          items: [
-            {
-              title: "Gestión de Cursos",
-              url: "/admin/courses",
-            },
-            {
-              title: "Crear Curso",
-              url: "/admin/courses/create",
-            },
-            {
-              title: "Estudiantes",
-              url: "/admin/students",
-            },
-          ],
         },
         {
-          title: "Contenido para Jóvenes",
+          title: "Crear Curso",
+          url: "/admin/courses/create",
+          icon: GraduationCap,
+        },
+        {
+          title: "Estudiantes",
+          url: "/admin/students",
+          icon: Users,
+        },
+        {
+          title: "Gestión de Contenido",
+          url: "/admin/youth-content",
           icon: Lightbulb,
-          items: [
-            {
-              title: "Gestión de Contenido",
-              url: "/admin/youth-content",
-            },
-          ],
         },
-
         {
-          title: "Recursos",
+          title: "Gestión de Recursos",
+          url: "/municipalities/resources",
           icon: FileText,
-          items: [
-            {
-              title: "Gestión de Recursos",
-              url: "/municipalities/resources",
-            },
-            {
-              title: "Crear Recurso",
-              url: "/resources/create",
-            },
-          ],
+        },
+        {
+          title: "Crear Recurso",
+          url: "/resources/create",
+          icon: FileText,
         },
       ],
     },
@@ -469,16 +404,6 @@ export const municipalGovernmentSidebarData: SidebarData = {
           title: "Gestión de Noticias",
           url: "/admin/municipalities/news",
           icon: FileText,
-        },
-      ],
-    },
-    {
-      title: "Análisis",
-      items: [
-        {
-          title: "Reportes Avanzados",
-          url: "/reports/admin",
-          icon: PieChart,
         },
       ],
     },
@@ -523,49 +448,34 @@ export const trainingCenterSidebarData: SidebarData = {
       title: "Programas",
       items: [
         {
-          title: "Capacitación",
+          title: "Gestión de Cursos",
+          url: "/admin/courses",
           icon: GraduationCap,
-          items: [
-            {
-              title: "Gestión de Cursos",
-              url: "/admin/courses",
-            },
-            {
-              title: "Crear Curso",
-              url: "/admin/courses/create",
-            },
-            {
-              title: "Estudiantes",
-              url: "/admin/students",
-            },
-          ],
         },
         {
-          title: "Contenido para Jóvenes",
+          title: "Crear Curso",
+          url: "/admin/courses/create",
+          icon: GraduationCap,
+        },
+        {
+          title: "Estudiantes",
+          url: "/admin/students",
+          icon: Users,
+        },
+        {
+          title: "Gestión de Contenido",
+          url: "/admin/youth-content",
           icon: Lightbulb,
-          items: [
-            {
-              title: "Gestión de Contenido",
-              url: "/admin/youth-content",
-            },
-            {
-
-            },
-          ],
         },
         {
-          title: "Recursos",
+          title: "Ver Recursos",
+          url: "/resources",
           icon: FileText,
-          items: [
-            {
-              title: "Ver Recursos",
-              url: "/resources",
-            },
-            {
-              title: "Crear Recurso",
-              url: "/resources/create",
-            },
-          ],
+        },
+        {
+          title: "Crear Recurso",
+          url: "/resources/create",
+          icon: FileText,
         },
       ],
     },
@@ -576,16 +486,6 @@ export const trainingCenterSidebarData: SidebarData = {
           title: "Gestión de Noticias",
           url: "/admin/news",
           icon: FileText,
-        },
-      ],
-    },
-    {
-      title: "Análisis",
-      items: [
-        {
-          title: "Reportes de Capacitación",
-          url: "/reports/training",
-          icon: BarChart3,
         },
       ],
     },
@@ -630,35 +530,24 @@ export const ngoFoundationSidebarData: SidebarData = {
       title: "Programas",
       items: [
         {
-          title: "Capacitación",
+          title: "Gestión de Cursos",
+          url: "/admin/courses",
           icon: GraduationCap,
-          items: [
-            {
-              title: "Gestión de Cursos",
-              url: "/admin/courses",
-            },
-            {
-              title: "Crear Curso",
-              url: "/admin/courses/create",
-            },
-            {
-              title: "Estudiantes",
-              url: "/admin/students",
-            },
-          ],
         },
         {
-          title: "Contenido para Jóvenes",
+          title: "Crear Curso",
+          url: "/admin/courses/create",
+          icon: GraduationCap,
+        },
+        {
+          title: "Estudiantes",
+          url: "/admin/students",
+          icon: Users,
+        },
+        {
+          title: "Gestión de Contenido",
+          url: "/admin/youth-content",
           icon: Lightbulb,
-          items: [
-            {
-              title: "Gestión de Contenido",
-              url: "/admin/youth-content",
-            },
-            {
-
-            },
-          ],
         },
       ],
     },
@@ -671,28 +560,14 @@ export const ngoFoundationSidebarData: SidebarData = {
           icon: FileText,
         },
         {
-          title: "Recursos",
+          title: "Ver Recursos",
+          url: "/resources",
           icon: FileText,
-          items: [
-            {
-              title: "Ver Recursos",
-              url: "/resources",
-            },
-            {
-              title: "Crear Recurso",
-              url: "/resources/create",
-            },
-          ],
         },
-      ],
-    },
-    {
-      title: "Análisis",
-      items: [
         {
-          title: "Reportes de Impacto Social",
-          url: "/reports/impact",
-          icon: BarChart3,
+          title: "Crear Recurso",
+          url: "/resources/create",
+          icon: FileText,
         },
       ],
     },
@@ -741,11 +616,6 @@ export const superAdminSidebarData: SidebarData = {
           url: "/admin/companies",
           icon: Building2,
         },
-        {
-          title: "Gestión de Roles",
-          url: "/admin/roles",
-          icon: Users,
-        },
       ],
     },
     {
@@ -788,12 +658,11 @@ export const superAdminSidebarData: SidebarData = {
       items: [
         {
           title: "Gestión de Contenido",
-          url: "/admin/entrepreneurship",
+          url: "/admin/entrepreneurship/resources",
           icon: Lightbulb,
         },
       ],
     },
-
     {
       title: "Recursos",
       items: [
@@ -817,30 +686,10 @@ export const superAdminSidebarData: SidebarData = {
           url: "/admin/news",
           icon: FileText,
         },
-        {
-          title: "Anuncios del Sistema",
-          url: "/admin/announcements",
-          icon: Newspaper,
-        },
       ],
     },
     {
-      title: "Análisis",
-      items: [
-        {
-          title: "Reportes del Sistema",
-          url: "/admin/reports",
-          icon: BarChart3,
-        },
-        {
-          title: "Analytics",
-          url: "/admin/analytics",
-          icon: PieChart,
-        },
-      ],
-    },
-    {
-      title: "Configuración",
+      title: "Sistema",
       items: [
         {
           title: "Configuración del Sistema",
@@ -912,38 +761,14 @@ export const youthSidebarItems: SidebarItem[] = [
     title: "Desarrollo",
     items: [
       {
-        title: "Capacitación",
+        title: "Cursos",
         icon: GraduationCap,
         href: "/courses",
-        items: [
-          {
-            title: "Explorar Cursos",
-            href: "/courses",
-          },
-          {
-            title: "Mis Cursos",
-            href: "/my-courses",
-          },
-        ],
       },
       {
         title: "Emprendimiento",
         icon: Lightbulb,
         href: "/entrepreneurship",
-        items: [
-          {
-            title: "Recursos",
-            href: "/entrepreneurship/resources",
-          },
-          {
-            title: "Directorio",
-            href: "/entrepreneurship/directory",
-          },
-          {
-            title: "Red de Contactos",
-            href: "/entrepreneurship/network",
-          },
-        ],
       },
     ],
   },
@@ -965,11 +790,6 @@ export const youthSidebarItems: SidebarItem[] = [
         icon: UserCircle,
         href: "/profile",
       },
-      // {
-      //   title: "Reportes Personales",
-      //   icon: BarChart3,
-      //   href: "/reports",
-      // },
     ],
   },
 ];

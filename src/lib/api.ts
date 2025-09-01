@@ -20,12 +20,21 @@ export const backendCall = async (
 
   console.log("🔍 backendCall - Making request to:", url);
 
+  const headers: Record<string, string> = {};
+  
+  // Only add Content-Type for non-FormData requests
+  if (!(options.body instanceof FormData)) {
+    headers["Content-Type"] = "application/json";
+  }
+  
+  // Add other headers from options
+  if (options.headers) {
+    Object.assign(headers, options.headers);
+  }
+
   const response = await fetch(url, {
     ...options,
-    headers: {
-      "Content-Type": "application/json",
-      ...options.headers,
-    },
+    headers,
   });
 
   if (!response.ok) {

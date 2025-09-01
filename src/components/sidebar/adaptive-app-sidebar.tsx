@@ -58,6 +58,23 @@ export function AdaptiveAppSidebar({ className }: AdaptiveAppSidebarProps) {
   // Obtener datos del sidebar basados en el rol del usuario
   const sidebarData = getSidebarDataByRole(userRole as UserRole);
 
+  // Debug: Log the sidebar data being used
+  console.log("🎨 AdaptiveAppSidebar - Sidebar data:", {
+    userRole,
+    sidebarData: {
+      navGroupsCount: sidebarData.navGroups.length,
+      navGroups: sidebarData.navGroups.map(group => ({
+        title: group.title,
+        itemsCount: group.items.length,
+        items: group.items.map(item => ({
+          title: item.title,
+          url: item.url,
+          icon: item.icon?.name || 'No icon'
+        }))
+      }))
+    }
+  });
+
   // Condición especial para municipios: aplicar colores primario y secundario - DESHABILITADO TEMPORALMENTE
   // const isMunicipality =
   //   userRole === "GOBIERNOS_MUNICIPALES" ||
@@ -82,6 +99,15 @@ export function AdaptiveAppSidebar({ className }: AdaptiveAppSidebarProps) {
   };
 
   const navigationItems = getNavigationItems();
+
+  // Debug: Log the navigation items being rendered
+  console.log("🎨 AdaptiveAppSidebar - Navigation items to render:", {
+    count: navigationItems.length,
+    items: navigationItems.map(group => ({
+      title: group.title,
+      itemsCount: group.items.length
+    }))
+  });
 
   // Define teams data for TeamSwitcher
   const teams = [
@@ -123,6 +149,7 @@ export function AdaptiveAppSidebar({ className }: AdaptiveAppSidebarProps) {
     className: cn(className),
     // styles: getMunicipalityStyles(),
     userRole,
+    navigationItemsCount: navigationItems.length,
   });
 
   return (

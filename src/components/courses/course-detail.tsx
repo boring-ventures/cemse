@@ -55,6 +55,15 @@ export const CourseDetail = ({
     return getCourseThumbnail(course);
   });
 
+  // Debug logs for thumbnail
+  console.log("🔍 CourseDetail - thumbnail debug:", {
+    courseThumbnail: course.thumbnail,
+    courseCoverImage: course.coverImage,
+    currentImageSrc,
+    isValidThumbnail: course.thumbnail && (course.thumbnail.startsWith('/uploads/') || course.thumbnail.startsWith('http')),
+    isValidCoverImage: course.coverImage && (course.coverImage.startsWith('/uploads/') || course.coverImage.startsWith('http')),
+  });
+
   // Debug logs
   console.log("🔍 CourseDetail - course data:", course);
   console.log("🔍 CourseDetail - studentsCount:", course.studentsCount);
