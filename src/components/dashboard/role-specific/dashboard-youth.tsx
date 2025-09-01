@@ -49,16 +49,7 @@ function NewsCarousel() {
   // Use the real news hook
   const { data: allNews, isLoading: loading, error, refetch } = usePublicNews();
 
-  // Debug: Log all news and their author types
-  console.log("🔍 Dashboard Youth - All news:", allNews);
-  console.log(
-    "🔍 Dashboard Youth - Author types:",
-    allNews?.map((news) => ({
-      id: news.id,
-      authorType: news.authorType,
-      authorName: news.authorName,
-    }))
-  );
+
 
   // Show all news without filtering by type for now
   const allNewsArray = allNews || [];
@@ -67,12 +58,7 @@ function NewsCarousel() {
   const companyNews = allNewsArray.slice(0, Math.ceil(allNewsArray.length / 2));
   const governmentNews = allNewsArray.slice(Math.ceil(allNewsArray.length / 2));
 
-  // Debug: Log filtered results
-  console.log("🔍 Dashboard Youth - Company news count:", companyNews.length);
-  console.log(
-    "🔍 Dashboard Youth - Government news count:",
-    governmentNews.length
-  );
+
 
   const formatTimeAgo = (dateString: string) => {
     const date = new Date(dateString);
@@ -194,18 +180,7 @@ function NewsCarousel() {
         <p className="text-muted-foreground">
           Mantente informado sobre las últimas novedades
         </p>
-        {/* Debug button */}
-        <Button
-          onClick={() => {
-            console.log("🔄 Debug - Forcing refetch");
-            refetch();
-          }}
-          variant="outline"
-          size="sm"
-          className="mt-2"
-        >
-          🔄 Forzar Actualización
-        </Button>
+
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">

@@ -35,7 +35,7 @@ export default function CreateMunicipalNewsPage() {
         relatedLinks: "",
       };
 
-      console.log("🔍 Creating municipal news with data:", newsData);
+
 
       const response = await fetch(
         "https://cemse-back-production.up.railway.app/api/newsarticle",
@@ -76,7 +76,7 @@ export default function CreateMunicipalNewsPage() {
         <CardContent>
           <div className="space-y-4">
             <p className="text-sm text-gray-600">
-              This will create a test municipal news article in the backend with
+              This will create a municipal news article in the backend with
               the municipality ID: cmemo5inx00019ybpwv3fu7bk
             </p>
 

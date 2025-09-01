@@ -250,24 +250,14 @@ export const companySidebarData: SidebarData = {
           icon: LayoutDashboard,
         },
         {
-          title: "Publicar Empleos",
-          url: "/jobs/create",
+          title: "Empleos",
+          url: "/company/jobs",
           icon: Briefcase,
         },
         {
-          title: "Mis Empleos",
-          url: "/company/jobs",
-          icon: Building2,
-        },
-        {
-          title: "Gestionar Candidatos",
+          title: "Candidatos",
           url: "/job-publishing/candidates",
           icon: Users,
-        },
-        {
-          title: "Postulaciones de Jóvenes",
-          url: "/company/youth-applications",
-          icon: FileText,
         },
       ],
     },
@@ -289,11 +279,6 @@ export const companySidebarData: SidebarData = {
           url: "/resources",
           icon: FileText,
         },
-        {
-          title: "Crear Recurso",
-          url: "/resources/create",
-          icon: FileText,
-        },
       ],
     },
     // {
@@ -307,7 +292,7 @@ export const companySidebarData: SidebarData = {
     //   ],
     // },
     {
-      title: "Configuración",
+      title: "Personal",
       items: [
         {
           title: "Perfil de Empresa",

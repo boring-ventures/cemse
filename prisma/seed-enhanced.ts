@@ -448,6 +448,7 @@ async function main() {
             'Dominar los conceptos fundamentales',
             'Aplicar los conocimientos en proyectos reales',
             'Obtener certificación al completar el curso',
+
           ],
           enrollmentCount: randomInt(50, 500),
           rating: Math.round((4 + Math.random()) * 10) / 10,
@@ -614,4 +615,5 @@ main()
   .catch((e) => {
     console.error('Seeding failed:', e);
     process.exit(1);
+  });
   });
