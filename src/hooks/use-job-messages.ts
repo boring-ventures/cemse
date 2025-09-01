@@ -97,7 +97,7 @@ export function useJobMessages(applicationId: string) {
       setSending(true);
       setError(null);
       
-      const url = `/api/jobapplication-messages/${applicationId}/messages`;
+      const url = `/api/jobapplication-messages/send-message`;
       console.log('🔍 useJobMessages - Sending message to URL:', url);
       const response = await fetch(url, {
         method: 'POST',
@@ -106,6 +106,7 @@ export function useJobMessages(applicationId: string) {
           'Content-Type': 'application/json',
         },
         body: JSON.stringify({
+          applicationId,
           content: messageData.content,
           messageType: messageData.messageType || 'TEXT',
         }),
