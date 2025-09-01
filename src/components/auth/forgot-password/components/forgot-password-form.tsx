@@ -50,7 +50,13 @@ export function ForgotPasswordForm({
 
       // Get the site URL from the environment or current location
       const siteUrl =
-        process.env.NEXT_PUBLIC_SITE_URL || window.location.origin;
+        process.env.NEXT_PUBLIC_SITE_URL || 
+        (typeof window !== 'undefined' ? window.location.origin : '');
+
+      // Ensure we have a valid site URL
+      if (!siteUrl) {
+        throw new Error('Site URL not configured');
+      }
 
       // Call Supabase's resetPasswordForEmail method
       const { error } = await supabase.auth.resetPasswordForEmail(data.email, {

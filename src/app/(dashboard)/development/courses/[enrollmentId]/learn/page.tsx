@@ -38,7 +38,6 @@ import { QuizSelector } from "@/components/courses/QuizSelector";
 import { ResourcesModal } from "@/components/courses/ResourcesModal";
 import { QuizCompletionModal } from "@/components/courses/quiz-completion-modal";
 import { LessonCompletionModal } from "@/components/courses/lesson-completion-modal";
-import { CourseDataInspector } from "@/components/debug/course-data-inspector";
 
 interface Lesson {
   id: string;
@@ -1379,19 +1378,7 @@ export default function CourseLearningPage() {
         loading={completingLesson}
       />
 
-      {/* Debug Component */}
-      {process.env.NODE_ENV === "development" && (
-        <CourseDataInspector
-          data={{
-            enrollment,
-            selectedLesson,
-            selectedModule,
-            courseProgress,
-            lessonProgress,
-          }}
-          title="Course Learning Debug Data"
-        />
-      )}
+
     </div>
   );
 }
