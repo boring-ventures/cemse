@@ -24,8 +24,7 @@
       "Write",
       "MultiEdit",
       "Task",
-      "Bash(docker:*)",
-      "Bash(grep:*)"
+      "Bash(docker:*)"
     ],
     "defaultMode": "acceptEdits",
     "additionalDirectories": [

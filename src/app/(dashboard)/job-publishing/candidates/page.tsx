@@ -546,8 +546,8 @@ export default function CandidatesPage() {
                         if (checked) {
                           setSelectedCVs(
                             candidatesData.candidates
-                              .filter((c) => c.cvFile)
-                              .map((c) => c.cvFile!)
+                              .filter((c) => c.cvUrl)
+                              .map((c) => c.cvUrl!)
                           );
                         } else {
                           setSelectedCVs([]);
@@ -570,17 +570,17 @@ export default function CandidatesPage() {
                 <TableRow key={candidate.id}>
                   <TableCell>
                     <Checkbox
-                      checked={selectedCVs.includes(candidate.cvFile || "")}
+                      checked={selectedCVs.includes(candidate.cvUrl || "")}
                       onCheckedChange={(checked) => {
                         if (checked) {
-                          setSelectedCVs([...selectedCVs, candidate.cvFile!]);
+                          setSelectedCVs([...selectedCVs, candidate.cvUrl!]);
                         } else {
                           setSelectedCVs(
-                            selectedCVs.filter((url) => url !== candidate.cvFile)
+                            selectedCVs.filter((url) => url !== candidate.cvUrl)
                           );
                         }
                       }}
-                      disabled={!candidate.cvFile}
+                      disabled={!candidate.cvUrl}
                     />
                   </TableCell>
 
@@ -589,27 +589,27 @@ export default function CandidatesPage() {
                       <Avatar>
                         <AvatarImage
                           src="/api/placeholder/40/40"
-                          alt={`${candidate.applicant.firstName} ${candidate.applicant.lastName}`}
+                          alt={candidate.applicantName}
                         />
                         <AvatarFallback>
-                          {`${candidate.applicant.firstName} ${candidate.applicant.lastName}`
+                          {candidate.applicantName
                             .split(" ")
-                            .map((n: string) => n[0])
+                            .map((n) => n[0])
                             .join("")}
                         </AvatarFallback>
                       </Avatar>
                       <div>
                         <div className="font-medium">
-                          {`${candidate.applicant.firstName} ${candidate.applicant.lastName}`}
+                          {candidate.applicantName}
                         </div>
                         <div className="text-sm text-muted-foreground">
-                          {candidate.applicant.email}
+                          {candidate.applicantEmail}
                         </div>
                       </div>
                     </div>
                   </TableCell>
                   <TableCell>
-                    <div className="font-medium">{candidate.jobOffer.title}</div>
+                    <div className="font-medium">{candidate.jobTitle}</div>
                   </TableCell>
                   <TableCell>{getStatusBadge(candidate.status)}</TableCell>
                   <TableCell>
@@ -664,7 +664,7 @@ export default function CandidatesPage() {
                           <MessageSquare className="mr-2 h-4 w-4" />
                           Programar Entrevista
                         </DropdownMenuItem>
-                        {candidate.cvFile && (
+                        {candidate.cvUrl && (
                           <DropdownMenuItem>
                             <FileText className="mr-2 h-4 w-4" />
                             Descargar CV
@@ -732,7 +732,7 @@ export default function CandidatesPage() {
               <DialogTitle>Detalles del Candidato</DialogTitle>
               <DialogDescription>
                 Información completa de la aplicación de{" "}
-                {`${selectedCandidate.applicant.firstName} ${selectedCandidate.applicant.lastName}`}
+                {selectedCandidate.applicantName}
               </DialogDescription>
             </DialogHeader>
 
@@ -742,22 +742,22 @@ export default function CandidatesPage() {
                 <Avatar className="h-16 w-16">
                   <AvatarImage
                     src="/api/placeholder/64/64"
-                    alt={`${selectedCandidate.applicant.firstName} ${selectedCandidate.applicant.lastName}`}
+                    alt={selectedCandidate.applicantName}
                   />
                   <AvatarFallback className="text-lg">
-                    {`${selectedCandidate.applicant.firstName} ${selectedCandidate.applicant.lastName}`
+                    {selectedCandidate.applicantName
                       .split(" ")
-                      .map((n: string) => n[0])
+                      .map((n) => n[0])
                       .join("")}
                   </AvatarFallback>
                 </Avatar>
                 <div className="space-y-2">
                   <div>
                     <h3 className="text-lg font-semibold">
-                      {`${selectedCandidate.applicant.firstName} ${selectedCandidate.applicant.lastName}`}
+                      {selectedCandidate.applicantName}
                     </h3>
                     <p className="text-muted-foreground">
-                      {selectedCandidate.applicant.email}
+                      {selectedCandidate.applicantEmail}
                     </p>
                   </div>
                   <div className="flex items-center gap-4">
@@ -768,12 +768,19 @@ export default function CandidatesPage() {
                   <div className="grid grid-cols-2 gap-4 text-sm">
                     <div>
                       <span className="font-medium">Puesto:</span>{" "}
-                      {selectedCandidate.jobOffer.title}
+                      {selectedCandidate.jobTitle}
                     </div>
                     <div>
                       <span className="font-medium">Aplicó:</span>{" "}
                       {formatDate(selectedCandidate.appliedAt)}
                     </div>
+                    {selectedCandidate.updatedAt !==
+                      selectedCandidate.appliedAt && (
+                      <div>
+                        <span className="font-medium">Actualizado:</span>{" "}
+                        {formatDate(selectedCandidate.updatedAt)}
+                      </div>
+                    )}
                   </div>
                 </div>
               </div>
@@ -795,14 +802,14 @@ export default function CandidatesPage() {
               )}
 
               {/* Question Answers */}
-              {selectedCandidate.questionAnswers &&
-                selectedCandidate.questionAnswers.length > 0 && (
+              {selectedCandidate.answers &&
+                selectedCandidate.answers.length > 0 && (
                   <div>
                     <h4 className="text-lg font-semibold mb-3">
                       Respuestas a Preguntas
                     </h4>
                     <div className="space-y-4">
-                      {selectedCandidate.questionAnswers.map((answer: any, index: number) => (
+                      {selectedCandidate.answers.map((answer, index) => (
                         <div key={index} className="border rounded-lg p-4">
                           <h5 className="font-medium mb-2">
                             {answer.question}
@@ -830,10 +837,10 @@ export default function CandidatesPage() {
 
               {/* Actions */}
               <div className="flex justify-end space-x-3 pt-4 border-t">
-                {selectedCandidate.cvFile && (
+                {selectedCandidate.cvUrl && (
                   <Button variant="outline" asChild>
                     <a
-                      href={selectedCandidate.cvFile}
+                      href={selectedCandidate.cvUrl}
                       target="_blank"
                       rel="noopener noreferrer"
                     >
