@@ -321,9 +321,8 @@ model Course {
   duration          Int
   level             CourseLevel
   category          CourseCategory
-  isMandatory       Boolean            @default(false) @map("is_mandatory")
-  isActive          Boolean            @default(true) @map("is_active")
-  price             Decimal?           @default(0)
+  isMandatory       Boolean?           @default(false) @map("is_mandatory")
+  isActive          Boolean?           @default(true) @map("is_active")
   rating            Decimal?           @default(0)
   studentsCount     Int                @default(0) @map("students_count")
   completionRate    Decimal?           @default(0) @map("completion_rate")
@@ -331,7 +330,7 @@ model Course {
   totalQuizzes      Int                @default(0) @map("total_quizzes")
   totalResources    Int                @default(0) @map("total_resources")
   tags              String[]
-  certification     Boolean            @default(true)
+  certification     Boolean?           @default(true)
   includedMaterials String[]           @map("included_materials")
   instructorId      String?            @map("instructor_id")
   institutionName   String?            @map("institution_name")

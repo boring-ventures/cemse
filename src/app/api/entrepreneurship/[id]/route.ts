@@ -1,32 +1,47 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { getAuthHeaders } from '@/lib/api';
+import { prisma } from '@/lib/prisma';
 
 export async function GET(
   request: NextRequest,
   { params }: { params: { id: string } }
 ) {
   try {
-    const backendUrl = process.env.BACKEND_URL || '${BACKEND_URL}';
-    const url = `${backendUrl}/api/entrepreneurship/${params.id}`;
-
     console.log('🔍 API Route - Getting entrepreneurship:', params.id);
 
-    const response = await fetch(url, {
-      method: 'GET',
-      headers: {
-        ...getAuthHeaders()
+    // Get entrepreneurship with owner profile
+    const entrepreneurship = await prisma.entrepreneurship.findUnique({
+      where: { id: params.id },
+      include: {
+        owner: {
+          select: {
+            userId: true,
+            firstName: true,
+            lastName: true,
+            email: true,
+            municipality: true,
+            phone: true,
+            avatarUrl: true,
+          }
+        }
       }
     });
 
-    if (!response.ok) {
-      console.error('🔍 API Route - Backend error:', response.status, response.statusText);
-      throw new Error(`Backend responded with status: ${response.status}`);
+    if (!entrepreneurship) {
+      console.log('🔍 API Route - Entrepreneurship not found:', params.id);
+      return NextResponse.json(
+        { error: 'Emprendimiento no encontrado' },
+        { status: 404 }
+      );
     }
 
-    const data = await response.json();
-    console.log('🔍 API Route - Entrepreneurship data:', data);
+    // Increment view count
+    await prisma.entrepreneurship.update({
+      where: { id: params.id },
+      data: { viewsCount: { increment: 1 } }
+    });
 
-    return NextResponse.json(data);
+    console.log('🔍 API Route - Entrepreneurship data:', entrepreneurship);
+    return NextResponse.json(entrepreneurship);
   } catch (error) {
     console.error('🔍 API Route - Error:', error);
     return NextResponse.json(
@@ -42,28 +57,51 @@ export async function PUT(
 ) {
   try {
     const body = await request.json();
-    const backendUrl = process.env.BACKEND_URL || '${BACKEND_URL}';
-    const url = `${backendUrl}/api/entrepreneurship/${params.id}`;
-
     console.log('🔍 API Route - Updating entrepreneurship:', params.id, body);
 
-    const response = await fetch(url, {
-      method: 'PUT',
-      headers: {
-        ...getAuthHeaders()
+    // Update entrepreneurship in local database
+    const updatedEntrepreneurship = await prisma.entrepreneurship.update({
+      where: { id: params.id },
+      data: {
+        name: body.name,
+        description: body.description,
+        category: body.category,
+        subcategory: body.subcategory,
+        businessStage: body.businessStage,
+        logo: body.logo,
+        images: body.images,
+        website: body.website,
+        email: body.email,
+        phone: body.phone,
+        address: body.address,
+        municipality: body.municipality,
+        department: body.department,
+        socialMedia: body.socialMedia,
+        founded: body.founded ? new Date(body.founded) : null,
+        employees: body.employees,
+        annualRevenue: body.annualRevenue,
+        businessModel: body.businessModel,
+        targetMarket: body.targetMarket,
+        isPublic: body.isPublic,
+        isActive: body.isActive,
       },
-      body: JSON.stringify(body)
+      include: {
+        owner: {
+          select: {
+            userId: true,
+            firstName: true,
+            lastName: true,
+            email: true,
+            municipality: true,
+            phone: true,
+            avatarUrl: true,
+          }
+        }
+      }
     });
 
-    if (!response.ok) {
-      console.error('🔍 API Route - Backend error:', response.status, response.statusText);
-      throw new Error(`Backend responded with status: ${response.status}`);
-    }
-
-    const data = await response.json();
-    console.log('🔍 API Route - Updated entrepreneurship:', data);
-
-    return NextResponse.json(data);
+    console.log('🔍 API Route - Updated entrepreneurship:', updatedEntrepreneurship);
+    return NextResponse.json(updatedEntrepreneurship);
   } catch (error) {
     console.error('🔍 API Route - Error updating entrepreneurship:', error);
     return NextResponse.json(
@@ -78,27 +116,15 @@ export async function DELETE(
   { params }: { params: { id: string } }
 ) {
   try {
-    const backendUrl = process.env.BACKEND_URL || '${BACKEND_URL}';
-    const url = `${backendUrl}/api/entrepreneurship/${params.id}`;
-
     console.log('🔍 API Route - Deleting entrepreneurship:', params.id);
 
-    const response = await fetch(url, {
-      method: 'DELETE',
-      headers: {
-        ...getAuthHeaders()
-      }
+    // Delete entrepreneurship from local database
+    await prisma.entrepreneurship.delete({
+      where: { id: params.id }
     });
 
-    if (!response.ok) {
-      console.error('🔍 API Route - Backend error:', response.status, response.statusText);
-      throw new Error(`Backend responded with status: ${response.status}`);
-    }
-
-    const data = await response.json();
-    console.log('🔍 API Route - Deleted entrepreneurship:', data);
-
-    return NextResponse.json(data);
+    console.log('🔍 API Route - Entrepreneurship deleted successfully');
+    return NextResponse.json({ message: 'Emprendimiento eliminado exitosamente' });
   } catch (error) {
     console.error('🔍 API Route - Error deleting entrepreneurship:', error);
     return NextResponse.json(

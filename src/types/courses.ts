@@ -16,7 +16,6 @@ export interface Course {
   totalLessons: number;
   rating: number;
   studentCount: number;
-  price: number; // 0 for free courses
   isMandatory: boolean;
   isActive: boolean;
   objectives: string[];
@@ -320,10 +319,6 @@ export interface CourseFilters {
   category?: CourseCategory[];
   level?: CourseLevel[];
   duration?: {
-    min: number;
-    max: number;
-  };
-  price?: {
     min: number;
     max: number;
   };

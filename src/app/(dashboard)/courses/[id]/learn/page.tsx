@@ -116,6 +116,7 @@ function CourseLearnClient({ params }: PageProps) {
     enrollments,
     loading: enrollmentsLoading,
     getEnrollmentForLearning,
+    fetchEnrollments,
   } = useCourseEnrollments();
 
   const [course, setCourse] = useState<ExtendedCourse | null>(null);
@@ -134,6 +135,24 @@ function CourseLearnClient({ params }: PageProps) {
   const userEnrollment = enrollments.find((e) => e.courseId === courseId);
   const isEnrolled = !!userEnrollment;
 
+  // Debug logging for enrollment matching
+  console.log("🔍 Enrollment matching debug:", {
+    courseId,
+    enrollmentsCount: enrollments.length,
+    enrollments: enrollments.map(e => ({ id: e.id, courseId: e.courseId, status: e.status })),
+    userEnrollment,
+    isEnrolled,
+    enrollmentsLoading
+  });
+
+  // Refresh enrollments when component mounts to ensure we have the latest data
+  useEffect(() => {
+    if (courseId) {
+      console.log("🔄 Refreshing enrollments for course:", courseId);
+      fetchEnrollments();
+    }
+  }, [courseId, fetchEnrollments]);
+
   // Redirect if not enrolled (after loading is complete)
   useEffect(() => {
     if (!enrollmentsLoading && !loading && courseId && !isEnrolled) {
@@ -145,7 +164,31 @@ function CourseLearnClient({ params }: PageProps) {
   // Fetch complete course data with modules and lessons when enrollment is found
   useEffect(() => {
     const fetchCourseData = async () => {
-      if (!userEnrollment || !courseId) return;
+      if (!courseId) return;
+
+      // If we don't have a userEnrollment in local state, try to fetch it directly
+      let enrollmentToUse = userEnrollment;
+      if (!enrollmentToUse) {
+        console.log("🔍 No local enrollment found, trying to fetch from API...");
+        try {
+          // Try to get enrollments for this specific course
+          const response = await apiCall(`/course-enrollments?courseId=${courseId}`);
+          const courseEnrollments = response.enrollments || [];
+          enrollmentToUse = courseEnrollments.find((e: any) => e.courseId === courseId);
+          
+          if (enrollmentToUse) {
+            console.log("✅ Found enrollment via API:", enrollmentToUse.id);
+          } else {
+            console.log("❌ No enrollment found for course:", courseId);
+            return;
+          }
+        } catch (error) {
+          console.error("❌ Failed to fetch enrollment from API:", error);
+          return;
+        }
+      }
+
+      if (!enrollmentToUse) return;
 
       try {
         setLoading(true);
@@ -153,18 +196,18 @@ function CourseLearnClient({ params }: PageProps) {
 
         console.log(
           "🔍 Fetching complete course data for enrollment:",
-          userEnrollment.id
+          enrollmentToUse.id
         );
 
         // Get complete enrollment data with course modules and lessons
-        let enrollmentData = await getEnrollmentForLearning(userEnrollment.id);
+        let enrollmentData = await getEnrollmentForLearning(enrollmentToUse.id);
 
         // If we couldn't get complete data, try to get basic enrollment data
         if (!enrollmentData || !enrollmentData.course) {
           console.log("🔍 Trying to get basic enrollment data as fallback");
           try {
             const basicData = (await apiCall(
-              `/course-enrollments/${userEnrollment.id}`
+              `/course-enrollments/${enrollmentToUse.id}`
             )) as any;
             enrollmentData = basicData.enrollment || basicData;
             console.log("🔍 Basic enrollment data:", enrollmentData);

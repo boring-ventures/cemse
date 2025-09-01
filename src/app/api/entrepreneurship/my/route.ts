@@ -1,9 +1,9 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getAuthHeaders } from '@/lib/api';
 
-export async function GET() {
+export async function GET(request: NextRequest) {
   try {
-    const backendUrl = process.env.BACKEND_URL || '${BACKEND_URL}';
+    const backendUrl = process.env.NEXT_PUBLIC_BACKEND_URL || 'https://cemse-back-production.up.railway.app';
     const url = `${backendUrl}/api/entrepreneurship/my`;
 
 

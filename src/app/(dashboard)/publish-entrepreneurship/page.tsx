@@ -34,6 +34,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useToast } from "@/components/ui/use-toast";
 import { useCreateEntrepreneurship } from "@/hooks/useEntrepreneurshipApi";
 import { useAuthContext } from "@/hooks/use-auth";
+import { ImageUploadService } from "@/services/imageUpload.service";
 
 interface EntrepreneurshipForm {
   basicInfo: {
@@ -137,6 +138,7 @@ export default function PublishEntrepreneurshipPage() {
   const [previewMode, setPreviewMode] = useState(false);
   const [loading, setLoading] = useState(false);
   const [selectedMunicipality, setSelectedMunicipality] = useState("");
+  const [dragActive, setDragActive] = useState(false);
 
   // Redirect if not authenticated
   useEffect(() => {
@@ -290,7 +292,7 @@ export default function PublishEntrepreneurshipPage() {
       [section]: {
         ...prev[section],
         [subsection]: {
-          ...(prev[section] as Record<string, unknown>)[subsection],
+          ...(prev[section] as any)[subsection],
           [field]: value,
         },
       },
@@ -318,11 +320,106 @@ export default function PublishEntrepreneurshipPage() {
     (event: React.ChangeEvent<HTMLInputElement>) => {
       const files = Array.from(event.target.files || []);
       if (files.length > 0) {
-        updateFormData("media", "images", [...formData.media.images, ...files]);
+        // Validate file sizes
+        const validFiles = files.filter(file => {
+          if (file.size > 5 * 1024 * 1024) {
+            toast({
+              title: "Archivo muy grande",
+              description: `${file.name} es mayor a 5MB`,
+              variant: "destructive",
+            });
+            return false;
+          }
+          return true;
+        });
+
+        if (validFiles.length > 0) {
+          // Limit to 10 images total
+          const totalImages = formData.media.images.length + validFiles.length;
+          if (totalImages > 10) {
+            toast({
+              title: "Demasiadas imágenes",
+              description: "Máximo 10 imágenes permitidas",
+              variant: "destructive",
+            });
+            return;
+          }
+          
+          updateFormData("media", "images", [...formData.media.images, ...validFiles]);
+        }
       }
     },
-    [formData.media.images]
+    [formData.media.images, toast]
   );
+
+  const handleDrag = useCallback((e: React.DragEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    if (e.type === "dragenter" || e.type === "dragover") {
+      setDragActive(true);
+    } else if (e.type === "dragleave") {
+      setDragActive(false);
+    }
+  }, []);
+
+  const handleDrop = useCallback((e: React.DragEvent, type: 'logo' | 'images') => {
+    e.preventDefault();
+    e.stopPropagation();
+    setDragActive(false);
+
+    const files = Array.from(e.dataTransfer.files);
+    const imageFiles = files.filter(file => file.type.startsWith('image/'));
+
+    if (imageFiles.length === 0) {
+      toast({
+        title: "Tipo de archivo no válido",
+        description: "Solo se permiten archivos de imagen",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    if (type === 'logo') {
+      const file = imageFiles[0];
+      if (file.size > 5 * 1024 * 1024) {
+        toast({
+          title: "Archivo muy grande",
+          description: "El logo debe ser menor a 5MB",
+          variant: "destructive",
+        });
+        return;
+      }
+      updateFormData("media", "logo", file);
+    } else {
+      // Validate file sizes for multiple images
+      const validFiles = imageFiles.filter(file => {
+        if (file.size > 5 * 1024 * 1024) {
+          toast({
+            title: "Archivo muy grande",
+            description: `${file.name} es mayor a 5MB`,
+            variant: "destructive",
+          });
+          return false;
+        }
+        return true;
+      });
+
+      if (validFiles.length > 0) {
+        // Limit to 10 images total
+        const totalImages = formData.media.images.length + validFiles.length;
+        if (totalImages > 10) {
+          toast({
+            title: "Demasiadas imágenes",
+            description: "Máximo 10 imágenes permitidas",
+            variant: "destructive",
+          });
+          return;
+        }
+        
+        updateFormData("media", "images", [...formData.media.images, ...validFiles]);
+      }
+    }
+  }, [formData.media.images, toast]);
 
   const removeImage = (index: number) => {
     const updatedImages = formData.media.images.filter((_, i) => i !== index);
@@ -374,6 +471,40 @@ export default function PublishEntrepreneurshipPage() {
     try {
       setLoading(true);
 
+      // Upload images first if they exist
+      let logoUrl: string | undefined;
+      let imageUrls: string[] = [];
+
+      if (formData.media.logo) {
+        try {
+          const logoResult = await ImageUploadService.uploadLogo(formData.media.logo);
+          logoUrl = logoResult.logoUrl;
+        } catch (error) {
+          console.error('Error uploading logo:', error);
+          toast({
+            title: "Error al subir logo",
+            description: "No se pudo subir el logo. Intenta nuevamente.",
+            variant: "destructive",
+          });
+          return;
+        }
+      }
+
+      if (formData.media.images.length > 0) {
+        try {
+          const imagesResult = await ImageUploadService.uploadImages(formData.media.images);
+          imageUrls = imagesResult.map((img: { imageUrl: string; filename: string }) => img.imageUrl);
+        } catch (error) {
+          console.error('Error uploading images:', error);
+          toast({
+            title: "Error al subir imágenes",
+            description: "No se pudieron subir las imágenes. Intenta nuevamente.",
+            variant: "destructive",
+          });
+          return;
+        }
+      }
+
       // Prepare data for API according to the backend specification
       const entrepreneurshipData = {
         name: formData.basicInfo.businessName,
@@ -383,6 +514,8 @@ export default function PublishEntrepreneurshipPage() {
         businessStage: "IDEA" as const, // Default stage
         municipality: formData.basicInfo.municipality,
         department: "Cochabamba", // Default department
+        logo: logoUrl,
+        images: imageUrls,
         website: formData.basicInfo.website || undefined,
         email: formData.contact.email,
         phone: formData.contact.phone,
@@ -818,6 +951,18 @@ export default function PublishEntrepreneurshipPage() {
                           </SelectContent>
                         </Select>
                       </div>
+                    </div>
+
+                    <div className="space-y-2">
+                      <Label>Sitio Web</Label>
+                      <Input
+                        type="url"
+                        value={formData.basicInfo.website}
+                        onChange={(e) =>
+                          updateFormData("basicInfo", "website", e.target.value)
+                        }
+                        placeholder="https://miemprendimiento.com"
+                      />
                     </div>
 
                     <div className="space-y-4">
@@ -1790,18 +1935,64 @@ export default function PublishEntrepreneurshipPage() {
             <div className="space-y-6">
               <div className="space-y-4">
                 <Label>Logo del Emprendimiento</Label>
-                <div className="border-2 border-dashed border-gray-300 rounded-lg p-6 text-center">
-                  <Upload className="mx-auto h-12 w-12 text-gray-400" />
-                  <p className="mt-2 text-sm text-gray-600">
-                    Arrastra tu logo aquí o haz clic para seleccionar
-                  </p>
+                <div 
+                  className={`border-2 border-dashed rounded-lg p-6 text-center transition-colors cursor-pointer ${
+                    dragActive ? 'border-blue-500 bg-blue-50' : 'border-gray-300 hover:border-gray-400'
+                  }`}
+                  onClick={() => document.getElementById('logo-upload')?.click()}
+                  onDragEnter={handleDrag}
+                  onDragLeave={handleDrag}
+                  onDragOver={handleDrag}
+                  onDrop={(e) => handleDrop(e, 'logo')}
+                >
+                  {formData.media.logo ? (
+                    <div className="relative">
+                      <Image
+                        src={URL.createObjectURL(formData.media.logo)}
+                        alt="Logo preview"
+                        width={120}
+                        height={120}
+                        className="mx-auto rounded-lg object-cover"
+                      />
+                      <Button
+                        variant="destructive"
+                        size="sm"
+                        className="absolute -top-2 -right-2"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          updateFormData("media", "logo", null);
+                        }}
+                      >
+                        <X className="h-4 w-4" />
+                      </Button>
+                    </div>
+                  ) : (
+                    <>
+                      <Upload className="mx-auto h-12 w-12 text-gray-400" />
+                      <p className="mt-2 text-sm text-gray-600">
+                        Arrastra tu logo aquí o haz clic para seleccionar
+                      </p>
+                      <p className="text-xs text-gray-500 mt-1">
+                        Formatos: JPG, PNG, GIF (máx. 5MB)
+                      </p>
+                    </>
+                  )}
                   <input
+                    id="logo-upload"
                     type="file"
                     accept="image/*"
                     className="hidden"
                     onChange={(e) => {
                       const file = e.target.files?.[0];
                       if (file) {
+                        if (file.size > 5 * 1024 * 1024) {
+                          toast({
+                            title: "Archivo muy grande",
+                            description: "El logo debe ser menor a 5MB",
+                            variant: "destructive",
+                          });
+                          return;
+                        }
                         updateFormData("media", "logo", file);
                       }
                     }}
@@ -1811,12 +2002,28 @@ export default function PublishEntrepreneurshipPage() {
 
               <div className="space-y-4">
                 <Label>Imágenes del Emprendimiento</Label>
-                <div className="border-2 border-dashed border-gray-300 rounded-lg p-6 text-center">
+                <div 
+                  className={`border-2 border-dashed rounded-lg p-6 text-center transition-colors cursor-pointer ${
+                    dragActive ? 'border-blue-500 bg-blue-50' : 'border-gray-300 hover:border-gray-400'
+                  }`}
+                  onClick={() => document.getElementById('images-upload')?.click()}
+                  onDragEnter={handleDrag}
+                  onDragLeave={handleDrag}
+                  onDragOver={handleDrag}
+                  onDrop={(e) => handleDrop(e, 'images')}
+                >
                   <Upload className="mx-auto h-12 w-12 text-gray-400" />
                   <p className="mt-2 text-sm text-gray-600">
                     Arrastra imágenes aquí o haz clic para seleccionar
                   </p>
+                  <p className="text-xs text-gray-500 mt-1">
+                    Formatos: JPG, PNG, GIF (máx. 5MB por imagen)
+                  </p>
+                  <p className="text-xs text-blue-600 mt-1">
+                    {formData.media.images.length}/10 imágenes seleccionadas
+                  </p>
                   <input
+                    id="images-upload"
                     type="file"
                     accept="image/*"
                     multiple

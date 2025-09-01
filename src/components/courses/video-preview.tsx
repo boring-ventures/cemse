@@ -21,13 +21,24 @@ export const VideoPreview = ({
   console.log("VideoPreview render:", {
     videoUrl,
     isYouTube: isYouTubeVideo(videoUrl),
+    isLocalFile: videoUrl?.startsWith('/uploads/'),
     className,
   });
 
-  if (!videoUrl || !isYouTubeVideo(videoUrl)) {
-    console.log("VideoPreview: No se renderiza porque:", {
+  if (!videoUrl) {
+    console.log("VideoPreview: No se renderiza porque no hay videoUrl");
+    return null;
+  }
+
+  // Check if it's a YouTube video or local uploaded file
+  const isYouTube = isYouTubeVideo(videoUrl);
+  const isLocalFile = videoUrl?.startsWith('/uploads/');
+  
+  if (!isYouTube && !isLocalFile) {
+    console.log("VideoPreview: No se renderiza porque no es YouTube ni archivo local:", {
       videoUrl,
-      isYouTube: isYouTubeVideo(videoUrl),
+      isYouTube,
+      isLocalFile,
     });
     return null;
   }
@@ -39,7 +50,7 @@ export const VideoPreview = ({
     return videoId ? `https://www.youtube.com/embed/${videoId}?autoplay=1` : "";
   };
 
-  const embedUrl = getYouTubeEmbedUrl(videoUrl);
+  const embedUrl = isYouTube ? getYouTubeEmbedUrl(videoUrl) : "";
 
   return (
     <>
@@ -68,13 +79,22 @@ export const VideoPreview = ({
           </div>
 
           <div className="h-[calc(100%-40px)]">
-            {embedUrl ? (
+            {isYouTube && embedUrl ? (
               <iframe
                 src={embedUrl}
                 title={title}
                 className="w-full h-full"
                 allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
                 allowFullScreen
+              />
+            ) : isLocalFile ? (
+              <video
+                src={videoUrl}
+                title={title}
+                className="w-full h-full object-contain"
+                controls
+                autoPlay
+                muted
               />
             ) : (
               <div className="w-full h-full flex items-center justify-center text-white">

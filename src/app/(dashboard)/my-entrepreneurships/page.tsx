@@ -126,6 +126,39 @@ export default function MyEntrepreneurshipsPage() {
     return categories[category] || category;
   };
 
+  const getImageUrl = (imagePath: string) => {
+    // If the image path is already a full URL, check if it's from the old backend
+    if (imagePath.startsWith('http://') || imagePath.startsWith('https://')) {
+      // If it's from the old backend, try to convert it to local path
+      if (imagePath.includes('cemse-back-production.up.railway.app') || 
+          imagePath.includes('localhost:3001') ||
+          imagePath.includes('0.0.0.0:3001')) {
+        // Extract the path part after /uploads/
+        const uploadsIndex = imagePath.indexOf('/uploads/');
+        if (uploadsIndex !== -1) {
+          const localPath = imagePath.substring(uploadsIndex);
+          console.log('Converting backend URL to local:', imagePath, '->', localPath);
+          return localPath;
+        }
+      }
+      // If it's not from our backend, return as is
+      return imagePath;
+    }
+    
+    // If it's a relative path starting with /uploads/, return as is (local file)
+    if (imagePath.startsWith('/uploads/')) {
+      return imagePath;
+    }
+    
+    // If it's just a filename, assume it's in the uploads directory
+    if (!imagePath.includes('/')) {
+      return `/uploads/entrepreneurships/${imagePath}`;
+    }
+    
+    // For any other relative path, return as is
+    return imagePath;
+  };
+
   const handleNextImage = (entrepreneurshipId: string, totalImages: number) => {
     setImageCarousels(prev => ({
       ...prev,
@@ -303,9 +336,13 @@ export default function MyEntrepreneurshipsPage() {
                   </div>
                   <div className="flex items-center gap-1">
                     {entrepreneurship.isPublic ? (
-                      <Eye className="h-4 w-4 text-green-600" title="Público" />
+                      <span title="Público">
+                        <Eye className="h-4 w-4 text-green-600" />
+                      </span>
                     ) : (
-                      <EyeOff className="h-4 w-4 text-gray-400" title="Privado" />
+                      <span title="Privado">
+                        <EyeOff className="h-4 w-4 text-gray-400" />
+                      </span>
                     )}
                   </div>
                 </div>
@@ -316,7 +353,7 @@ export default function MyEntrepreneurshipsPage() {
                    <div className="relative mb-4 rounded-lg overflow-hidden bg-gray-100">
                      <div className="aspect-video relative">
                        <img
-                         src={entrepreneurship.images[getCurrentImageIndex(entrepreneurship.id)]}
+                         src={getImageUrl(entrepreneurship.images[getCurrentImageIndex(entrepreneurship.id)])}
                          alt={`${entrepreneurship.name} - Imagen ${getCurrentImageIndex(entrepreneurship.id) + 1}`}
                          className="w-full h-full object-cover"
                          onError={(e) => {

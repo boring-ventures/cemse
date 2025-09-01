@@ -55,13 +55,14 @@ export const CourseCard = ({
   });
 
   const formatDuration = (hours: number) => {
+    if (!hours || isNaN(hours)) return "0 min";
     if (hours < 1) return `${Math.round(hours * 60)} min`;
     return `${hours}h`;
   };
 
   const formatPrice = (price: number | string) => {
     const numPrice = typeof price === "string" ? parseFloat(price) : price;
-    if (numPrice === 0) return "Gratis";
+    if (isNaN(numPrice) || numPrice === 0) return "Gratis";
     return `$${numPrice.toLocaleString()} BOB`;
   };
 
@@ -234,9 +235,7 @@ export const CourseCard = ({
                   <Users className="h-4 w-4" />
                   <span>
                     {(
-                      course.studentCount ||
-                      course.enrollmentCount ||
-                      0
+                      (course.studentCount ?? course.enrollmentCount ?? 0) || 0
                     ).toLocaleString()}{" "}
                     estudiantes
                   </span>
@@ -247,7 +246,7 @@ export const CourseCard = ({
                 </div>
                 <div className="flex items-center gap-1">
                   <BookOpen className="h-4 w-4" />
-                  <span>{course.modules?.length || 0} módulos</span>
+                  <span>{course.modules?.length ?? 0} módulos</span>
                 </div>
                 {course.certification && (
                   <div className="flex items-center gap-1">
@@ -419,7 +418,7 @@ export const CourseCard = ({
           </div> */}
           <div className="flex items-center gap-1">
             <Users className="h-3 w-3" />
-            <span>{course.studentCount}</span>
+            <span>{course.studentCount ?? course.enrollmentCount ?? 0}</span>
           </div>
           <div className="flex items-center gap-1">
             <Clock className="h-3 w-3" />
@@ -434,12 +433,12 @@ export const CourseCard = ({
 
         {/* Tags */}
         <div className="flex flex-wrap gap-1 mb-3">
-          {course.tags.slice(0, 2).map((tag) => (
+          {course.tags?.slice(0, 2).map((tag) => (
             <Badge key={tag} variant="secondary" className="text-xs">
               {tag}
             </Badge>
           ))}
-          {course.tags.length > 2 && (
+          {course.tags && course.tags.length > 2 && (
             <span className="text-xs text-muted-foreground">
               +{course.tags.length - 2}
             </span>

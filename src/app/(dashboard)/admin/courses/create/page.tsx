@@ -15,7 +15,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { Checkbox } from "@/components/ui/checkbox";
+
 import { Badge } from "@/components/ui/badge";
 import {
   ArrowLeft,
@@ -30,11 +30,20 @@ import {
 } from "lucide-react";
 import Link from "next/link";
 import { useCreateCourse } from "@/hooks/useCourseApi";
+import { useCourseFileUpload } from "@/hooks/useCourseFileUpload";
+import { CourseFileUpload } from "@/components/courses/CourseFileUpload";
+
 import { toast } from "sonner";
 
 export default function CreateCoursePage() {
   const router = useRouter();
   const createCourseMutation = useCreateCourse();
+  const { uploadFiles, isUploading: isFileUploading } = useCourseFileUpload();
+
+  const [selectedFiles, setSelectedFiles] = useState<{
+    thumbnail?: File;
+    videoPreview?: File;
+  }>({});
 
   const [formData, setFormData] = useState({
     title: "",
@@ -60,6 +69,10 @@ export default function CreateCoursePage() {
 
   const handleInputChange = (field: string, value: string | boolean | number) => {
     setFormData(prev => ({ ...prev, [field]: value }));
+  };
+
+  const handleFilesChange = (files: { thumbnail?: File; videoPreview?: File }) => {
+    setSelectedFiles(files);
   };
 
   const addArrayItem = (
@@ -122,20 +135,36 @@ export default function CreateCoursePage() {
       return;
     }
 
-    const courseData = {
-      ...formData,
-      slug: formData.title.toLowerCase().replace(/\s+/g, '-').replace(/[^\w-]/g, ''),
-      duration: parseInt(formData.duration) || 0,
-      price: parseFloat(formData.price) || 0,
-      level: formData.level as CourseLevel,
-      category: formData.category as CourseCategory,
-      objectives: objectives.filter(obj => obj.trim()),
-      prerequisites: prerequisites.filter(req => req.trim()),
-      tags: tags,
-      includedMaterials: includedMaterials.filter(material => material.trim()),
-    };
-
     try {
+      // Upload files first if any are selected
+      let uploadedFileUrls: { thumbnail?: string; videoPreview?: string } = {};
+      
+      if (selectedFiles.thumbnail || selectedFiles.videoPreview) {
+        const uploadResult = await uploadFiles(selectedFiles);
+        if (uploadResult) {
+          uploadedFileUrls = uploadResult;
+        } else {
+          toast.error("Error al subir archivos. Intenta de nuevo.");
+          return;
+        }
+      }
+
+      const courseData = {
+        ...formData,
+        // Use uploaded file URLs if available, otherwise use existing URLs
+        thumbnail: uploadedFileUrls.thumbnail || formData.thumbnail,
+        videoPreview: uploadedFileUrls.videoPreview || formData.videoPreview,
+        slug: formData.title.toLowerCase().replace(/\s+/g, '-').replace(/[^\w-]/g, ''),
+        duration: parseInt(formData.duration) || 0,
+        price: parseFloat(formData.price) || 0,
+        level: formData.level as CourseLevel,
+        category: formData.category as CourseCategory,
+        objectives: objectives.filter(obj => obj.trim()),
+        prerequisites: prerequisites.filter(req => req.trim()),
+        tags: tags,
+        includedMaterials: includedMaterials.filter(material => material.trim()),
+      };
+
       await createCourseMutation.mutateAsync(courseData);
       toast.success("Curso creado exitosamente");
       router.push("/admin/courses");
@@ -234,26 +263,41 @@ export default function CreateCoursePage() {
               />
             </div>
 
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <div className="space-y-2">
-                <Label htmlFor="thumbnail">URL de Imagen</Label>
-                <Input
-                  id="thumbnail"
-                  value={formData.thumbnail}
-                  onChange={(e) => handleInputChange("thumbnail", e.target.value)}
-                  placeholder="https://ejemplo.com/imagen.jpg"
-                />
-              </div>
-              <div className="space-y-2">
-                <Label htmlFor="videoPreview">URL de Video Preview</Label>
-                <Input
-                  id="videoPreview"
-                  value={formData.videoPreview}
-                  onChange={(e) => handleInputChange("videoPreview", e.target.value)}
-                  placeholder="https://youtube.com/watch?v=..."
-                />
+            <div className="space-y-4">
+              <CourseFileUpload
+                onFilesChange={handleFilesChange}
+                className="w-full"
+              />
+              
+              {/* Alternative: URL inputs */}
+              <div className="border-t pt-4">
+                <p className="text-sm text-muted-foreground mb-3">
+                  O ingresa URLs directamente:
+                </p>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div className="space-y-2">
+                    <Label htmlFor="thumbnail">URL de Imagen</Label>
+                    <Input
+                      id="thumbnail"
+                      value={formData.thumbnail}
+                      onChange={(e) => handleInputChange("thumbnail", e.target.value)}
+                      placeholder="https://ejemplo.com/imagen.jpg"
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="videoPreview">URL de Video Preview</Label>
+                    <Input
+                      id="videoPreview"
+                      value={formData.videoPreview}
+                      onChange={(e) => handleInputChange("videoPreview", e.target.value)}
+                      placeholder="https://youtube.com/watch?v=..."
+                    />
+                  </div>
+                </div>
               </div>
             </div>
+
+
           </CardContent>
         </Card>
 
@@ -317,45 +361,7 @@ export default function CreateCoursePage() {
               </div>
             </div>
 
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <div className="space-y-2">
-                <Label htmlFor="price">Precio (Bs.)</Label>
-                <Input
-                  id="price"
-                  type="number"
-                  step="0.01"
-                  value={formData.price}
-                  onChange={(e) => handleInputChange("price", e.target.value)}
-                  placeholder="0.00"
-                />
-              </div>
-              <div className="space-y-4">
-                <div className="flex items-center space-x-2">
-                  <Checkbox
-                    id="isMandatory"
-                    checked={formData.isMandatory}
-                    onCheckedChange={(checked) => handleInputChange("isMandatory", checked)}
-                  />
-                  <Label htmlFor="isMandatory">Curso Obligatorio</Label>
-                </div>
-                <div className="flex items-center space-x-2">
-                  <Checkbox
-                    id="isActive"
-                    checked={formData.isActive}
-                    onCheckedChange={(checked) => handleInputChange("isActive", checked)}
-                  />
-                  <Label htmlFor="isActive">Curso Activo</Label>
-                </div>
-                <div className="flex items-center space-x-2">
-                  <Checkbox
-                    id="certification"
-                    checked={formData.certification}
-                    onCheckedChange={(checked) => handleInputChange("certification", checked)}
-                  />
-                  <Label htmlFor="certification">Otorga Certificado</Label>
-                </div>
-              </div>
-            </div>
+
           </CardContent>
         </Card>
 
@@ -516,13 +522,13 @@ export default function CreateCoursePage() {
           </Button>
           <Button 
             type="submit" 
-            disabled={createCourseMutation.isPending}
+            disabled={createCourseMutation.isPending || isFileUploading}
             className="min-w-[120px]"
           >
-            {createCourseMutation.isPending ? (
+            {createCourseMutation.isPending || isFileUploading ? (
               <>
                 <Clock className="h-4 w-4 mr-2 animate-spin" />
-                Creando...
+                {isFileUploading ? 'Subiendo archivos...' : 'Creando...'}
               </>
             ) : (
               <>

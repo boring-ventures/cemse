@@ -200,9 +200,8 @@ export interface Course {
   duration: number;
   level: 'BEGINNER' | 'INTERMEDIATE' | 'ADVANCED';
   category: string;
-  isMandatory: boolean;
-  isActive: boolean;
-  price: string | number;
+  isMandatory?: boolean;
+  isActive?: boolean;
   rating: string | number;
   studentsCount: number;
   enrollmentCount?: number;
@@ -211,7 +210,7 @@ export interface Course {
   totalQuizzes: number;
   totalResources: number;
   tags: string[];
-  certification: boolean;
+  certification?: boolean;
   includedMaterials: string[];
   instructorId?: string | null;
   institutionName?: string | null;

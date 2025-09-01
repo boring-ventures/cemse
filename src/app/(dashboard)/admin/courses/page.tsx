@@ -467,24 +467,7 @@ export default function CourseManagementPage() {
                               Ver estudiantes
                             </Link>
                           </DropdownMenuItem>
-                          <DropdownMenuItem asChild>
-                            <Link href={`/admin/courses/${course.id}/progress`}>
-                              <TrendingUp className="h-4 w-4 mr-2" />
-                              Progreso
-                            </Link>
-                          </DropdownMenuItem>
-                          <DropdownMenuItem asChild>
-                            <Link href={`/admin/courses/${course.id}/certificates`}>
-                              <GraduationCap className="h-4 w-4 mr-2" />
-                              Certificados
-                            </Link>
-                          </DropdownMenuItem>
-                          <DropdownMenuItem asChild>
-                            <Link href={`/admin/courses/${course.id}/analytics`}>
-                              <BarChart3 className="h-4 w-4 mr-2" />
-                              Analíticas
-                            </Link>
-                          </DropdownMenuItem>
+
                           <DropdownMenuItem
                             onClick={() => handleDuplicateCourse(course.id)}
                           >
