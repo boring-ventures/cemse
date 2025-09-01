@@ -316,9 +316,13 @@ export default function MyApplicationsPage() {
   };
 
   const handleSendMessage = async () => {
-    if (!newMessage.trim() || !selectedApplication) return;
+    if (!newMessage.trim() || !selectedApplication) {
+      console.log('🔍 handleSendMessage - Skipping: no message or application selected');
+      return;
+    }
 
     try {
+      console.log('🔍 handleSendMessage - Sending message for application:', selectedApplication.id);
       await sendJobMessage({
         content: newMessage.trim(),
         messageType: "TEXT",
@@ -329,9 +333,10 @@ export default function MyApplicationsPage() {
         description: "Tu mensaje ha sido enviado exitosamente",
       });
     } catch (error) {
+      console.error('🔍 handleSendMessage - Error:', error);
       toast({
         title: "Error",
-        description: "No se pudo enviar el mensaje",
+        description: error instanceof Error ? error.message : "No se pudo enviar el mensaje",
         variant: "destructive",
       });
     }

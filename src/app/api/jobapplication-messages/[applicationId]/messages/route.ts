@@ -188,7 +188,7 @@ export async function POST(
         messageType: body.messageType || 'TEXT',
         senderId: decoded.id,
         senderType: senderType,
-        status: 'SENT' // Use MessageStatus enum instead of isRead
+        status: 'SENT'
       },
       include: {
         application: {
