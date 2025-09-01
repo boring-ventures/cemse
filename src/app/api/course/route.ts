@@ -29,16 +29,29 @@ export async function GET(request: NextRequest) {
     const isActive = searchParams.get('isActive');
     
     // Build filter conditions
-    const where: any = {};
+    const where: any = {
+      isActive: true // By default, only show active courses
+    };
     if (category) where.category = category;
     if (level) where.level = level;
     if (institutionId) where.instructorId = institutionId;
     if (isActive !== null) where.isActive = isActive === 'true';
     
-    // If user is authenticated, only show their courses
+    // If user is authenticated and is an instructor, only show their courses
+    // Youth users should see all available courses
     if (userId) {
-      where.instructorId = userId;
-      console.log('📚 API: Filtering courses by authenticated user:', userId);
+      // Check if user is an instructor (training center, company, etc.)
+      const userProfile = await prisma.profile.findUnique({
+        where: { userId },
+        select: { role: true }
+      });
+      
+      if (userProfile?.role && ['TRAINING_CENTERS', 'COMPANIES', 'NGOS_AND_FOUNDATIONS', 'INSTRUCTOR'].includes(userProfile.role)) {
+        where.instructorId = userId;
+        console.log('📚 API: Filtering courses by instructor user:', userId);
+      } else {
+        console.log('📚 API: User is not an instructor, showing all courses');
+      }
     }
     
     // Get courses from database

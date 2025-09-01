@@ -295,72 +295,7 @@ export function DashboardMunicipio() {
     }
   };
 
-  // Test function to check authentication
-  const testAuth = async () => {
-    console.log("🧪 Testing authentication...");
-    const token = getToken();
-    console.log("🧪 Token:", token ? `${token.substring(0, 20)}...` : "null");
 
-    // Decode JWT token to check expiration
-    if (token) {
-      try {
-        const base64Url = token.split(".")[1];
-        const base64 = base64Url.replace(/-/g, "+").replace(/_/g, "/");
-        const jsonPayload = decodeURIComponent(
-          atob(base64)
-            .split("")
-            .map(function (c) {
-              return "%" + ("00" + c.charCodeAt(0).toString(16)).slice(-2);
-            })
-            .join("")
-        );
-        const decoded = JSON.parse(jsonPayload);
-        console.log("🧪 Decoded token:", decoded);
-        console.log("🧪 Token expiration:", new Date(decoded.exp * 1000));
-        console.log("🧪 Current time:", new Date());
-        console.log("🧪 Is token expired?", Date.now() > decoded.exp * 1000);
-      } catch (error) {
-        console.error("🧪 Error decoding token:", error);
-      }
-    }
-
-    try {
-      // Test multiple endpoints
-      const endpoints = [
-        "/company",
-        "/auth/me",
-        "/municipality",
-        "/user/profile",
-      ];
-
-      for (const endpoint of endpoints) {
-        try {
-          console.log(`🧪 Testing endpoint: ${endpoint}`);
-          const response = await fetch(
-            `https://cemse-back-production.up.railway.app/api${endpoint}`,
-            {
-              headers: {
-                Authorization: `Bearer ${token}`,
-                "Content-Type": "application/json",
-              },
-            }
-          );
-          console.log(`🧪 ${endpoint} - Status:`, response.status);
-          if (response.ok) {
-            const data = await response.json();
-            console.log(`🧪 ${endpoint} - Success:`, data);
-          } else {
-            const errorText = await response.text();
-            console.log(`🧪 ${endpoint} - Error:`, errorText);
-          }
-        } catch (error) {
-          console.error(`🧪 ${endpoint} - Exception:`, error);
-        }
-      }
-    } catch (error) {
-      console.error("🧪 Test error:", error);
-    }
-  };
 
   return (
     <div className="space-y-6 px-4">
@@ -382,16 +317,6 @@ export function DashboardMunicipio() {
             </p>
           </div>
           <div className="flex gap-2">
-            <Button
-              variant="outline"
-              onClick={testAuth}
-              style={{
-                color: primaryTextColor,
-                borderColor: primaryTextColor,
-              }}
-            >
-              Test Auth
-            </Button>
             <Dialog open={showCreateDialog} onOpenChange={setShowCreateDialog}>
               <DialogTrigger asChild>
                 <Button

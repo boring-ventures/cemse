@@ -307,18 +307,7 @@ La contraseña no se puede recuperar una vez creada la cuenta.`;
             </CardContent>
           </Card>
 
-          {/* Test Credentials Button */}
-          {onTestCredentials && (
-            <Button
-              variant="outline"
-              onClick={() => onTestCredentials(credentials.username, credentials.password)}
-              disabled={testingCredentials}
-              className="w-full"
-            >
-              <TestTube className="h-4 w-4 mr-2" />
-              {testingCredentials ? "Probando credenciales..." : "Probar credenciales"}
-            </Button>
-          )}
+
 
           {/* Download Buttons */}
           <div className="flex gap-2">

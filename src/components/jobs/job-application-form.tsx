@@ -266,19 +266,7 @@ export default function JobApplicationForm({ jobOffer, onSuccess, onCancel }: Jo
     // Must have at least one document (existing or uploaded)
     const hasAnyDocument = hasCV || hasCoverLetter || uploadedCvUrl || uploadedCoverLetterUrl;
     
-    console.log('🔍 canSubmit - Debug info:', {
-      hasCV,
-      hasCoverLetter,
-      uploadedCvUrl,
-      uploadedCoverLetterUrl,
-      hasAnyDocument,
-      questionsCount: questions.length,
-      requiredQuestionsCount: questions.filter(q => q.required).length,
-      answeredQuestionsCount: formData.questionAnswers.filter(qa => qa.answer.trim()).length
-    });
-    
     if (!hasAnyDocument) {
-      console.log('🔍 canSubmit - No documents available');
       return false;
     }
     
@@ -287,12 +275,10 @@ export default function JobApplicationForm({ jobOffer, onSuccess, onCancel }: Jo
     for (const question of requiredQuestions) {
       const answer = formData.questionAnswers.find(qa => qa.questionId === question.id);
       if (!answer || !answer.answer.trim()) {
-        console.log('🔍 canSubmit - Missing answer for question:', question.question);
         return false;
       }
     }
     
-    console.log('🔍 canSubmit - All validations passed, can submit!');
     return true;
   };
 
@@ -328,19 +314,7 @@ export default function JobApplicationForm({ jobOffer, onSuccess, onCancel }: Jo
 
       console.log('🚀 Submitting application data:', applicationData);
 
-      // Test API endpoint first
-      console.log('🧪 Testing API endpoint...');
-      
-      try {
-        // First test if we can reach the API at all
-        const testResponse = await fetch('/api/auth/me', {
-          method: 'GET',
-          credentials: 'include'
-        });
-        console.log('🧪 Auth test response status:', testResponse.status);
-      } catch (testError) {
-        console.log('🧪 Auth test failed:', testError);
-      }
+
       
       const response = await fetch('/api/jobapplication', {
         method: 'POST',

@@ -48,7 +48,7 @@ export const useCourses = (municipalityId?: string) => {
   // Load initial data
   useEffect(() => {
     fetchCourses();
-  }, []);
+  }, [municipalityId]); // Add municipalityId as dependency
 
   return {
     courses,

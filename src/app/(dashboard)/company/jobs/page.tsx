@@ -66,9 +66,8 @@ export default function CompanyJobsPage() {
       // Use the user ID directly as the company ID for company users
       const companyId = user.id;
 
-      // Fetch job offers using test API call (bypassing auth temporarily)
-      console.log('🧪 Using test API endpoint to bypass auth issues');
-      const response = await fetch(`/api/joboffer-test?companyId=${companyId}`, {
+      // Fetch job offers
+      const response = await fetch(`/api/joboffer?companyId=${companyId}`, {
         method: 'GET',
         headers: {
           'Content-Type': 'application/json'
@@ -93,9 +92,7 @@ export default function CompanyJobsPage() {
       const data = await response.json();
       console.log("Job offers fetched successfully:", data);
       
-      // Handle the test API response format
       const jobOffers = data.jobOffers || data || [];
-      console.log("Extracted job offers:", jobOffers.length, "offers");
       setJobOffers(jobOffers);
 
     } catch (error) {
@@ -232,45 +229,7 @@ export default function CompanyJobsPage() {
           </p>
         </div>
         <div className="flex gap-2">
-          <Button variant="outline" onClick={async () => {
-            try {
-              const response = await fetch('/api/debug-auth', { credentials: 'include' });
-              const data = await response.json();
-              console.log('Auth debug:', data);
-              toast({
-                title: "Auth Debug",
-                description: `Token: ${data.hasToken ? 'YES' : 'NO'}, Valid: ${data.tokenValid ? 'YES' : 'NO'}`,
-                variant: data.tokenValid ? "default" : "destructive",
-              });
-            } catch (error) {
-              console.error('Debug failed:', error);
-            }
-          }}>
-            🔍 Debug Auth
-          </Button>
-          <Button variant="outline" onClick={async () => {
-            try {
-              console.log('🧪 Testing simple API...');
-              const response = await fetch('/api/test-simple');
-              const data = await response.json();
-              console.log('🧪 Simple API result:', data);
-              toast({
-                title: "Simple API Test",
-                description: `Status: ${response.status}`,
-                variant: response.ok ? "default" : "destructive",
-              });
-            } catch (error) {
-              console.error('🧪 Simple API test failed:', error);
-              toast({
-                title: "API Test Failed",
-                description: "Check console",
-                variant: "destructive",
-              });
-            }
-          }}>
-            🧪 Test API
-          </Button>
-          <Button onClick={() => router.push("/company/jobs/create")}>
+          <Button onClick={() => router.push("/jobs/create")}>
             <Plus className="w-4 h-4 mr-2" />
             Crear Puesto
           </Button>
@@ -356,7 +315,7 @@ export default function CompanyJobsPage() {
                 Comienza creando tu primer puesto de trabajo para atraer
                 candidatos
               </p>
-              <Button onClick={() => router.push("/company/jobs/create")}>
+              <Button onClick={() => router.push("/jobs/create")}>
                 <Plus className="w-4 h-4 mr-2" />
                 Crear Primer Puesto
               </Button>

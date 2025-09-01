@@ -48,12 +48,7 @@ export default function CoursesPage() {
   const [levelFilter, setLevelFilter] = useState("all");
   const [viewMode, setViewMode] = useState<"grid" | "list">("grid");
 
-  // Debug logs
-  console.log("🔍 CoursesPage - courses:", courses);
-  console.log("🔍 CoursesPage - loading:", loading);
-  console.log("🔍 CoursesPage - error:", error);
-  console.log("🔍 CoursesPage - courses length:", courses?.length || 0);
-  console.log("🔍 CoursesPage - enrollments:", enrollments);
+
 
   // Estadísticas
   const stats = {
@@ -102,10 +97,7 @@ export default function CoursesPage() {
       return matchesSearch && matchesCategory && matchesLevel;
     }) || [];
 
-  console.log("🔍 CoursesPage - filteredCourses:", filteredCourses);
-  console.log("🔍 CoursesPage - searchQuery:", searchQuery);
-  console.log("🔍 CoursesPage - categoryFilter:", categoryFilter);
-  console.log("🔍 CoursesPage - levelFilter:", levelFilter);
+
 
   const categories = [
     { value: "all", label: "Todas las categorías" },

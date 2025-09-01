@@ -9,7 +9,7 @@ export default {
     "./src/app/(auth)/**/*.{js,ts,jsx,tsx,mdx}",
     "./src/app/landing/**/*.{js,ts,jsx,tsx,mdx}",
     "./src/app/news/**/*.{js,ts,jsx,tsx,mdx}",
-    "./src/app/test-*/**/*.{js,ts,jsx,tsx,mdx}",
+
     "./src/app/verify-email/**/*.{js,ts,jsx,tsx,mdx}",
     "./src/app/login/**/*.{js,ts,jsx,tsx,mdx}",
     "./src/app/globals.css",
