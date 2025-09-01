@@ -18,6 +18,9 @@ import {
   AlertCircle,
   UserCheck,
   MoreHorizontal,
+  Send,
+  RefreshCw,
+  Calendar,
 } from "lucide-react";
 import {
   Card,
@@ -71,6 +74,7 @@ import { Checkbox } from "@/components/ui/checkbox";
 import { useRef } from "react";
 import { useJobOffers } from "@/hooks/useJobOfferApi";
 import { useProfiles } from "@/hooks/useProfileApi";
+import { useJobMessages } from "@/hooks/use-job-messages";
 
 interface CandidatesData {
   candidates: JobApplication[];
@@ -119,6 +123,18 @@ export default function CandidatesPage() {
   const [rejectionMessage, setRejectionMessage] = useState("");
   const [candidateToReject, setCandidateToReject] =
     useState<JobApplication | null>(null);
+  const [showChatModal, setShowChatModal] = useState(false);
+  const [newMessage, setNewMessage] = useState("");
+
+  // Chat functionality
+  const {
+    messages,
+    loading: messagesLoading,
+    sending: messageSending,
+    error: messageError,
+    sendMessage: sendJobMessage,
+    refreshMessages,
+  } = useJobMessages(selectedCandidate?.id || "");
 
   useEffect(() => {
     fetchCandidates();
@@ -237,6 +253,50 @@ export default function CandidatesPage() {
     setRejectDialogOpen(false);
     setCandidateToReject(null);
     setRejectionMessage("");
+  };
+
+  // Chat handlers
+  const handleOpenChat = (candidate: JobApplication) => {
+    setSelectedCandidate(candidate);
+    setShowChatModal(true);
+    // Load messages when opening chat
+    refreshMessages();
+  };
+
+  const handleCloseChat = () => {
+    setShowChatModal(false);
+    setSelectedCandidate(null);
+    setNewMessage("");
+  };
+
+  const handleSendMessage = async () => {
+    if (!newMessage.trim() || !selectedCandidate) return;
+
+    try {
+      await sendJobMessage({
+        content: newMessage.trim(),
+        messageType: "TEXT",
+      });
+      setNewMessage("");
+    } catch (error) {
+      toast({
+        title: "Error",
+        description: error instanceof Error ? error.message : "No se pudo enviar el mensaje",
+        variant: "destructive",
+      });
+    }
+  };
+
+  const formatMessageTime = (dateString: string) => {
+    return new Date(dateString).toLocaleTimeString("es-ES", {
+      hour: "2-digit",
+      minute: "2-digit",
+    });
+  };
+
+  const isOwnMessage = (message: any) => {
+    // Check if the message sender is the current user (company)
+    return message.senderType === "COMPANY";
   };
 
   const getStatusBadge = (status: ApplicationStatus) => {
@@ -660,8 +720,12 @@ export default function CandidatesPage() {
                           <Mail className="mr-2 h-4 w-4" />
                           Enviar Email
                         </DropdownMenuItem>
-                        <DropdownMenuItem>
+                        <DropdownMenuItem onClick={() => handleOpenChat(candidate)}>
                           <MessageSquare className="mr-2 h-4 w-4" />
+                          Chat
+                        </DropdownMenuItem>
+                        <DropdownMenuItem>
+                          <Calendar className="mr-2 h-4 w-4" />
                           Programar Entrevista
                         </DropdownMenuItem>
                         {candidate.cvFile && (
@@ -974,6 +1038,159 @@ export default function CandidatesPage() {
             <Button variant="destructive" onClick={handleConfirmReject}>
               Confirmar Rechazo
             </Button>
+          </div>
+        </DialogContent>
+      </Dialog>
+
+      {/* Chat Modal */}
+      <Dialog open={showChatModal} onOpenChange={setShowChatModal}>
+        <DialogContent className="max-w-4xl max-h-[80vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle>Chat con Candidato</DialogTitle>
+            <DialogDescription>
+              Conversación con{" "}
+              {selectedCandidate
+                ? `${selectedCandidate.applicant.firstName} ${selectedCandidate.applicant.lastName}`
+                : "el candidato"}
+            </DialogDescription>
+          </DialogHeader>
+
+          <div className="flex flex-col h-[600px]">
+            {/* Chat Header with Refresh */}
+            <div className="flex items-center justify-between p-4 border-b">
+              <div className="flex items-center space-x-3">
+                <Avatar className="h-8 w-8">
+                  <AvatarImage
+                    src="/api/placeholder/32/32"
+                    alt={`${selectedCandidate?.applicant.firstName} ${selectedCandidate?.applicant.lastName}`}
+                  />
+                  <AvatarFallback className="text-sm">
+                    {selectedCandidate
+                      ? `${selectedCandidate.applicant.firstName.charAt(0)}${selectedCandidate.applicant.lastName.charAt(0)}`
+                      : "CD"}
+                  </AvatarFallback>
+                </Avatar>
+                <div>
+                  <p className="font-medium">
+                    {selectedCandidate
+                      ? `${selectedCandidate.applicant.firstName} ${selectedCandidate.applicant.lastName}`
+                      : "Candidato"}
+                  </p>
+                  <p className="text-sm text-muted-foreground">
+                    {selectedCandidate?.jobOffer?.title || "Puesto"}
+                  </p>
+                </div>
+              </div>
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={refreshMessages}
+                disabled={messagesLoading}
+              >
+                <RefreshCw className="w-4 h-4 mr-2" />
+                {messagesLoading ? "Cargando..." : "Recargar"}
+              </Button>
+            </div>
+
+            {/* Messages Area */}
+            <div className="flex-1 overflow-y-auto p-4 space-y-4">
+              {messagesLoading ? (
+                <div className="flex items-center justify-center h-full">
+                  <div className="text-center">
+                    <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary mx-auto mb-4"></div>
+                    <p className="text-muted-foreground">Cargando mensajes...</p>
+                  </div>
+                </div>
+              ) : messageError ? (
+                <div className="text-center py-8">
+                  <MessageSquare className="w-12 h-12 text-red-400 mb-4 mx-auto" />
+                  <p className="text-sm text-gray-600 mb-4">{messageError}</p>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={refreshMessages}
+                    disabled={messagesLoading}
+                  >
+                    Reintentar
+                  </Button>
+                </div>
+              ) : messages.length === 0 ? (
+                <div className="text-center py-8">
+                  <MessageSquare className="w-12 h-12 text-gray-400 mb-4 mx-auto" />
+                  <p className="text-muted-foreground">No hay mensajes aún</p>
+                  <p className="text-sm text-gray-500">
+                    Inicia la conversación enviando un mensaje
+                  </p>
+                </div>
+              ) : (
+                messages.map((message) => {
+                  const isOwnMessage = message.senderType === "COMPANY";
+                  return (
+                    <div
+                      key={message.id}
+                      className={`flex ${isOwnMessage ? "justify-end" : "justify-start"}`}
+                    >
+                      <div className={`max-w-[70%] ${isOwnMessage ? "order-2" : "order-1"}`}>
+                        <div
+                          className={`text-xs mb-1 ${
+                            isOwnMessage ? "text-right text-blue-600" : "text-left text-gray-600"
+                          }`}
+                        >
+                          {isOwnMessage ? "Tú" : selectedCandidate?.applicant.firstName || "Candidato"}
+                        </div>
+                        {/* Message bubble */}
+                        <div
+                          className={`rounded-lg px-3 py-2 ${
+                            isOwnMessage
+                              ? "bg-blue-500 text-white"
+                              : "bg-gray-100 text-gray-900"
+                          }`}
+                        >
+                          <p className="text-sm">{message.content}</p>
+                        </div>
+                        <div
+                          className={`text-xs mt-1 ${
+                            isOwnMessage ? "text-blue-100" : "text-gray-500"
+                          }`}
+                        >
+                          {formatMessageTime(message.createdAt)}
+                        </div>
+                      </div>
+                    </div>
+                  );
+                })
+              )}
+            </div>
+
+            {/* Message Input */}
+            <div className="border-t p-4">
+              <div className="flex space-x-2">
+                <Input
+                  placeholder="Escribe tu mensaje..."
+                  value={newMessage}
+                  onChange={(e) => setNewMessage(e.target.value)}
+                  onKeyPress={(e) => {
+                    if (e.key === "Enter" && !e.shiftKey) {
+                      e.preventDefault();
+                      handleSendMessage();
+                    }
+                  }}
+                  disabled={messageSending}
+                />
+                <Button
+                  onClick={handleSendMessage}
+                  disabled={!newMessage.trim() || messageSending}
+                  size="sm"
+                >
+                  <Send className="w-4 h-4" />
+                </Button>
+              </div>
+              {messageError && (
+                <div className="mt-2">
+                  <p className="text-sm text-red-600">{messageError}</p>
+                </div>
+              )}
+            </div>
           </div>
         </DialogContent>
       </Dialog>

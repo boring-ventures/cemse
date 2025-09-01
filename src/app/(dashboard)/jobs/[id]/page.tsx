@@ -343,7 +343,7 @@ export default function JobDetailPage() {
                 <div className="flex flex-col sm:flex-row items-center sm:items-start gap-3 sm:gap-4 flex-1">
                   <Avatar className="w-12 sm:w-16 h-12 sm:h-16 flex-shrink-0">
                     <AvatarImage
-                      src={job.company?.logo}
+                      src={job.logo}
                       alt={job.company?.name || "Empresa"}
                     />
                     <AvatarFallback className="text-sm sm:text-base">
@@ -361,11 +361,11 @@ export default function JobDetailPage() {
                       <span className="font-medium text-base sm:text-lg">
                         {job.company?.name || "Empresa"}
                       </span>
-                      {job.company?.rating && (
+                      {job.company?.businessSector && (
                         <div className="flex items-center justify-center sm:justify-start gap-1">
-                          <Star className="w-3 sm:w-4 h-3 sm:h-4 fill-yellow-400 text-yellow-400" />
-                          <span className="text-sm sm:text-base">{job.company.rating}</span>
-                          <span className="text-sm sm:text-base">({job.company.reviewCount} reseñas)</span>
+                          <Building className="w-3 sm:w-4 h-3 sm:h-4 text-blue-400" />
+                          <span className="text-sm sm:text-base">{job.company.businessSector}</span>
+                          <span className="text-sm sm:text-base">• {job.company.companySize || 'Tamaño no especificado'}</span>
                         </div>
                       )}
                     </div>
@@ -632,7 +632,7 @@ export default function JobDetailPage() {
                   <div className="flex flex-col sm:flex-row items-center sm:items-start gap-3">
                     <Avatar className="w-10 sm:w-12 h-10 sm:h-12 flex-shrink-0">
                       <AvatarImage
-                        src={job.company.logo}
+                        src={job.logo}
                         alt={job.company.name}
                       />
                       <AvatarFallback className="text-sm">
@@ -642,14 +642,14 @@ export default function JobDetailPage() {
                     <div className="text-center sm:text-left">
                       <h3 className="font-medium text-sm sm:text-base">{job.company.name}</h3>
                       <p className="text-xs sm:text-sm text-gray-600">
-                        {job.company.size}
+                        {job.company.companySize}
                       </p>
                     </div>
                   </div>
 
-                  {job.company.images && job.company.images.length > 0 && (
+                  {job.images && job.images.length > 0 && (
                     <div className="mt-3 sm:mt-4">
-                      <CompanyGallery images={job.company.images} />
+                      <CompanyGallery images={job.images} />
                     </div>
                   )}
 
