@@ -2,7 +2,7 @@
 
 import React, { useState, useEffect } from 'react';
 import { useSearchParams } from "next/navigation";
-import { Search, MapPin, Building, Clock, DollarSign, Filter, Grid, List, SortDesc } from "lucide-react";
+import { Search, MapPin, Building, Clock, DollarSign, Filter, Grid, List, SortDesc, FileText } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -12,6 +12,7 @@ import { JobSearchFilters } from "@/components/jobs/job-search-filters";
 import { JobCard } from "@/components/jobs/job-card";
 import { JobOffer, JobSearchFilters as JobFilters } from "@/types/jobs";
 import { useJobOfferSearch } from "@/hooks/useJobOfferApi";
+import { useRouter } from "next/navigation";
 
 export default function JobsPage() {
   const { search, loading, error } = useJobOfferSearch();
@@ -23,6 +24,7 @@ export default function JobsPage() {
   const [filters, setFilters] = useState<JobFilters>({});
 
   const searchParams = useSearchParams();
+  const router = useRouter();
 
   // Initialize search query from URL params
   useEffect(() => {
@@ -152,13 +154,22 @@ export default function JobsPage() {
             <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 sm:gap-0">
               <div>
                 <h1 className="text-xl sm:text-2xl font-bold text-gray-900">
-                  Buscar Empleos
+                  Empleos
                 </h1>
                 <p className="text-sm sm:text-base text-gray-600">
                   Encuentra oportunidades laborales que se ajusten a tu perfil
                 </p>
               </div>
               <div className="flex items-center space-x-2 justify-center sm:justify-end">
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => router.push('/my-applications')}
+                  className="flex items-center gap-2"
+                >
+                  <FileText className="w-3 sm:w-4 h-3 sm:h-4" />
+                  <span className="hidden sm:inline">Mis Postulaciones</span>
+                </Button>
                 <Button
                   variant={viewMode === "grid" ? "default" : "outline"}
                   size="sm"

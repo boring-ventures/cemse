@@ -14,7 +14,6 @@ import {
   Users,
   MessageSquare,
   Edit,
-  Plus,
   FileText,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -47,6 +46,7 @@ import {
 } from "@/services/youth-application.service";
 import YouthApplicationChat from "@/components/youth-applications/YouthApplicationChat";
 import UnreadMessagesBadge from "@/components/youth-applications/UnreadMessagesBadge";
+import YouthApplicationEditModal from "@/components/youth-applications/YouthApplicationEditModal";
 
 interface YouthApplicationStats {
   total: number;
@@ -86,6 +86,8 @@ export default function MyYouthApplicationsPage() {
   const [selectedApplication, setSelectedApplication] =
     useState<YouthApplication | null>(null);
   const [showChatModal, setShowChatModal] = useState(false);
+  const [showEditModal, setShowEditModal] = useState(false);
+  const [editingApplication, setEditingApplication] = useState<YouthApplication | null>(null);
 
   useEffect(() => {
     console.log(
@@ -212,6 +214,11 @@ export default function MyYouthApplicationsPage() {
     setShowChatModal(true);
   };
 
+  const handleOpenEdit = (application: YouthApplication) => {
+    setEditingApplication(application);
+    setShowEditModal(true);
+  };
+
   if (loading) {
     return (
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
@@ -245,10 +252,7 @@ export default function MyYouthApplicationsPage() {
             encuentren
           </p>
         </div>
-        <Button onClick={() => router.push("/my-applications/new")}>
-          <Plus className="w-4 h-4 mr-2" />
-          Nueva Postulación
-        </Button>
+
       </div>
 
       {/* Stats Cards */}
@@ -486,11 +490,7 @@ export default function MyYouthApplicationsPage() {
                           <Button
                             variant="outline"
                             size="sm"
-                            onClick={() =>
-                              router.push(
-                                `/my-applications/${application.id}/edit`
-                              )
-                            }
+                            onClick={() => handleOpenEdit(application)}
                           >
                             <Edit className="w-4 h-4 mr-2" />
                             Editar
@@ -530,10 +530,7 @@ export default function MyYouthApplicationsPage() {
                 ? "Crea tu primera postulación para que las empresas puedan encontrarte."
                 : "Intenta ajustar tus filtros de búsqueda."}
             </p>
-            <Button onClick={() => router.push("/my-applications/new")}>
-              <Plus className="w-4 h-4 mr-2" />
-              Crear Primera Postulación
-            </Button>
+
           </CardContent>
         </Card>
       )}
@@ -566,6 +563,14 @@ export default function MyYouthApplicationsPage() {
           </div>
         </DialogContent>
       </Dialog>
+
+      {/* Edit Modal */}
+      <YouthApplicationEditModal
+        application={editingApplication}
+        open={showEditModal}
+        onOpenChange={setShowEditModal}
+        onSuccess={refetch}
+      />
     </div>
   );
 }

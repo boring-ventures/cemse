@@ -14,6 +14,7 @@ import {
   Users,
   MessageSquare,
   FileText,
+  Edit,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -79,7 +80,12 @@ export default function MyApplicationsPage() {
   const [selectedApplication, setSelectedApplication] =
     useState<JobApplication | null>(null);
   const [showChatModal, setShowChatModal] = useState(false);
+  const [showEditModal, setShowEditModal] = useState(false);
   const [newMessage, setNewMessage] = useState("");
+  const [editForm, setEditForm] = useState({
+    coverLetter: "",
+    notes: "",
+  });
 
   const { toast } = useToast();
   const { user } = useAuthContext();
@@ -147,7 +153,7 @@ export default function MyApplicationsPage() {
     try {
       const response = await fetch(`/api/jobapplication/${applicationId}`, {
         method: "DELETE",
-        headers: getAuthHeaders(),
+        headers: await getAuthHeaders(),
       });
 
       if (response.ok) {
@@ -172,6 +178,61 @@ export default function MyApplicationsPage() {
         variant: "destructive",
       });
     }
+  };
+
+  const handleEditApplication = async () => {
+    if (!selectedApplication) return;
+
+    try {
+      const response = await fetch(`/api/jobapplication/${selectedApplication.id}`, {
+        method: "PUT",
+        headers: await getAuthHeaders(),
+        body: JSON.stringify({
+          coverLetter: editForm.coverLetter,
+          notes: editForm.notes,
+        }),
+      });
+
+      if (response.ok) {
+        toast({
+          title: "Aplicación actualizada",
+          description: "Tu aplicación ha sido actualizada exitosamente",
+        });
+        setShowEditModal(false);
+        setSelectedApplication(null);
+        setEditForm({ coverLetter: "", notes: "" });
+        // Refresh the applications data
+        refresh();
+      } else {
+        const errorData = await response.json();
+        toast({
+          title: "Error",
+          description: errorData.error || "No se pudo actualizar la aplicación",
+          variant: "destructive",
+        });
+      }
+    } catch (error) {
+      toast({
+        title: "Error de conexión",
+        description: "No se pudo actualizar la aplicación",
+        variant: "destructive",
+      });
+    }
+  };
+
+  const handleOpenEdit = (application: JobApplication) => {
+    setSelectedApplication(application);
+    setEditForm({
+      coverLetter: application.coverLetter || "",
+      notes: application.notes || "",
+    });
+    setShowEditModal(true);
+  };
+
+  const handleCloseEdit = () => {
+    setShowEditModal(false);
+    setSelectedApplication(null);
+    setEditForm({ coverLetter: "", notes: "" });
   };
 
   const getStatusIcon = (status: ApplicationStatus) => {
@@ -235,6 +296,10 @@ export default function MyApplicationsPage() {
 
   const canWithdraw = (status: ApplicationStatus) => {
     return status === "SENT";
+  };
+
+  const canEdit = (status: ApplicationStatus) => {
+    return status === "SENT" || status === "UNDER_REVIEW";
   };
 
   const handleOpenChat = (application: JobApplication) => {
@@ -305,18 +370,29 @@ export default function MyApplicationsPage() {
     );
   }
 
+  // Show error state if there's an error
+  if (error) {
+    return (
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
+        <div className="text-center py-12">
+          <AlertCircle className="w-12 h-12 text-red-400 mx-auto mb-4" />
+          <h3 className="text-lg font-semibold text-gray-900 mb-2">
+            Error al cargar las aplicaciones
+          </h3>
+          <p className="text-gray-600 mb-6">
+            {error.message || "No se pudieron cargar tus aplicaciones"}
+          </p>
+          <Button onClick={refresh}>
+            Reintentar
+          </Button>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
       {/* Header */}
-      <div className="mb-8">
-        <h1 className="text-2xl font-bold text-gray-900 mb-2">
-          Mis Aplicaciones
-        </h1>
-        <p className="text-gray-600">
-          Gestiona y da seguimiento a tus postulaciones laborales
-        </p>
-      </div>
-
       <div className="mb-8 flex justify-between items-center">
         <div>
           <h1 className="text-2xl font-bold text-gray-900 mb-1">
@@ -552,6 +628,17 @@ export default function MyApplicationsPage() {
                             Chat
                           </Button>
 
+                          {canEdit(application.status) && (
+                            <Button
+                              variant="outline"
+                              size="sm"
+                              onClick={() => handleOpenEdit(application)}
+                            >
+                              <Edit className="w-4 h-4 mr-2" />
+                              Editar
+                            </Button>
+                          )}
+
                           {application.cvFile && (
                             <Button
                               variant="outline"
@@ -628,6 +715,57 @@ export default function MyApplicationsPage() {
           </CardContent>
         </Card>
       )}
+
+      {/* Edit Modal */}
+      <Dialog open={showEditModal} onOpenChange={setShowEditModal}>
+        <DialogContent className="max-w-2xl">
+          <DialogHeader>
+            <DialogTitle className="text-lg font-semibold text-gray-900">
+              Editar Aplicación
+            </DialogTitle>
+            <DialogDescription className="text-sm text-gray-600">
+              Actualiza la información de tu aplicación para{" "}
+              {selectedApplication?.jobOffer?.title || "este trabajo"}
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-4 py-4">
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-2">
+                Carta de Presentación
+              </label>
+              <Textarea
+                placeholder="Describe por qué eres el candidato ideal para este puesto..."
+                value={editForm.coverLetter}
+                onChange={(e) =>
+                  setEditForm({ ...editForm, coverLetter: e.target.value })
+                }
+                className="min-h-[120px]"
+              />
+            </div>
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-2">
+                Notas Adicionales
+              </label>
+              <Textarea
+                placeholder="Agrega cualquier información adicional que consideres relevante..."
+                value={editForm.notes}
+                onChange={(e) =>
+                  setEditForm({ ...editForm, notes: e.target.value })
+                }
+                className="min-h-[100px]"
+              />
+            </div>
+          </div>
+          <div className="flex justify-end space-x-3 pt-4 border-t">
+            <Button variant="outline" onClick={handleCloseEdit}>
+              Cancelar
+            </Button>
+            <Button onClick={handleEditApplication}>
+              Guardar Cambios
+            </Button>
+          </div>
+        </DialogContent>
+      </Dialog>
 
       {/* Chat Modal */}
       <Dialog open={showChatModal} onOpenChange={setShowChatModal}>

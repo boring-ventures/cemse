@@ -62,6 +62,7 @@ import { useModuleLessons } from "@/hooks/useLessonApi";
 import { useLessonResources } from "@/hooks/useLessonResourceApi";
 import { useCourseProgress } from "@/hooks/useLessonProgressApi";
 import { useModuleCertificates } from "@/hooks/useModuleCertificateApi";
+import { useCurrentUser } from "@/hooks/use-current-user";
 
 interface CourseStats {
   totalCourses: number;
@@ -77,11 +78,25 @@ interface CourseStats {
 }
 
 export default function CourseManagementPage() {
+  const { profile: currentUser } = useCurrentUser();
   const { data: courses, isLoading: loading, error } = useCourses();
   const [searchQuery, setSearchQuery] = useState("");
   const [statusFilter, setStatusFilter] = useState<string>("all");
   const [categoryFilter, setCategoryFilter] = useState<string>("all");
   const [selectedCourse, setSelectedCourse] = useState<string | null>(null);
+
+  // Filter courses to only show those created by the current user
+  const userCourses = courses?.filter(course => 
+    course.instructorId === currentUser?.id
+  ) || [];
+
+  // Debug logging
+  console.log('🔍 Course filtering:', {
+    totalCourses: courses?.length || 0,
+    currentUserId: currentUser?.id,
+    userCoursesCount: userCourses.length,
+    userCourses: userCourses.map(c => ({ id: c.id, title: c.title, instructorId: c.instructorId }))
+  });
 
   // Fetch modules for selected course
   const { data: modulesData } = useCourseModules(selectedCourse || undefined);
@@ -92,21 +107,21 @@ export default function CourseManagementPage() {
   const [allResources, setAllResources] = useState<any[]>([]);
   const [allCertificates, setAllCertificates] = useState<any[]>([]);
 
-  // Calculate comprehensive stats
+  // Calculate comprehensive stats based on user's courses only
   const stats: CourseStats = {
-    totalCourses: courses?.length || 0,
-    totalStudents: courses?.reduce((sum, course) => sum + (course.studentsCount || 0), 0) || 0,
-    totalHours: courses?.reduce((sum, course) => sum + (course.duration || 0), 0) || 0,
-    averageRating: (courses && courses.length > 0) ? courses.reduce((sum, course) => sum + (Number(course.rating) || 0), 0) / courses.length : 0,
-    completionRate: (courses && courses.length > 0) ? courses.reduce((sum, course) => sum + (Number(course.completionRate) || 0), 0) / courses.length : 0,
-    activeCourses: courses?.filter(c => c.isActive).length || 0,
+    totalCourses: userCourses.length,
+    totalStudents: userCourses.reduce((sum, course) => sum + (course.studentsCount || 0), 0) || 0,
+    totalHours: userCourses.reduce((sum, course) => sum + (course.duration || 0), 0) || 0,
+    averageRating: (userCourses && userCourses.length > 0) ? userCourses.reduce((sum, course) => sum + (Number(course.rating) || 0), 0) / userCourses.length : 0,
+    completionRate: (userCourses && userCourses.length > 0) ? userCourses.reduce((sum, course) => sum + (Number(course.completionRate) || 0), 0) / userCourses.length : 0,
+    activeCourses: userCourses.filter(c => c.isActive).length || 0,
     totalModules: modules.length,
     totalLessons: allLessons.length,
     totalResources: allResources.length,
     totalCertificates: allCertificates.length,
   };
 
-  const filteredCourses = (courses || []).filter((course) => {
+  const filteredCourses = userCourses.filter((course) => {
     if (!course) return false;
     
     const searchLower = (searchQuery || '').toLowerCase();
@@ -167,7 +182,7 @@ export default function CourseManagementPage() {
     }
   };
 
-  if (loading) {
+  if (loading || !currentUser) {
     return (
       <div className="container mx-auto p-6">
         <div className="animate-pulse space-y-6">
@@ -183,14 +198,31 @@ export default function CourseManagementPage() {
     );
   }
 
+  // If no user is authenticated, show a message
+  if (!currentUser) {
+    return (
+      <div className="container mx-auto p-6">
+        <div className="text-center py-12">
+          <BookOpen className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
+          <h3 className="text-lg font-semibold mb-2">
+            Acceso requerido
+          </h3>
+          <p className="text-muted-foreground mb-4">
+            Debes iniciar sesión para ver tus cursos
+          </p>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className="container mx-auto p-6 space-y-6">
       {/* Header */}
       <div className="flex justify-between items-center">
         <div>
-          <h1 className="text-3xl font-bold">🎓 Sistema de Cursos</h1>
+          <h1 className="text-3xl font-bold">🎓 Mis Cursos</h1>
           <p className="text-muted-foreground">
-            Gestión completa de cursos con módulos, lecciones, recursos y certificados
+            Gestión de tus cursos creados con módulos, lecciones, recursos y certificados
           </p>
         </div>
         <div className="flex gap-2">
@@ -494,14 +526,18 @@ export default function CourseManagementPage() {
             <div className="text-center py-12">
               <BookOpen className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
               <h3 className="text-lg font-semibold mb-2">
-                No se encontraron cursos
+                {searchQuery ||
+                statusFilter !== "all" ||
+                categoryFilter !== "all"
+                  ? "No se encontraron cursos con los filtros aplicados"
+                  : "No tienes cursos creados aún"}
               </h3>
               <p className="text-muted-foreground mb-4">
                 {searchQuery ||
                 statusFilter !== "all" ||
                 categoryFilter !== "all"
                   ? "Intenta ajustar los filtros de búsqueda"
-                  : "Comienza creando tu primer curso tipo Platzi"}
+                  : "Comienza creando tu primer curso para compartir tu conocimiento"}
               </p>
               <Button asChild>
                 <Link href="/admin/courses/create">

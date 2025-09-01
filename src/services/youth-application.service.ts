@@ -135,7 +135,7 @@ export class YouthApplicationService {
 
                     const cvUploadResponse = await apiCall('/files/upload/cv', {
                         method: 'POST',
-                        headers: getAuthHeaders(true), // excludeContentType for FormData
+                        headers: await getAuthHeaders(true), // excludeContentType for FormData
                         body: cvFormData
                     }) as { cvUrl: string };
 
@@ -156,7 +156,7 @@ export class YouthApplicationService {
 
                     const coverLetterUploadResponse = await apiCall('/files/upload/cover-letter', {
                         method: 'POST',
-                        headers: getAuthHeaders(true), // excludeContentType for FormData
+                        headers: await getAuthHeaders(true), // excludeContentType for FormData
                         body: coverLetterFormData
                     }) as { coverLetterUrl: string };
 
@@ -181,7 +181,7 @@ export class YouthApplicationService {
 
             const response = await apiCall('/youthapplication', {
                 method: 'POST',
-                headers: getAuthHeaders(),
+                headers: await getAuthHeaders(),
                 body: JSON.stringify(payload)
             });
 
@@ -212,7 +212,7 @@ export class YouthApplicationService {
             const url = `/youthapplication${params.toString() ? `?${params.toString()}` : ''}`;
             const response = await apiCall(url, {
                 method: 'GET',
-                headers: getAuthHeaders()
+                headers: await getAuthHeaders()
             });
 
             console.log('✅ YouthApplicationService.getYouthApplications - Applications retrieved:', response);
@@ -232,7 +232,7 @@ export class YouthApplicationService {
 
             const response = await apiCall(`/youthapplication/${id}`, {
                 method: 'GET',
-                headers: getAuthHeaders()
+                headers: await getAuthHeaders()
             });
 
             console.log('✅ YouthApplicationService.getYouthApplication - Application retrieved:', response);
@@ -263,7 +263,7 @@ export class YouthApplicationService {
 
             const response = await apiCall(`/youthapplication/${id}`, {
                 method: 'PUT',
-                headers: getAuthHeaders(true), // excludeContentType = true para FormData
+                headers: await getAuthHeaders(true), // excludeContentType = true para FormData
                 body: formData
             });
 
@@ -284,7 +284,7 @@ export class YouthApplicationService {
 
             await apiCall(`/youthapplication/${id}`, {
                 method: 'DELETE',
-                headers: getAuthHeaders()
+                headers: await getAuthHeaders()
             });
 
             console.log('✅ YouthApplicationService.deleteYouthApplication - Application deleted');
@@ -303,7 +303,7 @@ export class YouthApplicationService {
 
             const response = await apiCall(`/youthapplication/${applicationId}/message`, {
                 method: 'GET',
-                headers: getAuthHeaders()
+                headers: await getAuthHeaders()
             });
 
             console.log('✅ YouthApplicationService.getMessages - Messages retrieved:', response);
@@ -324,7 +324,7 @@ export class YouthApplicationService {
             // The API will determine senderType based on authenticated user's profile
             const response = await apiCall(`/youthapplication/${applicationId}/message`, {
                 method: 'POST',
-                headers: getAuthHeaders(),
+                headers: await getAuthHeaders(),
                 body: JSON.stringify({ content: data.content })
             });
 
@@ -345,7 +345,7 @@ export class YouthApplicationService {
 
             const response = await apiCall(`/youthapplication/${applicationId}/company-interest`, {
                 method: 'GET',
-                headers: getAuthHeaders()
+                headers: await getAuthHeaders()
             });
 
             console.log('✅ YouthApplicationService.getCompanyInterests - Company interests retrieved:', response);
@@ -365,7 +365,7 @@ export class YouthApplicationService {
 
             const response = await apiCall(`/youthapplication/${applicationId}/company-interest`, {
                 method: 'POST',
-                headers: getAuthHeaders(),
+                headers: await getAuthHeaders(),
                 body: JSON.stringify(data)
             });
 
@@ -387,7 +387,7 @@ export class YouthApplicationService {
             // Use cookie-based authentication - the API endpoint will handle user identification
             const response = await apiCall('/youthapplication/my', {
                 method: 'GET',
-                headers: getAuthHeaders()
+                headers: await getAuthHeaders()
             });
 
             console.log('✅ YouthApplicationService.getMyApplications - My applications retrieved:', response);
@@ -407,7 +407,7 @@ export class YouthApplicationService {
 
             const response = await apiCall('/youthapplication?isPublic=true', {
                 method: 'GET',
-                headers: getAuthHeaders()
+                headers: await getAuthHeaders()
             });
 
             console.log('✅ YouthApplicationService.getPublicApplications - Public applications retrieved:', response);

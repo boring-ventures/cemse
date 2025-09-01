@@ -130,6 +130,7 @@ export async function GET(request: NextRequest) {
     const category = searchParams.get('category');
     const authorType = searchParams.get('authorType');
     const authorId = searchParams.get('authorId');
+    const showAll = searchParams.get('showAll') === 'true';
     
     let filteredNews = [...mockNews];
     
@@ -137,8 +138,12 @@ export async function GET(request: NextRequest) {
     if (!session) {
       filteredNews = filteredNews.filter(news => news.status === 'PUBLISHED');
     } else {
-      // Si está autenticado, filtrar por autor si se especifica
-      if (authorId) {
+      // Si está autenticado y no se especifica showAll, filtrar por el usuario autenticado
+      if (!showAll && !authorId) {
+        filteredNews = filteredNews.filter(news => news.authorId === session.user.id);
+        console.log('📰 API: Filtering news by authenticated user:', session.user.id);
+      } else if (authorId) {
+        // Si se especifica authorId, usar ese filtro
         filteredNews = filteredNews.filter(news => news.authorId === authorId);
       }
     }
@@ -155,6 +160,14 @@ export async function GET(request: NextRequest) {
     if (authorType) {
       filteredNews = filteredNews.filter(news => news.authorType === authorType.toUpperCase());
     }
+
+    console.log('📰 API: Returning filtered news:', {
+      total: mockNews.length,
+      filtered: filteredNews.length,
+      authenticated: !!session,
+      userId: session?.user?.id,
+      filters: { status, category, authorType, authorId, showAll }
+    });
     
     return NextResponse.json(filteredNews);
   } catch (error) {

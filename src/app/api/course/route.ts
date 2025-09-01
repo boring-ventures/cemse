@@ -35,6 +35,12 @@ export async function GET(request: NextRequest) {
     if (institutionId) where.instructorId = institutionId;
     if (isActive !== null) where.isActive = isActive === 'true';
     
+    // If user is authenticated, only show their courses
+    if (userId) {
+      where.instructorId = userId;
+      console.log('📚 API: Filtering courses by authenticated user:', userId);
+    }
+    
     // Get courses from database
     const courses = await prisma.course.findMany({
       where,

@@ -46,7 +46,7 @@ export function useJobMessages(applicationId: string) {
       setLoading(true);
       setError(null);
       
-      const response = await fetch(`/api/jobapplication-messages/${applicationId}/messages`, {
+      const response = await fetch(`/api/job-messages/${applicationId}`, {
         method: 'GET',
         credentials: 'include', // Use cookies for authentication
         headers: {
@@ -82,7 +82,7 @@ export function useJobMessages(applicationId: string) {
       setSending(true);
       setError(null);
       
-      const response = await fetch(`/api/jobapplication-messages/${applicationId}/messages`, {
+      const response = await fetch(`/api/job-messages/${applicationId}`, {
         method: 'POST',
         credentials: 'include', // Use cookies for authentication
         headers: {
@@ -117,7 +117,7 @@ export function useJobMessages(applicationId: string) {
   // Mark message as read
   const markAsRead = async (messageId: string) => {
     try {
-      await fetch(`/api/jobapplication-messages/${applicationId}/messages/${messageId}/read`, {
+      await fetch(`/api/job-messages/${applicationId}/read/${messageId}`, {
         method: 'PUT',
         credentials: 'include', // Use cookies for authentication
         headers: {
@@ -136,7 +136,7 @@ export function useJobMessages(applicationId: string) {
   // Get unread count
   const getUnreadCount = async () => {
     try {
-      const response = await fetch('/api/jobapplication-messages/unread-count', {
+      const response = await fetch('/api/job-messages/unread-count', {
         method: 'GET',
         credentials: 'include', // Use cookies for authentication
         headers: {
