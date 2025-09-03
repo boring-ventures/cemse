@@ -15,6 +15,8 @@ import {
   Building,
   Globe,
   Calendar,
+  AlertCircle,
+  Info,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -57,38 +59,39 @@ export default function JobDetailPage() {
   const router = useRouter();
   const jobId = params.id as string;
 
-  // Use the proper hook for fetching job data
+  // Usar el hook apropiado para obtener datos del empleo
   const { data: job, isLoading: loading, error } = useJobOffer(jobId);
 
-  // Debug logging
-  console.log("🔍 JobDetailPage - jobId:", jobId);
-  console.log("🔍 JobDetailPage - loading:", loading);
+  // Registro de depuración
+  console.log("🔍 JobDetailPage - ID del empleo:", jobId);
+  console.log("🔍 JobDetailPage - cargando:", loading);
   console.log("🔍 JobDetailPage - error:", error);
-  console.log("🔍 JobDetailPage - job data:", job);
+  console.log("🔍 JobDetailPage - datos del empleo:", job);
 
-  // Check if current user is the company that created this job
-  // Temporarily show owner actions for any company user for testing
-  const isCompanyUser = user && (user.role === "EMPRESAS" || user.role === "COMPANIES");
+  // Verificar si el usuario actual es la empresa que creó este empleo
+  // Temporalmente mostrar acciones de propietario para cualquier usuario de empresa para pruebas
+  const isCompanyUser =
+    user && (user.role === "EMPRESAS" || user.role === "COMPANIES");
   const isJobOwner =
     user &&
     job &&
     (user.id === job.companyId ||
       (isCompanyUser && user.id === job.companyId) ||
-      isCompanyUser); // Temporary: show for any company user
+      isCompanyUser); // Temporal: mostrar para cualquier usuario de empresa
 
-  // Debug logging
-  console.log("🔍 Debug isJobOwner:", {
-    userId: user?.id,
-    userRole: user?.role,
-    userCompany: user?.company,
-    userCompanyId: user?.company?.id,
-    jobCompanyId: job?.companyId,
-    jobCompanyName: job?.company?.name,
-    isJobOwner,
-    isAuthenticated: !!user,
-    comparison1: user?.id === job?.companyId,
-    comparison2: isCompanyUser && user?.id === job?.companyId,
-    fullUserObject: user,
+  // Registro de depuración
+  console.log("🔍 Debug esPropietario:", {
+    idUsuario: user?.id,
+    rolUsuario: user?.role,
+    empresaUsuario: user?.company,
+    idEmpresaUsuario: user?.company?.id,
+    idEmpresaEmpleo: job?.companyId,
+    nombreEmpresaEmpleo: job?.company?.name,
+    esPropietario: isJobOwner,
+    estaAutenticado: !!user,
+    comparacion1: user?.id === job?.companyId,
+    comparacion2: isCompanyUser && user?.id === job?.companyId,
+    objetoUsuarioCompleto: user,
   });
 
   // Verificar si ya aplicaste a este trabajo
@@ -104,7 +107,7 @@ export default function JobDetailPage() {
           loading: false,
         });
       } catch (error) {
-        console.error("Error checking application status:", error);
+        console.error("Error al verificar el estado de la aplicación:", error);
         setApplicationStatus({
           hasApplied: false,
           loading: false,
@@ -176,9 +179,34 @@ export default function JobDetailPage() {
     }
   };
 
+  const getEducationLabel = (education: string) => {
+    switch (education) {
+      case "NO_EDUCATION":
+        return "Sin educación formal";
+      case "PRIMARY":
+        return "Primaria";
+      case "SECONDARY":
+        return "Secundaria";
+      case "HIGH_SCHOOL":
+        return "Bachillerato";
+      case "TECHNICAL":
+        return "Técnico";
+      case "UNIVERSITY":
+        return "Universidad";
+      case "POSTGRADUATE":
+        return "Postgrado";
+      case "MASTERS":
+        return "Maestría";
+      case "DOCTORATE":
+        return "Doctorado";
+      default:
+        return education;
+    }
+  };
+
   const handleSaveJob = () => {
     setIsSaved(!isSaved);
-    // TODO: Implement save/unsave job functionality
+    // TODO: Implementar funcionalidad de guardar/quitar guardado del empleo
   };
 
   const handleCancelApplication = async () => {
@@ -208,7 +236,7 @@ export default function JobDetailPage() {
         loading: false,
       });
     } catch (error) {
-      console.error("Error canceling application:", error);
+      console.error("Error al cancelar la aplicación:", error);
       toast({
         title: "Error",
         description: "No se pudo cancelar la aplicación",
@@ -260,7 +288,7 @@ export default function JobDetailPage() {
       });
     } else {
       navigator.clipboard.writeText(window.location.href);
-      // TODO: Show toast notification
+      // TODO: Mostrar notificación toast
     }
   };
 
@@ -327,16 +355,20 @@ export default function JobDetailPage() {
 
   return (
     <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4 sm:py-6">
-      {/* Back Button */}
-      <Button variant="ghost" onClick={() => router.back()} className="mb-4 sm:mb-6 text-sm sm:text-base">
+      {/* Botón de Volver */}
+      <Button
+        variant="ghost"
+        onClick={() => router.back()}
+        className="mb-4 sm:mb-6 text-sm sm:text-base"
+      >
         <ArrowLeft className="w-3 sm:w-4 h-3 sm:h-4 mr-2" />
         Volver a los resultados
       </Button>
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 sm:gap-6">
-        {/* Main Content */}
+        {/* Contenido Principal */}
         <div className="lg:col-span-2 space-y-4 sm:space-y-6">
-          {/* Job Header */}
+          {/* Encabezado del Empleo */}
           <Card>
             <CardHeader className="pb-3 sm:pb-6 p-4 sm:p-6">
               <div className="flex flex-col lg:flex-row lg:items-start lg:justify-between gap-4">
@@ -364,8 +396,14 @@ export default function JobDetailPage() {
                       {job.company?.businessSector && (
                         <div className="flex items-center justify-center sm:justify-start gap-1">
                           <Building className="w-3 sm:w-4 h-3 sm:h-4 text-blue-400" />
-                          <span className="text-sm sm:text-base">{job.company.businessSector}</span>
-                          <span className="text-sm sm:text-base">• {job.company.companySize || 'Tamaño no especificado'}</span>
+                          <span className="text-sm sm:text-base">
+                            {job.company.businessSector}
+                          </span>
+                          <span className="text-sm sm:text-base">
+                            •{" "}
+                            {job.company.companySize ||
+                              "Tamaño no especificado"}
+                          </span>
                         </div>
                       )}
                     </div>
@@ -432,16 +470,21 @@ export default function JobDetailPage() {
             </CardContent>
           </Card>
 
-          {/* Job Description */}
+          {/* Descripción del Empleo */}
           <Card>
             <CardHeader className="pb-3 sm:pb-6 p-4 sm:p-6">
-              <CardTitle className="text-base sm:text-lg">Descripción del puesto</CardTitle>
+              <CardTitle className="text-base sm:text-lg">
+                Descripción del puesto
+              </CardTitle>
             </CardHeader>
             <CardContent className="p-4 sm:p-6">
               <div className="prose prose-sm sm:prose max-w-none">
                 {job.description &&
                   job.description.split("\n").map((paragraph, index) => (
-                    <p key={index} className="mb-3 sm:mb-4 text-sm sm:text-base text-gray-700">
+                    <p
+                      key={index}
+                      className="mb-3 sm:mb-4 text-sm sm:text-base text-gray-700"
+                    >
                       {paragraph}
                     </p>
                   ))}
@@ -449,16 +492,21 @@ export default function JobDetailPage() {
             </CardContent>
           </Card>
 
-          {/* Requirements */}
+          {/* Requisitos */}
           {job.requirements && (
             <Card>
               <CardHeader className="pb-3 sm:pb-6 p-4 sm:p-6">
-                <CardTitle className="text-base sm:text-lg">Requisitos</CardTitle>
+                <CardTitle className="text-base sm:text-lg">
+                  Requisitos
+                </CardTitle>
               </CardHeader>
               <CardContent className="p-4 sm:p-6">
                 <div className="prose prose-sm sm:prose max-w-none">
                   {job.requirements?.split("\n").map((requirement, index) => (
-                    <p key={index} className="mb-3 sm:mb-4 text-sm sm:text-base text-gray-700">
+                    <p
+                      key={index}
+                      className="mb-3 sm:mb-4 text-sm sm:text-base text-gray-700"
+                    >
                       {requirement}
                     </p>
                   ))}
@@ -467,10 +515,12 @@ export default function JobDetailPage() {
             </Card>
           )}
 
-          {/* Skills */}
+          {/* Habilidades */}
           <Card>
             <CardHeader className="pb-3 sm:pb-6 p-4 sm:p-6">
-              <CardTitle className="text-base sm:text-lg">Habilidades requeridas</CardTitle>
+              <CardTitle className="text-base sm:text-lg">
+                Habilidades requeridas
+              </CardTitle>
             </CardHeader>
             <CardContent className="p-4 sm:p-6">
               <div className="space-y-3 sm:space-y-4">
@@ -481,7 +531,11 @@ export default function JobDetailPage() {
                   <div className="flex flex-wrap gap-1 sm:gap-2">
                     {job.skillsRequired &&
                       job.skillsRequired.map((skill) => (
-                        <Badge key={skill} variant="default" className="text-xs">
+                        <Badge
+                          key={skill}
+                          variant="default"
+                          className="text-xs"
+                        >
                           {skill}
                         </Badge>
                       ))}
@@ -494,7 +548,11 @@ export default function JobDetailPage() {
                     </h4>
                     <div className="flex flex-wrap gap-1 sm:gap-2">
                       {job.desiredSkills.map((skill) => (
-                        <Badge key={skill} variant="outline" className="text-xs">
+                        <Badge
+                          key={skill}
+                          variant="outline"
+                          className="text-xs"
+                        >
                           {skill}
                         </Badge>
                       ))}
@@ -505,16 +563,21 @@ export default function JobDetailPage() {
             </CardContent>
           </Card>
 
-          {/* Benefits */}
+          {/* Beneficios */}
           {job.benefits && (
             <Card>
               <CardHeader className="pb-3 sm:pb-6 p-4 sm:p-6">
-                <CardTitle className="text-base sm:text-lg">Beneficios</CardTitle>
+                <CardTitle className="text-base sm:text-lg">
+                  Beneficios
+                </CardTitle>
               </CardHeader>
               <CardContent className="p-4 sm:p-6">
                 <div className="prose prose-sm sm:prose max-w-none">
                   {job.benefits.split("\n").map((benefit, index) => (
-                    <p key={index} className="mb-3 sm:mb-4 text-sm sm:text-base text-gray-700">
+                    <p
+                      key={index}
+                      className="mb-3 sm:mb-4 text-sm sm:text-base text-gray-700"
+                    >
                       {benefit}
                     </p>
                   ))}
@@ -522,18 +585,67 @@ export default function JobDetailPage() {
               </CardContent>
             </Card>
           )}
+
+          {/* Horario del Empleo e Información Adicional */}
+          <Card>
+            <CardHeader className="pb-3 sm:pb-6 p-4 sm:p-6">
+              <CardTitle className="text-base sm:text-lg">
+                Horario y Información Adicional
+              </CardTitle>
+            </CardHeader>
+            <CardContent className="p-4 sm:p-6">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <div>
+                  <h4 className="font-medium text-sm text-gray-900 mb-2">
+                    Horario de trabajo
+                  </h4>
+                  <p className="text-sm text-gray-600">
+                    {job.workSchedule || "No especificado"}
+                  </p>
+                </div>
+                <div>
+                  <h4 className="font-medium text-sm text-gray-900 mb-2">
+                    Educación requerida
+                  </h4>
+                  <p className="text-sm text-gray-600">
+                    {job.educationRequired
+                      ? getEducationLabel(job.educationRequired)
+                      : "No especificada"}
+                  </p>
+                </div>
+                <div>
+                  <h4 className="font-medium text-sm text-gray-900 mb-2">
+                    Municipio
+                  </h4>
+                  <p className="text-sm text-gray-600">
+                    {job.municipality || "No especificado"}
+                  </p>
+                </div>
+                <div>
+                  <h4 className="font-medium text-sm text-gray-900 mb-2">
+                    Departamento
+                  </h4>
+                  <p className="text-sm text-gray-600">
+                    {job.department || "No especificado"}
+                  </p>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
         </div>
 
-        {/* Sidebar */}
+        {/* Barra Lateral */}
         <div className="space-y-4 sm:space-y-6">
-          {/* Apply Button - Only show if user is not the job owner */}
+          {/* Botón de Aplicar - Solo mostrar si el usuario no es el propietario del empleo */}
           {!isJobOwner && (
             <Card>
               <CardContent className="p-4 sm:p-6">
                 {applicationStatus.loading ? (
                   <Button className="w-full mb-3 sm:mb-4" size="lg" disabled>
                     <Loader2 className="w-4 sm:w-5 h-4 sm:h-5 animate-spin mr-2" />
-                    <span className="text-sm sm:text-base">Verificando aplicación...</span>
+                    <span className="text-sm sm:text-base">
+                      Verificando aplicación...
+                    </span>
                   </Button>
                 ) : applicationStatus.hasApplied ? (
                   <div className="space-y-3 sm:space-y-4">
@@ -583,7 +695,7 @@ export default function JobDetailPage() {
             </Card>
           )}
 
-          {/* Job Owner Actions */}
+          {/* Acciones del Propietario del Empleo */}
           {isJobOwner && (
             <Card>
               <CardContent className="p-4 sm:p-6">
@@ -618,7 +730,7 @@ export default function JobDetailPage() {
             </Card>
           )}
 
-          {/* Company Info */}
+          {/* Información de la Empresa */}
           {job.company && (
             <Card>
               <CardHeader className="pb-3 sm:pb-6 p-4 sm:p-6">
@@ -631,16 +743,15 @@ export default function JobDetailPage() {
                 <div className="space-y-3 sm:space-y-4">
                   <div className="flex flex-col sm:flex-row items-center sm:items-start gap-3">
                     <Avatar className="w-10 sm:w-12 h-10 sm:h-12 flex-shrink-0">
-                      <AvatarImage
-                        src={job.logo}
-                        alt={job.company.name}
-                      />
+                      <AvatarImage src={job.logo} alt={job.company.name} />
                       <AvatarFallback className="text-sm">
                         {job.company.name.charAt(0)}
                       </AvatarFallback>
                     </Avatar>
                     <div className="text-center sm:text-left">
-                      <h3 className="font-medium text-sm sm:text-base">{job.company.name}</h3>
+                      <h3 className="font-medium text-sm sm:text-base">
+                        {job.company.name}
+                      </h3>
                       <p className="text-xs sm:text-sm text-gray-600">
                         {job.company.companySize}
                       </p>
@@ -677,7 +788,7 @@ export default function JobDetailPage() {
             </Card>
           )}
 
-          {/* Location Map */}
+          {/* Mapa de Ubicación */}
           <div className="w-full">
             <LocationMap
               latitude={job.latitude}
@@ -689,7 +800,7 @@ export default function JobDetailPage() {
         </div>
       </div>
 
-      {/* Job Application Modal */}
+      {/* Modal de Aplicación al Empleo */}
       <Dialog
         open={showApplicationModal}
         onOpenChange={setShowApplicationModal}
@@ -711,7 +822,7 @@ export default function JobDetailPage() {
                   title: "¡Aplicación enviada!",
                   description: "Tu aplicación ha sido enviada exitosamente.",
                 });
-                // Refresh application status after successful application
+                // Actualizar estado de aplicación después de aplicación exitosa
                 JobApplicationService.checkIfApplied(job.id).then((result) => {
                   setApplicationStatus({
                     hasApplied: result.hasApplied,

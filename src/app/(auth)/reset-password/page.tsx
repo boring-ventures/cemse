@@ -8,6 +8,9 @@ export const metadata: Metadata = {
   description: "Enter your new password",
 };
 
+// Force dynamic rendering to avoid build-time URL construction issues
+export const dynamic = "force-dynamic";
+
 export default function ResetPasswordPage() {
   return (
     <AuthLayout>

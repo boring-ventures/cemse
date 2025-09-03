@@ -1,361 +1,559 @@
 "use client";
 
-import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardHeader,
-  CardTitle,
-} from "@/components/ui/card";
+import { useCompanyProfile } from "@/hooks/useCompanyProfile";
+import { useCompanyJobOffers } from "@/hooks/use-job-offers";
+import { useNewsByType } from "@/hooks/useNewsArticleApi";
+import { useCompanyApplications } from "@/hooks/use-job-applications";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
+import { Skeleton } from "@/components/ui/skeleton";
+import { Alert, AlertDescription } from "@/components/ui/alert";
 import {
+  Building2,
   Briefcase,
-  Users,
-  UserCheck,
-  ArrowRight,
-  Building,
   Newspaper,
+  Users,
+  TrendingUp,
+  AlertCircle,
+  ExternalLink,
   Plus,
+  Eye,
+  Clock,
+  CheckCircle,
+  XCircle,
+  Pause,
 } from "lucide-react";
 import Link from "next/link";
-import { useEffect, useState } from "react";
-import {
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-  DialogDescription,
-} from "@/components/ui/dialog";
-
-// Componente de tarjeta de oferta con temporizador y modal
-function SimulatedJobCard() {
-  const [secondsLeft, setSecondsLeft] = useState(60);
-  const [result, setResult] = useState<null | boolean>(null);
-  const [showModal, setShowModal] = useState(false);
-
-  useEffect(() => {
-    const timer = setInterval(() => {
-      setSecondsLeft((prev) => {
-        if (prev <= 1) {
-          const hired = Math.random() > 0.5;
-          setResult(hired);
-          setShowModal(true);
-          return 60;
-        }
-        return prev - 1;
-      });
-    }, 1000);
-
-    return () => clearInterval(timer);
-  }, []);
-
-  const closeModal = () => {
-    setShowModal(false);
-    setResult(null);
-  };
-
-  return (
-    <>
-      <div className="flex items-center justify-between p-4 bg-gray-50 rounded-lg">
-        <div className="flex items-center gap-4">
-          <div className="w-10 h-10 bg-gray-500 rounded-lg flex items-center justify-center">
-            <Briefcase className="w-5 h-5 text-white" />
-          </div>
-          <div>
-            <h4 className="font-medium">Desarrollador Frontend Senior</h4>
-            <p className="text-sm text-gray-600">Cierra en {secondsLeft}s</p>
-          </div>
-        </div>
-        <div className="text-right space-y-1">
-          <p className="font-medium">24 candidatos</p>
-          {result === null ? (
-            <Badge variant="default">Activa</Badge>
-          ) : result ? (
-            <Badge
-              variant="default"
-              className="bg-green-100 text-green-800 hover:bg-green-100"
-            >
-              ¡Contratado!
-            </Badge>
-          ) : (
-            <Badge variant="destructive">Sin contratar</Badge>
-          )}
-        </div>
-      </div>
-
-      <Dialog open={showModal} onOpenChange={closeModal}>
-        <DialogContent>
-          <DialogHeader>
-            <DialogTitle>Resultado de la Oferta</DialogTitle>
-            <DialogDescription>
-              {result
-                ? "🎉 ¡Se ha contratado un candidato exitosamente!"
-                : "❌ No se logró contratar a ningún candidato esta vez."}
-            </DialogDescription>
-          </DialogHeader>
-        </DialogContent>
-      </Dialog>
-    </>
-  );
-}
 
 export function DashboardCompany() {
-  return (
-    <div className="space-y-8 px-10 py-4">
-      {/* Header */}
-      <div className="bg-gray-100 rounded-lg p-6">
-        <div className="flex items-center justify-between">
-          <div>
-            <h1 className="text-3xl font-bold mb-2 text-gray-900">
-              Panel de Empresa
-            </h1>
-            <p className="text-gray-600">
-              Publica ofertas de empleo, gestiona noticias y tus procesos de
-              selección
-            </p>
-          </div>
-          <Building className="w-16 h-16 text-gray-400 hidden md:block" />
+  const {
+    profile,
+    loading: profileLoading,
+    error: profileError,
+  } = useCompanyProfile();
+  const { data: jobOffers = [], isLoading: jobOffersLoading } =
+    useCompanyJobOffers(profile?.id || "", "ACTIVE");
+  const { data: news = [], loading: newsLoading } = useNewsByType("COMPANY");
+  const { data: applications = [], loading: applicationsLoading } =
+    useCompanyApplications();
+
+  // Debug logging
+  console.log("🔍 DashboardCompany - Data loaded:", {
+    profile,
+    profileLoading,
+    profileError,
+    jobOffers: jobOffers.length,
+    jobOffersLoading,
+    news: news.length,
+    newsLoading,
+    applications: applications.length,
+    applicationsLoading,
+  });
+
+  // Calculate statistics with fallbacks
+  const totalJobOffers = jobOffers?.length || 0;
+  const activeJobOffers =
+    jobOffers?.filter((job) => job.status === "ACTIVE").length || 0;
+  const pausedJobOffers =
+    jobOffers?.filter((job) => job.status === "PAUSED").length || 0;
+  const closedJobOffers =
+    jobOffers?.filter((job) => job.status === "CLOSED").length || 0;
+
+  const totalApplications = applications?.length || 0;
+  const pendingApplications =
+    applications?.filter(
+      (app) => app.status === "SENT" || app.status === "UNDER_REVIEW"
+    ).length || 0;
+  const selectedApplications =
+    applications?.filter((app) => app.status === "PRE_SELECTED").length || 0;
+  const hiredApplications =
+    applications?.filter((app) => app.status === "HIRED").length || 0;
+
+  const companyNews =
+    news?.filter(
+      (article) =>
+        article.authorId === profile?.id || article.authorName === profile?.name
+    ).length || 0;
+
+  // Show skeleton while loading
+  if (profileLoading) {
+    return (
+      <div className="space-y-6 p-6">
+        <div className="space-y-2">
+          <Skeleton className="h-8 w-64" />
+          <Skeleton className="h-4 w-96" />
+        </div>
+
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+          <Skeleton className="h-32" />
+          <Skeleton className="h-32" />
+          <Skeleton className="h-32" />
+          <Skeleton className="h-32" />
+        </div>
+
+        <div className="grid gap-6 md:grid-cols-2">
+          <Skeleton className="h-80" />
+          <Skeleton className="h-80" />
         </div>
       </div>
+    );
+  }
 
-      {/* Stats */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-        <Card>
-          <CardContent className="p-4">
-            <div className="flex items-center space-x-2">
-              <Briefcase className="w-5 h-5 text-gray-500" />
-              <div>
-                <p className="text-sm font-medium">Ofertas Activas</p>
-                <p className="text-2xl font-bold">8</p>
+  // Show error state
+  if (profileError) {
+    return (
+      <div className="space-y-6 p-6">
+        <Alert variant="destructive">
+          <AlertCircle className="h-4 w-4" />
+          <AlertDescription>
+            Error al cargar el dashboard: {profileError.message}
+          </AlertDescription>
+        </Alert>
+      </div>
+    );
+  }
+
+  if (!profile) {
+    return (
+      <div className="space-y-6 p-6">
+        <Alert>
+          <AlertCircle className="h-4 w-4" />
+          <AlertDescription>
+            No se pudo cargar el perfil de la empresa.
+          </AlertDescription>
+        </Alert>
+      </div>
+    );
+  }
+
+  return (
+    <div className="space-y-6 p-6">
+      {/* Header */}
+      <div className="space-y-2">
+        <h1 className="text-3xl font-bold tracking-tight">
+          Dashboard de Empresa
+        </h1>
+        <p className="text-muted-foreground">
+          Bienvenido, {profile?.name || "Empresa"} - Gestiona tus ofertas de
+          trabajo y actividades
+        </p>
+      </div>
+
+             {/* Statistics Cards */}
+       <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+        {/* Job Offers Card */}
+        <Card className="border-2 hover:shadow-lg transition-shadow">
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+            <CardTitle className="text-sm font-medium">
+              Ofertas de Trabajo
+            </CardTitle>
+            <Briefcase className="h-4 w-4 text-blue-600" />
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold text-blue-600">
+              {totalJobOffers}
+            </div>
+            <p className="text-xs text-muted-foreground">Total de ofertas</p>
+            <div className="mt-2 space-y-1">
+              <div className="flex items-center justify-between text-xs">
+                <span className="flex items-center gap-1">
+                  <CheckCircle className="h-3 w-3 text-green-600" />
+                  Activas
+                </span>
+                <span className="font-medium">{activeJobOffers}</span>
+              </div>
+              <div className="flex items-center justify-between text-xs">
+                <span className="flex items-center gap-1">
+                  <Pause className="h-3 w-3 text-yellow-600" />
+                  Pausadas
+                </span>
+                <span className="font-medium">{pausedJobOffers}</span>
+              </div>
+              <div className="flex items-center justify-between text-xs">
+                <span className="flex items-center gap-1">
+                  <XCircle className="h-3 w-3 text-red-600" />
+                  Cerradas
+                </span>
+                <span className="font-medium">{closedJobOffers}</span>
               </div>
             </div>
           </CardContent>
         </Card>
 
-        <Card>
-          <CardContent className="p-4">
-            <div className="flex items-center space-x-2">
-              <Users className="w-5 h-5 text-gray-500" />
-              <div>
-                <p className="text-sm font-medium">Candidatos Totales</p>
-                <p className="text-2xl font-bold">124</p>
+        {/* Applications Card */}
+        <Card className="border-2 hover:shadow-lg transition-shadow">
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+            <CardTitle className="text-sm font-medium">Candidatos</CardTitle>
+            <Users className="h-4 w-4 text-green-600" />
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold text-green-600">
+              {totalApplications}
+            </div>
+            <p className="text-xs text-muted-foreground">
+              Total de aplicaciones
+            </p>
+            <div className="mt-2 space-y-1">
+              <div className="flex items-center justify-between text-xs">
+                <span className="flex items-center gap-1">
+                  <Clock className="h-3 w-3 text-yellow-600" />
+                  Pendientes
+                </span>
+                <span className="font-medium">{pendingApplications}</span>
+              </div>
+              <div className="flex items-center justify-between text-xs">
+                <span className="flex items-center gap-1">
+                  <TrendingUp className="h-3 w-3 text-blue-600" />
+                  Preseleccionados
+                </span>
+                <span className="font-medium">{selectedApplications}</span>
+              </div>
+              <div className="flex items-center justify-between text-xs">
+                <span className="flex items-center gap-1">
+                  <CheckCircle className="h-3 w-3 text-green-600" />
+                  Contratados
+                </span>
+                <span className="font-medium">{hiredApplications}</span>
               </div>
             </div>
           </CardContent>
         </Card>
 
-        <Card>
-          <CardContent className="p-4">
-            <div className="flex items-center space-x-2">
-              <UserCheck className="w-5 h-5 text-gray-500" />
-              <div>
-                <p className="text-sm font-medium">En Proceso</p>
-                <p className="text-2xl font-bold">15</p>
-              </div>
+        {/* News Card */}
+        <Card className="border-2 hover:shadow-lg transition-shadow">
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+            <CardTitle className="text-sm font-medium">Noticias</CardTitle>
+            <Newspaper className="h-4 w-4 text-orange-600" />
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold text-orange-600">
+              {companyNews}
             </div>
-          </CardContent>
-        </Card>
-
-        <Card>
-          <CardContent className="p-4">
-            <div className="flex items-center space-x-2">
-              <Briefcase className="w-5 h-5 text-gray-500" />
-              <div>
-                <p className="text-sm font-medium">Ofertas Cerradas</p>
-                <p className="text-2xl font-bold">5</p>
-              </div>
-            </div>
-          </CardContent>
-        </Card>
-
-        <Card>
-          <CardContent className="p-4">
-            <div className="flex items-center space-x-2">
-              <Users className="w-5 h-5 text-gray-500" />
-              <div>
-                <p className="text-sm font-medium">Candidatos por Oferta</p>
-                <p className="text-2xl font-bold">15.5</p>
-              </div>
-            </div>
-          </CardContent>
-        </Card>
-
-        <Card>
-          <CardContent className="p-4">
-            <div className="flex items-center space-x-2">
-              <UserCheck className="w-5 h-5 text-gray-500" />
-              <div>
-                <p className="text-sm font-medium">Tasa de Conversión</p>
-                <p className="text-2xl font-bold">12%</p>
-              </div>
+            <p className="text-xs text-muted-foreground">
+              Artículos publicados
+            </p>
+            <div className="mt-2">
+              <Badge variant="secondary" className="text-xs">
+                Contenido propio
+              </Badge>
             </div>
           </CardContent>
         </Card>
       </div>
 
-      {/* Quick Actions Grid */}
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-        {/* Crear Nueva Oferta */}
-        <Card className="border-dashed">
-          <CardContent className="p-6 text-center">
-            <Briefcase className="w-8 h-8 text-gray-500 mx-auto mb-4" />
-            <h3 className="text-lg font-medium mb-2">Publicar Nueva Oferta</h3>
-            <p className="text-gray-600 mb-4">
-              Crea una nueva publicación para atraer talento ideal
-            </p>
-            <Button asChild>
-              <Link href="/jobs/create">
-                Crear Oferta
-                <ArrowRight className="w-4 h-4 ml-2" />
-              </Link>
-            </Button>
+      {/* Company Information and Quick Actions */}
+      <div className="grid gap-6 md:grid-cols-2">
+        {/* Company Information */}
+        <Card className="border-2 hover:shadow-lg transition-shadow">
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2 text-lg font-semibold text-blue-600">
+              <Building2 className="h-5 w-5" />
+              Información de la Empresa
+            </CardTitle>
+          </CardHeader>
+          <CardContent className="space-y-3">
+            <div className="space-y-2">
+              <div className="flex justify-between items-center p-2 rounded bg-gray-50">
+                <strong className="text-sm">Empresa:</strong>
+                <span className="text-sm font-medium text-blue-600">
+                  {profile?.name || "N/A"}
+                </span>
+              </div>
+              <div className="flex justify-between items-center p-2 rounded bg-gray-50">
+                <strong className="text-sm">Sector:</strong>
+                <span className="text-sm">
+                  {profile?.businessSector || "No especificado"}
+                </span>
+              </div>
+              <div className="flex justify-between items-center p-2 rounded bg-gray-50">
+                <strong className="text-sm">Tamaño:</strong>
+                <span className="text-sm">
+                  {profile?.companySize || "No especificado"}
+                </span>
+              </div>
+              <div className="flex justify-between items-center p-2 rounded bg-gray-50">
+                <strong className="text-sm">Ubicación:</strong>
+                <span className="text-sm">
+                  {profile?.municipality?.name || "No especificado"}
+                </span>
+              </div>
+              {profile?.website && (
+                <div className="flex justify-between items-center p-2 rounded bg-gray-50">
+                  <strong className="text-sm">Sitio Web:</strong>
+                  <a
+                    href={profile?.website || "#"}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="text-sm text-blue-600 hover:underline flex items-center gap-1"
+                  >
+                    Visitar <ExternalLink className="h-3 w-3" />
+                  </a>
+                </div>
+              )}
+            </div>
           </CardContent>
         </Card>
 
-        {/* Crear Nueva Noticia */}
-        <Card className="border-dashed">
-          <CardContent className="p-6 text-center">
-            <Newspaper className="w-8 h-8 text-blue-500 mx-auto mb-4" />
-            <h3 className="text-lg font-medium mb-2">Publicar Nueva Noticia</h3>
-            <p className="text-gray-600 mb-4">
-              Comparte novedades y oportunidades con la comunidad
-            </p>
-            <Button asChild>
-              <Link href="/company/news">
-                <Plus className="w-4 h-4 mr-2" />
-                Gestionar Noticias
-                <ArrowRight className="w-4 h-4 ml-2" />
-              </Link>
-            </Button>
-          </CardContent>
-        </Card>
-      </div>
+        {/* Quick Actions */}
+        <Card className="border-2 hover:shadow-lg transition-shadow">
+          <CardHeader>
+            <CardTitle className="text-lg font-semibold text-green-600">
+              Acciones Rápidas
+            </CardTitle>
+          </CardHeader>
+          <CardContent className="space-y-3">
+            <Link href="/company/jobs">
+              <Button className="w-full justify-start" variant="outline">
+                <Plus className="h-4 w-4 mr-2" />
+                Crear Nueva Oferta de Trabajo
+              </Button>
+            </Link>
 
-      {/* Ofertas activas destacadas */}
-      <Card>
-        <CardHeader>
-          <CardTitle className="flex items-center gap-2">
-            <Briefcase className="w-5 h-5" />
-            Ofertas de Trabajo Activas
-          </CardTitle>
-          <CardDescription>
-            Revisa y gestiona tus publicaciones activas
-          </CardDescription>
-        </CardHeader>
-        <CardContent>
-          <div className="space-y-4">
-            <SimulatedJobCard />
-            {/* Puedes duplicar <SimulatedJobCard /> para simular más ofertas */}
-          </div>
-
-          <div className="mt-4 pt-4 border-t">
-            <Button asChild className="w-full">
-              <Link href="/job-publishing/my-offers">
+            <Link href="/company/jobs">
+              <Button className="w-full justify-start" variant="outline">
+                <Eye className="h-4 w-4 mr-2" />
                 Ver Todas las Ofertas
-                <ArrowRight className="w-4 h-4 ml-2" />
-              </Link>
-            </Button>
-          </div>
-        </CardContent>
-      </Card>
+              </Button>
+            </Link>
 
-      {/* Postulaciones Recientes */}
-      <Card>
-        <CardHeader>
-          <CardTitle className="flex items-center gap-2">
-            <Users className="w-5 h-5" />
-            Postulaciones Recientes
-          </CardTitle>
-          <CardDescription>
-            Revisa las postulaciones enviadas recientemente por jóvenes
-          </CardDescription>
-        </CardHeader>
-        <CardContent>
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-            {[
-              {
-                name: "Ana Martínez",
-                email: "ana.martinez@email.com",
-                phone: "+591 77777777",
-                city: "La Paz",
-                education: "Bachiller - Colegio La Salle",
-                interests: ["Tecnología", "Marketing Digital", "Diseño"],
-                cv: true,
-                cover: false,
-              },
-              {
-                name: "Carlos Rojas",
-                email: "carlosr@email.com",
-                phone: "+591 78888888",
-                city: "Cochabamba",
-                education: "Técnico Medio - INFOCAL",
-                interests: ["Redes", "Hardware", "Sistemas"],
-                cv: true,
-                cover: true,
-              },
-            ].map((user) => (
-              <Card key={user.email} className="border border-gray-200 p-4">
-                <div className="flex flex-col space-y-1 mb-2">
-                  <h4 className="font-semibold text-base">{user.name}</h4>
-                  <p className="text-sm text-gray-600">{user.email}</p>
-                  <p className="text-sm text-gray-600">{user.phone}</p>
-                  <p className="text-sm text-gray-600">{user.city}</p>
-                  <p className="text-sm text-gray-600">{user.education}</p>
-                </div>
-                <div className="flex flex-wrap gap-1 mb-2">
-                  {user.interests.map((tag) => (
-                    <Badge key={tag} variant="secondary">
-                      {tag}
-                    </Badge>
-                  ))}
-                </div>
-                <div className="flex items-center justify-between">
-                  <Badge
-                    variant={user.cv ? "default" : "destructive"}
-                    className={
-                      user.cv
-                        ? "bg-green-100 text-green-800 hover:bg-green-100"
-                        : ""
-                    }
-                  >
-                    CV {user.cv ? "Disponible" : "Faltante"}
-                  </Badge>
-                  <Badge
-                    variant={user.cover ? "default" : "destructive"}
-                    className={
-                      user.cover
-                        ? "bg-green-100 text-green-800 hover:bg-green-100"
-                        : ""
-                    }
-                  >
-                    Carta {user.cover ? "Disponible" : "Faltante"}
-                  </Badge>
-                </div>
-              </Card>
-            ))}
-          </div>
-        </CardContent>
-      </Card>
+            <Link href="/company/youth-applications">
+              <Button className="w-full justify-start" variant="outline">
+                <Users className="h-4 w-4 mr-2" />
+                Revisar Candidatos
+              </Button>
+            </Link>
 
-      {/* Acciones rápidas */}
-      {/* <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-        <Card className="border-dashed">
-          <CardContent className="p-6 text-center">
-            <Users className="w-8 h-8 text-green-500 mx-auto mb-4" />
-            <h3 className="text-lg font-medium mb-2">Gestionar Candidatos</h3>
-            <p className="text-gray-600 mb-4">
-              Visualiza postulaciones y avanza en tus procesos de selección
-            </p>
-            <Button variant="outline" asChild>
-              <Link href="/job-publishing/candidates">
-                Ver Candidatos
-                <ArrowRight className="w-4 h-4 ml-2" />
-              </Link>
-            </Button>
+            <Link href="/company/news">
+              <Button className="w-full justify-start" variant="outline">
+                <Newspaper className="h-4 w-4 mr-2" />
+                Gestionar Noticias
+              </Button>
+            </Link>
+
+            <Link href="/company/profile">
+              <Button className="w-full justify-start" variant="outline">
+                <Building2 className="h-4 w-4 mr-2" />
+                Editar Perfil
+              </Button>
+            </Link>
           </CardContent>
         </Card>
-      </div> */}
+      </div>
+
+      {/* Recent Job Offers */}
+      {totalJobOffers > 0 && !jobOffersLoading ? (
+        <Card className="border-2 hover:shadow-lg transition-shadow">
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2 text-lg font-semibold">
+              <Briefcase className="h-5 w-5" />
+              Ofertas de Trabajo Recientes
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            {jobOffersLoading ? (
+              <div className="space-y-3">
+                {[1, 2, 3].map((i) => (
+                  <Skeleton key={i} className="h-16" />
+                ))}
+              </div>
+            ) : (
+              <div className="space-y-3">
+                {(jobOffers || []).slice(0, 3).map((job) => (
+                  <div
+                    key={job.id}
+                    className="flex items-center justify-between p-3 rounded-lg border bg-gray-50"
+                  >
+                    <div className="space-y-1">
+                      <h4 className="font-medium">
+                        {job.title || "Sin título"}
+                      </h4>
+                      <p className="text-sm text-muted-foreground">
+                        {job.location || "Ubicación no especificada"}
+                      </p>
+                      <div className="flex items-center gap-2">
+                        <Badge
+                          variant={
+                            job.status === "ACTIVE" ? "default" : "secondary"
+                          }
+                          className="text-xs"
+                        >
+                          {job.status === "ACTIVE"
+                            ? "Activa"
+                            : job.status === "PAUSED"
+                              ? "Pausada"
+                              : "Cerrada"}
+                        </Badge>
+                        <span className="text-xs text-muted-foreground">
+                          {job.applicationsCount || job.applicationCount || 0}{" "}
+                          candidatos
+                        </span>
+                      </div>
+                    </div>
+                    <Link href={`/company/jobs/${job.id || "unknown"}`}>
+                      <Button size="sm" variant="outline">
+                        Ver Detalles
+                      </Button>
+                    </Link>
+                  </div>
+                ))}
+                {totalJobOffers > 3 && (
+                  <div className="text-center pt-2">
+                    <Link href="/company/jobs">
+                      <Button variant="ghost" size="sm">
+                        Ver todas las ofertas ({totalJobOffers})
+                      </Button>
+                    </Link>
+                  </div>
+                )}
+              </div>
+            )}
+          </CardContent>
+        </Card>
+      ) : totalJobOffers === 0 && !jobOffersLoading ? (
+        <Card className="border-2 hover:shadow-lg transition-shadow">
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2 text-lg font-semibold">
+              <Briefcase className="h-5 w-5" />
+              Ofertas de Trabajo
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="text-center py-8">
+              <Briefcase className="h-12 w-12 text-gray-400 mx-auto mb-4" />
+              <h3 className="text-lg font-medium text-gray-900 mb-2">
+                No hay ofertas de trabajo
+              </h3>
+              <p className="text-gray-600 mb-4">
+                Aún no has creado ninguna oferta de trabajo. Comienza creando tu
+                primera oferta.
+              </p>
+              <Link href="/company/jobs">
+                <Button>
+                  <Plus className="h-4 w-4 mr-2" />
+                  Crear Primera Oferta
+                </Button>
+              </Link>
+            </div>
+          </CardContent>
+        </Card>
+      ) : null}
+
+      {/* Recent Applications */}
+      {totalApplications > 0 && !applicationsLoading ? (
+        <Card className="border-2 hover:shadow-lg transition-shadow">
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2 text-lg font-semibold">
+              <Users className="h-5 w-5" />
+              Candidatos Recientes
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            {applicationsLoading ? (
+              <div className="space-y-3">
+                {[1, 2, 3].map((i) => (
+                  <Skeleton key={i} className="h-16" />
+                ))}
+              </div>
+            ) : (
+              <div className="space-y-3">
+                {(applications || []).slice(0, 3).map((application) => (
+                  <div
+                    key={application.id}
+                    className="flex items-center justify-between p-3 rounded-lg border bg-gray-50"
+                  >
+                    <div className="space-y-1">
+                      <h4 className="font-medium">
+                        {application.applicant?.firstName || "N/A"}{" "}
+                        {application.applicant?.lastName || ""}
+                      </h4>
+                      <p className="text-sm text-muted-foreground">
+                        Aplicó a:{" "}
+                        {application.jobOffer?.title || "Oferta no disponible"}
+                      </p>
+                      <div className="flex items-center gap-2">
+                        <Badge
+                          variant={
+                            application.status === "HIRED"
+                              ? "default"
+                              : application.status === "PRE_SELECTED"
+                                ? "secondary"
+                                : application.status === "REJECTED"
+                                  ? "destructive"
+                                  : "outline"
+                          }
+                          className="text-xs"
+                        >
+                          {application.status === "SENT"
+                            ? "Enviada"
+                            : application.status === "UNDER_REVIEW"
+                              ? "En Revisión"
+                              : application.status === "PRE_SELECTED"
+                                ? "Preseleccionado"
+                                : application.status === "REJECTED"
+                                  ? "Rechazado"
+                                  : application.status === "HIRED"
+                                    ? "Contratado"
+                                    : application.status}
+                        </Badge>
+                        <span className="text-xs text-muted-foreground">
+                          {application.appliedAt
+                            ? new Date(
+                                application.appliedAt
+                              ).toLocaleDateString()
+                            : "Fecha no disponible"}
+                        </span>
+                      </div>
+                    </div>
+                    <Link
+                      href={`/company/jobs/${application.jobOfferId || "unknown"}/candidates`}
+                    >
+                      <Button size="sm" variant="outline">
+                        Ver Candidato
+                      </Button>
+                    </Link>
+                  </div>
+                ))}
+                {totalApplications > 3 && (
+                  <div className="text-center pt-2">
+                    <Link href="/company/youth-applications">
+                      <Button variant="ghost" size="sm">
+                        Ver todos los candidatos ({totalApplications})
+                      </Button>
+                    </Link>
+                  </div>
+                )}
+              </div>
+            )}
+          </CardContent>
+        </Card>
+      ) : totalApplications === 0 && !applicationsLoading ? (
+        <Card className="border-2 hover:shadow-lg transition-shadow">
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2 text-lg font-semibold">
+              <Users className="h-5 w-5" />
+              Candidatos
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="text-center py-8">
+              <Users className="h-12 w-12 text-gray-400 mx-auto mb-4" />
+              <h3 className="text-lg font-medium text-gray-900 mb-2">
+                No hay candidatos aún
+              </h3>
+              <p className="text-gray-600 mb-4">
+                Cuando crees ofertas de trabajo, los candidatos aparecerán aquí.
+              </p>
+              <Link href="/company/jobs">
+                <Button>
+                  <Plus className="h-4 w-4 mr-2" />
+                  Crear Oferta de Trabajo
+                </Button>
+              </Link>
+            </div>
+          </CardContent>
+        </Card>
+      ) : null}
     </div>
   );
 }

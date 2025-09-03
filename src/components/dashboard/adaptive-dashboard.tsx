@@ -9,6 +9,7 @@ import { AlertCircle } from "lucide-react";
 import { DashboardYouth } from "./role-specific/dashboard-youth";
 import { DashboardAdolescent } from "./role-specific/dashboard-adolescent";
 import { DashboardMunicipality } from "./role-specific/dashboard-municipality";
+import { DashboardCompany } from "./role-specific/dashboard-company";
 
 export function AdaptiveDashboard() {
   const { profile, isLoading, error } = useCurrentUser();
@@ -32,22 +33,22 @@ export function AdaptiveDashboard() {
   // Show skeleton while loading
   if (isLoading) {
     return (
-      <div className="space-y-4 sm:space-y-6 p-4 sm:p-6">
+      <div className="space-y-3 sm:space-y-4 md:space-y-6 p-3 sm:p-4 md:p-6 w-full max-w-full overflow-hidden">
         <div className="space-y-2">
-          <Skeleton className="h-6 sm:h-8 w-48 sm:w-64" />
-          <Skeleton className="h-3 sm:h-4 w-72 sm:w-96" />
+          <Skeleton className="h-6 sm:h-8 w-32 sm:w-48 md:w-64" />
+          <Skeleton className="h-3 sm:h-4 w-48 sm:w-72 md:w-96" />
         </div>
 
-        <div className="grid grid-cols-2 gap-3 sm:gap-4 md:grid-cols-2 lg:grid-cols-4">
-          <Skeleton className="h-24 sm:h-32" />
-          <Skeleton className="h-24 sm:h-32" />
-          <Skeleton className="h-24 sm:h-32" />
-          <Skeleton className="h-24 sm:h-32" />
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 sm:gap-3 md:gap-4 lg:grid-cols-4">
+          <Skeleton className="h-20 sm:h-24 md:h-32" />
+          <Skeleton className="h-20 sm:h-24 md:h-32" />
+          <Skeleton className="h-20 sm:h-24 md:h-32" />
+          <Skeleton className="h-20 sm:h-24 md:h-32" />
         </div>
 
-        <div className="grid gap-4 sm:gap-6 md:grid-cols-2">
-          <Skeleton className="h-64 sm:h-80" />
-          <Skeleton className="h-64 sm:h-80" />
+        <div className="grid gap-3 sm:gap-4 md:gap-6 grid-cols-1 md:grid-cols-2">
+          <Skeleton className="h-48 sm:h-64 md:h-80" />
+          <Skeleton className="h-48 sm:h-64 md:h-80" />
         </div>
       </div>
     );
@@ -56,7 +57,7 @@ export function AdaptiveDashboard() {
   // Show error state
   if (error) {
     return (
-      <div className="space-y-4 sm:space-y-6 p-4 sm:p-6">
+      <div className="space-y-3 sm:space-y-4 md:space-y-6 p-3 sm:p-4 md:p-6 w-full max-w-full overflow-hidden">
         <Alert variant="destructive">
           <AlertCircle className="h-4 w-4" />
           <AlertDescription className="text-sm">
@@ -70,17 +71,23 @@ export function AdaptiveDashboard() {
   // Show dashboard based on user role
   if (!profile) {
     return (
-      <div className="space-y-4 sm:space-y-6 p-4 sm:p-6">
+      <div className="space-y-3 sm:space-y-4 md:space-y-6 p-3 sm:p-4 md:p-6 w-full max-w-full overflow-hidden">
         <div>
-          <h1 className="text-2xl sm:text-3xl font-bold tracking-tight">Dashboard</h1>
-          <p className="text-sm sm:text-base text-muted-foreground">Bienvenido al sistema CEMSE</p>
+          <h1 className="text-xl sm:text-2xl md:text-3xl font-bold tracking-tight">
+            Dashboard
+          </h1>
+          <p className="text-xs sm:text-sm md:text-base text-muted-foreground">
+            Bienvenido al sistema CEMSE
+          </p>
         </div>
         <Card>
-          <CardHeader className="pb-3 sm:pb-6">
-            <CardTitle className="text-lg sm:text-xl">No hay perfil disponible</CardTitle>
+          <CardHeader className="pb-2 sm:pb-3 md:pb-6">
+            <CardTitle className="text-base sm:text-lg md:text-xl">
+              No hay perfil disponible
+            </CardTitle>
           </CardHeader>
           <CardContent>
-            <p className="text-sm sm:text-base">
+            <p className="text-xs sm:text-sm md:text-base">
               No se pudo cargar tu perfil. Por favor, inicia sesión nuevamente.
             </p>
           </CardContent>
@@ -124,22 +131,26 @@ export function AdaptiveDashboard() {
     case "ONGS_Y_FUNDACIONES":
       // For other institutions, use the generic dashboard with custom colors
       return (
-        <div className="space-y-4 sm:space-y-6 p-4 sm:p-6">
+        <div className="space-y-3 sm:space-y-4 md:space-y-6 p-3 sm:p-4 md:p-6 w-full max-w-full overflow-hidden">
           <div>
-            <h1 className="text-2xl sm:text-3xl font-bold tracking-tight">Dashboard</h1>
-            <p className="text-sm sm:text-base text-muted-foreground">
+            <h1 className="text-xl sm:text-2xl md:text-3xl font-bold tracking-tight">
+              Dashboard
+            </h1>
+            <p className="text-xs sm:text-sm md:text-base text-muted-foreground">
               Bienvenido al sistema CEMSE - {getRoleDisplayName(profile.role)}
             </p>
           </div>
 
-          <div className="grid grid-cols-2 gap-3 sm:gap-4 md:grid-cols-2 lg:grid-cols-4">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 sm:gap-3 md:gap-4 lg:grid-cols-4">
             <Card className="border-2 hover:shadow-lg transition-shadow">
-              <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-1 sm:pb-2 px-3 sm:px-6 pt-3 sm:pt-6">
-                <CardTitle className="text-xs sm:text-sm font-medium">Cursos</CardTitle>
+              <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-1 sm:pb-2 px-2 sm:px-3 md:px-6 pt-2 sm:pt-3 md:pt-6">
+                <CardTitle className="text-xs sm:text-sm font-medium">
+                  Cursos
+                </CardTitle>
               </CardHeader>
-              <CardContent className="px-3 sm:px-6 pb-3 sm:pb-6">
+              <CardContent className="px-2 sm:px-3 md:px-6 pb-2 sm:pb-3 md:pb-6">
                 <div
-                  className="text-lg sm:text-2xl font-bold"
+                  className="text-base sm:text-lg md:text-2xl font-bold"
                   style={{ color: colors.primaryColor }}
                 >
                   0
@@ -151,12 +162,14 @@ export function AdaptiveDashboard() {
             </Card>
 
             <Card className="border-2 hover:shadow-lg transition-shadow">
-              <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-1 sm:pb-2 px-3 sm:px-6 pt-3 sm:pt-6">
-                <CardTitle className="text-xs sm:text-sm font-medium">Empleos</CardTitle>
+              <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-1 sm:pb-2 px-2 sm:px-3 md:px-6 pt-2 sm:pt-3 md:pt-6">
+                <CardTitle className="text-xs sm:text-sm font-medium">
+                  Empleos
+                </CardTitle>
               </CardHeader>
-              <CardContent className="px-3 sm:px-6 pb-3 sm:pb-6">
+              <CardContent className="px-2 sm:px-3 md:px-6 pb-2 sm:pb-3 md:pb-6">
                 <div
-                  className="text-lg sm:text-2xl font-bold"
+                  className="text-base sm:text-lg md:text-2xl font-bold"
                   style={{ color: colors.secondaryColor }}
                 >
                   0
@@ -168,12 +181,14 @@ export function AdaptiveDashboard() {
             </Card>
 
             <Card className="border-2 hover:shadow-lg transition-shadow">
-              <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-1 sm:pb-2 px-3 sm:px-6 pt-3 sm:pt-6">
-                <CardTitle className="text-xs sm:text-sm font-medium">Noticias</CardTitle>
+              <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-1 sm:pb-2 px-2 sm:px-3 md:px-6 pt-2 sm:pt-3 md:pt-6">
+                <CardTitle className="text-xs sm:text-sm font-medium">
+                  Noticias
+                </CardTitle>
               </CardHeader>
-              <CardContent className="px-3 sm:px-6 pb-3 sm:pb-6">
+              <CardContent className="px-2 sm:px-3 md:px-6 pb-2 sm:pb-3 md:pb-6">
                 <div
-                  className="text-lg sm:text-2xl font-bold"
+                  className="text-base sm:text-lg md:text-2xl font-bold"
                   style={{ color: colors.primaryColor }}
                 >
                   0
@@ -185,12 +200,14 @@ export function AdaptiveDashboard() {
             </Card>
 
             <Card className="border-2 hover:shadow-lg transition-shadow">
-              <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-1 sm:pb-2 px-3 sm:px-6 pt-3 sm:pt-6">
-                <CardTitle className="text-xs sm:text-sm font-medium">Progreso</CardTitle>
+              <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-1 sm:pb-2 px-2 sm:px-3 md:px-6 pt-2 sm:pt-3 md:pt-6">
+                <CardTitle className="text-xs sm:text-sm font-medium">
+                  Progreso
+                </CardTitle>
               </CardHeader>
-              <CardContent className="px-3 sm:px-6 pb-3 sm:pb-6">
+              <CardContent className="px-2 sm:px-3 md:px-6 pb-2 sm:pb-3 md:pb-6">
                 <div
-                  className="text-lg sm:text-2xl font-bold"
+                  className="text-base sm:text-lg md:text-2xl font-bold"
                   style={{ color: colors.secondaryColor }}
                 >
                   {profile.completionPercentage || 0}%
@@ -213,23 +230,33 @@ export function AdaptiveDashboard() {
               <CardContent className="space-y-2 sm:space-y-3">
                 <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center p-2 rounded bg-gray-50 gap-1 sm:gap-0">
                   <strong className="text-sm">ID:</strong>
-                  <span className="font-mono text-xs sm:text-sm break-all">{profile.id}</span>
+                  <span className="font-mono text-xs sm:text-sm break-all">
+                    {profile.id}
+                  </span>
                 </div>
                 <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center p-2 rounded bg-gray-50 gap-1 sm:gap-0">
                   <strong className="text-sm">Usuario:</strong>
-                  <span className="text-sm" style={{ color: colors.primaryColor }}>
+                  <span
+                    className="text-sm"
+                    style={{ color: colors.primaryColor }}
+                  >
                     {profile.firstName}
                   </span>
                 </div>
                 <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center p-2 rounded bg-gray-50 gap-1 sm:gap-0">
                   <strong className="text-sm">Rol:</strong>
-                  <span className="text-sm" style={{ color: colors.secondaryColor }}>
+                  <span
+                    className="text-sm"
+                    style={{ color: colors.secondaryColor }}
+                  >
                     {getRoleDisplayName(profile.role)}
                   </span>
                 </div>
                 <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center p-2 rounded bg-gray-50 gap-1 sm:gap-0">
                   <strong className="text-sm">Rol Original:</strong>
-                  <span className="font-mono text-xs break-all">"{profile.role}"</span>
+                  <span className="font-mono text-xs break-all">
+                    "{profile.role}"
+                  </span>
                 </div>
               </CardContent>
             </Card>
@@ -274,124 +301,16 @@ export function AdaptiveDashboard() {
 
     case "EMPRESAS":
     case "COMPANIES":
-      // Generic dashboard for companies with neutral colors
-      return (
-        <div className="space-y-4 sm:space-y-6 p-4 sm:p-6">
-          <div>
-            <h1 className="text-2xl sm:text-3xl font-bold tracking-tight">Dashboard</h1>
-            <p className="text-sm sm:text-base text-muted-foreground">
-              Bienvenido al sistema CEMSE - {getRoleDisplayName(profile.role)}
-            </p>
-          </div>
-
-          <div className="grid grid-cols-2 gap-3 sm:gap-4 md:grid-cols-2 lg:grid-cols-4">
-            <Card className="border-2 hover:shadow-lg transition-shadow">
-              <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-1 sm:pb-2 px-3 sm:px-6 pt-3 sm:pt-6">
-                <CardTitle className="text-xs sm:text-sm font-medium">Cursos</CardTitle>
-              </CardHeader>
-              <CardContent className="px-3 sm:px-6 pb-3 sm:pb-6">
-                <div className="text-lg sm:text-2xl font-bold text-gray-700">0</div>
-                <p className="text-xs text-muted-foreground">
-                  Cursos disponibles
-                </p>
-              </CardContent>
-            </Card>
-
-            <Card className="border-2 hover:shadow-lg transition-shadow">
-              <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-1 sm:pb-2 px-3 sm:px-6 pt-3 sm:pt-6">
-                <CardTitle className="text-xs sm:text-sm font-medium">Empleos</CardTitle>
-              </CardHeader>
-              <CardContent className="px-3 sm:px-6 pb-3 sm:pb-6">
-                <div className="text-lg sm:text-2xl font-bold text-gray-700">0</div>
-                <p className="text-xs text-muted-foreground">
-                  Ofertas de trabajo
-                </p>
-              </CardContent>
-            </Card>
-
-            <Card className="border-2 hover:shadow-lg transition-shadow">
-              <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-1 sm:pb-2 px-3 sm:px-6 pt-3 sm:pt-6">
-                <CardTitle className="text-xs sm:text-sm font-medium">Noticias</CardTitle>
-              </CardHeader>
-              <CardContent className="px-3 sm:px-6 pb-3 sm:pb-6">
-                <div className="text-lg sm:text-2xl font-bold text-gray-700">0</div>
-                <p className="text-xs text-muted-foreground">
-                  Artículos disponibles
-                </p>
-              </CardContent>
-            </Card>
-
-            <Card className="border-2 hover:shadow-lg transition-shadow">
-              <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-1 sm:pb-2 px-3 sm:px-6 pt-3 sm:pt-6">
-                <CardTitle className="text-xs sm:text-sm font-medium">Progreso</CardTitle>
-              </CardHeader>
-              <CardContent className="px-3 sm:px-6 pb-3 sm:pb-6">
-                <div className="text-lg sm:text-2xl font-bold text-gray-700">
-                  {profile.completionPercentage || 0}%
-                </div>
-                <p className="text-xs text-muted-foreground">Completado</p>
-              </CardContent>
-            </Card>
-          </div>
-
-          <div className="grid gap-4 sm:gap-6 md:grid-cols-2">
-            <Card className="border-2 hover:shadow-lg transition-shadow">
-              <CardHeader className="pb-3 sm:pb-6">
-                <CardTitle className="text-base sm:text-lg font-semibold text-gray-700">
-                  Información del Usuario
-                </CardTitle>
-              </CardHeader>
-              <CardContent className="space-y-2 sm:space-y-3">
-                <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center p-2 rounded bg-gray-50 gap-1 sm:gap-0">
-                  <strong className="text-sm">ID:</strong>
-                  <span className="font-mono text-xs sm:text-sm break-all">{profile.id}</span>
-                </div>
-                <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center p-2 rounded bg-gray-50 gap-1 sm:gap-0">
-                  <strong className="text-sm">Usuario:</strong>
-                  <span className="text-sm text-gray-700">{profile.firstName}</span>
-                </div>
-                <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center p-2 rounded bg-gray-50 gap-1 sm:gap-0">
-                  <strong className="text-sm">Rol:</strong>
-                  <span className="text-sm text-gray-700">
-                    {getRoleDisplayName(profile.role)}
-                  </span>
-                </div>
-                <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center p-2 rounded bg-gray-50 gap-1 sm:gap-0">
-                  <strong className="text-sm">Rol Original:</strong>
-                  <span className="font-mono text-xs break-all">"{profile.role}"</span>
-                </div>
-              </CardContent>
-            </Card>
-
-            <Card className="border-2 hover:shadow-lg transition-shadow">
-              <CardHeader className="pb-3 sm:pb-6">
-                <CardTitle className="text-base sm:text-lg font-semibold text-gray-700">
-                  Acciones Rápidas
-                </CardTitle>
-              </CardHeader>
-              <CardContent>
-                <div className="p-3 sm:p-4 rounded-lg border-2 border-dashed border-gray-300 bg-gray-50">
-                  <p className="text-sm text-muted-foreground text-center">
-                    Aquí aparecerán las acciones específicas para tu rol.
-                  </p>
-                  <div className="mt-2 sm:mt-3 text-center">
-                    <span className="text-xs px-2 py-1 rounded-full bg-gray-600 text-white">
-                      Acciones disponibles
-                    </span>
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
-          </div>
-        </div>
-      );
+      return <DashboardCompany />;
 
     default:
       // Generic dashboard for other roles (companies, etc.)
       return (
         <div className="space-y-4 sm:space-y-6 p-4 sm:p-6">
           <div>
-            <h1 className="text-2xl sm:text-3xl font-bold tracking-tight">Dashboard</h1>
+            <h1 className="text-2xl sm:text-3xl font-bold tracking-tight">
+              Dashboard
+            </h1>
             <p className="text-sm sm:text-base text-muted-foreground">
               Bienvenido al sistema CEMSE - {getRoleDisplayName(profile.role)}
             </p>
@@ -400,10 +319,14 @@ export function AdaptiveDashboard() {
           <div className="grid grid-cols-2 gap-3 sm:gap-4 md:grid-cols-2 lg:grid-cols-4">
             <Card className="border-2 hover:shadow-lg transition-shadow">
               <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-1 sm:pb-2 px-3 sm:px-6 pt-3 sm:pt-6">
-                <CardTitle className="text-xs sm:text-sm font-medium">Cursos</CardTitle>
+                <CardTitle className="text-xs sm:text-sm font-medium">
+                  Cursos
+                </CardTitle>
               </CardHeader>
               <CardContent className="px-3 sm:px-6 pb-3 sm:pb-6">
-                <div className="text-lg sm:text-2xl font-bold text-blue-600">0</div>
+                <div className="text-lg sm:text-2xl font-bold text-blue-600">
+                  0
+                </div>
                 <p className="text-xs text-muted-foreground">
                   Cursos disponibles
                 </p>
@@ -412,10 +335,14 @@ export function AdaptiveDashboard() {
 
             <Card className="border-2 hover:shadow-lg transition-shadow">
               <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-1 sm:pb-2 px-3 sm:px-6 pt-3 sm:pt-6">
-                <CardTitle className="text-xs sm:text-sm font-medium">Empleos</CardTitle>
+                <CardTitle className="text-xs sm:text-sm font-medium">
+                  Empleos
+                </CardTitle>
               </CardHeader>
               <CardContent className="px-3 sm:px-6 pb-3 sm:pb-6">
-                <div className="text-lg sm:text-2xl font-bold text-orange-600">0</div>
+                <div className="text-lg sm:text-2xl font-bold text-orange-600">
+                  0
+                </div>
                 <p className="text-xs text-muted-foreground">
                   Ofertas de trabajo
                 </p>
@@ -424,10 +351,14 @@ export function AdaptiveDashboard() {
 
             <Card className="border-2 hover:shadow-lg transition-shadow">
               <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-1 sm:pb-2 px-3 sm:px-6 pt-3 sm:pt-6">
-                <CardTitle className="text-xs sm:text-sm font-medium">Noticias</CardTitle>
+                <CardTitle className="text-xs sm:text-sm font-medium">
+                  Noticias
+                </CardTitle>
               </CardHeader>
               <CardContent className="px-3 sm:px-6 pb-3 sm:pb-6">
-                <div className="text-lg sm:text-2xl font-bold text-blue-600">0</div>
+                <div className="text-lg sm:text-2xl font-bold text-blue-600">
+                  0
+                </div>
                 <p className="text-xs text-muted-foreground">
                   Artículos disponibles
                 </p>
@@ -436,7 +367,9 @@ export function AdaptiveDashboard() {
 
             <Card className="border-2 hover:shadow-lg transition-shadow">
               <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-1 sm:pb-2 px-3 sm:px-6 pt-3 sm:pt-6">
-                <CardTitle className="text-xs sm:text-sm font-medium">Progreso</CardTitle>
+                <CardTitle className="text-xs sm:text-sm font-medium">
+                  Progreso
+                </CardTitle>
               </CardHeader>
               <CardContent className="px-3 sm:px-6 pb-3 sm:pb-6">
                 <div className="text-lg sm:text-2xl font-bold text-orange-600">
@@ -457,11 +390,15 @@ export function AdaptiveDashboard() {
               <CardContent className="space-y-2 sm:space-y-3">
                 <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center p-2 rounded bg-gray-50 gap-1 sm:gap-0">
                   <strong className="text-sm">ID:</strong>
-                  <span className="font-mono text-xs sm:text-sm break-all">{profile.id}</span>
+                  <span className="font-mono text-xs sm:text-sm break-all">
+                    {profile.id}
+                  </span>
                 </div>
                 <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center p-2 rounded bg-gray-50 gap-1 sm:gap-0">
                   <strong className="text-sm">Usuario:</strong>
-                  <span className="text-sm text-blue-600">{profile.firstName}</span>
+                  <span className="text-sm text-blue-600">
+                    {profile.firstName}
+                  </span>
                 </div>
                 <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center p-2 rounded bg-gray-50 gap-1 sm:gap-0">
                   <strong className="text-sm">Rol:</strong>
@@ -471,7 +408,9 @@ export function AdaptiveDashboard() {
                 </div>
                 <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center p-2 rounded bg-gray-50 gap-1 sm:gap-0">
                   <strong className="text-sm">Rol Original:</strong>
-                  <span className="font-mono text-xs break-all">"{profile.role}"</span>
+                  <span className="font-mono text-xs break-all">
+                    "{profile.role}"
+                  </span>
                 </div>
               </CardContent>
             </Card>

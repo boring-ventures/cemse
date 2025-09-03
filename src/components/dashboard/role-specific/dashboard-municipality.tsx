@@ -93,28 +93,32 @@ export function DashboardMunicipality() {
   }
 
   return (
-    <div className="space-y-4 sm:space-y-6 p-4 sm:p-6">
+    <div className="space-y-3 sm:space-y-4 md:space-y-6 p-3 sm:p-4 md:p-6 w-full max-w-full overflow-hidden">
       {/* Header */}
       <div>
-        <h1 className="text-2xl sm:text-3xl font-bold tracking-tight">Dashboard</h1>
-        <p className="text-sm sm:text-base text-muted-foreground">
+        <h1 className="text-xl sm:text-2xl md:text-3xl font-bold tracking-tight">
+          Dashboard
+        </h1>
+        <p className="text-xs sm:text-sm md:text-base text-muted-foreground">
           Bienvenido al sistema CEMSE - {municipality?.name || "Municipio"}
         </p>
       </div>
 
       {/* Statistics Cards */}
-      <div className="grid grid-cols-2 gap-3 sm:gap-4 md:grid-cols-2 lg:grid-cols-4">
+      <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 sm:gap-3 md:gap-4 lg:grid-cols-4">
         <Card className="border-2 hover:shadow-lg transition-shadow">
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-1 sm:pb-2 px-3 sm:px-6 pt-3 sm:pt-6">
-            <CardTitle className="text-xs sm:text-sm font-medium">Empresas</CardTitle>
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-1 sm:pb-2 px-2 sm:px-3 md:px-6 pt-2 sm:pt-3 md:pt-6">
+            <CardTitle className="text-xs sm:text-sm font-medium">
+              Empresas
+            </CardTitle>
             <Building2
               className="h-3 sm:h-4 w-3 sm:w-4"
               style={{ color: colors.primaryColor }}
             />
           </CardHeader>
-          <CardContent className="px-3 sm:px-6 pb-3 sm:pb-6">
+          <CardContent className="px-2 sm:px-3 md:px-6 pb-2 sm:pb-3 md:pb-6">
             <div
-              className="text-lg sm:text-2xl font-bold"
+              className="text-base sm:text-lg md:text-2xl font-bold"
               style={{ color: colors.primaryColor }}
             >
               {stats.companies}
@@ -131,16 +135,18 @@ export function DashboardMunicipality() {
         </Card>
 
         <Card className="border-2 hover:shadow-lg transition-shadow">
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-1 sm:pb-2 px-3 sm:px-6 pt-3 sm:pt-6">
-            <CardTitle className="text-xs sm:text-sm font-medium">Cursos</CardTitle>
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-1 sm:pb-2 px-2 sm:px-3 md:px-6 pt-2 sm:pt-3 md:pt-6">
+            <CardTitle className="text-xs sm:text-sm font-medium">
+              Cursos
+            </CardTitle>
             <BookOpen
               className="h-3 sm:h-4 w-3 sm:w-4"
               style={{ color: colors.secondaryColor }}
             />
           </CardHeader>
-          <CardContent className="px-3 sm:px-6 pb-3 sm:pb-6">
+          <CardContent className="px-2 sm:px-3 md:px-6 pb-2 sm:pb-3 md:pb-6">
             <div
-              className="text-lg sm:text-2xl font-bold"
+              className="text-base sm:text-lg md:text-2xl font-bold"
               style={{ color: colors.secondaryColor }}
             >
               {stats.courses}
@@ -155,16 +161,18 @@ export function DashboardMunicipality() {
         </Card>
 
         <Card className="border-2 hover:shadow-lg transition-shadow">
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-1 sm:pb-2 px-3 sm:px-6 pt-3 sm:pt-6">
-            <CardTitle className="text-xs sm:text-sm font-medium">Empleos</CardTitle>
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-1 sm:pb-2 px-2 sm:px-3 md:px-6 pt-2 sm:pt-3 md:pt-6">
+            <CardTitle className="text-xs sm:text-sm font-medium">
+              Empleos
+            </CardTitle>
             <Briefcase
               className="h-3 sm:h-4 w-3 sm:w-4"
               style={{ color: colors.primaryColor }}
             />
           </CardHeader>
-          <CardContent className="px-3 sm:px-6 pb-3 sm:pb-6">
+          <CardContent className="px-2 sm:px-3 md:px-6 pb-2 sm:pb-3 md:pb-6">
             <div
-              className="text-lg sm:text-2xl font-bold"
+              className="text-base sm:text-lg md:text-2xl font-bold"
               style={{ color: colors.primaryColor }}
             >
               {stats.jobs}
@@ -179,16 +187,18 @@ export function DashboardMunicipality() {
         </Card>
 
         <Card className="border-2 hover:shadow-lg transition-shadow">
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-1 sm:pb-2 px-3 sm:px-6 pt-3 sm:pt-6">
-            <CardTitle className="text-xs sm:text-sm font-medium">Noticias</CardTitle>
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-1 sm:pb-2 px-2 sm:px-3 md:px-6 pt-2 sm:pt-3 md:pt-6">
+            <CardTitle className="text-xs sm:text-sm font-medium">
+              Noticias
+            </CardTitle>
             <Newspaper
               className="h-3 sm:h-4 w-3 sm:w-4"
               style={{ color: colors.secondaryColor }}
             />
           </CardHeader>
-          <CardContent className="px-3 sm:px-6 pb-3 sm:pb-6">
+          <CardContent className="px-2 sm:px-3 md:px-6 pb-2 sm:pb-3 md:pb-6">
             <div
-              className="text-lg sm:text-2xl font-bold"
+              className="text-base sm:text-lg md:text-2xl font-bold"
               style={{ color: colors.secondaryColor }}
             >
               {stats.news}
@@ -206,11 +216,11 @@ export function DashboardMunicipality() {
       </div>
 
       {/* Municipality Information and Quick Actions */}
-      <div className="grid gap-4 sm:gap-6 md:grid-cols-2">
+      <div className="grid gap-3 sm:gap-4 md:gap-6 grid-cols-1 md:grid-cols-2">
         {/* Municipality Information */}
         <Card className="border-2 hover:shadow-lg transition-shadow">
-          <CardHeader className="pb-3 sm:pb-6">
-            <CardTitle className="flex items-center gap-2 text-base sm:text-lg">
+          <CardHeader className="pb-2 sm:pb-3 md:pb-6">
+            <CardTitle className="flex items-center gap-2 text-sm sm:text-base md:text-lg">
               <Building2
                 className="h-4 sm:h-5 w-4 sm:w-5"
                 style={{ color: colors.primaryColor }}
@@ -218,7 +228,7 @@ export function DashboardMunicipality() {
               Información del Municipio
             </CardTitle>
           </CardHeader>
-          <CardContent className="space-y-3 sm:space-y-4">
+          <CardContent className="space-y-2 sm:space-y-3 md:space-y-4">
             {municipality ? (
               <>
                 <div className="space-y-2">
@@ -230,7 +240,10 @@ export function DashboardMunicipality() {
                   </div>
                   <div className="flex flex-col sm:flex-row sm:items-center gap-1 sm:gap-2">
                     <span className="font-medium text-sm">Municipio:</span>
-                    <span className="text-sm" style={{ color: colors.primaryColor }}>
+                    <span
+                      className="text-sm"
+                      style={{ color: colors.primaryColor }}
+                    >
                       {municipality.name}
                     </span>
                   </div>
@@ -249,24 +262,32 @@ export function DashboardMunicipality() {
                 <div className="space-y-2">
                   <div className="flex items-start sm:items-center gap-2">
                     <Mail className="h-4 w-4 text-muted-foreground flex-shrink-0 mt-0.5 sm:mt-0" />
-                    <span className="text-xs sm:text-sm break-all">{municipality.email}</span>
+                    <span className="text-xs sm:text-sm break-all">
+                      {municipality.email}
+                    </span>
                   </div>
                   {municipality.phone && (
                     <div className="flex items-center gap-2">
                       <Phone className="h-4 w-4 text-muted-foreground flex-shrink-0" />
-                      <span className="text-xs sm:text-sm">{municipality.phone}</span>
+                      <span className="text-xs sm:text-sm">
+                        {municipality.phone}
+                      </span>
                     </div>
                   )}
                   {municipality.website && (
                     <div className="flex items-start sm:items-center gap-2">
                       <Globe className="h-4 w-4 text-muted-foreground flex-shrink-0 mt-0.5 sm:mt-0" />
-                      <span className="text-xs sm:text-sm break-all">{municipality.website}</span>
+                      <span className="text-xs sm:text-sm break-all">
+                        {municipality.website}
+                      </span>
                     </div>
                   )}
                   {municipality.address && (
                     <div className="flex items-start gap-2">
                       <MapPin className="h-4 w-4 text-muted-foreground flex-shrink-0 mt-0.5" />
-                      <span className="text-xs sm:text-sm">{municipality.address}</span>
+                      <span className="text-xs sm:text-sm">
+                        {municipality.address}
+                      </span>
                     </div>
                   )}
                 </div>
@@ -290,8 +311,8 @@ export function DashboardMunicipality() {
 
         {/* Quick Actions */}
         <Card className="border-2 hover:shadow-lg transition-shadow">
-          <CardHeader className="pb-3 sm:pb-6">
-            <CardTitle className="flex items-center gap-2 text-base sm:text-lg">
+          <CardHeader className="pb-2 sm:pb-3 md:pb-6">
+            <CardTitle className="flex items-center gap-2 text-sm sm:text-base md:text-lg">
               <TrendingUp
                 className="h-4 sm:h-5 w-4 sm:w-5"
                 style={{ color: colors.secondaryColor }}
@@ -299,10 +320,13 @@ export function DashboardMunicipality() {
               Acciones Rápidas
             </CardTitle>
           </CardHeader>
-          <CardContent className="space-y-3 sm:space-y-4">
+          <CardContent className="space-y-2 sm:space-y-3 md:space-y-4">
             <div className="grid gap-2 sm:gap-3">
               <Link href="/admin/companies">
-                <Button variant="outline" className="w-full justify-start text-xs sm:text-sm h-9 sm:h-10">
+                <Button
+                  variant="outline"
+                  className="w-full justify-start text-xs sm:text-sm h-9 sm:h-10"
+                >
                   <Building2 className="mr-2 h-3 sm:h-4 w-3 sm:w-4" />
                   <span className="truncate">Gestionar Empresas</span>
                   <Badge variant="secondary" className="ml-auto text-xs">
@@ -312,7 +336,10 @@ export function DashboardMunicipality() {
               </Link>
 
               <Link href="/admin/courses">
-                <Button variant="outline" className="w-full justify-start text-xs sm:text-sm h-9 sm:h-10">
+                <Button
+                  variant="outline"
+                  className="w-full justify-start text-xs sm:text-sm h-9 sm:h-10"
+                >
                   <BookOpen className="mr-2 h-3 sm:h-4 w-3 sm:w-4" />
                   <span className="truncate">Gestionar Cursos</span>
                   <Badge variant="secondary" className="ml-auto text-xs">
@@ -322,7 +349,10 @@ export function DashboardMunicipality() {
               </Link>
 
               <Link href="/admin/job-offers">
-                <Button variant="outline" className="w-full justify-start text-xs sm:text-sm h-9 sm:h-10">
+                <Button
+                  variant="outline"
+                  className="w-full justify-start text-xs sm:text-sm h-9 sm:h-10"
+                >
                   <Briefcase className="mr-2 h-3 sm:h-4 w-3 sm:w-4" />
                   <span className="truncate">Gestionar Empleos</span>
                   <Badge variant="secondary" className="ml-auto text-xs">
@@ -332,7 +362,10 @@ export function DashboardMunicipality() {
               </Link>
 
               <Link href="/admin/news">
-                <Button variant="outline" className="w-full justify-start text-xs sm:text-sm h-9 sm:h-10">
+                <Button
+                  variant="outline"
+                  className="w-full justify-start text-xs sm:text-sm h-9 sm:h-10"
+                >
                   <Newspaper className="mr-2 h-3 sm:h-4 w-3 sm:w-4" />
                   <span className="truncate">Gestionar Noticias</span>
                   <Badge variant="secondary" className="ml-auto text-xs">
@@ -342,7 +375,10 @@ export function DashboardMunicipality() {
               </Link>
 
               <Link href="/admin/settings">
-                <Button variant="outline" className="w-full justify-start text-xs sm:text-sm h-9 sm:h-10">
+                <Button
+                  variant="outline"
+                  className="w-full justify-start text-xs sm:text-sm h-9 sm:h-10"
+                >
                   <Settings className="mr-2 h-3 sm:h-4 w-3 sm:w-4" />
                   <span className="truncate">Configuración</span>
                 </Button>

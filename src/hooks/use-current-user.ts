@@ -41,68 +41,66 @@ type CurrentUserData = {
 export function useCurrentUser(): CurrentUserData {
   const { user, loading } = useAuthContext();
 
-  console.log('🔍 useCurrentUser: Auth state:', {
+  console.log("🔍 useCurrentUser: Auth state:", {
     user: !!user,
     loading,
     userId: user?.id,
     userRole: user?.role,
-    userType: typeof user?.role
+    userType: typeof user?.role,
   });
 
   // Log when user changes
   useEffect(() => {
-    console.log('🔍 useCurrentUser: User changed:', {
+    console.log("🔍 useCurrentUser: User changed:", {
       user: !!user,
       userId: user?.id,
       userRole: user?.role,
-      userType: typeof user?.role
+      userType: typeof user?.role,
     });
   }, [user]);
-
-
 
   // Transform real user to match expected profile structure
   const profile: Profile | null = user
     ? {
-      id: user.id,
-      role: (normalizeUserRole(user.role) as UserRole) || null,
-      firstName: user.firstName || user.username || '',
-      lastName: user.lastName || '',
-      profilePicture: user.profilePicture || null,
-      completionPercentage: 0,
-      primaryColor: user.primaryColor,
-      secondaryColor: user.secondaryColor,
-      // Include company information if available
-      ...(user.company && {
-        company: {
-          id: user.company.id,
-          name: user.company.name,
-          email: user.company.email,
-          phone: user.company.phone,
-        }
-      }),
-      // Include municipality information if available
-      ...(user.municipality && {
-        municipality: {
-          id: user.municipality.id,
-          name: user.municipality.name,
-          department: user.municipality.department,
-          email: user.municipality.email,
-          phone: user.municipality.phone,
-          address: user.municipality.address,
-        }
-      }),
-    }
+        id: user.id,
+        role: (normalizeUserRole(user.role) as UserRole) || null,
+        firstName: user.firstName || user.username || "",
+        lastName: user.lastName || "",
+        profilePicture: user.profilePicture || null,
+        completionPercentage: 0,
+        primaryColor: user.primaryColor,
+        secondaryColor: user.secondaryColor,
+        // Include company information if available
+        ...(user.company && {
+          company: {
+            id: user.company.id,
+            name: user.company.name,
+            email: user.company.email,
+            phone: user.company.phone,
+          },
+        }),
+        // Include municipality information if available
+        ...(user.municipality && {
+          municipality: {
+            id: user.municipality.id,
+            name: user.municipality.name,
+            department: user.municipality.department,
+            email: user.municipality.email,
+            phone: user.municipality.phone,
+            address: user.municipality.address,
+          },
+        }),
+      }
     : null;
 
-  console.log('🔍 useCurrentUser: Profile:', profile);
-  console.log('🔍 useCurrentUser: Raw user data:', {
+  console.log("🔍 useCurrentUser: Profile:", profile);
+  console.log("🔍 useCurrentUser: Raw user data:", {
     id: user?.id,
     role: user?.role,
     firstName: user?.firstName,
     lastName: user?.lastName,
     username: user?.username,
-    profilePicture: user?.profilePicture
+    profilePicture: user?.profilePicture,
   });
 
   const refetch = async () => {

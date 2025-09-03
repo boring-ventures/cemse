@@ -9,6 +9,9 @@ export const metadata: Metadata = {
   description: "Sign in to your account",
 };
 
+// Force dynamic rendering to avoid build-time issues
+export const dynamic = "force-dynamic";
+
 export default function SignInPage() {
   return (
     <AuthLayout>

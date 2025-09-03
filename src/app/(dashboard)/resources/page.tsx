@@ -27,7 +27,7 @@ import { CreateResourceDialog } from "@/components/resources/CreateResourceDialo
 import { EditResourceDialog } from "@/components/resources/EditResourceDialog";
 import { useCurrentUser } from "@/hooks/use-current-user";
 import { useCurrentMunicipality } from "@/hooks/useMunicipalityApi";
-import { isMunicipalityRole } from "@/lib/utils";
+import { isMunicipalityRole, isYouthRole } from "@/lib/utils";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -46,7 +46,9 @@ export default function ResourcesPage() {
   const [selectedCategory, setSelectedCategory] = useState<string>("all");
   const [activeTab, setActiveTab] = useState("all");
   const [editingResource, setEditingResource] = useState<Resource | null>(null);
-  const [deletingResource, setDeletingResource] = useState<Resource | null>(null);
+  const [deletingResource, setDeletingResource] = useState<Resource | null>(
+    null
+  );
   const [showCreateDialog, setShowCreateDialog] = useState(false);
 
   // Get current user and municipality info for filtering
@@ -58,7 +60,11 @@ export default function ResourcesPage() {
   const municipalityId = isMunicipality ? currentMunicipality?.id : undefined;
 
   // Hooks para obtener recursos
-  const { data: allResources = [], isLoading: loadingAll, refetch: refetchAll } = useResources();
+  const {
+    data: allResources = [],
+    isLoading: loadingAll,
+    refetch: refetchAll,
+  } = useResources();
   const { mutateAsync: deleteResource } = useDeleteResource();
   const {
     mutateAsync: searchResources,
@@ -90,18 +96,18 @@ export default function ResourcesPage() {
 
       if (response.ok) {
         const data = await response.json();
-        
+
         if (data.success && data.downloadUrl) {
           // Open the download URL in a new tab
-          window.open(data.downloadUrl, '_blank');
-          
+          window.open(data.downloadUrl, "_blank");
+
           // Show success message
           toast({
             title: "Descarga iniciada",
             description: "El recurso se está descargando",
           });
         } else {
-          throw new Error('No download URL provided');
+          throw new Error("No download URL provided");
         }
       } else {
         throw new Error(`HTTP error! status: ${response.status}`);
@@ -134,7 +140,7 @@ export default function ResourcesPage() {
             title: "Calificación enviada",
             description: "Tu calificación se ha registrado correctamente",
           });
-          
+
           // Invalidate queries to refresh the data
           // This will trigger a refetch of the resources
           window.location.reload();
@@ -168,7 +174,7 @@ export default function ResourcesPage() {
 
     try {
       await deleteResource(deletingResource.id);
-      
+
       toast({
         title: "Recurso eliminado",
         description: "El recurso se ha eliminado exitosamente",
@@ -216,11 +222,12 @@ export default function ResourcesPage() {
     loadingAll || loadingSearch || loadingType || loadingCategory;
 
   // Check if user can manage resources (create, edit, delete)
-  const canManageResources = profile?.role === 'SUPERADMIN' || 
-    profile?.role === 'EMPRESAS' || 
-    profile?.role === 'GOBIERNOS_MUNICIPALES' || 
-    profile?.role === 'CENTROS_DE_FORMACION' || 
-    profile?.role === 'ONGS_Y_FUNDACIONES';
+  const canManageResources =
+    profile?.role === "SUPERADMIN" ||
+    profile?.role === "EMPRESAS" ||
+    profile?.role === "GOBIERNOS_MUNICIPALES" ||
+    profile?.role === "CENTROS_DE_FORMACION" ||
+    profile?.role === "ONGS_Y_FUNDACIONES";
 
   return (
     <div className="container mx-auto px-4 py-8">
@@ -346,6 +353,7 @@ export default function ResourcesPage() {
               onEdit={handleEdit}
               onDelete={handleDelete}
               showActions={canManageResources}
+              showDownloadActions={isYouthRole(profile?.role)}
             />
           ))}
         </div>
@@ -360,18 +368,24 @@ export default function ResourcesPage() {
       />
 
       {/* Delete Confirmation Dialog */}
-      <AlertDialog open={!!deletingResource} onOpenChange={(open) => !open && setDeletingResource(null)}>
+      <AlertDialog
+        open={!!deletingResource}
+        onOpenChange={(open) => !open && setDeletingResource(null)}
+      >
         <AlertDialogContent>
           <AlertDialogHeader>
             <AlertDialogTitle>¿Estás seguro?</AlertDialogTitle>
             <AlertDialogDescription>
-              Esta acción no se puede deshacer. Se eliminará permanentemente el recurso
-              "{deletingResource?.title}" del sistema.
+              Esta acción no se puede deshacer. Se eliminará permanentemente el
+              recurso "{deletingResource?.title}" del sistema.
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
             <AlertDialogCancel>Cancelar</AlertDialogCancel>
-            <AlertDialogAction onClick={confirmDelete} className="bg-destructive text-destructive-foreground">
+            <AlertDialogAction
+              onClick={confirmDelete}
+              className="bg-destructive text-destructive-foreground"
+            >
               Eliminar
             </AlertDialogAction>
           </AlertDialogFooter>

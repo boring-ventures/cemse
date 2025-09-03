@@ -1,148 +1,182 @@
-import { NextRequest, NextResponse } from 'next/server';
-import { getAuthHeaders, BACKEND_URL } from '@/lib/api';
+import { NextRequest, NextResponse } from "next/server";
+import { prisma } from "@/lib/prisma";
+import { verifyAuth } from "@/lib/auth-utils";
 
 export async function GET(request: NextRequest) {
   try {
-    console.log('🔍 API: Received request for job questions');
+    console.log("🔍 API: Received request for job questions");
+
     const { searchParams } = new URL(request.url);
+    const jobOfferId = searchParams.get("jobOfferId");
+    const debug = searchParams.get("debug");
 
-    // Build backend URL directly (not using API_BASE to avoid circular calls)
-    const backendUrl = new URL(`${BACKEND_URL}/api/jobquestion`);
-    searchParams.forEach((value, key) => {
-      backendUrl.searchParams.set(key, value);
-    });
+    // Debug endpoint to check database status without authentication
+    if (debug === "true") {
+      try {
+        const totalJobOffers = await prisma.jobOffer.count();
+        const availableJobOffers = await prisma.jobOffer.findMany({
+          select: { id: true, title: true },
+          take: 10,
+        });
 
-    console.log('🔍 API: Forwarding to backend:', backendUrl.toString());
-    console.log('🔍 API: Authorization header:', request.headers.get('authorization') ? 'Present' : 'Missing');
-
-    const response = await fetch(backendUrl.toString(), {
-      headers: {
-        'Authorization': request.headers.get('authorization') || '',
-        'Content-Type': 'application/json',
-      },
-    });
-
-    console.log('🔍 API: Backend response status:', response.status);
-
-    if (!response.ok) {
-      const errorText = await response.text();
-      console.error('🔍 API: Backend error:', errorText);
-      
-      // If backend is not available, return mock data
-      if (response.status >= 500 || response.status === 0) {
-        console.log('🔍 API: Backend not available, returning mock data');
-        const mockData = [
+        return NextResponse.json({
+          debug: true,
+          totalJobOffers,
+          availableJobOffers,
+          message: "Database connection successful",
+        });
+      } catch (dbError) {
+        console.error("🔍 API: Database connection error:", dbError);
+        return NextResponse.json(
           {
-            id: 'question_1',
-            jobOfferId: searchParams.get('jobOfferId') || 'mock-job-1',
-            question: '¿Por qué te interesa trabajar en nuestra empresa?',
-            type: 'TEXT',
-            required: true,
-            orderIndex: 1,
-            createdAt: '2024-01-15T10:00:00Z',
-            updatedAt: '2024-01-15T10:00:00Z'
+            debug: true,
+            error: "Database connection failed",
+            details:
+              dbError instanceof Error ? dbError.message : "Unknown error",
           },
-          {
-            id: 'question_2',
-            jobOfferId: searchParams.get('jobOfferId') || 'mock-job-1',
-            question: '¿Tienes experiencia previa en este tipo de roles?',
-            type: 'MULTIPLE_CHOICE',
-            required: true,
-            options: ['Sí, tengo mucha experiencia', 'Tengo algo de experiencia', 'No, pero estoy dispuesto/a a aprender'],
-            orderIndex: 2,
-            createdAt: '2024-01-15T10:00:00Z',
-            updatedAt: '2024-01-15T10:00:00Z'
-          },
-          {
-            id: 'question_3',
-            jobOfferId: searchParams.get('jobOfferId') || 'mock-job-1',
-            question: '¿Estás disponible para trabajar tiempo completo?',
-            type: 'BOOLEAN',
-            required: true,
-            orderIndex: 3,
-            createdAt: '2024-01-15T10:00:00Z',
-            updatedAt: '2024-01-15T10:00:00Z'
-          }
-        ];
-        return NextResponse.json(mockData);
+          { status: 500 }
+        );
       }
-      
+    }
+
+    // Verify authentication for actual requests
+    const authResult = await verifyAuth(request);
+    if (!authResult.success) {
+      console.log("🔍 API: Authentication failed:", authResult.error);
+      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    }
+
+    console.log("🔍 API: User authenticated:", authResult.user?.username);
+
+    if (!jobOfferId) {
+      console.log("🔍 API: Missing jobOfferId parameter");
       return NextResponse.json(
-        { message: `Backend error: ${response.status} ${errorText}` },
-        { status: response.status }
+        { error: "jobOfferId is required" },
+        { status: 400 }
       );
     }
 
-    const data = await response.json();
-    console.log('🔍 API: Backend data received, questions count:', data.length || 0);
-    return NextResponse.json(data);
-  } catch (error) {
-    console.error('Error in job questions route:', error);
-    
-    // Return mock data on any error (e.g., network error, backend not available)
-    console.log('🔍 API: Error occurred, returning mock data');
-    const { searchParams } = new URL(request.url);
-    const mockData = [
-      {
-        id: 'question_1',
-        jobOfferId: searchParams.get('jobOfferId') || 'mock-job-1',
-        question: '¿Por qué te interesa trabajar en nuestra empresa?',
-        type: 'TEXT',
-        required: true,
-        orderIndex: 1,
-        createdAt: '2024-01-15T10:00:00Z',
-        updatedAt: '2024-01-15T10:00:00Z'
-      },
-      {
-        id: 'question_2',
-        jobOfferId: searchParams.get('jobOfferId') || 'mock-job-1',
-        question: '¿Tienes experiencia previa en este tipo de roles?',
-        type: 'MULTIPLE_CHOICE',
-        required: true,
-        options: ['Sí, tengo mucha experiencia', 'Tengo algo de experiencia', 'No, pero estoy dispuesto/a a aprender'],
-        orderIndex: 2,
-        createdAt: '2024-01-15T10:00:00Z',
-        updatedAt: '2024-01-15T10:00:00Z'
-      },
-      {
-        id: 'question_3',
-        jobOfferId: searchParams.get('jobOfferId') || 'mock-job-1',
-        question: '¿Estás disponible para trabajar tiempo completo?',
-        type: 'BOOLEAN',
-        required: true,
-        orderIndex: 3,
-        createdAt: '2024-01-15T10:00:00Z',
-        updatedAt: '2024-01-15T10:00:00Z'
+    console.log("🔍 API: Fetching questions for job offer:", jobOfferId);
+
+    // Debug: Check if database is accessible and count job offers
+    try {
+      const totalJobOffers = await prisma.jobOffer.count();
+      console.log("🔍 API: Total job offers in database:", totalJobOffers);
+
+      if (totalJobOffers === 0) {
+        console.log("🔍 API: No job offers found in database");
+        return NextResponse.json(
+          { error: "No job offers available in the system" },
+          { status: 404 }
+        );
       }
-    ];
-    return NextResponse.json(mockData);
+    } catch (dbError) {
+      console.error("🔍 API: Database connection error:", dbError);
+      return NextResponse.json(
+        { error: "Database connection failed" },
+        { status: 500 }
+      );
+    }
+
+    // First, verify the job offer exists
+    const jobOffer = await prisma.jobOffer.findUnique({
+      where: { id: jobOfferId },
+      select: { id: true, title: true },
+    });
+
+    if (!jobOffer) {
+      console.log("🔍 API: Job offer not found:", jobOfferId);
+
+      // Debug: List some available job offer IDs
+      const availableJobOffers = await prisma.jobOffer.findMany({
+        select: { id: true, title: true },
+        take: 5,
+      });
+      console.log("🔍 API: Available job offers:", availableJobOffers);
+
+      return NextResponse.json(
+        {
+          error: "Job offer not found",
+          availableJobOffers: availableJobOffers.map((jo) => ({
+            id: jo.id,
+            title: jo.title,
+          })),
+        },
+        { status: 404 }
+      );
+    }
+
+    console.log("🔍 API: Job offer found:", jobOffer.title);
+
+    // Fetch job questions from database using Prisma
+    const questions = await prisma.jobQuestion.findMany({
+      where: {
+        jobOfferId: jobOfferId,
+      },
+      orderBy: {
+        orderIndex: "asc",
+      },
+      select: {
+        id: true,
+        jobOfferId: true,
+        question: true,
+        type: true,
+        required: true,
+        options: true,
+        orderIndex: true,
+      },
+    });
+
+    console.log("🔍 API: Found questions count:", questions.length);
+
+    // Return empty array if no questions found (this is valid)
+    return NextResponse.json(questions);
+  } catch (error) {
+    console.error("🔍 API: Error in job questions route:", error);
+
+    // Return error response
+    return NextResponse.json(
+      { error: "Internal server error" },
+      { status: 500 }
+    );
   }
 }
 
 export async function POST(request: NextRequest) {
   try {
-    const body = await request.json();
-    const authHeaders = getAuthHeaders();
-
-    const response = await fetch(`${BACKEND_URL}/api/jobquestion`, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        ...authHeaders,
-      },
-      body: JSON.stringify(body),
-    });
-
-    if (!response.ok) {
-      throw new Error(`HTTP error! status: ${response.status}`);
+    // Verify authentication
+    const authResult = await verifyAuth(request);
+    if (!authResult.success) {
+      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
-    const data = await response.json();
-    return NextResponse.json(data);
+    const body = await request.json();
+
+    // Validate required fields
+    if (!body.jobOfferId || !body.question || !body.type) {
+      return NextResponse.json(
+        { error: "Missing required fields: jobOfferId, question, type" },
+        { status: 400 }
+      );
+    }
+
+    // Create job question using Prisma
+    const question = await prisma.jobQuestion.create({
+      data: {
+        jobOfferId: body.jobOfferId,
+        question: body.question,
+        type: body.type,
+        required: body.required || false,
+        options: body.options || [],
+        orderIndex: body.orderIndex || 0,
+      },
+    });
+
+    return NextResponse.json(question);
   } catch (error) {
-    console.error('Error creating job question:', error);
+    console.error("Error creating job question:", error);
     return NextResponse.json(
-      { error: 'Error al crear pregunta de trabajo' },
+      { error: "Error al crear pregunta de trabajo" },
       { status: 500 }
     );
   }

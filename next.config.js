@@ -11,6 +11,7 @@ const nextConfig = {
   env: {
     NEXT_PUBLIC_USE_BACKEND: "true",
     NEXT_PUBLIC_BACKEND_URL: "https://cemse-back-production.up.railway.app",
+    NEXT_PUBLIC_SITE_URL: "https://cemse-back-production.up.railway.app",
   },
   // Ensure proper URL resolution
   basePath: "",
@@ -61,7 +62,7 @@ const nextConfig = {
       },
     ],
   },
-  output: "standalone",
+  //output: "standalone",
   // Security headers configuration
   async headers() {
     return [

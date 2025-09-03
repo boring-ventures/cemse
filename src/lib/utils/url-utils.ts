@@ -36,7 +36,7 @@ export const getCourseEnrollmentUrl = (courseId: string): string => {
  */
 export const formatUrl = (url: string): string => {
   // Remove any leading slashes to ensure proper routing
-  return url.replace(/^\/+/, '/');
+  return url.replace(/^\/+/, "/");
 };
 
 /**
@@ -45,7 +45,7 @@ export const formatUrl = (url: string): string => {
  * @returns True if the URL is external
  */
 export const isExternalUrl = (url: string): boolean => {
-  return url.startsWith('http://') || url.startsWith('https://');
+  return url.startsWith("http://") || url.startsWith("https://");
 };
 
 /**
@@ -53,11 +53,32 @@ export const isExternalUrl = (url: string): boolean => {
  * @returns The base URL
  */
 export const getBaseUrl = (): string => {
-  if (typeof window !== 'undefined') {
+  if (typeof window !== "undefined") {
     // Client-side: use the current origin
     return window.location.origin;
   }
 
   // Server-side: use environment variable or default
-  return process.env.NEXT_PUBLIC_SITE_URL || 'https://cemse-back-production.up.railway.app';
+  return (
+    process.env.NEXT_PUBLIC_SITE_URL ||
+    "https://cemse-back-production.up.railway.app"
+  );
+};
+
+/**
+ * Safely gets the site URL for authentication redirects
+ * Handles both client and server-side rendering
+ * @returns The site URL
+ */
+export const getSiteUrl = (): string => {
+  if (typeof window !== "undefined") {
+    // Client-side: use the current origin
+    return window.location.origin;
+  }
+
+  // Server-side: use environment variable or default
+  return (
+    process.env.NEXT_PUBLIC_SITE_URL ||
+    "https://cemse-back-production.up.railway.app"
+  );
 };

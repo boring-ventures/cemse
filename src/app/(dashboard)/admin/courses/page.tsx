@@ -52,16 +52,10 @@ import {
   Lock,
   Unlock,
   Settings,
-  GraduationCap,
   Target,
   TrendingUp,
 } from "lucide-react";
 import { useCourses } from "@/hooks/useCourseApi";
-import { useCourseModules } from "@/hooks/useCourseModuleApi";
-import { useModuleLessons } from "@/hooks/useLessonApi";
-import { useLessonResources } from "@/hooks/useLessonResourceApi";
-import { useCourseProgress } from "@/hooks/useLessonProgressApi";
-import { useModuleCertificates } from "@/hooks/useModuleCertificateApi";
 import { useCurrentUser } from "@/hooks/use-current-user";
 
 interface CourseStats {
@@ -74,7 +68,6 @@ interface CourseStats {
   totalModules: number;
   totalLessons: number;
   totalResources: number;
-  totalCertificates: number;
 }
 
 export default function CourseManagementPage() {
@@ -83,53 +76,141 @@ export default function CourseManagementPage() {
   const [searchQuery, setSearchQuery] = useState("");
   const [statusFilter, setStatusFilter] = useState<string>("all");
   const [categoryFilter, setCategoryFilter] = useState<string>("all");
-  const [selectedCourse, setSelectedCourse] = useState<string | null>(null);
 
   // Filter courses to only show those created by the current user
-  const userCourses = courses?.filter(course => 
-    course.instructorId === currentUser?.id
-  ) || [];
+  const userCourses =
+    courses?.filter((course) => course.instructorId === currentUser?.id) || [];
 
   // Debug logging
-  console.log('🔍 Course filtering:', {
+  console.log("🔍 Course filtering:", {
     totalCourses: courses?.length || 0,
     currentUserId: currentUser?.id,
     userCoursesCount: userCourses.length,
-    userCourses: userCourses.map(c => ({ id: c.id, title: c.title, instructorId: c.instructorId }))
+    userCourses: userCourses.map((c) => ({
+      id: c.id,
+      title: c.title,
+      instructorId: c.instructorId,
+    })),
   });
 
-  // Fetch modules for selected course
-  const { data: modulesData } = useCourseModules(selectedCourse || undefined);
-  const modules = (modulesData as any)?.modules || [];
-
-  // Fetch lessons for all modules
+  // Fetch modules for all user courses
+  const [allModules, setAllModules] = useState<any[]>([]);
   const [allLessons, setAllLessons] = useState<any[]>([]);
   const [allResources, setAllResources] = useState<any[]>([]);
-  const [allCertificates, setAllCertificates] = useState<any[]>([]);
+
+  // Fetch data for all user courses
+  useEffect(() => {
+    const fetchCourseData = async () => {
+      if (userCourses.length === 0) return;
+
+      try {
+        // Fetch modules for all courses
+        const modulesPromises = userCourses.map((course) =>
+          fetch(`/api/courses/${course.id}/modules`)
+            .then((res) => res.json())
+            .then((data) => {
+              // Add courseId to each module for proper filtering
+              const modules = data.modules || [];
+              return modules.map((module: any) => ({
+                ...module,
+                courseId: course.id,
+              }));
+            })
+            .catch(() => [])
+        );
+
+        const allModulesData = await Promise.all(modulesPromises);
+        const flatModules = allModulesData.flat();
+
+        // Debug logging
+        console.log("🔍 Modules data:", {
+          userCourses: userCourses.map((c) => ({ id: c.id, title: c.title })),
+          allModulesData,
+          flatModules: flatModules.map((m) => ({
+            id: m.id,
+            title: m.title,
+            courseId: m.courseId,
+          })),
+        });
+
+        setAllModules(flatModules);
+
+        // Fetch lessons for all modules
+        if (flatModules.length > 0) {
+          const lessonsPromises = flatModules.map((module) =>
+            fetch(`/api/modules/${module.id}/lessons`)
+              .then((res) => res.json())
+              .then((data) => data.lessons || [])
+              .catch(() => [])
+          );
+
+          const allLessonsData = await Promise.all(lessonsPromises);
+          const flatLessons = allLessonsData.flat();
+          setAllLessons(flatLessons);
+
+          // Fetch resources for all lessons
+          if (flatLessons.length > 0) {
+            const resourcesPromises = flatLessons.map((lesson) =>
+              fetch(`/api/lessons/${lesson.id}/resources`)
+                .then((res) => res.json())
+                .then((data) => data.resources || [])
+                .catch(() => [])
+            );
+
+            const allResourcesData = await Promise.all(resourcesPromises);
+            const flatResources = allResourcesData.flat();
+            setAllResources(flatResources);
+          }
+        }
+      } catch (error) {
+        console.error("Error fetching course data:", error);
+      }
+    };
+
+    fetchCourseData();
+  }, [userCourses]);
 
   // Calculate comprehensive stats based on user's courses only
   const stats: CourseStats = {
     totalCourses: userCourses.length,
-    totalStudents: userCourses.reduce((sum, course) => sum + (course.studentsCount || 0), 0) || 0,
-    totalHours: userCourses.reduce((sum, course) => sum + (course.duration || 0), 0) || 0,
-    averageRating: (userCourses && userCourses.length > 0) ? userCourses.reduce((sum, course) => sum + (Number(course.rating) || 0), 0) / userCourses.length : 0,
-    completionRate: (userCourses && userCourses.length > 0) ? userCourses.reduce((sum, course) => sum + (Number(course.completionRate) || 0), 0) / userCourses.length : 0,
-    activeCourses: userCourses.filter(c => c.isActive).length || 0,
-    totalModules: modules.length,
+    totalStudents:
+      userCourses.reduce(
+        (sum, course) => sum + (course.studentsCount || 0),
+        0
+      ) || 0,
+    totalHours:
+      userCourses.reduce((sum, course) => sum + (course.duration || 0), 0) || 0,
+    averageRating:
+      userCourses && userCourses.length > 0
+        ? userCourses.reduce(
+            (sum, course) => sum + (Number(course.rating) || 0),
+            0
+          ) / userCourses.length
+        : 0,
+    completionRate:
+      userCourses && userCourses.length > 0
+        ? userCourses.reduce(
+            (sum, course) => sum + (Number(course.completionRate) || 0),
+            0
+          ) / userCourses.length
+        : 0,
+    activeCourses: userCourses.filter((c) => c.isActive).length || 0,
+    totalModules: allModules.length,
     totalLessons: allLessons.length,
     totalResources: allResources.length,
-    totalCertificates: allCertificates.length,
+    totalCertificates: 0, // Removed certificates
   };
 
   const filteredCourses = userCourses.filter((course) => {
     if (!course) return false;
-    
-    const searchLower = (searchQuery || '').toLowerCase();
-    const courseTitle = (course.title || '').toLowerCase();
-    const courseDescription = (course.description || '').toLowerCase();
-    
-    const matchesSearch = courseTitle.includes(searchLower) ||
-                         courseDescription.includes(searchLower);
+
+    const searchLower = (searchQuery || "").toLowerCase();
+    const courseTitle = (course.title || "").toLowerCase();
+    const courseDescription = (course.description || "").toLowerCase();
+
+    const matchesSearch =
+      courseTitle.includes(searchLower) ||
+      courseDescription.includes(searchLower);
     const matchesStatus =
       statusFilter === "all" || course.isActive === (statusFilter === "active");
     const matchesCategory =
@@ -167,15 +248,15 @@ export default function CourseManagementPage() {
 
   const getContentTypeIcon = (type: string) => {
     switch (type) {
-      case 'VIDEO':
+      case "VIDEO":
         return <Video className="h-4 w-4" />;
-      case 'TEXT':
+      case "TEXT":
         return <FileText className="h-4 w-4" />;
-      case 'QUIZ':
+      case "QUIZ":
         return <Target className="h-4 w-4" />;
-      case 'ASSIGNMENT':
+      case "ASSIGNMENT":
         return <CheckCircle className="h-4 w-4" />;
-      case 'LIVE':
+      case "LIVE":
         return <Play className="h-4 w-4" />;
       default:
         return <FileText className="h-4 w-4" />;
@@ -187,8 +268,8 @@ export default function CourseManagementPage() {
       <div className="container mx-auto p-6">
         <div className="animate-pulse space-y-6">
           <div className="h-8 bg-gray-200 rounded w-1/4" />
-          <div className="grid grid-cols-1 md:grid-cols-5 gap-4">
-            {[...Array(5)].map((_, i) => (
+          <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+            {[...Array(4)].map((_, i) => (
               <div key={i} className="h-24 bg-gray-200 rounded" />
             ))}
           </div>
@@ -204,9 +285,7 @@ export default function CourseManagementPage() {
       <div className="container mx-auto p-6">
         <div className="text-center py-12">
           <BookOpen className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
-          <h3 className="text-lg font-semibold mb-2">
-            Acceso requerido
-          </h3>
+          <h3 className="text-lg font-semibold mb-2">Acceso requerido</h3>
           <p className="text-muted-foreground mb-4">
             Debes iniciar sesión para ver tus cursos
           </p>
@@ -222,16 +301,10 @@ export default function CourseManagementPage() {
         <div>
           <h1 className="text-3xl font-bold">🎓 Mis Cursos</h1>
           <p className="text-muted-foreground">
-            Gestión de tus cursos creados con módulos, lecciones, recursos y certificados
+            Gestión de tus cursos creados con módulos, lecciones y recursos
           </p>
         </div>
         <div className="flex gap-2">
-          <Button variant="outline" asChild>
-            <Link href="/admin/courses/analytics">
-              <BarChart3 className="h-4 w-4 mr-2" />
-              Analíticas
-            </Link>
-          </Button>
           <Button asChild>
             <Link href="/admin/courses/create">
               <Plus className="h-4 w-4 mr-2" />
@@ -242,7 +315,7 @@ export default function CourseManagementPage() {
       </div>
 
       {/* Enhanced Stats Cards */}
-      <div className="grid grid-cols-1 md:grid-cols-5 gap-4">
+      <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
             <CardTitle className="text-sm font-medium">Total Cursos</CardTitle>
@@ -278,19 +351,6 @@ export default function CourseManagementPage() {
             <div className="text-2xl font-bold">{stats.totalResources}</div>
             <p className="text-xs text-muted-foreground">
               PDFs, videos, documentos
-            </p>
-          </CardContent>
-        </Card>
-
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Certificados</CardTitle>
-            <GraduationCap className="h-4 w-4 text-muted-foreground" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">{stats.totalCertificates}</div>
-            <p className="text-xs text-muted-foreground">
-              Emitidos por módulos
             </p>
           </CardContent>
         </Card>
@@ -386,9 +446,12 @@ export default function CourseManagementPage() {
                           <BookOpen className="h-6 w-6 text-white" />
                         </div>
                         <div>
-                          <div className="font-medium">{course.title || "Sin título"}</div>
+                          <div className="font-medium">
+                            {course.title || "Sin título"}
+                          </div>
                           <div className="text-sm text-muted-foreground">
-                            {course.totalLessons || 0} lecciones • {course.duration || 0}h
+                            {course.totalLessons || 0} lecciones •{" "}
+                            {course.duration || 0}h
                           </div>
                           <div className="flex gap-1 mt-1">
                             {(course.isMandatory || false) && (
@@ -411,7 +474,24 @@ export default function CourseManagementPage() {
                       <div className="space-y-1">
                         <div className="flex items-center gap-2 text-sm">
                           <Layers className="h-3 w-3 text-muted-foreground" />
-                          <span>{modules.filter((m: any) => m.courseId === course.id).length} módulos</span>
+                          <span>
+                            {(() => {
+                              const courseModules = allModules.filter(
+                                (m: any) => m.courseId === course.id
+                              );
+                              console.log(
+                                `🔍 Course ${course.title} (${course.id}):`,
+                                {
+                                  courseId: course.id,
+                                  allModulesCount: allModules.length,
+                                  courseModules,
+                                  courseModulesCount: courseModules.length,
+                                }
+                              );
+                              return courseModules.length;
+                            })()}{" "}
+                            módulos
+                          </span>
                         </div>
                         <div className="flex items-center gap-2 text-sm">
                           <FileText className="h-3 w-3 text-muted-foreground" />
@@ -450,9 +530,11 @@ export default function CourseManagementPage() {
 
                     <TableCell>
                       <Badge
-                        variant={(course.isActive || false) ? "default" : "secondary"}
+                        variant={
+                          course.isActive || false ? "default" : "secondary"
+                        }
                       >
-                        {(course.isActive || false) ? "Activo" : "Inactivo"}
+                        {course.isActive || false ? "Activo" : "Inactivo"}
                       </Badge>
                     </TableCell>
 
@@ -464,7 +546,9 @@ export default function CourseManagementPage() {
                     </TableCell>
 
                     <TableCell>
-                      {course.updatedAt ? new Date(course.updatedAt).toLocaleDateString() : "N/A"}
+                      {course.updatedAt
+                        ? new Date(course.updatedAt).toLocaleDateString()
+                        : "N/A"}
                     </TableCell>
 
                     <TableCell className="text-right">

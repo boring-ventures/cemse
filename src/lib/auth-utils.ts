@@ -195,3 +195,21 @@ export function handleAuthError(error: unknown) {
     status: 500,
   };
 }
+
+/**
+ * Verifies authentication and returns a result object
+ * Suitable for API routes that need to handle auth failures gracefully
+ */
+export async function verifyAuth(
+  request: NextRequest
+): Promise<{ success: boolean; user?: AuthUser; error?: string }> {
+  try {
+    const user = await authenticateUser(request);
+    return { success: true, user };
+  } catch (error) {
+    if (error instanceof AuthenticationError) {
+      return { success: false, error: error.message };
+    }
+    return { success: false, error: "Authentication failed" };
+  }
+}

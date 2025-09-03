@@ -1,16 +1,16 @@
 // User roles based on the API documentation
 export type UserRole =
-  | 'JOVENES'
-  | 'ADOLESCENTES'
-  | 'EMPRESAS'
-  | 'COMPANIES' // Alternative role name for companies
-  | 'GOBIERNOS_MUNICIPALES'
-  | 'CENTROS_DE_FORMACION'
-  | 'ONGS_Y_FUNDACIONES'
-  | 'CLIENT'
-  | 'AGENT'
-  | 'SUPER_ADMIN'
-  | 'SUPERADMIN'; // Agregado para compatibilidad con el backend
+  | "JOVENES"
+  | "ADOLESCENTES"
+  | "EMPRESAS"
+  | "COMPANIES" // Alternative role name for companies
+  | "GOBIERNOS_MUNICIPALES"
+  | "CENTROS_DE_FORMACION"
+  | "ONGS_Y_FUNDACIONES"
+  | "CLIENT"
+  | "AGENT"
+  | "SUPER_ADMIN"
+  | "SUPERADMIN"; // Agregado para compatibilidad con el backend
 
 // Authentication types
 export interface LoginRequest {
@@ -107,18 +107,26 @@ export interface User {
   company?: {
     id: string;
     name: string;
-    description: string;
-    businessSector: string;
-    companySize: string;
-    foundedYear: string;
-    website: string;
-    email: string;
-    phone: string;
-    address: string;
+    description: string | null;
+    businessSector: string | null;
+    companySize: "MICRO" | "SMALL" | "MEDIUM" | "LARGE" | null;
+    foundedYear: number | null;
+    website: string | null;
+    email: string | null;
+    phone: string | null;
+    address: string | null;
     taxId: string | null;
+    legalRepresentative: string | null;
+    isActive: boolean;
+    username: string;
+    loginEmail: string;
     createdAt: string;
     updatedAt: string;
-    isActive?: boolean;
+    municipality?: {
+      id: string;
+      name: string;
+      department: string;
+    } | null;
   };
 }
 
@@ -179,7 +187,7 @@ export interface NotificationSettings {
 }
 
 export interface PrivacySettings {
-  profileVisibility: 'public' | 'private' | 'contacts';
+  profileVisibility: "public" | "private" | "contacts";
   showEmail: boolean;
   showPhone: boolean;
   showLocation: boolean;
@@ -198,7 +206,7 @@ export interface Course {
   objectives: string[];
   prerequisites: string[];
   duration: number;
-  level: 'BEGINNER' | 'INTERMEDIATE' | 'ADVANCED';
+  level: "BEGINNER" | "INTERMEDIATE" | "ADVANCED";
   category: string;
   isMandatory?: boolean;
   isActive?: boolean;
@@ -249,7 +257,7 @@ export interface Lesson {
   moduleId: string;
   title: string;
   description?: string;
-  type: 'VIDEO' | 'TEXT' | 'QUIZ' | 'ASSIGNMENT';
+  type: "VIDEO" | "TEXT" | "QUIZ" | "ASSIGNMENT";
   content: LessonContent;
   duration: number;
   order: number;
@@ -269,7 +277,7 @@ export interface LessonContent {
 export interface LessonResource {
   id: string;
   title: string;
-  type: 'PDF' | 'VIDEO' | 'LINK' | 'FILE';
+  type: "PDF" | "VIDEO" | "LINK" | "FILE";
   url: string;
   description?: string;
 }
@@ -295,7 +303,7 @@ export interface QuizQuestion {
   id: string;
   quizId: string;
   question: string;
-  type: 'MULTIPLE_CHOICE' | 'TRUE_FALSE' | 'FILL_BLANK' | 'ESSAY';
+  type: "MULTIPLE_CHOICE" | "TRUE_FALSE" | "FILL_BLANK" | "ESSAY";
   options?: string[];
   correctAnswer: string | string[];
   explanation?: string;
@@ -310,9 +318,9 @@ export interface JobOffer {
   description: string;
   company: Company;
   location: string;
-  contractType: 'FULL_TIME' | 'PART_TIME' | 'CONTRACT' | 'INTERNSHIP';
-  workModality: 'REMOTE' | 'ONSITE' | 'HYBRID';
-  experienceLevel: 'ENTRY_LEVEL' | 'MID_LEVEL' | 'SENIOR_LEVEL' | 'EXECUTIVE';
+  contractType: "FULL_TIME" | "PART_TIME" | "CONTRACT" | "INTERNSHIP";
+  workModality: "REMOTE" | "ONSITE" | "HYBRID";
+  experienceLevel: "ENTRY_LEVEL" | "MID_LEVEL" | "SENIOR_LEVEL" | "EXECUTIVE";
   salaryMin?: number;
   salaryMax?: number;
   salaryCurrency: string;
@@ -321,7 +329,7 @@ export interface JobOffer {
   benefits?: string[];
   requirements: string[];
   responsibilities: string[];
-  status: 'ACTIVE' | 'PAUSED' | 'CLOSED';
+  status: "ACTIVE" | "PAUSED" | "CLOSED";
   publishedAt: string;
   expiresAt?: string;
   applicationCount: number;
@@ -353,7 +361,7 @@ export interface JobApplication {
   user?: UserProfile;
   coverLetter?: string;
   resumeUrl?: string;
-  status: 'SENT' | 'UNDER_REVIEW' | 'PRE_SELECTED' | 'REJECTED' | 'HIRED';
+  status: "SENT" | "UNDER_REVIEW" | "PRE_SELECTED" | "REJECTED" | "HIRED";
   appliedAt: string;
   updatedAt: string;
 }
@@ -367,10 +375,10 @@ export interface NewsArticle {
   imageUrl?: string;
   authorId: string;
   authorName: string;
-  authorType: 'COMPANY' | 'GOVERNMENT' | 'INSTITUTION' | 'USER';
+  authorType: "COMPANY" | "GOVERNMENT" | "INSTITUTION" | "USER";
   authorLogo?: string;
-  status: 'DRAFT' | 'PUBLISHED' | 'ARCHIVED';
-  priority: 'LOW' | 'MEDIUM' | 'HIGH';
+  status: "DRAFT" | "PUBLISHED" | "ARCHIVED";
+  priority: "LOW" | "MEDIUM" | "HIGH";
   featured: boolean;
   tags: string[];
   category: string;
@@ -417,7 +425,7 @@ export interface BusinessPlan {
   title: string;
   description: string;
   category: string;
-  status: 'DRAFT' | 'COMPLETED' | 'PUBLISHED';
+  status: "DRAFT" | "COMPLETED" | "PUBLISHED";
   content: BusinessPlanContent;
   financialProjections?: FinancialProjection[];
   attachments?: string[];
@@ -490,6 +498,6 @@ export interface QueryParams {
   limit?: number;
   search?: string;
   sortBy?: string;
-  sortOrder?: 'asc' | 'desc';
+  sortOrder?: "asc" | "desc";
   filter?: Record<string, any>;
-} 
+}

@@ -49,8 +49,6 @@ export default function CreateCoursePage() {
     title: "",
     description: "",
     shortDescription: "",
-    thumbnail: "",
-    videoPreview: "",
     category: "",
     level: "",
     duration: "",
@@ -67,11 +65,17 @@ export default function CreateCoursePage() {
   const [includedMaterials, setIncludedMaterials] = useState<string[]>([""]);
   const [newTag, setNewTag] = useState("");
 
-  const handleInputChange = (field: string, value: string | boolean | number) => {
-    setFormData(prev => ({ ...prev, [field]: value }));
+  const handleInputChange = (
+    field: string,
+    value: string | boolean | number
+  ) => {
+    setFormData((prev) => ({ ...prev, [field]: value }));
   };
 
-  const handleFilesChange = (files: { thumbnail?: File; videoPreview?: File }) => {
+  const handleFilesChange = (files: {
+    thumbnail?: File;
+    videoPreview?: File;
+  }) => {
     setSelectedFiles(files);
   };
 
@@ -111,7 +115,7 @@ export default function CreateCoursePage() {
   };
 
   const removeTag = (tagToRemove: string) => {
-    setTags(tags.filter(tag => tag !== tagToRemove));
+    setTags(tags.filter((tag) => tag !== tagToRemove));
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -138,7 +142,7 @@ export default function CreateCoursePage() {
     try {
       // Upload files first if any are selected
       let uploadedFileUrls: { thumbnail?: string; videoPreview?: string } = {};
-      
+
       if (selectedFiles.thumbnail || selectedFiles.videoPreview) {
         const uploadResult = await uploadFiles(selectedFiles);
         if (uploadResult) {
@@ -151,18 +155,23 @@ export default function CreateCoursePage() {
 
       const courseData = {
         ...formData,
-        // Use uploaded file URLs if available, otherwise use existing URLs
-        thumbnail: uploadedFileUrls.thumbnail || formData.thumbnail,
-        videoPreview: uploadedFileUrls.videoPreview || formData.videoPreview,
-        slug: formData.title.toLowerCase().replace(/\s+/g, '-').replace(/[^\w-]/g, ''),
+        // Use uploaded file URLs
+        thumbnail: uploadedFileUrls.thumbnail || "",
+        videoPreview: uploadedFileUrls.videoPreview || "",
+        slug: formData.title
+          .toLowerCase()
+          .replace(/\s+/g, "-")
+          .replace(/[^\w-]/g, ""),
         duration: parseInt(formData.duration) || 0,
         price: parseFloat(formData.price) || 0,
         level: formData.level as CourseLevel,
         category: formData.category as CourseCategory,
-        objectives: objectives.filter(obj => obj.trim()),
-        prerequisites: prerequisites.filter(req => req.trim()),
+        objectives: objectives.filter((obj) => obj.trim()),
+        prerequisites: prerequisites.filter((req) => req.trim()),
         tags: tags,
-        includedMaterials: includedMaterials.filter(material => material.trim()),
+        includedMaterials: includedMaterials.filter((material) =>
+          material.trim()
+        ),
       };
 
       await createCourseMutation.mutateAsync(courseData);
@@ -235,7 +244,9 @@ export default function CreateCoursePage() {
                 <Input
                   id="institutionName"
                   value={formData.institutionName}
-                  onChange={(e) => handleInputChange("institutionName", e.target.value)}
+                  onChange={(e) =>
+                    handleInputChange("institutionName", e.target.value)
+                  }
                   placeholder="CEMSE"
                 />
               </div>
@@ -246,7 +257,9 @@ export default function CreateCoursePage() {
               <Input
                 id="shortDescription"
                 value={formData.shortDescription}
-                onChange={(e) => handleInputChange("shortDescription", e.target.value)}
+                onChange={(e) =>
+                  handleInputChange("shortDescription", e.target.value)
+                }
                 placeholder="Resumen breve del curso"
               />
             </div>
@@ -256,7 +269,9 @@ export default function CreateCoursePage() {
               <Textarea
                 id="description"
                 value={formData.description}
-                onChange={(e) => handleInputChange("description", e.target.value)}
+                onChange={(e) =>
+                  handleInputChange("description", e.target.value)
+                }
                 placeholder="Descripción detallada del curso, qué aprenderán los estudiantes..."
                 rows={4}
                 required
@@ -268,36 +283,7 @@ export default function CreateCoursePage() {
                 onFilesChange={handleFilesChange}
                 className="w-full"
               />
-              
-              {/* Alternative: URL inputs */}
-              <div className="border-t pt-4">
-                <p className="text-sm text-muted-foreground mb-3">
-                  O ingresa URLs directamente:
-                </p>
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  <div className="space-y-2">
-                    <Label htmlFor="thumbnail">URL de Imagen</Label>
-                    <Input
-                      id="thumbnail"
-                      value={formData.thumbnail}
-                      onChange={(e) => handleInputChange("thumbnail", e.target.value)}
-                      placeholder="https://ejemplo.com/imagen.jpg"
-                    />
-                  </div>
-                  <div className="space-y-2">
-                    <Label htmlFor="videoPreview">URL de Video Preview</Label>
-                    <Input
-                      id="videoPreview"
-                      value={formData.videoPreview}
-                      onChange={(e) => handleInputChange("videoPreview", e.target.value)}
-                      placeholder="https://youtube.com/watch?v=..."
-                    />
-                  </div>
-                </div>
-              </div>
             </div>
-
-
           </CardContent>
         </Card>
 
@@ -315,7 +301,9 @@ export default function CreateCoursePage() {
                 <Label htmlFor="category">Categoría *</Label>
                 <Select
                   value={formData.category}
-                  onValueChange={(value) => handleInputChange("category", value)}
+                  onValueChange={(value) =>
+                    handleInputChange("category", value)
+                  }
                   required
                 >
                   <SelectTrigger>
@@ -342,9 +330,15 @@ export default function CreateCoursePage() {
                     <SelectValue placeholder="Seleccionar nivel" />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value={CourseLevel.BEGINNER}>Principiante</SelectItem>
-                    <SelectItem value={CourseLevel.INTERMEDIATE}>Intermedio</SelectItem>
-                    <SelectItem value={CourseLevel.ADVANCED}>Avanzado</SelectItem>
+                    <SelectItem value={CourseLevel.BEGINNER}>
+                      Principiante
+                    </SelectItem>
+                    <SelectItem value={CourseLevel.INTERMEDIATE}>
+                      Intermedio
+                    </SelectItem>
+                    <SelectItem value={CourseLevel.ADVANCED}>
+                      Avanzado
+                    </SelectItem>
                   </SelectContent>
                 </Select>
               </div>
@@ -355,13 +349,13 @@ export default function CreateCoursePage() {
                   id="duration"
                   type="number"
                   value={formData.duration}
-                  onChange={(e) => handleInputChange("duration", e.target.value)}
+                  onChange={(e) =>
+                    handleInputChange("duration", e.target.value)
+                  }
                   placeholder="240"
                 />
               </div>
             </div>
-
-
           </CardContent>
         </Card>
 
@@ -379,14 +373,23 @@ export default function CreateCoursePage() {
                 <div key={index} className="flex gap-2">
                   <Input
                     value={objective}
-                    onChange={(e) => updateArrayItem(objectives, setObjectives, index, e.target.value)}
+                    onChange={(e) =>
+                      updateArrayItem(
+                        objectives,
+                        setObjectives,
+                        index,
+                        e.target.value
+                      )
+                    }
                     placeholder={`Objetivo ${index + 1}`}
                   />
                   <Button
                     type="button"
                     variant="outline"
                     size="sm"
-                    onClick={() => removeArrayItem(objectives, setObjectives, index)}
+                    onClick={() =>
+                      removeArrayItem(objectives, setObjectives, index)
+                    }
                     disabled={objectives.length === 1}
                   >
                     <X className="h-4 w-4" />
@@ -417,14 +420,23 @@ export default function CreateCoursePage() {
                 <div key={index} className="flex gap-2">
                   <Input
                     value={prerequisite}
-                    onChange={(e) => updateArrayItem(prerequisites, setPrerequisites, index, e.target.value)}
+                    onChange={(e) =>
+                      updateArrayItem(
+                        prerequisites,
+                        setPrerequisites,
+                        index,
+                        e.target.value
+                      )
+                    }
                     placeholder={`Requisito ${index + 1}`}
                   />
                   <Button
                     type="button"
                     variant="outline"
                     size="sm"
-                    onClick={() => removeArrayItem(prerequisites, setPrerequisites, index)}
+                    onClick={() =>
+                      removeArrayItem(prerequisites, setPrerequisites, index)
+                    }
                     disabled={prerequisites.length === 1}
                   >
                     <X className="h-4 w-4" />
@@ -456,7 +468,9 @@ export default function CreateCoursePage() {
                   value={newTag}
                   onChange={(e) => setNewTag(e.target.value)}
                   placeholder="Agregar etiqueta"
-                  onKeyPress={(e) => e.key === 'Enter' && (e.preventDefault(), addTag())}
+                  onKeyPress={(e) =>
+                    e.key === "Enter" && (e.preventDefault(), addTag())
+                  }
                 />
                 <Button type="button" variant="outline" onClick={addTag}>
                   <Plus className="h-4 w-4" />
@@ -464,10 +478,14 @@ export default function CreateCoursePage() {
               </div>
               <div className="flex flex-wrap gap-2">
                 {tags.map((tag) => (
-                  <Badge key={tag} variant="secondary" className="flex items-center gap-1">
+                  <Badge
+                    key={tag}
+                    variant="secondary"
+                    className="flex items-center gap-1"
+                  >
                     {tag}
-                    <X 
-                      className="h-3 w-3 cursor-pointer" 
+                    <X
+                      className="h-3 w-3 cursor-pointer"
                       onClick={() => removeTag(tag)}
                     />
                   </Badge>
@@ -488,14 +506,27 @@ export default function CreateCoursePage() {
                 <div key={index} className="flex gap-2">
                   <Input
                     value={material}
-                    onChange={(e) => updateArrayItem(includedMaterials, setIncludedMaterials, index, e.target.value)}
+                    onChange={(e) =>
+                      updateArrayItem(
+                        includedMaterials,
+                        setIncludedMaterials,
+                        index,
+                        e.target.value
+                      )
+                    }
                     placeholder={`Material ${index + 1}`}
                   />
                   <Button
                     type="button"
                     variant="outline"
                     size="sm"
-                    onClick={() => removeArrayItem(includedMaterials, setIncludedMaterials, index)}
+                    onClick={() =>
+                      removeArrayItem(
+                        includedMaterials,
+                        setIncludedMaterials,
+                        index
+                      )
+                    }
                     disabled={includedMaterials.length === 1}
                   >
                     <X className="h-4 w-4" />
@@ -505,7 +536,9 @@ export default function CreateCoursePage() {
               <Button
                 type="button"
                 variant="outline"
-                onClick={() => addArrayItem(includedMaterials, setIncludedMaterials)}
+                onClick={() =>
+                  addArrayItem(includedMaterials, setIncludedMaterials)
+                }
                 className="w-full"
               >
                 <Plus className="h-4 w-4 mr-2" />
@@ -520,15 +553,15 @@ export default function CreateCoursePage() {
           <Button type="button" variant="outline" asChild>
             <Link href="/admin/courses">Cancelar</Link>
           </Button>
-          <Button 
-            type="submit" 
+          <Button
+            type="submit"
             disabled={createCourseMutation.isPending || isFileUploading}
             className="min-w-[120px]"
           >
             {createCourseMutation.isPending || isFileUploading ? (
               <>
                 <Clock className="h-4 w-4 mr-2 animate-spin" />
-                {isFileUploading ? 'Subiendo archivos...' : 'Creando...'}
+                {isFileUploading ? "Subiendo archivos..." : "Creando..."}
               </>
             ) : (
               <>

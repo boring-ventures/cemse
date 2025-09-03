@@ -107,8 +107,8 @@ export default function CandidatesPage() {
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState("");
   const [statusFilter, setStatusFilter] = useState("all");
-  const [jobFilter, setJobFilter] = useState("all");
-  const [sortBy, setSortBy] = useState("appliedAt");
+
+  const [sortBy, setSortBy] = useState("createdAt");
   const [sortOrder, setSortOrder] = useState("desc");
   const [selectedCandidate, setSelectedCandidate] =
     useState<JobApplication | null>(null);
@@ -125,20 +125,59 @@ export default function CandidatesPage() {
     useState<JobApplication | null>(null);
   const [showChatModal, setShowChatModal] = useState(false);
   const [newMessage, setNewMessage] = useState("");
-
-  // Chat functionality
-  const {
-    messages,
-    loading: messagesLoading,
-    sending: messageSending,
-    error: messageError,
-    sendMessage: sendJobMessage,
-    refreshMessages,
-  } = useJobMessages(selectedCandidate?.id || "");
+  const [messages, setMessages] = useState<any[]>([]);
+  const [messagesLoading, setMessagesLoading] = useState(false);
+  const [messageSending, setMessageSending] = useState(false);
+  const [messageError, setMessageError] = useState<string | null>(null);
 
   useEffect(() => {
     fetchCandidates();
-  }, [searchTerm, statusFilter, jobFilter, sortBy, sortOrder, page]);
+  }, [searchTerm, statusFilter, sortBy, sortOrder, page]);
+
+  // Load messages when chat modal opens
+  useEffect(() => {
+    if (showChatModal && selectedCandidate) {
+      loadMessages();
+    }
+  }, [showChatModal, selectedCandidate]);
+
+  const loadMessages = async () => {
+    if (!selectedCandidate) return;
+
+    try {
+      setMessagesLoading(true);
+      setMessageError(null);
+
+      const response = await fetch(
+        `/api/youthapplication/${selectedCandidate.id}/message`,
+        {
+          method: "GET",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          credentials: "include", // Use cookies for authentication
+        }
+      );
+
+      if (!response.ok) {
+        throw new Error("Error al cargar mensajes");
+      }
+
+      const data = await response.json();
+      setMessages(data || []);
+    } catch (error) {
+      console.error("Error loading messages:", error);
+      setMessageError(
+        error instanceof Error ? error.message : "Error al cargar mensajes"
+      );
+    } finally {
+      setMessagesLoading(false);
+    }
+  };
+
+  const refreshMessages = () => {
+    loadMessages();
+  };
 
   const fetchCandidates = async () => {
     try {
@@ -148,23 +187,81 @@ export default function CandidatesPage() {
         limit: "10",
         ...(searchTerm && { search: searchTerm }),
         ...(statusFilter !== "all" && { status: statusFilter }),
-        ...(jobFilter !== "all" && { jobId: jobFilter }),
+
         sortBy,
         sortOrder,
       });
 
-      const response = await fetch(`/api/jobs/candidates?${queryParams}`);
+      const response = await fetch(`/api/youthapplication?${queryParams}`);
       if (!response.ok) {
-        throw new Error("Error al cargar candidatos");
+        throw new Error("Error al cargar postulaciones de jóvenes");
       }
 
       const data = await response.json();
-      setCandidatesData(data);
+
+      // Transform the data to match our expected structure
+      const transformedData: CandidatesData = {
+        candidates: data.map((app: any) => ({
+          id: app.id,
+          status:
+            app.status === "ACTIVE"
+              ? "SENT"
+              : app.status === "PAUSED"
+                ? "UNDER_REVIEW"
+                : app.status === "CLOSED"
+                  ? "REJECTED"
+                  : app.status === "HIRED"
+                    ? "HIRED"
+                    : "SENT",
+          appliedAt: app.createdAt,
+          coverLetter: app.description,
+          cvFile: app.cvFile || app.cvUrl,
+          rating: 0,
+          notes: "",
+          applicant: {
+            id: app.youthProfile?.userId || app.id,
+            firstName: app.youthProfile?.firstName || "Sin nombre",
+            lastName: app.youthProfile?.lastName || "",
+            email: app.youthProfile?.email || "Sin email",
+            avatarUrl: undefined,
+            location: undefined,
+            phone: undefined,
+          },
+          jobOffer: {
+            id: app.id,
+            title: app.title,
+            company: undefined,
+          },
+          cvData: undefined,
+          questionAnswers: undefined,
+        })),
+        pagination: {
+          total: data.length,
+          page: 1,
+          limit: 10,
+          totalPages: Math.ceil(data.length / 10),
+        },
+        stats: {
+          total: data.length,
+          byStatus: {
+            sent: data.filter((app: any) => app.status === "ACTIVE").length,
+            underReview: data.filter((app: any) => app.status === "PAUSED")
+              .length,
+            preSelected: 0,
+            rejected: data.filter((app: any) => app.status === "CLOSED").length,
+            hired: data.filter((app: any) => app.status === "HIRED").length,
+          },
+          byJob: {},
+          averageRating: 0,
+        },
+      };
+
+      setCandidatesData(transformedData);
     } catch (error) {
       console.error("Error:", error);
       toast({
         title: "Error",
-        description: "No se pudieron cargar los candidatos",
+        description: "No se pudieron cargar las postulaciones de jóvenes",
         variant: "destructive",
       });
     } finally {
@@ -273,17 +370,47 @@ export default function CandidatesPage() {
     if (!newMessage.trim() || !selectedCandidate) return;
 
     try {
-      await sendJobMessage({
-        content: newMessage.trim(),
-        messageType: "TEXT",
-      });
+      setMessageSending(true);
+      setMessageError(null);
+      const response = await fetch(
+        `/api/youthapplication/${selectedCandidate.id}/message`,
+        {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          credentials: "include", // Use cookies for authentication
+          body: JSON.stringify({
+            content: newMessage.trim(),
+            messageType: "TEXT",
+          }),
+        }
+      );
+
+      if (!response.ok) {
+        throw new Error("Error al enviar mensaje");
+      }
+
+      const data = await response.json();
+      setMessages((prev) => [...prev, data]);
       setNewMessage("");
+
+      // Show success toast
+      toast({
+        title: "Mensaje enviado",
+        description: "El mensaje se ha enviado correctamente",
+      });
     } catch (error) {
+      setMessageError(
+        error instanceof Error ? error.message : "No se pudo enviar el mensaje"
+      );
       toast({
         title: "Error",
-        description: error instanceof Error ? error.message : "No se pudo enviar el mensaje",
+        description: "No se pudo enviar el mensaje",
         variant: "destructive",
       });
+    } finally {
+      setMessageSending(false);
     }
   };
 
@@ -419,10 +546,10 @@ export default function CandidatesPage() {
       <div className="flex items-center justify-between">
         <div>
           <h1 className="text-3xl font-bold tracking-tight">
-            Gestión de Candidatos
+            Postulaciones de Jóvenes
           </h1>
           <p className="text-muted-foreground">
-            Revisa y gestiona todos los candidatos de tus ofertas de trabajo
+            Revisa y gestiona las postulaciones de jóvenes emprendedores
           </p>
         </div>
         <Button
@@ -533,28 +660,14 @@ export default function CandidatesPage() {
               <div className="relative">
                 <Search className="absolute left-2 top-2.5 h-4 w-4 text-muted-foreground" />
                 <Input
-                  placeholder="Buscar por nombre, email o puesto..."
+                  placeholder="Buscar por título, descripción o nombre..."
                   value={searchTerm}
                   onChange={(e) => setSearchTerm(e.target.value)}
                   className="pl-8"
                 />
               </div>
             </div>
-            <Select value={jobFilter} onValueChange={setJobFilter}>
-              <SelectTrigger className="w-full md:w-60">
-                <SelectValue placeholder="Filtrar por puesto" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="all">Todos los puestos</SelectItem>
-                {Object.entries(candidatesData.stats.byJob).map(
-                  ([jobId, job]) => (
-                    <SelectItem key={jobId} value={jobId}>
-                      {job.jobTitle} ({job.count})
-                    </SelectItem>
-                  )
-                )}
-              </SelectContent>
-            </Select>
+
             <Select value={statusFilter} onValueChange={setStatusFilter}>
               <SelectTrigger className="w-full md:w-40">
                 <SelectValue placeholder="Estado" />
@@ -573,9 +686,8 @@ export default function CandidatesPage() {
                 <SelectValue placeholder="Ordenar por" />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="appliedAt">Fecha aplicación</SelectItem>
-                <SelectItem value="applicantName">Nombre</SelectItem>
-                <SelectItem value="rating">Calificación</SelectItem>
+                <SelectItem value="createdAt">Fecha creación</SelectItem>
+                <SelectItem value="title">Título</SelectItem>
                 <SelectItem value="status">Estado</SelectItem>
               </SelectContent>
             </Select>
@@ -586,10 +698,10 @@ export default function CandidatesPage() {
       {/* Candidates Table */}
       <Card>
         <CardHeader>
-          <CardTitle>Lista de Candidatos</CardTitle>
+          <CardTitle>Lista de Postulaciones</CardTitle>
           <CardDescription>
             {candidatesData.candidates.length} de{" "}
-            {candidatesData.pagination.total} candidatos
+            {candidatesData.pagination.total} postulaciones
           </CardDescription>
         </CardHeader>
         <CardContent>
@@ -617,11 +729,11 @@ export default function CandidatesPage() {
                   </div>
                 </TableHead>
 
-                <TableHead>Candidato</TableHead>
-                <TableHead>Puesto</TableHead>
+                <TableHead>Joven</TableHead>
+                <TableHead>Postulación</TableHead>
                 <TableHead>Estado</TableHead>
-                <TableHead>Calificación</TableHead>
-                <TableHead>Fecha Aplicación</TableHead>
+                <TableHead>Vistas</TableHead>
+                <TableHead>Fecha Creación</TableHead>
                 <TableHead className="text-right">Acciones</TableHead>
               </TableRow>
             </TableHeader>
@@ -636,7 +748,9 @@ export default function CandidatesPage() {
                           setSelectedCVs([...selectedCVs, candidate.cvFile!]);
                         } else {
                           setSelectedCVs(
-                            selectedCVs.filter((url) => url !== candidate.cvFile)
+                            selectedCVs.filter(
+                              (url) => url !== candidate.cvFile
+                            )
                           );
                         }
                       }}
@@ -669,17 +783,19 @@ export default function CandidatesPage() {
                     </div>
                   </TableCell>
                   <TableCell>
-                    <div className="font-medium">{candidate.jobOffer.title}</div>
+                    <div className="font-medium">
+                      {candidate.jobOffer.title}
+                    </div>
+                    <div className="text-sm text-muted-foreground line-clamp-2">
+                      {candidate.coverLetter}
+                    </div>
                   </TableCell>
                   <TableCell>{getStatusBadge(candidate.status)}</TableCell>
                   <TableCell>
-                    {candidate.rating ? (
-                      renderStars(candidate.rating)
-                    ) : (
-                      <span className="text-sm text-muted-foreground">
-                        Sin calificar
-                      </span>
-                    )}
+                    <div className="flex items-center gap-1">
+                      <Eye className="h-4 w-4 text-muted-foreground" />
+                      <span className="text-sm">0</span>
+                    </div>
                   </TableCell>
                   <TableCell>
                     <div className="text-sm">
@@ -710,23 +826,10 @@ export default function CandidatesPage() {
                           </DialogTrigger>
                         </Dialog>
                         <DropdownMenuItem
-                          onClick={() => openUpdateDialog(candidate)}
+                          onClick={() => handleOpenChat(candidate)}
                         >
-                          <Edit3 className="mr-2 h-4 w-4" />
-                          Actualizar Estado
-                        </DropdownMenuItem>
-                        <DropdownMenuSeparator />
-                        <DropdownMenuItem>
-                          <Mail className="mr-2 h-4 w-4" />
-                          Enviar Email
-                        </DropdownMenuItem>
-                        <DropdownMenuItem onClick={() => handleOpenChat(candidate)}>
                           <MessageSquare className="mr-2 h-4 w-4" />
                           Chat
-                        </DropdownMenuItem>
-                        <DropdownMenuItem>
-                          <Calendar className="mr-2 h-4 w-4" />
-                          Programar Entrevista
                         </DropdownMenuItem>
                         {candidate.cvFile && (
                           <DropdownMenuItem>
@@ -866,16 +969,18 @@ export default function CandidatesPage() {
                       Respuestas a Preguntas
                     </h4>
                     <div className="space-y-4">
-                      {selectedCandidate.questionAnswers.map((answer: any, index: number) => (
-                        <div key={index} className="border rounded-lg p-4">
-                          <h5 className="font-medium mb-2">
-                            {answer.question}
-                          </h5>
-                          <p className="text-sm text-gray-700">
-                            {answer.answer}
-                          </p>
-                        </div>
-                      ))}
+                      {selectedCandidate.questionAnswers.map(
+                        (answer: any, index: number) => (
+                          <div key={index} className="border rounded-lg p-4">
+                            <h5 className="font-medium mb-2">
+                              {answer.question}
+                            </h5>
+                            <p className="text-sm text-gray-700">
+                              {answer.answer}
+                            </p>
+                          </div>
+                        )
+                      )}
                     </div>
                   </div>
                 )}
@@ -1098,7 +1203,9 @@ export default function CandidatesPage() {
                 <div className="flex items-center justify-center h-full">
                   <div className="text-center">
                     <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary mx-auto mb-4"></div>
-                    <p className="text-muted-foreground">Cargando mensajes...</p>
+                    <p className="text-muted-foreground">
+                      Cargando mensajes...
+                    </p>
                   </div>
                 </div>
               ) : messageError ? (
@@ -1130,13 +1237,20 @@ export default function CandidatesPage() {
                       key={message.id}
                       className={`flex ${isOwnMessage ? "justify-end" : "justify-start"}`}
                     >
-                      <div className={`max-w-[70%] ${isOwnMessage ? "order-2" : "order-1"}`}>
+                      <div
+                        className={`max-w-[70%] ${isOwnMessage ? "order-2" : "order-1"}`}
+                      >
                         <div
                           className={`text-xs mb-1 ${
-                            isOwnMessage ? "text-right text-blue-600" : "text-left text-gray-600"
+                            isOwnMessage
+                              ? "text-right text-blue-600"
+                              : "text-left text-gray-600"
                           }`}
                         >
-                          {isOwnMessage ? "Tú" : selectedCandidate?.applicant.firstName || "Candidato"}
+                          {isOwnMessage
+                            ? "Tú"
+                            : selectedCandidate?.applicant.firstName ||
+                              "Candidato"}
                         </div>
                         {/* Message bubble */}
                         <div

@@ -8,7 +8,7 @@ import { AuthProvider } from "@/hooks/use-auth";
 import { ThemeProvider } from "@/context/theme-context";
 import { Toaster } from "@/components/ui/toaster";
 
-const APP_NAME = "POSITIVE-NEXT";
+const APP_NAME = "CEMSE";
 const APP_DESCRIPTION = "Your Mind's Best Friend";
 
 const inter = Inter({ subsets: ["latin"] });

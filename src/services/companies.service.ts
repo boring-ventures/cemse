@@ -1,4 +1,4 @@
-import { apiCall } from '@/lib/api';
+import { apiCall } from "@/lib/api";
 
 // Type definitions based on the actual Prisma schema
 export interface Company {
@@ -6,7 +6,7 @@ export interface Company {
   name: string;
   description: string | null;
   businessSector: string | null;
-  companySize: 'MICRO' | 'SMALL' | 'MEDIUM' | 'LARGE' | null;
+  companySize: "MICRO" | "SMALL" | "MEDIUM" | "LARGE" | null;
   foundedYear: number | null;
   website: string | null;
   email: string | null;
@@ -40,7 +40,7 @@ export interface CreateCompanyRequest {
   name: string;
   description?: string;
   businessSector?: string;
-  companySize?: 'MICRO' | 'SMALL' | 'MEDIUM' | 'LARGE';
+  companySize?: "MICRO" | "SMALL" | "MEDIUM" | "LARGE";
   foundedYear?: number;
   website?: string;
   email: string;
@@ -69,15 +69,15 @@ export class CompaniesService {
    */
   static async getAll(): Promise<CompaniesResponse> {
     console.log("📞 CompaniesService.getAll() - Fetching companies");
-    
+
     try {
-      const response = await apiCall('/companies') as CompaniesResponse;
+      const response = (await apiCall("/companies")) as CompaniesResponse;
       console.log("✅ CompaniesService.getAll() - Success:", {
         total: response.total,
         active: response.metadata.totalActive,
-        inactive: response.metadata.totalInactive
+        inactive: response.metadata.totalInactive,
       });
-      
+
       return response;
     } catch (error) {
       console.error("❌ CompaniesService.getAll() - Error:", error);
@@ -88,21 +88,26 @@ export class CompaniesService {
   /**
    * Create a new company
    */
-  static async create(data: CreateCompanyRequest): Promise<{ company: Company }> {
+  static async create(
+    data: CreateCompanyRequest
+  ): Promise<{ company: Company }> {
     console.log("📞 CompaniesService.create() - Creating company:", {
       name: data.name,
       email: data.email,
       municipalityId: data.municipalityId,
-      username: data.username
+      username: data.username,
     });
 
     try {
-      const response = await apiCall('/companies', {
-        method: 'POST',
-        body: JSON.stringify(data)
-      }) as { company: Company };
-      
-      console.log("✅ CompaniesService.create() - Success:", response.company.name);
+      const response = (await apiCall("/companies", {
+        method: "POST",
+        body: JSON.stringify(data),
+      })) as { company: Company };
+
+      console.log(
+        "✅ CompaniesService.create() - Success:",
+        response.company.name
+      );
       return response;
     } catch (error) {
       console.error("❌ CompaniesService.create() - Error:", error);
@@ -113,15 +118,18 @@ export class CompaniesService {
   /**
    * Update a company
    */
-  static async update(id: string, data: Partial<CreateCompanyRequest>): Promise<{ company: Company }> {
+  static async update(
+    id: string,
+    data: Partial<CreateCompanyRequest>
+  ): Promise<{ company: Company }> {
     console.log("📞 CompaniesService.update() - Updating company:", id);
 
     try {
-      const response = await apiCall(`/companies/${id}`, {
-        method: 'PUT',
-        body: JSON.stringify(data)
-      }) as { company: Company };
-      
+      const response = (await apiCall(`/companies/${id}`, {
+        method: "PUT",
+        body: JSON.stringify(data),
+      })) as { company: Company };
+
       console.log("✅ CompaniesService.update() - Success");
       return response;
     } catch (error) {
@@ -133,14 +141,16 @@ export class CompaniesService {
   /**
    * Delete a company
    */
-  static async delete(id: string): Promise<{ message: string; deletedData: any }> {
+  static async delete(
+    id: string
+  ): Promise<{ message: string; deletedData: any }> {
     console.log("📞 CompaniesService.delete() - Deleting company:", id);
 
     try {
-      const response = await apiCall(`/companies/${id}`, {
-        method: 'DELETE'
-      }) as { message: string; deletedData: any };
-      
+      const response = (await apiCall(`/companies/${id}`, {
+        method: "DELETE",
+      })) as { message: string; deletedData: any };
+
       console.log("✅ CompaniesService.delete() - Success");
       return response;
     } catch (error) {

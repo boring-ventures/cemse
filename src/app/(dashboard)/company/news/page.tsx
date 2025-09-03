@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { Plus, Search, Filter, TrendingUp, Users, MessageSquare, FileText } from "lucide-react";
+import { Plus, Search, Filter } from "lucide-react";
 import {
   Card,
   CardContent,
@@ -28,11 +28,11 @@ import {
 } from "@/components/ui/dialog";
 import { useToast } from "@/hooks/use-toast";
 import { useCurrentUser } from "@/hooks/use-current-user";
-import { 
-  useNewsByAuthor, 
-  useCreateNewsArticleWithImage, 
-  useUpdateNewsArticleWithImage, 
-  useDeleteNewsArticle 
+import {
+  useNewsByAuthor,
+  useCreateNewsArticleWithImage,
+  useUpdateNewsArticleWithImage,
+  useDeleteNewsArticle,
 } from "@/hooks/useNewsArticleApi";
 import { NewsArticle } from "@/types/news";
 import { NewsForm } from "@/components/news/news-form";
@@ -42,7 +42,7 @@ import { NewsDetail } from "@/components/news/news-detail";
 export default function CompanyNewsPage() {
   const { profile } = useCurrentUser();
   const { toast } = useToast();
-  
+
   // Estados
   const [searchTerm, setSearchTerm] = useState("");
   const [statusFilter, setStatusFilter] = useState("all");
@@ -52,7 +52,12 @@ export default function CompanyNewsPage() {
   const [selectedNews, setSelectedNews] = useState<NewsArticle | null>(null);
 
   // Hooks de React Query
-  const { data: newsData, isLoading, error, refetch } = useNewsByAuthor(profile?.id || "");
+  const {
+    data: newsData,
+    isLoading,
+    error,
+    refetch,
+  } = useNewsByAuthor(profile?.id || "");
   const createNewsMutation = useCreateNewsArticleWithImage();
   const updateNewsMutation = useUpdateNewsArticleWithImage();
   const deleteNewsMutation = useDeleteNewsArticle();
@@ -61,30 +66,21 @@ export default function CompanyNewsPage() {
 
   // Filtrar noticias
   const filteredNews = newsArticles.filter((news) => {
-    const matchesSearch = news.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                         news.summary.toLowerCase().includes(searchTerm.toLowerCase());
-    const matchesStatus = statusFilter === "all" || news.status === statusFilter.toUpperCase();
+    const matchesSearch =
+      news.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      news.summary.toLowerCase().includes(searchTerm.toLowerCase());
+    const matchesStatus =
+      statusFilter === "all" || news.status === statusFilter.toUpperCase();
     return matchesSearch && matchesStatus;
   });
-
-  // Calcular estadísticas
-  const stats = {
-    total: newsArticles.length,
-    published: newsArticles.filter(n => n.status === "PUBLISHED").length,
-    draft: newsArticles.filter(n => n.status === "DRAFT").length,
-    archived: newsArticles.filter(n => n.status === "ARCHIVED").length,
-    totalViews: newsArticles.reduce((sum, n) => sum + n.viewCount, 0),
-    totalLikes: newsArticles.reduce((sum, n) => sum + n.likeCount, 0),
-    totalComments: newsArticles.reduce((sum, n) => sum + n.commentCount, 0),
-  };
 
   // Handlers
   const handleCreateNews = async (data: any, imageFile?: File) => {
     try {
       const formData = new FormData();
-      
+
       // Agregar campos de texto
-      Object.keys(data).forEach(key => {
+      Object.keys(data).forEach((key) => {
         if (data[key] !== undefined && data[key] !== null && data[key] !== "") {
           formData.append(key, data[key].toString());
         }
@@ -92,11 +88,11 @@ export default function CompanyNewsPage() {
 
       // Agregar imagen si existe
       if (imageFile) {
-        formData.append('image', imageFile);
+        formData.append("image", imageFile);
       }
 
       await createNewsMutation.mutateAsync(formData);
-      
+
       setShowCreateDialog(false);
       toast({
         title: "Éxito",
@@ -122,9 +118,9 @@ export default function CompanyNewsPage() {
 
     try {
       const formData = new FormData();
-      
+
       // Agregar campos de texto
-      Object.keys(data).forEach(key => {
+      Object.keys(data).forEach((key) => {
         if (data[key] !== undefined && data[key] !== null && data[key] !== "") {
           formData.append(key, data[key].toString());
         }
@@ -132,11 +128,11 @@ export default function CompanyNewsPage() {
 
       // Agregar imagen si existe
       if (imageFile) {
-        formData.append('image', imageFile);
+        formData.append("image", imageFile);
       }
 
       await updateNewsMutation.mutateAsync({ id: selectedNews.id, formData });
-      
+
       setShowEditDialog(false);
       setSelectedNews(null);
       toast({
@@ -195,7 +191,9 @@ export default function CompanyNewsPage() {
       {/* Header */}
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-3xl font-bold text-gray-900">Gestión de Noticias</h1>
+          <h1 className="text-3xl font-bold text-gray-900">
+            Gestión de Noticias
+          </h1>
           <p className="text-gray-600 mt-2">
             Administra las noticias de tu empresa
           </p>
@@ -211,7 +209,8 @@ export default function CompanyNewsPage() {
             <DialogHeader>
               <DialogTitle>Crear Nueva Noticia</DialogTitle>
               <DialogDescription>
-                Completa el formulario para crear una nueva noticia para tu empresa.
+                Completa el formulario para crear una nueva noticia para tu
+                empresa.
               </DialogDescription>
             </DialogHeader>
             <NewsForm
@@ -221,61 +220,6 @@ export default function CompanyNewsPage() {
             />
           </DialogContent>
         </Dialog>
-      </div>
-
-      {/* Estadísticas */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Total Noticias</CardTitle>
-            <FileText className="h-4 w-4 text-muted-foreground" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">{stats.total}</div>
-            <p className="text-xs text-muted-foreground">
-              {stats.published} publicadas, {stats.draft} borradores
-            </p>
-          </CardContent>
-        </Card>
-
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Total Vistas</CardTitle>
-            <TrendingUp className="h-4 w-4 text-muted-foreground" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">{stats.totalViews.toLocaleString()}</div>
-            <p className="text-xs text-muted-foreground">
-              Promedio: {stats.total > 0 ? Math.round(stats.totalViews / stats.total) : 0} por noticia
-            </p>
-          </CardContent>
-        </Card>
-
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Me Gusta</CardTitle>
-            <Users className="h-4 w-4 text-muted-foreground" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">{stats.totalLikes.toLocaleString()}</div>
-            <p className="text-xs text-muted-foreground">
-              {stats.total > 0 ? Math.round(stats.totalLikes / stats.total) : 0} por noticia
-            </p>
-          </CardContent>
-        </Card>
-
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Comentarios</CardTitle>
-            <MessageSquare className="h-4 w-4 text-muted-foreground" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">{stats.totalComments.toLocaleString()}</div>
-            <p className="text-xs text-muted-foreground">
-              {stats.total > 0 ? Math.round(stats.totalComments / stats.total) : 0} por noticia
-            </p>
-          </CardContent>
-        </Card>
       </div>
 
       {/* Filtros */}
