@@ -413,7 +413,7 @@ model CourseEnrollment {
   finalGrade        Int?             @map("final_grade")
   moduleProgress    Json?            @map("module_progress")
   quizResults       Json?            @map("quiz_results")
-  course            Course           @relation(fields: [courseId], references: [id])
+  course            Course           @relation(fields: [courseId], references: [id], onDelete: Cascade)
   student           Profile          @relation(fields: [studentId], references: [userId])
   lessonProgress    LessonProgress[]
   quizAttempts      QuizAttempt[]

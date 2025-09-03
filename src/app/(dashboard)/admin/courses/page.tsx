@@ -55,7 +55,7 @@ import {
   Target,
   TrendingUp,
 } from "lucide-react";
-import { useCourses } from "@/hooks/useCourseApi";
+import { useCourses, useDeleteCourse } from "@/hooks/useCourseApi";
 import { useCurrentUser } from "@/hooks/use-current-user";
 
 interface CourseStats {
@@ -73,6 +73,7 @@ interface CourseStats {
 export default function CourseManagementPage() {
   const { profile: currentUser } = useCurrentUser();
   const { data: courses, isLoading: loading, error } = useCourses();
+  const deleteCourseMutation = useDeleteCourse();
   const [searchQuery, setSearchQuery] = useState("");
   const [statusFilter, setStatusFilter] = useState<string>("all");
   const [categoryFilter, setCategoryFilter] = useState<string>("all");
@@ -220,8 +221,21 @@ export default function CourseManagementPage() {
 
   const handleDeleteCourse = async (courseId: string) => {
     if (window.confirm("¿Estás seguro de que quieres eliminar este curso?")) {
-      // Implementation for course deletion
-      console.log("Deleting course:", courseId);
+      try {
+        console.log("🗑️ Starting course deletion for:", courseId);
+        console.log("🗑️ Current user:", currentUser);
+        console.log("🗑️ Delete mutation state:", deleteCourseMutation);
+
+        await deleteCourseMutation.mutateAsync(courseId);
+        console.log("✅ Course deleted successfully:", courseId);
+      } catch (error) {
+        console.error("❌ Error deleting course:", error);
+        console.error("❌ Error details:", {
+          message: error instanceof Error ? error.message : "Unknown error",
+          stack: error instanceof Error ? error.stack : undefined,
+        });
+        alert("Error al eliminar el curso. Por favor, inténtalo de nuevo.");
+      }
     }
   };
 
