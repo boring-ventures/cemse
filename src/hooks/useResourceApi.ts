@@ -1,11 +1,11 @@
-import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { ResourceService } from '@/services/resource.service';
-import { Resource } from '@/types/api';
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import { ResourceService } from "@/services/resource.service";
+import { Resource } from "@/types/api";
 
 // Hook para obtener todos los recursos
 export const useResources = () => {
   return useQuery({
-    queryKey: ['resources'],
+    queryKey: ["resources"],
     queryFn: () => ResourceService.getAllResources(),
   });
 };
@@ -13,7 +13,7 @@ export const useResources = () => {
 // Hook para obtener un recurso específico
 export const useResource = (id: string) => {
   return useQuery({
-    queryKey: ['resource', id],
+    queryKey: ["resource", id],
     queryFn: () => ResourceService.getResource(id),
     enabled: !!id,
   });
@@ -24,9 +24,10 @@ export const useCreateResource = () => {
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: (data: Partial<Resource> | FormData) => ResourceService.createResource(data),
+    mutationFn: (data: Partial<Resource> | FormData) =>
+      ResourceService.createResource(data),
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['resources'] });
+      queryClient.invalidateQueries({ queryKey: ["resources"] });
     },
   });
 };
@@ -39,8 +40,8 @@ export const useUpdateResource = () => {
     mutationFn: ({ id, data }: { id: string; data: Partial<Resource> }) =>
       ResourceService.updateResource(id, data),
     onSuccess: (_, { id }) => {
-      queryClient.invalidateQueries({ queryKey: ['resources'] });
-      queryClient.invalidateQueries({ queryKey: ['resource', id] });
+      queryClient.invalidateQueries({ queryKey: ["resources"] });
+      queryClient.invalidateQueries({ queryKey: ["resource", id] });
     },
   });
 };
@@ -52,7 +53,7 @@ export const useDeleteResource = () => {
   return useMutation({
     mutationFn: (id: string) => ResourceService.deleteResource(id),
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['resources'] });
+      queryClient.invalidateQueries({ queryKey: ["resources"] });
     },
   });
 };
@@ -62,9 +63,10 @@ export const useSearchResources = () => {
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: (query: string) => ResourceService.getAllResources({ search: query }),
+    mutationFn: (query: string) =>
+      ResourceService.getAllResources({ search: query }),
     onSuccess: (data) => {
-      queryClient.setQueryData(['resources', 'search'], data);
+      queryClient.setQueryData(["resources", "search"], data);
     },
   });
 };
@@ -72,8 +74,11 @@ export const useSearchResources = () => {
 // Hook para obtener recursos por tipo
 export const useResourcesByType = (type: string) => {
   return useQuery({
-    queryKey: ['resources', 'type', type],
-    queryFn: () => ResourceService.getAllResources({ type: type === 'all' ? undefined : type }),
+    queryKey: ["resources", "type", type],
+    queryFn: () =>
+      ResourceService.getAllResources({
+        type: type === "all" ? undefined : type,
+      }),
     enabled: !!type,
   });
 };
@@ -81,8 +86,11 @@ export const useResourcesByType = (type: string) => {
 // Hook para obtener recursos por categoría
 export const useResourcesByCategory = (category: string) => {
   return useQuery({
-    queryKey: ['resources', 'category', category],
-    queryFn: () => ResourceService.getAllResources({ category: category === 'all' ? undefined : category }),
+    queryKey: ["resources", "category", category],
+    queryFn: () =>
+      ResourceService.getAllResources({
+        category: category === "all" ? undefined : category,
+      }),
     enabled: !!category,
   });
 };
@@ -90,11 +98,13 @@ export const useResourcesByCategory = (category: string) => {
 // Hook para obtener recursos públicos
 export const usePublicResources = (municipalityId?: string) => {
   return useQuery({
-    queryKey: ['resources', 'public', municipalityId],
+    queryKey: ["resources", "public", municipalityId],
     queryFn: async () => {
-      const response = await ResourceService.getAllResources({ municipalityId });
+      const response = await ResourceService.getAllResources({
+        municipalityId,
+      });
       // Handle response structure: { success: true, resources: [...] } or direct array
-      if (response && typeof response === 'object' && 'resources' in response) {
+      if (response && typeof response === "object" && "resources" in response) {
         return response.resources;
       }
       // Fallback: return as array if it's already an array
@@ -151,8 +161,8 @@ export const useIncrementDownloads = () => {
   return useMutation({
     mutationFn: (id: string) => ResourceService.incrementDownloads(id),
     onSuccess: (_, id) => {
-      queryClient.invalidateQueries({ queryKey: ['resource', id] });
-      queryClient.invalidateQueries({ queryKey: ['resources'] });
+      queryClient.invalidateQueries({ queryKey: ["resource", id] });
+      queryClient.invalidateQueries({ queryKey: ["resources"] });
     },
   });
 };
@@ -165,8 +175,8 @@ export const useRateResource = () => {
     mutationFn: ({ id, rating }: { id: string; rating: number }) =>
       ResourceService.rateResource(id, rating),
     onSuccess: (_, { id }) => {
-      queryClient.invalidateQueries({ queryKey: ['resource', id] });
-      queryClient.invalidateQueries({ queryKey: ['resources'] });
+      queryClient.invalidateQueries({ queryKey: ["resource", id] });
+      queryClient.invalidateQueries({ queryKey: ["resources"] });
     },
   });
 };
@@ -214,9 +224,10 @@ export const useUploadResourceFile = () => {
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: (formData: FormData) => ResourceService.uploadResource(formData),
+    mutationFn: (formData: FormData) =>
+      ResourceService.uploadResource(formData),
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['resources'] });
+      queryClient.invalidateQueries({ queryKey: ["resources"] });
     },
   });
-}; 
+};

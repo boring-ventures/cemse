@@ -11,24 +11,29 @@ export function AuthRedirect() {
 
   useEffect(() => {
     // Don't redirect if we're on auth pages or if user recently logged out
-    const authPages = ['/sign-in', '/sign-up', '/login', '/register'];
-    const isOnAuthPage = authPages.some(page => pathname.startsWith(page));
-    
+    const authPages = ["/sign-in", "/sign-up", "/login", "/register"];
+    const isOnAuthPage = authPages.some((page) => pathname.startsWith(page));
+
     // Check for recent logout flag
-    const recentLogout = typeof window !== 'undefined' ? sessionStorage.getItem('recent-logout') : null;
-    
+    const recentLogout =
+      typeof window !== "undefined"
+        ? sessionStorage.getItem("recent-logout")
+        : null;
+
     if (isOnAuthPage) {
       console.log("🔐 AuthRedirect - On auth page, skipping redirect");
       return;
     }
-    
+
     if (recentLogout) {
-      console.log("🔐 AuthRedirect - Recent logout detected, skipping redirect");
+      console.log(
+        "🔐 AuthRedirect - Recent logout detected, skipping redirect"
+      );
       return;
     }
 
     // Only redirect if user is authenticated and not loading
-    if (!loading && isAuthenticated && user) {
+    if (isAuthenticated && !loading && user) {
       console.log("🔐 AuthRedirect - User authenticated:", {
         role: user.role,
         username: user.username,
@@ -39,7 +44,7 @@ export function AuthRedirect() {
       // Define role-specific default routes
       const roleDefaultRoutes: Record<string, string> = {
         EMPRESAS: "/dashboard",
-        GOBIERNOS_MUNICIPALES: "/admin/companies",
+        GOBIERNOS_MUNICIPALES: "/dashboard", // Allow municipal governments to access dashboard
         SUPER_ADMIN: "/dashboard", // Allow SUPER_ADMIN to stay on dashboard
         SUPERADMIN: "/dashboard", // Allow SUPERADMIN to stay on dashboard
         JOVENES: "/dashboard",
@@ -56,14 +61,33 @@ export function AuthRedirect() {
         console.log(
           `🔐 AuthRedirect - User on generic dashboard, redirecting ${user.role} to ${defaultRoute}`
         );
+
+        // Special handling for municipal governments - they should stay on dashboard
+        if (user.role === "GOBIERNOS_MUNICIPALES") {
+          console.log(
+            "🏛️ AuthRedirect - Municipal government user, allowing access to dashboard"
+          );
+          return; // Don't redirect, let them stay on dashboard
+        }
+
         router.replace(defaultRoute);
       } else {
         console.log(
           `🔐 AuthRedirect - User on specific page (${pathname}), no redirect needed`
         );
       }
+    } else {
+      console.log(
+        "🔐 AuthRedirect - User not authenticated or still loading:",
+        {
+          isAuthenticated,
+          loading,
+          hasUser: !!user,
+          currentPath: pathname,
+        }
+      );
     }
-  }, [user, loading, isAuthenticated, router, pathname]);
+  }, [isAuthenticated, loading, user, pathname, router]);
 
   // Don't render anything, this is just for side effects
   return null;

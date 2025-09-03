@@ -15,6 +15,7 @@ import {
   MessageSquare,
   Edit,
   FileText,
+  RefreshCw,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -45,7 +46,6 @@ import {
   YouthApplication,
 } from "@/services/youth-application.service";
 import YouthApplicationChat from "@/components/youth-applications/YouthApplicationChat";
-import UnreadMessagesBadge from "@/components/youth-applications/UnreadMessagesBadge";
 import YouthApplicationEditModal from "@/components/youth-applications/YouthApplicationEditModal";
 
 interface YouthApplicationStats {
@@ -87,7 +87,8 @@ export default function MyYouthApplicationsPage() {
     useState<YouthApplication | null>(null);
   const [showChatModal, setShowChatModal] = useState(false);
   const [showEditModal, setShowEditModal] = useState(false);
-  const [editingApplication, setEditingApplication] = useState<YouthApplication | null>(null);
+  const [editingApplication, setEditingApplication] =
+    useState<YouthApplication | null>(null);
 
   useEffect(() => {
     console.log(
@@ -252,7 +253,6 @@ export default function MyYouthApplicationsPage() {
             encuentren
           </p>
         </div>
-
       </div>
 
       {/* Stats Cards */}
@@ -444,13 +444,9 @@ export default function MyYouthApplicationsPage() {
                             variant="outline"
                             size="sm"
                             onClick={() => handleOpenChat(application)}
-                            className="relative"
                           >
                             <MessageSquare className="w-4 h-4 mr-2" />
                             Chat
-                            <UnreadMessagesBadge
-                              applicationId={application.id}
-                            />
                           </Button>
 
                           {application.cvFile && (
@@ -530,23 +526,39 @@ export default function MyYouthApplicationsPage() {
                 ? "Crea tu primera postulación para que las empresas puedan encontrarte."
                 : "Intenta ajustar tus filtros de búsqueda."}
             </p>
-
           </CardContent>
         </Card>
       )}
 
       {/* Chat Modal */}
       <Dialog open={showChatModal} onOpenChange={setShowChatModal}>
-        <DialogContent className="max-w-4xl h-[90vh] flex flex-col">
-          <DialogHeader className="p-6 pb-4 border-b">
-            <DialogTitle className="text-lg font-semibold text-gray-900">
-              Chat de Postulación
-            </DialogTitle>
-            <DialogDescription className="text-sm text-gray-600">
-              {selectedApplication?.title || "Sin título"}
-            </DialogDescription>
+        <DialogContent className="max-w-4xl h-[90vh] flex flex-col p-0">
+          <DialogHeader className="p-6 pb-4 border-b flex-shrink-0">
+            <div className="flex items-center justify-between">
+              <div>
+                <DialogTitle className="text-lg font-semibold text-gray-900">
+                  Chat de Postulación
+                </DialogTitle>
+                <DialogDescription className="text-sm text-gray-600">
+                  {selectedApplication?.title || "Sin título"}
+                </DialogDescription>
+              </div>
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => {
+                  // Force refresh of the chat component
+                  setShowChatModal(false);
+                  setTimeout(() => setShowChatModal(true), 100);
+                }}
+              >
+                <RefreshCw className="w-4 h-4 mr-2" />
+                Recargar
+              </Button>
+            </div>
           </DialogHeader>
-          <div className="flex-1 p-6">
+
+          <div className="flex-1 min-h-0 p-6">
             {selectedApplication && (
               <YouthApplicationChat
                 applicationId={selectedApplication.id}

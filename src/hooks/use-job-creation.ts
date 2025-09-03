@@ -1,14 +1,20 @@
-import { useState } from 'react';
-import { useRouter } from 'next/navigation';
-import { useToast } from '@/components/ui/use-toast';
+import { useState } from "react";
+import { useRouter } from "next/navigation";
+import { useToast } from "@/components/ui/use-toast";
+import {
+  ContractType,
+  WorkModality,
+  ExperienceLevel,
+  JobStatus,
+} from "@/types/jobs";
 
 interface JobFormData {
   title: string;
   description: string;
   location: string;
-  contractType: string;
-  workModality: string;
-  experienceLevel: string;
+  contractType: ContractType;
+  workModality: WorkModality;
+  experienceLevel: ExperienceLevel;
   salaryMin: string;
   salaryMax: string;
   salaryCurrency: string;
@@ -31,32 +37,47 @@ interface JobCreationOptions {
 
 interface UseJobCreationReturn {
   isLoading: boolean;
-  createJob: (data: JobFormData, user: any, images: File[], status: string) => Promise<void>;
+  createJob: (
+    data: JobFormData,
+    user: any,
+    images: File[],
+    status: JobStatus
+  ) => Promise<void>;
 }
 
-export const useJobCreation = (options: JobCreationOptions = {}): UseJobCreationReturn => {
+export const useJobCreation = (
+  options: JobCreationOptions = {}
+): UseJobCreationReturn => {
   const [isLoading, setIsLoading] = useState(false);
   const router = useRouter();
   const { toast } = useToast();
 
   // Transform job data for API
-  const transformJobData = (data: JobFormData, user: any) => {
+  const transformJobData = (
+    data: JobFormData,
+    user: any,
+    status: JobStatus
+  ) => {
     // Determine the correct company ID to use
     const companyId = user.company?.id || user.id;
-    
-    console.log('🔍 useJobCreation - transformJobData called with user:', {
+
+    console.log("🔍 useJobCreation - transformJobData called with user:", {
       userId: user.id,
       userCompanyId: user.company?.id,
       finalCompanyId: companyId,
       userRole: user.role,
       hasCompanyObject: !!user.company,
-      fullUserObject: JSON.stringify(user, null, 2)
+      status: status,
+      fullUserObject: JSON.stringify(user, null, 2),
     });
-    
+
     return {
       title: data.title,
       description: data.description,
-      requirements: data.requirements.length > 0 ? data.requirements.join(', ') : "Sin requisitos específicos",
+      requirements:
+        data.requirements.length > 0
+          ? data.requirements.join(", ")
+          : "Sin requisitos específicos",
       location: data.location,
       contractType: data.contractType,
       workSchedule: data.workSchedule || "Horario a definir",
@@ -64,23 +85,32 @@ export const useJobCreation = (options: JobCreationOptions = {}): UseJobCreation
       experienceLevel: data.experienceLevel,
       municipality: "Cochabamba",
       companyId: companyId,
-    salaryMin: data.salaryMin ? parseInt(data.salaryMin) : undefined,
-    salaryMax: data.salaryMax ? parseInt(data.salaryMax) : undefined,
-    benefits: data.benefits.length > 0 ? data.benefits.join(', ') : undefined,
-    skillsRequired: data.requiredSkills.length > 0 ? data.requiredSkills : ["Sin especificar"],
-    desiredSkills: data.desiredSkills,
-    applicationDeadline: data.closingDate || undefined,
-    latitude: data.coordinates ? data.coordinates[0] : undefined,
-    longitude: data.coordinates ? data.coordinates[1] : undefined,
-    department: data.department || undefined,
-    educationRequired: data.educationRequired || undefined,
+      salaryMin: data.salaryMin ? parseInt(data.salaryMin) : undefined,
+      salaryMax: data.salaryMax ? parseInt(data.salaryMax) : undefined,
+      benefits: data.benefits.length > 0 ? data.benefits.join(", ") : undefined,
+      skillsRequired:
+        data.requiredSkills.length > 0
+          ? data.requiredSkills
+          : ["Sin especificar"],
+      desiredSkills: data.desiredSkills,
+      applicationDeadline: data.closingDate || undefined,
+      latitude: data.coordinates ? data.coordinates[0] : undefined,
+      longitude: data.coordinates ? data.coordinates[1] : undefined,
+      department: data.department || undefined,
+      educationRequired: data.educationRequired || undefined,
+      status: status, // Pass the status parameter
+    };
   };
-};
 
   // Create FormData from job data
-  const createFormData = (data: JobFormData, user: any, images: File[]) => {
+  const createFormData = (
+    data: JobFormData,
+    user: any,
+    images: File[],
+    status: JobStatus
+  ) => {
     const formData = new FormData();
-    const jobPayload = transformJobData(data, user);
+    const jobPayload = transformJobData(data, user, status);
 
     // Add all job data to FormData
     Object.entries(jobPayload).forEach(([key, value]) => {
@@ -94,33 +124,40 @@ export const useJobCreation = (options: JobCreationOptions = {}): UseJobCreation
     });
 
     // Add images
-    images.forEach(file => formData.append('images', file));
+    images.forEach((file) => formData.append("images", file));
 
     return formData;
   };
 
   // Make API request
-  const makeJobRequest = async (body: FormData | string, isFormData: boolean = false) => {
-    const headers: HeadersInit = isFormData ? {} : { "Content-Type": "application/json" };
-    
+  const makeJobRequest = async (
+    body: FormData | string,
+    isFormData: boolean = false
+  ) => {
+    const headers: HeadersInit = isFormData
+      ? {}
+      : { "Content-Type": "application/json" };
+
     const response = await fetch("/api/joboffer", {
       method: "POST",
       headers,
-      credentials: 'include',
+      credentials: "include",
       body,
     });
 
     if (!response.ok) {
       const errorText = await response.text();
       let errorData;
-      
+
       try {
         errorData = JSON.parse(errorText);
       } catch {
         throw new Error(`HTTP ${response.status}: ${errorText}`);
       }
-      
-      throw new Error(`HTTP ${response.status}: ${errorData.error || errorText}`);
+
+      throw new Error(
+        `HTTP ${response.status}: ${errorData.error || errorText}`
+      );
     }
 
     return response;
@@ -133,20 +170,22 @@ export const useJobCreation = (options: JobCreationOptions = {}): UseJobCreation
     }
 
     const message = error.message;
-    
-    if (message.includes('401')) {
+
+    if (message.includes("401")) {
       return "Tu sesión ha expirado. Por favor, inicia sesión nuevamente.";
     }
-    
-    if (message.includes('400')) {
+
+    if (message.includes("400")) {
       const match = message.match(/HTTP 400: (.+)/);
-      return match ? `Error: ${match[1]}` : "Hay errores en los datos del formulario. Verifica todos los campos.";
+      return match
+        ? `Error: ${match[1]}`
+        : "Hay errores en los datos del formulario. Verifica todos los campos.";
     }
-    
-    if (message.includes('HTTP')) {
+
+    if (message.includes("HTTP")) {
       return `Error del servidor: ${message}`;
     }
-    
+
     return message;
   };
 
@@ -155,16 +194,16 @@ export const useJobCreation = (options: JobCreationOptions = {}): UseJobCreation
     data: JobFormData,
     user: any,
     images: File[],
-    status: string
+    status: JobStatus
   ) => {
-    console.log('🔍 useJobCreation - createJob called with:', {
+    console.log("🔍 useJobCreation - createJob called with:", {
       userId: user.id,
       userCompanyId: user.company?.id,
       status,
       hasImages: images.length > 0,
-      jobTitle: data.title
+      jobTitle: data.title,
     });
-    
+
     setIsLoading(true);
 
     try {
@@ -173,11 +212,11 @@ export const useJobCreation = (options: JobCreationOptions = {}): UseJobCreation
 
       if (hasImages) {
         // Create FormData for image uploads
-        const formData = createFormData(data, user, images);
+        const formData = createFormData(data, user, images, status);
         response = await makeJobRequest(formData, true);
       } else {
         // Create JSON payload for regular requests
-        const jobPayload = transformJobData(data, user);
+        const jobPayload = transformJobData(data, user, status);
         response = await makeJobRequest(JSON.stringify(jobPayload), false);
       }
 
@@ -186,13 +225,12 @@ export const useJobCreation = (options: JobCreationOptions = {}): UseJobCreation
         title: "Empleo creado",
         description: `El empleo ha sido ${status === "ACTIVE" ? "publicado" : "guardado como borrador"}`,
       });
-      
+
       options.onSuccess?.();
       router.push("/company/jobs");
-
     } catch (error) {
       const errorMessage = getErrorMessage(error);
-      
+
       toast({
         title: "Error",
         description: errorMessage,

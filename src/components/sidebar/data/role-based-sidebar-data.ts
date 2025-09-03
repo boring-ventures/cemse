@@ -65,7 +65,7 @@ export const youthSidebarData: SidebarData = {
         },
         {
           title: "Postulaciones",
-          url: "/my-applications",
+          url: "/my-youth-applications",
           icon: FileText,
         },
       ],
@@ -143,7 +143,6 @@ export const youthSidebarData: SidebarData = {
     },
   ],
 };
-
 
 // ADOLESCENTS navigation (similar to youth but no reports)
 export const adolescentSidebarData: SidebarData = {
@@ -618,9 +617,17 @@ export function getSidebarDataByRole(role: UserRole): SidebarData {
     case "SUPERADMIN":
       return superAdminSidebarData;
     default:
-      console.log("🔍 getSidebarDataByRole - No match for role:", role, "using superAdminSidebarData as fallback for admin roles");
+      console.log(
+        "🔍 getSidebarDataByRole - No match for role:",
+        role,
+        "using superAdminSidebarData as fallback for admin roles"
+      );
       // For any unknown role, check if it contains "ADMIN" and return super admin data
-      if (role && typeof role === 'string' && role.toUpperCase().includes('ADMIN')) {
+      if (
+        role &&
+        typeof role === "string" &&
+        role.toUpperCase().includes("ADMIN")
+      ) {
         return superAdminSidebarData;
       }
       return youthSidebarData; // Default fallback to youth data

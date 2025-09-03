@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import React, { useState } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
@@ -51,7 +51,15 @@ export function ResetPasswordForm({
   const router = useRouter();
   const [isLoading, setIsLoading] = useState(false);
   const [password, setPassword] = useState("");
-  const supabase = createClientComponentClient();
+  const [isClient, setIsClient] = useState(false);
+
+  // Only create Supabase client on the client side
+  const supabase = isClient ? createClientComponentClient() : null;
+
+  // Ensure we're on the client side
+  React.useEffect(() => {
+    setIsClient(true);
+  }, []);
 
   const form = useForm<FormValues>({
     resolver: zodResolver(formSchema),
@@ -69,6 +77,11 @@ export function ResetPasswordForm({
   async function onSubmit(data: FormValues) {
     try {
       setIsLoading(true);
+
+      // Check if Supabase client is available
+      if (!supabase) {
+        throw new Error("Supabase client not available");
+      }
 
       // Get the current user
       const { data: userData, error: userError } =
@@ -146,8 +159,16 @@ export function ResetPasswordForm({
             )}
           />
 
-          <Button type="submit" className="w-full" disabled={isLoading}>
-            {isLoading ? "Resetting..." : "Reset Password"}
+          <Button
+            type="submit"
+            className="w-full"
+            disabled={isLoading || !isClient}
+          >
+            {isLoading
+              ? "Resetting..."
+              : !isClient
+                ? "Loading..."
+                : "Reset Password"}
           </Button>
         </form>
       </Form>

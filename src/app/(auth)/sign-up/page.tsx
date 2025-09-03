@@ -9,6 +9,9 @@ export const metadata: Metadata = {
   description: "Create a new account",
 };
 
+// Force dynamic rendering to avoid build-time issues
+export const dynamic = "force-dynamic";
+
 export default function SignUpPage() {
   return (
     <AuthLayout>

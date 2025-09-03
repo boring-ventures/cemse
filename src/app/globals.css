@@ -2,6 +2,9 @@
 @tailwind components;
 @tailwind utilities;
 
+/* Leaflet Map Styles - Commented out to avoid build issues */
+/* @import 'leaflet/dist/leaflet.css'; */
+
 body {
   font-family: Arial, Helvetica, sans-serif;
 }
@@ -85,14 +88,24 @@ body {
   body {
     @apply bg-background text-foreground;
   }
-}
 
-@layer base {
-  * {
-    @apply border-border outline-ring/50;
+  /* Dashboard specific styles for better responsiveness */
+  .dashboard-container {
+    @apply w-full max-w-full overflow-hidden;
   }
-  body {
-    @apply bg-background text-foreground;
+
+  .dashboard-content {
+    @apply min-w-0 break-words;
+  }
+
+  /* Ensure cards don't overflow on small screens */
+  .dashboard-card {
+    @apply min-w-0 overflow-hidden;
+  }
+
+  /* Prevent text from overflowing containers */
+  .dashboard-text {
+    @apply break-words overflow-hidden;
   }
 }
 

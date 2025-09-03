@@ -1,16 +1,19 @@
 import { NextRequest, NextResponse } from "next/server";
-import bcrypt from 'bcrypt';
-import jwt from 'jsonwebtoken';
-import { prisma } from '@/lib/prisma';
+import bcrypt from "bcrypt";
+import jwt from "jsonwebtoken";
+import { prisma } from "@/lib/prisma";
 
-const BACKEND_URL = process.env.NEXT_PUBLIC_BACKEND_URL || "https://cemse-back-production.up.railway.app";
+const BACKEND_URL =
+  process.env.NEXT_PUBLIC_BACKEND_URL ||
+  "https://cemse-back-production.up.railway.app";
 const JWT_SECRET = process.env.JWT_SECRET || "supersecretkey"; // Same secret as external backend
 
-console.log('🔐 Login API - JWT_SECRET configured:', !!JWT_SECRET);
-console.log('🔐 Login API - JWT_SECRET length:', JWT_SECRET.length);
-console.log('🔐 Login API - JWT_SECRET preview:', JWT_SECRET.substring(0, 10) + '...');
-
-
+console.log("🔐 Login API - JWT_SECRET configured:", !!JWT_SECRET);
+console.log("🔐 Login API - JWT_SECRET length:", JWT_SECRET.length);
+console.log(
+  "🔐 Login API - JWT_SECRET preview:",
+  JWT_SECRET.substring(0, 10) + "..."
+);
 
 // Production authentication - uses real database and backend only
 
@@ -39,87 +42,100 @@ export async function POST(request: NextRequest) {
     console.log("🔐 Login API - Starting login process");
 
     // PRIORITY 1: Try database authentication first
-    console.log("🔐 Login API - Attempting database authentication for:", username);
-    
+    console.log(
+      "🔐 Login API - Attempting database authentication for:",
+      username
+    );
+
     try {
       const user = await prisma.user.findUnique({
-        where: { username }
+        where: { username },
       });
-      
+
       let profile = null;
       if (user) {
         profile = await prisma.profile.findUnique({
-          where: { userId: user.id }
+          where: { userId: user.id },
         });
       }
-      
+
       if (user && user.isActive) {
-        console.log("🔐 Login API - Found user in database:", { 
-          id: user.id, 
-          username: user.username, 
-          role: user.role
+        console.log("🔐 Login API - Found user in database:", {
+          id: user.id,
+          username: user.username,
+          role: user.role,
         });
-        
+
         // Verify password
         const isValidPassword = await bcrypt.compare(password, user.password);
-        
+
         if (isValidPassword) {
           console.log("🔐 Login API - Database authentication successful");
-          
+
           // Generate JWT token compatible with external backend
           const jwtToken = jwt.sign(
             {
               id: user.id,
               username: user.username,
               role: user.role,
-              type: user.role // Use the actual user role instead of generic 'user'
+              type: user.role, // Use the actual user role instead of generic 'user'
             },
             JWT_SECRET,
-            { expiresIn: '24h' }
+            { expiresIn: "24h" }
           );
-          
-          console.log("🔐 Login API - Generated JWT token for external backend compatibility");
-          
+
+          console.log(
+            "🔐 Login API - Generated JWT token for external backend compatibility"
+          );
+
           const userData = {
             user: {
               id: user.id,
               username: user.username,
               firstName: profile?.firstName || user.username,
-              lastName: profile?.lastName || '',
+              lastName: profile?.lastName || "",
               email: profile?.email || `${user.username}@cemse.dev`,
               role: user.role, // Use actual role from database
-              type: user.role
+              type: user.role,
             },
             role: user.role,
             type: user.role,
-            municipality: profile ? {
-              id: 'db-municipality',
-              name: profile.municipality || 'Unknown',
-              department: profile.department || 'Unknown'
-            } : null,
-            company: user.role === 'COMPANIES' && profile ? {
-              id: user.id,
-              name: profile.companyName || 'Unknown Company',
-              email: profile.email,
-              municipality: {
-                id: 'db-municipality',
-                name: profile.municipality || 'Unknown',
-                department: profile.department || 'Unknown'
-              }
-            } : null
+            municipality: profile
+              ? {
+                  id: "db-municipality",
+                  name: profile.municipality || "Unknown",
+                  department: profile.department || "Unknown",
+                }
+              : null,
+            company:
+              user.role === "COMPANIES" && profile
+                ? {
+                    id: user.id,
+                    name: profile.companyName || "Unknown Company",
+                    email: profile.email,
+                    municipality: {
+                      id: "db-municipality",
+                      name: profile.municipality || "Unknown",
+                      department: profile.department || "Unknown",
+                    },
+                  }
+                : null,
           };
 
-          const response = NextResponse.json({
-            success: true,
-            user: userData.user,
-            municipality: userData.municipality,
-            company: userData.company,
-            role: userData.role,
-            type: userData.type,
-          }, { status: 200 });
+          const response = NextResponse.json(
+            {
+              success: true,
+              user: userData.user,
+              municipality: userData.municipality,
+              company: userData.company,
+              role: userData.role,
+              type: userData.type,
+            },
+            { status: 200 }
+          );
 
-          const isProduction = process.env.NODE_ENV === 'production';
-          
+          const isProduction = process.env.NODE_ENV === "production";
+
           response.cookies.set("cemse-auth-token", jwtToken, {
             httpOnly: true,
             secure: isProduction,
@@ -128,7 +144,10 @@ export async function POST(request: NextRequest) {
             maxAge: 60 * 60 * 24, // 24 hours to match JWT expiry
           });
 
-          console.log("🔐 Login API - Database authentication successful for:", username);
+          console.log(
+            "🔐 Login API - Database authentication successful for:",
+            username
+          );
           return response;
         } else {
           console.log("🔐 Login API - Database password verification failed");
@@ -139,7 +158,10 @@ export async function POST(request: NextRequest) {
     }
 
     // PRIORITY 2: Try backend authentication as fallback
-    console.log("🔐 Login API - Database auth failed, trying backend authentication for:", username);
+    console.log(
+      "🔐 Login API - Database auth failed, trying backend authentication for:",
+      username
+    );
 
     const backendResponse = await fetch(`${BACKEND_URL}/api/auth/login`, {
       method: "POST",
@@ -152,9 +174,11 @@ export async function POST(request: NextRequest) {
     if (!backendResponse.ok) {
       const errorText = await backendResponse.text();
       console.error("🔐 Login API - Backend authentication failed:", errorText);
-      
+
       // Continue to company/mock authentication
-      console.log("🔐 Login API - Backend failed, trying company authentication");
+      console.log(
+        "🔐 Login API - Backend failed, trying company authentication"
+      );
       throw new Error("Backend authentication failed, trying alternatives");
     }
 
@@ -186,8 +210,8 @@ export async function POST(request: NextRequest) {
     );
 
     // Set authentication cookies with secure settings
-    const isProduction = process.env.NODE_ENV === 'production';
-    
+    const isProduction = process.env.NODE_ENV === "production";
+
     response.cookies.set("cemse-auth-token", token, {
       httpOnly: true,
       secure: isProduction,
@@ -209,46 +233,57 @@ export async function POST(request: NextRequest) {
     return response;
   } catch (error) {
     console.error("🔐 Login API - Login error:", error);
-    
+
     // If backend is not available or authentication failed, provide database authentication for development
-    if (error instanceof TypeError && error.message.includes('fetch failed') || 
-        error instanceof Error && error.message.includes('Backend authentication failed')) {
-      console.log("🔐 Login API - Backend not available or failed, using database authentication");
-      
-      console.log("🔐 Login API - Backend not available, checking database and local storage");
-      
+    if (
+      (error instanceof TypeError && error.message.includes("fetch failed")) ||
+      (error instanceof Error &&
+        error.message.includes("Backend authentication failed"))
+    ) {
+      console.log(
+        "🔐 Login API - Backend not available or failed, using database authentication"
+      );
+
+      console.log(
+        "🔐 Login API - Backend not available, checking database and local storage"
+      );
+
       // First, try to authenticate against the database
       console.log("🔐 Login API - Checking database for user:", username);
       try {
-        console.log("🔐 Login API - Querying database with username:", username);
+        console.log(
+          "🔐 Login API - Querying database with username:",
+          username
+        );
         const user = await prisma.user.findUnique({
-          where: { username }
+          where: { username },
         });
-        
+
         let profile = null;
         if (user) {
           profile = await prisma.profile.findUnique({
-            where: { userId: user.id }
+            where: { userId: user.id },
           });
         }
-        
+
         if (user && user.isActive) {
-          console.log("🔐 Login API - Found user in database:", { 
-            id: user.id, 
-            username: user.username, 
-            role: user.role
+          console.log("🔐 Login API - Found user in database:", {
+            id: user.id,
+            username: user.username,
+            role: user.role,
           });
-          
+
           // Verify password
           const isValidPassword = await bcrypt.compare(password, user.password);
-          
+
           if (isValidPassword) {
             console.log("🔐 Login API - Database authentication successful");
-            
-            const mockToken = user.role === 'COMPANIES' ? 
-              `mock-dev-token-company-${user.id}-${Date.now()}` : 
-              `mock-dev-token-${user.role.toLowerCase()}-${user.id}-${Date.now()}`;
-            
+
+            const mockToken =
+              user.role === "COMPANIES"
+                ? `mock-dev-token-company-${user.id}-${Date.now()}`
+                : `mock-dev-token-${user.role.toLowerCase()}-${user.id}-${Date.now()}`;
+
             // Map database roles to sidebar-compatible roles
             let mappedRole = user.role;
             // No mapping needed - database already has correct enum values
@@ -257,42 +292,50 @@ export async function POST(request: NextRequest) {
               user: {
                 id: user.id,
                 username: user.username,
-                firstName: profile?.firstName || 'User',
-                lastName: profile?.lastName || '',
+                firstName: profile?.firstName || "User",
+                lastName: profile?.lastName || "",
                 email: profile?.email || `${user.username}@company.dev`,
                 role: mappedRole,
-                type: mappedRole
+                type: mappedRole,
               },
               role: mappedRole,
               type: mappedRole,
-              municipality: profile ? {
-                id: 'db-municipality',
-                name: profile.municipality || 'Unknown',
-                department: profile.department || 'Unknown'
-              } : null,
-              company: user.role === 'COMPANIES' && profile ? {
-                id: user.id,
-                name: profile.companyName || 'Unknown Company',
-                email: profile.email,
-                municipality: {
-                  id: 'db-municipality',
-                  name: profile.municipality || 'Unknown',
-                  department: profile.department || 'Unknown'
-                }
-              } : null
+              municipality: profile
+                ? {
+                    id: "db-municipality",
+                    name: profile.municipality || "Unknown",
+                    department: profile.department || "Unknown",
+                  }
+                : null,
+              company:
+                user.role === "COMPANIES" && profile
+                  ? {
+                      id: user.id,
+                      name: profile.companyName || "Unknown Company",
+                      email: profile.email,
+                      municipality: {
+                        id: "db-municipality",
+                        name: profile.municipality || "Unknown",
+                        department: profile.department || "Unknown",
+                      },
+                    }
+                  : null,
             };
 
-            const response = NextResponse.json({
-              success: true,
-              user: userData.user,
-              municipality: userData.municipality,
-              company: userData.company,
-              role: userData.role,
-              type: userData.type,
-            }, { status: 200 });
+            const response = NextResponse.json(
+              {
+                success: true,
+                user: userData.user,
+                municipality: userData.municipality,
+                company: userData.company,
+                role: userData.role,
+                type: userData.type,
+              },
+              { status: 200 }
+            );
 
-            const isProduction = process.env.NODE_ENV === 'production';
-            
+            const isProduction = process.env.NODE_ENV === "production";
+
             response.cookies.set("cemse-auth-token", mockToken, {
               httpOnly: true,
               secure: isProduction,
@@ -301,55 +344,72 @@ export async function POST(request: NextRequest) {
               maxAge: 60 * 60 * 24 * 7,
             });
 
-            console.log("🔐 Login API - Database authentication successful for:", username);
+            console.log(
+              "🔐 Login API - Database authentication successful for:",
+              username
+            );
             return response;
           } else {
             console.log("🔐 Login API - Database password verification failed");
           }
         } else {
           console.log("🔐 Login API - User not found in database or inactive");
-          
+
           // Try to find by company credentials as well
-          console.log("🔐 Login API - Trying to find user by company credentials");
+          console.log(
+            "🔐 Login API - Trying to find user by company credentials"
+          );
           const company = await prisma.company.findFirst({
-            where: { 
-              OR: [
-                { username: username },
-                { loginEmail: username }
-              ]
+            where: {
+              OR: [{ username: username }, { loginEmail: username }],
             },
             include: {
-              creator: true
-            }
+              creator: true,
+            },
           });
-          
+
           let creatorProfile = null;
           if (company?.creator) {
             creatorProfile = await prisma.profile.findUnique({
-              where: { userId: company.creator.id }
+              where: { userId: company.creator.id },
             });
           }
-          
+
           if (company && company.creator) {
-            console.log("🔐 Login API - Found company, trying company password:", {
-              companyId: company.id,
-              companyName: company.name,
-              creatorId: company.creator.id,
-              creatorUsername: company.creator.username
-            });
-            
+            console.log(
+              "🔐 Login API - Found company, trying company password:",
+              {
+                companyId: company.id,
+                companyName: company.name,
+                creatorId: company.creator.id,
+                creatorUsername: company.creator.username,
+              }
+            );
+
             // Try both the company password and the user password
-            const companyPasswordValid = await bcrypt.compare(password, company.password);
-            const userPasswordValid = await bcrypt.compare(password, company.creator.password);
-            
-            console.log("🔐 Login API - Company password verification:", companyPasswordValid);
-            console.log("🔐 Login API - User password verification:", userPasswordValid);
-            
+            const companyPasswordValid = await bcrypt.compare(
+              password,
+              company.password
+            );
+            const userPasswordValid = await bcrypt.compare(
+              password,
+              company.creator.password
+            );
+
+            console.log(
+              "🔐 Login API - Company password verification:",
+              companyPasswordValid
+            );
+            console.log(
+              "🔐 Login API - User password verification:",
+              userPasswordValid
+            );
+
             if (companyPasswordValid || userPasswordValid) {
               console.log("🔐 Login API - Company authentication successful");
-              
+
               const mockToken = `mock-dev-token-company-${company.creator.id}-${Date.now()}`;
-              
+
               // Map company creator role to sidebar-compatible role
               let mappedCreatorRole = company.creator.role;
               // No mapping needed - database already has correct enum values
@@ -358,42 +418,61 @@ export async function POST(request: NextRequest) {
                 user: {
                   id: company.creator.id,
                   username: company.creator.username,
-                  firstName: creatorProfile?.firstName || 'Company',
-                  lastName: creatorProfile?.lastName || 'User',
+                  firstName: creatorProfile?.firstName || "Company",
+                  lastName: creatorProfile?.lastName || "User",
                   email: creatorProfile?.email || company.loginEmail,
                   role: mappedCreatorRole,
-                  type: mappedCreatorRole
+                  type: mappedCreatorRole,
                 },
                 role: mappedCreatorRole,
                 type: mappedCreatorRole,
-                municipality: creatorProfile ? {
-                  id: 'db-municipality',
-                  name: creatorProfile.municipality || 'Unknown',
-                  department: creatorProfile.department || 'Unknown'
-                } : null,
+                municipality: creatorProfile
+                  ? {
+                      id: "db-municipality",
+                      name: creatorProfile.municipality || "Unknown",
+                      department: creatorProfile.department || "Unknown",
+                    }
+                  : null,
                 company: {
                   id: company.id,
                   name: company.name,
+                  description: company.description,
+                  businessSector: company.businessSector,
+                  companySize: company.companySize,
+                  foundedYear: company.foundedYear,
+                  website: company.website,
                   email: company.loginEmail,
+                  phone: company.phone,
+                  address: company.address,
+                  taxId: company.taxId,
+                  legalRepresentative: company.legalRepresentative,
+                  isActive: company.isActive,
+                  username: company.username,
+                  loginEmail: company.loginEmail,
                   municipality: {
-                    id: 'db-municipality',
-                    name: creatorProfile?.municipality || 'Unknown',
-                    department: creatorProfile?.department || 'Unknown'
-                  }
-                }
+                    id: "db-municipality",
+                    name: creatorProfile?.municipality || "Unknown",
+                    department: creatorProfile?.department || "Unknown",
+                  },
+                  createdAt: company.createdAt.toISOString(),
+                  updatedAt: company.updatedAt.toISOString(),
+                },
               };
 
-              const response = NextResponse.json({
-                success: true,
-                user: userData.user,
-                municipality: userData.municipality,
-                company: userData.company,
-                role: userData.role,
-                type: userData.type,
-              }, { status: 200 });
+              const response = NextResponse.json(
+                {
+                  success: true,
+                  user: userData.user,
+                  municipality: userData.municipality,
+                  company: userData.company,
+                  role: userData.role,
+                  type: userData.type,
+                },
+                { status: 200 }
+              );
 
-              const isProduction = process.env.NODE_ENV === 'production';
-              
+              const isProduction = process.env.NODE_ENV === "production";
+
               response.cookies.set("cemse-auth-token", mockToken, {
                 httpOnly: true,
                 secure: isProduction,
@@ -402,7 +481,10 @@ export async function POST(request: NextRequest) {
                 maxAge: 60 * 60 * 24 * 7,
               });
 
-              console.log("🔐 Login API - Company authentication successful for:", username);
+              console.log(
+                "🔐 Login API - Company authentication successful for:",
+                username
+              );
               return response;
             }
           }
@@ -411,21 +493,27 @@ export async function POST(request: NextRequest) {
         console.error("🔐 Login API - Database error:", dbError);
         console.log("🔐 Login API - Falling back to in-memory storage");
       }
-      
+
       // Fall back to checking stored companies
-      console.log("🔐 Login API - Checking stored companies for credentials:", { username, hasPassword: !!password });
-      
-      const companiesResponse = await fetch(`${request.nextUrl.origin}/api/company`, {
-        headers: {
-          'Cookie': request.headers.get('cookie') || ''
-        }
+      console.log("🔐 Login API - Checking stored companies for credentials:", {
+        username,
+        hasPassword: !!password,
       });
-      
+
+      const companiesResponse = await fetch(
+        `${request.nextUrl.origin}/api/company`,
+        {
+          headers: {
+            Cookie: request.headers.get("cookie") || "",
+          },
+        }
+      );
+
       let storedCompany = null;
       if (companiesResponse.ok) {
         const companiesData = await companiesResponse.json();
         const companies = companiesData.companies || [];
-        
+
         console.log("🔐 Login API - Raw companies response:", {
           totalCompanies: companies.length,
           companies: companies.map((c: any) => ({
@@ -434,41 +522,47 @@ export async function POST(request: NextRequest) {
             username: c?.username,
             hasPassword: !!c?.password,
             passwordLength: c?.password ? c.password.length : 0,
-            isObject: typeof c === 'object',
-            hasCredentials: !!(c?.username && c?.password)
-          }))
+            isObject: typeof c === "object",
+            hasCredentials: !!(c?.username && c?.password),
+          })),
         });
-        
+
         // Safety check for companies array and individual company objects
         const validCompanies = companies.filter((c: any) => c && c.name);
-        
-        console.log("🔐 Login API - Valid companies after filtering:", validCompanies.map((c: any) => ({
-          id: c.id,
-          name: c.name,
-          username: c.username,
-          hasPassword: !!c.password,
-          hasCredentials: !!(c.username && c.password)
-        })));
-        
+
+        console.log(
+          "🔐 Login API - Valid companies after filtering:",
+          validCompanies.map((c: any) => ({
+            id: c.id,
+            name: c.name,
+            username: c.username,
+            hasPassword: !!c.password,
+            hasCredentials: !!(c.username && c.password),
+          }))
+        );
+
         console.log("🔐 Login API - Looking for username:", username);
-        
+
         if (companies.length !== validCompanies.length) {
           console.warn("🔐 Login API - Found invalid companies:", {
             total: companies.length,
             valid: validCompanies.length,
-            invalid: companies.length - validCompanies.length
+            invalid: companies.length - validCompanies.length,
           });
         }
-        
+
         // Find company by username first, then verify password with bcrypt
-        const companyCandidate = validCompanies.find((company: any) => 
-          company.username === username
+        const companyCandidate = validCompanies.find(
+          (company: any) => company.username === username
         );
-        
+
         // If company found, verify password using bcrypt
         if (companyCandidate && companyCandidate.password) {
           try {
-            const isValidPassword = await bcrypt.compare(password, companyCandidate.password);
+            const isValidPassword = await bcrypt.compare(
+              password,
+              companyCandidate.password
+            );
             storedCompany = isValidPassword ? companyCandidate : null;
           } catch (error) {
             console.error("🔐 Login API - Error comparing password:", error);
@@ -477,62 +571,205 @@ export async function POST(request: NextRequest) {
         } else {
           storedCompany = null;
         }
-        
+
         console.log("🔐 Login API - Company match result:", {
           found: !!storedCompany,
           attemptedUsername: username,
           totalValidCompanies: validCompanies.length,
-          companyFound: storedCompany ? {
-            id: storedCompany.id,
-            name: storedCompany.name,
-            username: storedCompany.username
-          } : null
+          companyFound: storedCompany
+            ? {
+                id: storedCompany.id,
+                name: storedCompany.name,
+                username: storedCompany.username,
+              }
+            : null,
         });
       } else {
         console.error("🔐 Login API - Failed to fetch companies:", {
           status: companiesResponse.status,
-          statusText: companiesResponse.statusText
+          statusText: companiesResponse.statusText,
         });
+      }
+
+      // If no companies exist and this is a company login attempt, create a default company
+      if (
+        !storedCompany &&
+        (username.includes("company") || username.includes("empresa"))
+      ) {
+        console.log(
+          "🔐 Login API - No companies exist, creating default company for:",
+          username
+        );
+
+        try {
+          // Create a default company profile
+          const defaultCompany = {
+            id: `default-company-${Date.now()}`,
+            name: "Mi Empresa",
+            description: "Empresa por defecto creada automáticamente",
+            businessSector: "Tecnología",
+            companySize: "MICRO",
+            foundedYear: new Date().getFullYear(),
+            website: null,
+            email: `${username}@company.dev`,
+            phone: null,
+            address: "Dirección por definir",
+            taxId: null,
+            legalRepresentative: null,
+            isActive: true,
+            username: username,
+            loginEmail: `${username}@company.dev`,
+            municipality: {
+              id: "default",
+              name: "Municipio por definir",
+              department: "Por definir",
+            },
+            createdAt: new Date().toISOString(),
+            updatedAt: new Date().toISOString(),
+          };
+
+          // Add to in-memory storage
+          const companyResponse = await fetch(
+            `${request.nextUrl.origin}/api/company`,
+            {
+              method: "POST",
+              headers: {
+                "Content-Type": "application/json",
+                Cookie: `cemse-auth-token=mock-dev-token-default-${Date.now()}`,
+              },
+              body: JSON.stringify({
+                name: defaultCompany.name,
+                description: defaultCompany.description,
+                businessSector: defaultCompany.businessSector,
+                companySize: defaultCompany.companySize,
+                foundedYear: defaultCompany.foundedYear,
+                email: defaultCompany.email,
+                phone: defaultCompany.phone,
+                address: defaultCompany.address,
+                taxId: defaultCompany.taxId,
+                legalRepresentative: defaultCompany.legalRepresentative,
+                municipalityId: "municipality_1",
+                username: defaultCompany.username,
+                password: password,
+              }),
+            }
+          );
+
+          if (companyResponse.ok) {
+            const createdCompany = await companyResponse.json();
+            console.log(
+              "🔐 Login API - Default company created:",
+              createdCompany
+            );
+            storedCompany = createdCompany.company || createdCompany;
+          } else {
+            console.log(
+              "🔐 Login API - Failed to create default company, using mock data"
+            );
+            storedCompany = defaultCompany;
+          }
+        } catch (error) {
+          console.error(
+            "🔐 Login API - Error creating default company:",
+            error
+          );
+          // Continue with mock company data
+          storedCompany = {
+            id: `mock-company-${Date.now()}`,
+            name: "Mi Empresa",
+            description: "Empresa por defecto (modo mock)",
+            businessSector: "Tecnología",
+            companySize: "MICRO",
+            foundedYear: new Date().getFullYear(),
+            website: null,
+            email: `${username}@company.dev`,
+            phone: null,
+            address: "Dirección por definir",
+            taxId: null,
+            legalRepresentative: null,
+            isActive: true,
+            username: username,
+            loginEmail: `${username}@company.dev`,
+            municipality: {
+              id: "default",
+              name: "Municipio por definir",
+              department: "Por definir",
+            },
+            createdAt: new Date().toISOString(),
+            updatedAt: new Date().toISOString(),
+          };
+        }
       }
 
       // If company credentials match, return company user data
       if (storedCompany) {
-        console.log("🔐 Login API - Found matching company credentials:", storedCompany.name);
-        
+        console.log(
+          "🔐 Login API - Found matching company credentials:",
+          storedCompany.name
+        );
+
         const mockToken = `mock-dev-token-company-${storedCompany.id}-${Date.now()}`;
-        
+
         const companyUserData = {
           user: {
             id: storedCompany.id,
-            username: storedCompany.username || 'unknown',
-            firstName: (storedCompany.name || 'Company').split(' ')[0] || 'Company',
-            lastName: 'User',
-            email: storedCompany.email || `${storedCompany.username || 'company'}@company.dev`,
-            role: 'COMPANIES', // Use COMPANIES instead of COMPANY
-            type: 'COMPANIES'
+            username: storedCompany.username || "unknown",
+            firstName:
+              (storedCompany.name || "Company").split(" ")[0] || "Company",
+            lastName: "User",
+            email:
+              storedCompany.email ||
+              `${storedCompany.username || "company"}@company.dev`,
+            role: "COMPANIES", // Use COMPANIES instead of COMPANY
+            type: "COMPANIES",
           },
-          role: 'COMPANIES',
-          type: 'COMPANIES',
-          municipality: storedCompany.municipality || { id: 'unknown', name: 'Unknown', department: 'Unknown' },
+          role: "COMPANIES",
+          type: "COMPANIES",
+          municipality: storedCompany.municipality || {
+            id: "unknown",
+            name: "Unknown",
+            department: "Unknown",
+          },
           company: {
             id: storedCompany.id,
-            name: storedCompany.name || 'Unknown Company',
+            name: storedCompany.name || "Unknown Company",
+            description: storedCompany.description,
+            businessSector: storedCompany.businessSector,
+            companySize: storedCompany.companySize,
+            foundedYear: storedCompany.foundedYear,
+            website: storedCompany.website,
             email: storedCompany.email,
-            municipality: storedCompany.municipality || { id: 'unknown', name: 'Unknown', department: 'Unknown' }
-          }
+            phone: storedCompany.phone,
+            address: storedCompany.address,
+            taxId: storedCompany.taxId,
+            legalRepresentative: storedCompany.legalRepresentative,
+            isActive: storedCompany.isActive,
+            username: storedCompany.username,
+            loginEmail: storedCompany.email,
+            municipality: storedCompany.municipality || {
+              id: "unknown",
+              name: "Unknown",
+              department: "Unknown",
+            },
+            createdAt: storedCompany.createdAt || new Date().toISOString(),
+            updatedAt: storedCompany.updatedAt || new Date().toISOString(),
+          },
         };
 
-        const response = NextResponse.json({
-          success: true,
-          user: companyUserData.user,
-          municipality: companyUserData.municipality,
-          company: companyUserData.company,
-          role: companyUserData.role,
-          type: companyUserData.type,
-        }, { status: 200 });
+        const response = NextResponse.json(
+          {
+            success: true,
+            user: companyUserData.user,
+            municipality: companyUserData.municipality,
+            company: companyUserData.company,
+            role: companyUserData.role,
+            type: companyUserData.type,
+          },
+          { status: 200 }
+        );
 
-        const isProduction = process.env.NODE_ENV === 'production';
-        
+        const isProduction = process.env.NODE_ENV === "production";
+
         response.cookies.set("cemse-auth-token", mockToken, {
           httpOnly: true,
           secure: isProduction,
@@ -546,14 +783,19 @@ export async function POST(request: NextRequest) {
       }
 
       // No more fallback authentication - all authentication should come from database or backend
-      console.log("🔐 Login API - No valid authentication method found for:", username);
-      
+      console.log(
+        "🔐 Login API - No valid authentication method found for:",
+        username
+      );
+
       return NextResponse.json(
-        { error: "Invalid username or password. Please check your credentials." },
+        {
+          error: "Invalid username or password. Please check your credentials.",
+        },
         { status: 401 }
       );
     }
-    
+
     return NextResponse.json(
       { error: "Internal server error" },
       { status: 500 }

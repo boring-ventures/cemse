@@ -367,9 +367,19 @@ export default function NetworkingPage() {
         .map((contactData: unknown) => {
           // Manejar diferentes estructuras de contacto
           let contactInfo;
-          if (contactData.contact) {
+          if (
+            contactData &&
+            typeof contactData === "object" &&
+            "contact" in contactData &&
+            contactData.contact
+          ) {
             contactInfo = contactData.contact;
-          } else if (contactData.userId) {
+          } else if (
+            contactData &&
+            typeof contactData === "object" &&
+            "userId" in contactData &&
+            contactData.userId
+          ) {
             contactInfo = contactData;
           } else {
             console.error("Unexpected contact data structure:", contactData);
@@ -377,18 +387,19 @@ export default function NetworkingPage() {
           }
 
           const contact = {
-            userId: contactInfo.userId,
-            firstName: contactInfo.firstName || "",
-            lastName: contactInfo.lastName || "",
-            email: contactInfo.email || "",
-            avatarUrl: contactInfo.avatarUrl,
-            currentInstitution: contactInfo.currentInstitution,
-            skills: contactInfo.skills || [],
-            department: contactInfo.department,
-            municipality: contactInfo.municipality,
-            birthDate: contactInfo.birthDate,
+            userId: (contactInfo as any).userId,
+            firstName: (contactInfo as any).firstName || "",
+            lastName: (contactInfo as any).lastName || "",
+            email: (contactInfo as any).email || "",
+            avatarUrl: (contactInfo as any).avatarUrl,
+            currentInstitution: (contactInfo as any).currentInstitution,
+            skills: (contactInfo as any).skills || [],
+            department: (contactInfo as any).department,
+            municipality: (contactInfo as any).municipality,
+            birthDate: (contactInfo as any).birthDate,
             contactStatus: "ACCEPTED",
-            contactId: contactData.id || contactData.contactId,
+            contactId:
+              (contactData as any).id || (contactData as any).contactId,
           };
           console.log("Processed contact:", contact); // Debug
           return contact;

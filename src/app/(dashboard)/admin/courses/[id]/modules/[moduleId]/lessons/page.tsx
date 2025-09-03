@@ -43,14 +43,11 @@ import {
   MoreHorizontal,
   Edit,
   Trash2,
-  Eye,
   Copy,
   FileText,
   Video,
-  Download,
   Play,
   CheckCircle,
-  Target,
   Clock,
   Users,
   ArrowLeft,
@@ -64,11 +61,9 @@ import {
   Settings,
   Eye as Preview,
   Upload,
-  HelpCircle,
 } from "lucide-react";
 import {
   useLessons,
-  useCreateLesson,
   useUpdateLesson,
   useDeleteLesson,
   type Lesson,
@@ -84,7 +79,6 @@ export default function ModuleLessonsPage() {
   const courseId = params.id as string;
   const moduleId = params.moduleId as string;
 
-  const [isCreateDialogOpen, setIsCreateDialogOpen] = useState(false);
   const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
   const [editingLesson, setEditingLesson] = useState<any>(null);
   const [searchQuery, setSearchQuery] = useState("");
@@ -114,7 +108,6 @@ export default function ModuleLessonsPage() {
   const queryClient = useQueryClient();
   const { data: lessonsData, isLoading: lessonsLoading } = useLessons(moduleId);
   const lessons = (lessonsData as any)?.lessons || [];
-  const createLesson = useCreateLesson();
   const updateLesson = useUpdateLesson();
   const deleteLesson = useDeleteLesson();
 
@@ -122,42 +115,6 @@ export default function ModuleLessonsPage() {
   const filteredLessons = lessons.filter((lesson: Lesson) =>
     lesson.title.toLowerCase().includes(searchQuery.toLowerCase())
   );
-
-  const handleCreateLesson = async () => {
-    try {
-      await createLesson.mutateAsync({
-        moduleId,
-        title: formData.title,
-        description: formData.description,
-        content: formData.content,
-        contentType: formData.contentType,
-        videoUrl: formData.videoUrl,
-        duration: formData.duration,
-        orderIndex: formData.orderIndex,
-        isRequired: formData.isRequired,
-        isPreview: formData.isPreview,
-      });
-
-      setIsCreateDialogOpen(false);
-      setFormData({
-        title: "",
-        description: "",
-        content: "",
-        contentType: "VIDEO",
-        videoUrl: "",
-        videoType: "youtube",
-        videoFile: null,
-        duration: 15,
-        orderIndex: 1,
-        isRequired: true,
-        isPreview: false,
-      });
-      toast.success("Lección creada exitosamente");
-    } catch (error) {
-      console.error("Error creating lesson:", error);
-      toast.error("Error al crear la lección");
-    }
-  };
 
   const handleEditLesson = async () => {
     if (!editingLesson) return;
@@ -514,16 +471,6 @@ export default function ModuleLessonsPage() {
     }
   };
 
-  const getLessonStats = (lessonId: string) => {
-    // Mock stats - in real implementation, fetch from API
-    return {
-      resources: 3,
-      students: 25,
-      completionRate: 85,
-      averageTime: 12,
-    };
-  };
-
   if (lessonsLoading) {
     return (
       <div className="container mx-auto p-6">
@@ -560,184 +507,8 @@ export default function ModuleLessonsPage() {
             className="bg-gradient-to-r from-blue-500 to-purple-600 text-white hover:from-blue-600 hover:to-purple-700 border-0"
           >
             <FileVideo className="h-4 w-4 mr-2" />
-            Crear Lección con Video
+            Crear Lección
           </Button>
-          <Dialog
-            open={isCreateDialogOpen}
-            onOpenChange={setIsCreateDialogOpen}
-          >
-            <DialogTrigger asChild>
-              <Button>
-                <Plus className="h-4 w-4 mr-2" />
-                Crear Lección
-              </Button>
-            </DialogTrigger>
-            <DialogContent className="sm:max-w-[600px]">
-              <DialogHeader>
-                <DialogTitle>Crear Nueva Lección</DialogTitle>
-                <DialogDescription>
-                  Agrega una nueva lección al módulo con su contenido y
-                  configuración.
-                </DialogDescription>
-              </DialogHeader>
-              <div className="grid gap-4 py-4">
-                <div className="grid gap-2">
-                  <label htmlFor="title">Título de la Lección</label>
-                  <Input
-                    id="title"
-                    value={formData.title}
-                    onChange={(e) =>
-                      setFormData({ ...formData, title: e.target.value })
-                    }
-                    placeholder="Ej: Introducción a HTML"
-                  />
-                </div>
-                <div className="grid gap-2">
-                  <label htmlFor="description">Descripción</label>
-                  <Textarea
-                    id="description"
-                    value={formData.description}
-                    onChange={(e) =>
-                      setFormData({ ...formData, description: e.target.value })
-                    }
-                    placeholder="Describe el contenido de la lección..."
-                  />
-                </div>
-                <div className="grid gap-2">
-                  <label htmlFor="contentType">Tipo de Contenido</label>
-                  <Select
-                    value={formData.contentType}
-                    onValueChange={(value: any) =>
-                      setFormData({ ...formData, contentType: value })
-                    }
-                  >
-                    <SelectTrigger>
-                      <SelectValue />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="VIDEO">Video</SelectItem>
-                      <SelectItem value="TEXT">Texto</SelectItem>
-                      <SelectItem value="QUIZ">Quiz</SelectItem>
-                      <SelectItem value="ASSIGNMENT">Asignación</SelectItem>
-                      <SelectItem value="LIVE">En Vivo</SelectItem>
-                    </SelectContent>
-                  </Select>
-                </div>
-                {formData.contentType === "VIDEO" && (
-                  <div className="grid gap-2">
-                    <label htmlFor="videoUrl">URL de YouTube (opcional)</label>
-                    <Input
-                      id="videoUrl"
-                      value={formData.videoUrl}
-                      onChange={(e) =>
-                        setFormData({
-                          ...formData,
-                          videoUrl: e.target.value,
-                        })
-                      }
-                      placeholder="https://www.youtube.com/watch?v=..."
-                    />
-                    <p className="text-xs text-muted-foreground">
-                      Para subir archivos de video, usa el botón "Crear Lección
-                      con Video"
-                    </p>
-                  </div>
-                )}
-                <div className="grid gap-2">
-                  <label htmlFor="content">Contenido</label>
-                  <Textarea
-                    id="content"
-                    value={formData.content}
-                    onChange={(e) =>
-                      setFormData({ ...formData, content: e.target.value })
-                    }
-                    placeholder="Contenido de la lección..."
-                    rows={4}
-                  />
-                </div>
-                <div className="grid grid-cols-2 gap-4">
-                  <div className="grid gap-2">
-                    <label htmlFor="orderIndex">Orden</label>
-                    <Input
-                      id="orderIndex"
-                      type="number"
-                      value={formData.orderIndex}
-                      onChange={(e) =>
-                        setFormData({
-                          ...formData,
-                          orderIndex: parseInt(e.target.value),
-                        })
-                      }
-                      min="1"
-                    />
-                  </div>
-                  <div className="grid gap-2">
-                    <label htmlFor="duration">Duración (minutos)</label>
-                    <Input
-                      id="duration"
-                      type="number"
-                      value={formData.duration}
-                      onChange={(e) =>
-                        setFormData({
-                          ...formData,
-                          duration: parseInt(e.target.value),
-                        })
-                      }
-                      min="1"
-                    />
-                  </div>
-                </div>
-                <div className="flex items-center space-x-4">
-                  <div className="flex items-center space-x-2">
-                    <input
-                      type="checkbox"
-                      id="isRequired"
-                      checked={formData.isRequired}
-                      onChange={(e) =>
-                        setFormData({
-                          ...formData,
-                          isRequired: e.target.checked,
-                        })
-                      }
-                    />
-                    <label htmlFor="isRequired">Obligatoria</label>
-                  </div>
-                  <div className="flex items-center space-x-2">
-                    <input
-                      type="checkbox"
-                      id="isPreview"
-                      checked={formData.isPreview}
-                      onChange={(e) =>
-                        setFormData({
-                          ...formData,
-                          isPreview: e.target.checked,
-                        })
-                      }
-                    />
-                    <label htmlFor="isPreview">Vista previa</label>
-                  </div>
-                </div>
-              </div>
-              <DialogFooter>
-                <Button
-                  variant="outline"
-                  onClick={() => setIsCreateDialogOpen(false)}
-                >
-                  Cancelar
-                </Button>
-                <Button
-                  onClick={handleCreateLesson}
-                  disabled={createLesson.isPending || isUploadingVideo}
-                >
-                  {createLesson.isPending || isUploadingVideo
-                    ? formData.videoFile && needsConversion(formData.videoFile)
-                      ? "Convirtiendo a MP4 y creando..."
-                      : "Creando..."
-                    : "Crear Lección"}
-                </Button>
-              </DialogFooter>
-            </DialogContent>
-          </Dialog>
         </div>
       </div>
 
@@ -768,7 +539,7 @@ export default function ModuleLessonsPage() {
                   <TableHead>Lección</TableHead>
                   <TableHead>Tipo</TableHead>
                   <TableHead>Duración</TableHead>
-                  <TableHead>Estadísticas</TableHead>
+
                   <TableHead>Estado</TableHead>
                   <TableHead>Última actualización</TableHead>
                   <TableHead className="text-right">Acciones</TableHead>
@@ -776,7 +547,6 @@ export default function ModuleLessonsPage() {
               </TableHeader>
               <TableBody>
                 {filteredLessons.map((lesson: Lesson) => {
-                  const stats = getLessonStats(lesson.id);
                   return (
                     <TableRow key={lesson.id}>
                       <TableCell>
@@ -832,22 +602,7 @@ export default function ModuleLessonsPage() {
                           <span>{lesson.duration} min</span>
                         </div>
                       </TableCell>
-                      <TableCell>
-                        <div className="space-y-1">
-                          <div className="flex items-center gap-2 text-sm">
-                            <Download className="h-3 w-3 text-muted-foreground" />
-                            <span>{stats.resources} recursos</span>
-                          </div>
-                          <div className="flex items-center gap-2 text-sm">
-                            <Users className="h-3 w-3 text-muted-foreground" />
-                            <span>{stats.students} estudiantes</span>
-                          </div>
-                          <div className="flex items-center gap-2 text-sm">
-                            <CheckCircle className="h-3 w-3 text-muted-foreground" />
-                            <span>{stats.completionRate}% completan</span>
-                          </div>
-                        </div>
-                      </TableCell>
+
                       <TableCell>
                         <Badge variant="default">Activa</Badge>
                       </TableCell>
@@ -864,38 +619,6 @@ export default function ModuleLessonsPage() {
                             </Button>
                           </DropdownMenuTrigger>
                           <DropdownMenuContent align="end">
-                            <DropdownMenuItem asChild>
-                              <Link
-                                href={`/admin/courses/${courseId}/modules/${moduleId}/lessons/${lesson.id}/resources`}
-                              >
-                                <Download className="h-4 w-4 mr-2" />
-                                Gestionar recursos
-                              </Link>
-                            </DropdownMenuItem>
-                            <DropdownMenuItem asChild>
-                              <Link
-                                href={`/admin/courses/${courseId}/modules/${moduleId}/lessons/${lesson.id}/quizzes`}
-                              >
-                                <HelpCircle className="h-4 w-4 mr-2" />
-                                Gestionar quizzes
-                              </Link>
-                            </DropdownMenuItem>
-                            <DropdownMenuItem asChild>
-                              <Link
-                                href={`/admin/courses/${courseId}/modules/${moduleId}/lessons/${lesson.id}/preview`}
-                              >
-                                <Eye className="h-4 w-4 mr-2" />
-                                Vista previa
-                              </Link>
-                            </DropdownMenuItem>
-                            <DropdownMenuItem asChild>
-                              <Link
-                                href={`/admin/courses/${courseId}/modules/${moduleId}/lessons/${lesson.id}/progress`}
-                              >
-                                <Target className="h-4 w-4 mr-2" />
-                                Progreso
-                              </Link>
-                            </DropdownMenuItem>
                             <DropdownMenuItem
                               onClick={() => openEditDialog(lesson)}
                             >
@@ -930,9 +653,9 @@ export default function ModuleLessonsPage() {
                   ? "Intenta ajustar los filtros de búsqueda"
                   : "Comienza creando tu primera lección para el módulo"}
               </p>
-              <Button onClick={() => setIsCreateDialogOpen(true)}>
-                <Plus className="h-4 w-4 mr-2" />
-                Crear Lección
+              <Button onClick={() => setShowVideoUpload(true)}>
+                <FileVideo className="h-4 w-4 mr-2" />
+                Crear Lección con Video
               </Button>
             </div>
           )}

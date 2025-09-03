@@ -93,17 +93,18 @@ export default function YouthApplicationChat({
 
   const isCurrentUserMessage = (message: YouthApplicationMessage) => {
     // Determine current user's sender type based on their role
-    const currentUserSenderType = user?.role === "COMPANIES" ? "COMPANY" : "YOUTH";
+    const currentUserSenderType =
+      user?.role === "COMPANIES" ? "COMPANY" : "YOUTH";
     return message.senderType === currentUserSenderType;
   };
 
   if (isLoading) {
     return (
-      <Card className="h-[600px]">
-        <CardHeader>
+      <Card className="h-full flex flex-col">
+        <CardHeader className="border-b flex-shrink-0">
           <CardTitle>Chat</CardTitle>
         </CardHeader>
-        <CardContent className="flex items-center justify-center h-full">
+        <CardContent className="flex-1 flex items-center justify-center min-h-0">
           <div className="text-center">
             <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary mx-auto mb-4"></div>
             <p className="text-muted-foreground">Cargando mensajes...</p>
@@ -114,8 +115,8 @@ export default function YouthApplicationChat({
   }
 
   return (
-    <Card className="h-[600px] flex flex-col">
-      <CardHeader className="border-b">
+    <Card className="h-full flex flex-col">
+      <CardHeader className="border-b flex-shrink-0">
         <div className="flex items-center gap-3">
           <Avatar className="h-8 w-8">
             <AvatarImage src={youthProfile?.avatarUrl} />
@@ -140,9 +141,9 @@ export default function YouthApplicationChat({
         </div>
       </CardHeader>
 
-      <CardContent className="flex-1 flex flex-col p-0">
+      <CardContent className="flex-1 flex flex-col p-0 min-h-0">
         {/* Messages */}
-        <div className="flex-1 overflow-y-auto p-4 space-y-4">
+        <div className="flex-1 overflow-y-auto p-4 space-y-4 min-h-0">
           {messages && messages.length > 0 ? (
             messages.map((msg, index) => {
               const isCurrentUser = isCurrentUserMessage(msg);
@@ -168,7 +169,7 @@ export default function YouthApplicationChat({
                       <AvatarImage
                         src={
                           isCurrentUser
-                            ? user?.avatarUrl
+                            ? user?.profilePicture || undefined
                             : youthProfile?.avatarUrl
                         }
                       />
@@ -248,7 +249,7 @@ export default function YouthApplicationChat({
         </div>
 
         {/* Message Input */}
-        <div className="border-t p-4">
+        <div className="border-t p-4 flex-shrink-0">
           <form onSubmit={handleSendMessage} className="flex gap-2">
             <Input
               value={message}

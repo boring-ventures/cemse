@@ -47,7 +47,6 @@ import {
   Play,
   Clock,
   Target,
-  Users,
   CheckCircle,
   XCircle,
   ArrowLeft,
@@ -56,18 +55,17 @@ import {
   Settings,
   Copy,
   Share,
-  BarChart3,
   Timer,
-  Award,
+  BarChart3,
 } from "lucide-react";
-import { 
-  useLessonQuizzes, 
-  useCreateQuiz, 
-  useUpdateQuiz, 
+import {
+  useLessonQuizzes,
+  useCreateQuiz,
+  useUpdateQuiz,
   useDeleteQuiz,
   type Quiz,
   type CreateQuizData,
-  type UpdateQuizData
+  type UpdateQuizData,
 } from "@/hooks/useQuizApi";
 import { toast } from "sonner";
 
@@ -94,7 +92,8 @@ export default function LessonQuizzesPage() {
   });
 
   // Hooks
-  const { data: quizzesData, isLoading: quizzesLoading } = useLessonQuizzes(lessonId);
+  const { data: quizzesData, isLoading: quizzesLoading } =
+    useLessonQuizzes(lessonId);
   const quizzes: Quiz[] = (quizzesData as { quizzes?: Quiz[] })?.quizzes || [];
   const createQuiz = useCreateQuiz();
   const updateQuiz = useUpdateQuiz();
@@ -111,7 +110,7 @@ export default function LessonQuizzesPage() {
         ...formData,
         lessonId,
       });
-      
+
       setIsCreateDialogOpen(false);
       setFormData({
         title: "",
@@ -129,13 +128,13 @@ export default function LessonQuizzesPage() {
 
   const handleEditQuiz = async () => {
     if (!editingQuiz) return;
-    
+
     try {
       await updateQuiz.mutateAsync({
         id: editingQuiz.id,
         ...formData,
       });
-      
+
       setIsEditDialogOpen(false);
       setEditingQuiz(null);
       setFormData({
@@ -176,16 +175,6 @@ export default function LessonQuizzesPage() {
     setIsEditDialogOpen(true);
   };
 
-  const getQuizStats = (quiz: Quiz) => {
-    // Mock stats - in real implementation, fetch from API
-    return {
-      totalAttempts: 45,
-      averageScore: 78,
-      passRate: 85,
-      totalQuestions: quiz.questions?.length || 0,
-    };
-  };
-
   const formatTime = (minutes: number) => {
     if (minutes < 60) {
       return `${minutes} min`;
@@ -212,7 +201,9 @@ export default function LessonQuizzesPage() {
       <div className="flex justify-between items-center">
         <div className="flex items-center gap-4">
           <Button variant="ghost" asChild>
-            <Link href={`/admin/courses/${courseId}/modules/${moduleId}/lessons`}>
+            <Link
+              href={`/admin/courses/${courseId}/modules/${moduleId}/lessons`}
+            >
               <ArrowLeft className="h-4 w-4 mr-2" />
               Volver a Lecciones
             </Link>
@@ -235,7 +226,8 @@ export default function LessonQuizzesPage() {
             <DialogHeader>
               <DialogTitle>Crear Nuevo Quiz</DialogTitle>
               <DialogDescription>
-                Crea un nuevo examen para evaluar el conocimiento de los estudiantes.
+                Crea un nuevo examen para evaluar el conocimiento de los
+                estudiantes.
               </DialogDescription>
             </DialogHeader>
             <div className="grid gap-4 py-4">
@@ -244,7 +236,9 @@ export default function LessonQuizzesPage() {
                 <Input
                   id="title"
                   value={formData.title}
-                  onChange={(e) => setFormData({ ...formData, title: e.target.value })}
+                  onChange={(e) =>
+                    setFormData({ ...formData, title: e.target.value })
+                  }
                   placeholder="Ej: Quiz sobre Variables en JavaScript"
                 />
               </div>
@@ -253,7 +247,9 @@ export default function LessonQuizzesPage() {
                 <Textarea
                   id="description"
                   value={formData.description}
-                  onChange={(e) => setFormData({ ...formData, description: e.target.value })}
+                  onChange={(e) =>
+                    setFormData({ ...formData, description: e.target.value })
+                  }
                   placeholder="Describe el contenido del quiz..."
                 />
               </div>
@@ -264,7 +260,12 @@ export default function LessonQuizzesPage() {
                     id="timeLimit"
                     type="number"
                     value={formData.timeLimit}
-                    onChange={(e) => setFormData({ ...formData, timeLimit: parseInt(e.target.value) })}
+                    onChange={(e) =>
+                      setFormData({
+                        ...formData,
+                        timeLimit: parseInt(e.target.value),
+                      })
+                    }
                     min="1"
                     max="180"
                   />
@@ -275,7 +276,12 @@ export default function LessonQuizzesPage() {
                     id="passingScore"
                     type="number"
                     value={formData.passingScore}
-                    onChange={(e) => setFormData({ ...formData, passingScore: parseInt(e.target.value) })}
+                    onChange={(e) =>
+                      setFormData({
+                        ...formData,
+                        passingScore: parseInt(e.target.value),
+                      })
+                    }
                     min="0"
                     max="100"
                   />
@@ -286,92 +292,45 @@ export default function LessonQuizzesPage() {
                   type="checkbox"
                   id="showCorrectAnswers"
                   checked={formData.showCorrectAnswers}
-                  onChange={(e) => setFormData({ ...formData, showCorrectAnswers: e.target.checked })}
+                  onChange={(e) =>
+                    setFormData({
+                      ...formData,
+                      showCorrectAnswers: e.target.checked,
+                    })
+                  }
                 />
-                <label htmlFor="showCorrectAnswers">Mostrar respuestas correctas</label>
+                <label htmlFor="showCorrectAnswers">
+                  Mostrar respuestas correctas
+                </label>
               </div>
               <div className="flex items-center space-x-2">
                 <input
                   type="checkbox"
                   id="isActive"
                   checked={formData.isActive}
-                  onChange={(e) => setFormData({ ...formData, isActive: e.target.checked })}
+                  onChange={(e) =>
+                    setFormData({ ...formData, isActive: e.target.checked })
+                  }
                 />
                 <label htmlFor="isActive">Quiz activo</label>
               </div>
             </div>
             <DialogFooter>
-              <Button variant="outline" onClick={() => setIsCreateDialogOpen(false)}>
+              <Button
+                variant="outline"
+                onClick={() => setIsCreateDialogOpen(false)}
+              >
                 Cancelar
               </Button>
-              <Button onClick={handleCreateQuiz} disabled={createQuiz.isPending}>
+              <Button
+                onClick={handleCreateQuiz}
+                disabled={createQuiz.isPending}
+              >
                 {createQuiz.isPending ? "Creando..." : "Crear Quiz"}
               </Button>
             </DialogFooter>
           </DialogContent>
         </Dialog>
-      </div>
-
-      {/* Quiz Statistics */}
-      <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Total Quizzes</CardTitle>
-            <FileText className="h-4 w-4 text-muted-foreground" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">{quizzes.length}</div>
-            <p className="text-xs text-muted-foreground">
-              {quizzes.filter(q => q.isActive).length} activos
-            </p>
-          </CardContent>
-        </Card>
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Total Intentos</CardTitle>
-            <Users className="h-4 w-4 text-muted-foreground" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">
-              {quizzes.reduce((total, quiz) => total + getQuizStats(quiz).totalAttempts, 0)}
-            </div>
-            <p className="text-xs text-muted-foreground">
-              Promedio por quiz
-            </p>
-          </CardContent>
-        </Card>
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Tasa de Aprobación</CardTitle>
-            <Award className="h-4 w-4 text-muted-foreground" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">
-              {quizzes.length > 0 
-                ? Math.round(quizzes.reduce((total, quiz) => total + getQuizStats(quiz).passRate, 0) / quizzes.length)
-                : 0}%
-            </div>
-            <p className="text-xs text-muted-foreground">
-              Promedio general
-            </p>
-          </CardContent>
-        </Card>
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Puntaje Promedio</CardTitle>
-            <BarChart3 className="h-4 w-4 text-muted-foreground" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">
-              {quizzes.length > 0 
-                ? Math.round(quizzes.reduce((total, quiz) => total + getQuizStats(quiz).averageScore, 0) / quizzes.length)
-                : 0}%
-            </div>
-            <p className="text-xs text-muted-foreground">
-              Promedio general
-            </p>
-          </CardContent>
-        </Card>
       </div>
 
       {/* Search and Filters */}
@@ -399,7 +358,7 @@ export default function LessonQuizzesPage() {
                 <TableRow>
                   <TableHead>Quiz</TableHead>
                   <TableHead>Configuración</TableHead>
-                  <TableHead>Estadísticas</TableHead>
+
                   <TableHead>Estado</TableHead>
                   <TableHead>Última actualización</TableHead>
                   <TableHead className="text-right">Acciones</TableHead>
@@ -407,7 +366,6 @@ export default function LessonQuizzesPage() {
               </TableHeader>
               <TableBody>
                 {filteredQuizzes.map((quiz) => {
-                  const stats = getQuizStats(quiz);
                   return (
                     <TableRow key={quiz.id}>
                       <TableCell>
@@ -443,34 +401,25 @@ export default function LessonQuizzesPage() {
                               <XCircle className="h-3 w-3 text-red-500" />
                             )}
                             <span className="text-xs">
-                              {quiz.showCorrectAnswers ? "Muestra respuestas" : "No muestra respuestas"}
+                              {quiz.showCorrectAnswers
+                                ? "Muestra respuestas"
+                                : "No muestra respuestas"}
                             </span>
                           </div>
                         </div>
                       </TableCell>
+
                       <TableCell>
-                        <div className="space-y-1">
-                          <div className="flex items-center gap-2 text-sm">
-                            <Users className="h-3 w-3 text-muted-foreground" />
-                            <span>{stats.totalAttempts} intentos</span>
-                          </div>
-                          <div className="flex items-center gap-2 text-sm">
-                            <BarChart3 className="h-3 w-3 text-muted-foreground" />
-                            <span>{stats.averageScore}% promedio</span>
-                          </div>
-                          <div className="flex items-center gap-2 text-sm">
-                            <Award className="h-3 w-3 text-muted-foreground" />
-                            <span>{stats.passRate}% aprobación</span>
-                          </div>
-                        </div>
-                      </TableCell>
-                      <TableCell>
-                        <Badge variant={quiz.isActive ? "default" : "secondary"}>
+                        <Badge
+                          variant={quiz.isActive ? "default" : "secondary"}
+                        >
                           {quiz.isActive ? "Activo" : "Inactivo"}
                         </Badge>
                       </TableCell>
                       <TableCell>
-                        {quiz.updatedAt ? new Date(quiz.updatedAt).toLocaleDateString() : "N/A"}
+                        {quiz.updatedAt
+                          ? new Date(quiz.updatedAt).toLocaleDateString()
+                          : "N/A"}
                       </TableCell>
                       <TableCell className="text-right">
                         <DropdownMenu>
@@ -481,24 +430,25 @@ export default function LessonQuizzesPage() {
                           </DropdownMenuTrigger>
                           <DropdownMenuContent align="end">
                             <DropdownMenuItem asChild>
-                              <Link href={`/admin/courses/${courseId}/modules/${moduleId}/lessons/${lessonId}/quizzes/${quiz.id}`}>
+                              <Link
+                                href={`/admin/courses/${courseId}/modules/${moduleId}/lessons/${lessonId}/quizzes/${quiz.id}`}
+                              >
                                 <Eye className="h-4 w-4 mr-2" />
                                 Ver detalles
                               </Link>
                             </DropdownMenuItem>
                             <DropdownMenuItem asChild>
-                              <Link href={`/admin/courses/${courseId}/modules/${moduleId}/lessons/${lessonId}/quizzes/${quiz.id}/questions`}>
+                              <Link
+                                href={`/admin/courses/${courseId}/modules/${moduleId}/lessons/${lessonId}/quizzes/${quiz.id}/questions`}
+                              >
                                 <FileText className="h-4 w-4 mr-2" />
                                 Gestionar preguntas
                               </Link>
                             </DropdownMenuItem>
-                            <DropdownMenuItem asChild>
-                              <Link href={`/admin/courses/${courseId}/modules/${moduleId}/lessons/${lessonId}/quizzes/${quiz.id}/attempts`}>
-                                <BarChart3 className="h-4 w-4 mr-2" />
-                                Ver intentos
-                              </Link>
-                            </DropdownMenuItem>
-                            <DropdownMenuItem onClick={() => openEditDialog(quiz)}>
+
+                            <DropdownMenuItem
+                              onClick={() => openEditDialog(quiz)}
+                            >
                               <Edit className="h-4 w-4 mr-2" />
                               Editar
                             </DropdownMenuItem>
@@ -554,7 +504,9 @@ export default function LessonQuizzesPage() {
               <Input
                 id="edit-title"
                 value={formData.title}
-                onChange={(e) => setFormData({ ...formData, title: e.target.value })}
+                onChange={(e) =>
+                  setFormData({ ...formData, title: e.target.value })
+                }
                 placeholder="Ej: Quiz sobre Variables en JavaScript"
               />
             </div>
@@ -563,18 +515,27 @@ export default function LessonQuizzesPage() {
               <Textarea
                 id="edit-description"
                 value={formData.description}
-                onChange={(e) => setFormData({ ...formData, description: e.target.value })}
+                onChange={(e) =>
+                  setFormData({ ...formData, description: e.target.value })
+                }
                 placeholder="Describe el contenido del quiz..."
               />
             </div>
             <div className="grid grid-cols-2 gap-4">
               <div className="grid gap-2">
-                <label htmlFor="edit-timeLimit">Límite de Tiempo (minutos)</label>
+                <label htmlFor="edit-timeLimit">
+                  Límite de Tiempo (minutos)
+                </label>
                 <Input
                   id="edit-timeLimit"
                   type="number"
                   value={formData.timeLimit}
-                  onChange={(e) => setFormData({ ...formData, timeLimit: parseInt(e.target.value) })}
+                  onChange={(e) =>
+                    setFormData({
+                      ...formData,
+                      timeLimit: parseInt(e.target.value),
+                    })
+                  }
                   min="1"
                   max="180"
                 />
@@ -585,7 +546,12 @@ export default function LessonQuizzesPage() {
                   id="edit-passingScore"
                   type="number"
                   value={formData.passingScore}
-                  onChange={(e) => setFormData({ ...formData, passingScore: parseInt(e.target.value) })}
+                  onChange={(e) =>
+                    setFormData({
+                      ...formData,
+                      passingScore: parseInt(e.target.value),
+                    })
+                  }
                   min="0"
                   max="100"
                 />
@@ -596,22 +562,34 @@ export default function LessonQuizzesPage() {
                 type="checkbox"
                 id="edit-showCorrectAnswers"
                 checked={formData.showCorrectAnswers}
-                onChange={(e) => setFormData({ ...formData, showCorrectAnswers: e.target.checked })}
+                onChange={(e) =>
+                  setFormData({
+                    ...formData,
+                    showCorrectAnswers: e.target.checked,
+                  })
+                }
               />
-              <label htmlFor="edit-showCorrectAnswers">Mostrar respuestas correctas</label>
+              <label htmlFor="edit-showCorrectAnswers">
+                Mostrar respuestas correctas
+              </label>
             </div>
             <div className="flex items-center space-x-2">
               <input
                 type="checkbox"
                 id="edit-isActive"
                 checked={formData.isActive}
-                onChange={(e) => setFormData({ ...formData, isActive: e.target.checked })}
+                onChange={(e) =>
+                  setFormData({ ...formData, isActive: e.target.checked })
+                }
               />
               <label htmlFor="edit-isActive">Quiz activo</label>
             </div>
           </div>
           <DialogFooter>
-            <Button variant="outline" onClick={() => setIsEditDialogOpen(false)}>
+            <Button
+              variant="outline"
+              onClick={() => setIsEditDialogOpen(false)}
+            >
               Cancelar
             </Button>
             <Button onClick={handleEditQuiz} disabled={updateQuiz.isPending}>

@@ -1,7 +1,12 @@
 "use client";
 
 import { useState } from "react";
-import { useCompanies, useCreateCompany, useUpdateCompany, useDeleteCompany } from "@/hooks/use-companies";
+import {
+  useCompanies,
+  useCreateCompany,
+  useUpdateCompany,
+  useDeleteCompany,
+} from "@/hooks/use-companies";
 import { useMunicipalities } from "@/hooks/use-municipalities";
 import { useCurrentUser } from "@/hooks/use-current-user";
 import { Button } from "@/components/ui/button";
@@ -63,8 +68,70 @@ import {
   XCircle,
   Users,
   Briefcase,
+  RefreshCw,
+  Copy,
+  Eye,
+  EyeOff,
 } from "lucide-react";
-import type { Company, CreateCompanyRequest } from "@/services/companies.service";
+import type {
+  Company,
+  CreateCompanyRequest,
+} from "@/services/companies.service";
+import { useToast } from "@/hooks/use-toast";
+
+// Utility function to generate credentials
+const generateCredentials = (companyName: string, email: string) => {
+  // Generate username: lowercase, no spaces, no special chars, max 20 chars
+  const username = companyName
+    .toLowerCase()
+    .replace(/[^a-z0-9]/g, "")
+    .substring(0, 20);
+
+  // Generate password: 12 characters with mix of letters, numbers, and symbols
+  const chars =
+    "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789!@#$%^&*";
+  let password = "";
+  for (let i = 0; i < 12; i++) {
+    password += chars.charAt(Math.floor(Math.random() * chars.length));
+  }
+
+  return { username, password };
+};
+
+// Utility function to validate email format
+const isValidEmail = (email: string) => {
+  const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+  return emailRegex.test(email);
+};
+
+// Utility function to validate password strength
+const validatePasswordStrength = (password: string) => {
+  const minLength = 8;
+  const hasUpperCase = /[A-Z]/.test(password);
+  const hasLowerCase = /[a-z]/.test(password);
+  const hasNumbers = /\d/.test(password);
+  const hasSpecialChar = /[!@#$%^&*(),.?":{}|<>]/.test(password);
+
+  const errors = [];
+  if (password.length < minLength)
+    errors.push(`Mínimo ${minLength} caracteres`);
+  if (!hasUpperCase) errors.push("Al menos una mayúscula");
+  if (!hasLowerCase) errors.push("Al menos una minúscula");
+  if (!hasNumbers) errors.push("Al menos un número");
+  if (!hasSpecialChar) errors.push("Al menos un carácter especial");
+
+  return {
+    isValid: errors.length === 0,
+    errors,
+    score: [
+      hasUpperCase,
+      hasLowerCase,
+      hasNumbers,
+      hasSpecialChar,
+      password.length >= minLength,
+    ].filter(Boolean).length,
+  };
+};
 
 export default function CompaniesPage() {
   // State
@@ -73,6 +140,13 @@ export default function CompaniesPage() {
   const [isCreateDialogOpen, setIsCreateDialogOpen] = useState(false);
   const [editingCompany, setEditingCompany] = useState<Company | null>(null);
   const [deletingCompany, setDeletingCompany] = useState<Company | null>(null);
+  const [showPassword, setShowPassword] = useState(false);
+  const [showGeneratedCredentials, setShowGeneratedCredentials] =
+    useState(false);
+  const [generatedCredentials, setGeneratedCredentials] = useState<{
+    username: string;
+    password: string;
+  } | null>(null);
 
   // Form state
   const [formData, setFormData] = useState<CreateCompanyRequest>({
@@ -91,22 +165,37 @@ export default function CompaniesPage() {
     isActive: true,
   });
 
+  // Validation state
+  const [validationErrors, setValidationErrors] = useState<
+    Record<string, string>
+  >({});
+
   // Hooks
   const { profile } = useCurrentUser();
-  const { data: companiesData, isLoading: companiesLoading, error: companiesError } = useCompanies();
-  const { data: municipalities = [], isLoading: municipalitiesLoading } = useMunicipalities();
+  const {
+    data: companiesData,
+    isLoading: companiesLoading,
+    error: companiesError,
+  } = useCompanies();
+  const { data: municipalities = [], isLoading: municipalitiesLoading } =
+    useMunicipalities();
   const createCompanyMutation = useCreateCompany();
   const updateCompanyMutation = useUpdateCompany();
   const deleteCompanyMutation = useDeleteCompany();
+  const { toast } = useToast();
 
   // Check permissions
-  const canManageCompanies = profile && profile.role && [
-    'SUPERADMIN', 
-    'GOBIERNOS_MUNICIPALES',
-    'INSTRUCTOR'
-  ].includes(profile.role);
-  
-  const isSuperAdmin = profile && profile.role === 'SUPERADMIN';
+  const canManageCompanies =
+    profile &&
+    profile.role &&
+    ["SUPERADMIN", "GOBIERNOS_MUNICIPALES", "INSTRUCTOR"].includes(
+      profile.role
+    );
+
+  const canDeleteCompanies =
+    profile &&
+    profile.role &&
+    ["SUPERADMIN", "GOBIERNOS_MUNICIPALES"].includes(profile.role);
 
   // Extract companies and metadata
   const companies = companiesData?.companies || [];
@@ -119,10 +208,14 @@ export default function CompaniesPage() {
 
   // Filter companies
   const filteredCompanies = companies.filter((company) => {
-    const matchesSearch = 
+    const matchesSearch =
       company.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      (company.description?.toLowerCase() || "").includes(searchTerm.toLowerCase()) ||
-      (company.businessSector?.toLowerCase() || "").includes(searchTerm.toLowerCase());
+      (company.description?.toLowerCase() || "").includes(
+        searchTerm.toLowerCase()
+      ) ||
+      (company.businessSector?.toLowerCase() || "").includes(
+        searchTerm.toLowerCase()
+      );
 
     const matchesStatus =
       statusFilter === "all" ||
@@ -131,6 +224,76 @@ export default function CompaniesPage() {
 
     return matchesSearch && matchesStatus;
   });
+
+  // Validation function
+  const validateForm = () => {
+    const errors: Record<string, string> = {};
+
+    if (!formData.name.trim()) {
+      errors.name = "El nombre de la empresa es requerido";
+    }
+
+    if (!formData.email.trim()) {
+      errors.email = "El email es requerido";
+    } else if (!isValidEmail(formData.email)) {
+      errors.email = "El formato del email no es válido";
+    }
+
+    if (!formData.municipalityId) {
+      errors.municipalityId = "Debe seleccionar un municipio";
+    }
+
+    if (!formData.username.trim()) {
+      errors.username = "El nombre de usuario es requerido";
+    } else if (formData.username.length < 3) {
+      errors.username = "El nombre de usuario debe tener al menos 3 caracteres";
+    }
+
+    if (!formData.password) {
+      errors.password = "La contraseña es requerida";
+    } else {
+      const passwordValidation = validatePasswordStrength(formData.password);
+      if (!passwordValidation.isValid) {
+        errors.password = `La contraseña debe cumplir: ${passwordValidation.errors.join(", ")}`;
+      }
+    }
+
+    setValidationErrors(errors);
+    return Object.keys(errors).length === 0;
+  };
+
+  // Auto-generate credentials
+  const handleAutoGenerateCredentials = () => {
+    if (!formData.name.trim() || !formData.email.trim()) {
+      toast({
+        title: "Error",
+        description: "Debe ingresar el nombre de la empresa y email primero",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    const credentials = generateCredentials(formData.name, formData.email);
+    setFormData((prev) => ({
+      ...prev,
+      username: credentials.username,
+      password: credentials.password,
+    }));
+
+    toast({
+      title: "Éxito",
+      description: "Credenciales generadas automáticamente",
+    });
+  };
+
+  // Copy credentials to clipboard
+  const copyToClipboard = (text: string, type: string) => {
+    navigator.clipboard.writeText(text);
+    toast({
+      title: "Copiado",
+      description: `${type} copiado al portapapeles`,
+    });
+  };
 
   // Handlers
   const resetForm = () => {
@@ -149,16 +312,67 @@ export default function CompaniesPage() {
       password: "",
       isActive: true,
     });
+    setValidationErrors({});
+    setGeneratedCredentials(null);
+    setShowGeneratedCredentials(false);
+    setShowPassword(false);
   };
 
   const handleCreateCompany = async () => {
+    if (!validateForm()) {
+      toast({
+        title: "Error",
+        description: "Por favor corrija los errores en el formulario",
+        variant: "destructive",
+      });
+      return;
+    }
+
     try {
-      await createCompanyMutation.mutateAsync(formData);
-      setIsCreateDialogOpen(false);
-      resetForm();
-    } catch (error) {
+      const result = await createCompanyMutation.mutateAsync(formData);
+
+      // Verify the company was created successfully
+      if (!result || !result.company) {
+        throw new Error(
+          "No se recibió confirmación de la creación de la empresa"
+        );
+      }
+
+      // Show success message
+      toast({
+        title: "Éxito",
+        description: `Empresa "${result.company.name}" creada exitosamente`,
+      });
+
+      // Show credentials modal with the credentials used for creation
+      setGeneratedCredentials({
+        username: formData.username,
+        password: formData.password,
+      });
+      setShowGeneratedCredentials(true);
+
+      // Don't close the create dialog yet, let user see credentials first
+      // resetForm(); // Commented out to keep form data visible
+    } catch (error: any) {
       console.error("Failed to create company:", error);
-      // Error handling is done in the mutation
+
+      // Extract error message from the API response
+      let errorMessage =
+        "Error al crear la empresa. Verifique los datos e intente nuevamente.";
+
+      if (error?.response?.data?.error) {
+        errorMessage = error.response.data.error;
+      } else if (error?.message) {
+        errorMessage = error.message;
+      } else if (error?.data?.error) {
+        errorMessage = error.data.error;
+      }
+
+      toast({
+        title: "Error",
+        description: errorMessage,
+        variant: "destructive",
+      });
     }
   };
 
@@ -179,24 +393,57 @@ export default function CompaniesPage() {
       password: "", // Don't pre-fill password
       isActive: company.isActive,
     });
+    setValidationErrors({});
   };
 
   const handleUpdateCompany = async () => {
     if (!editingCompany) return;
 
+    // Validate required fields for update
+    const errors: Record<string, string> = {};
+    if (!formData.name.trim())
+      errors.name = "El nombre de la empresa es requerido";
+    if (!formData.email.trim()) errors.email = "El email es requerido";
+    if (!isValidEmail(formData.email))
+      errors.email = "El formato del email no es válido";
+    if (!formData.municipalityId)
+      errors.municipalityId = "Debe seleccionar un municipio";
+    if (!formData.username.trim())
+      errors.username = "El nombre de usuario es requerido";
+
+    if (Object.keys(errors).length > 0) {
+      setValidationErrors(errors);
+      toast({
+        title: "Error",
+        description: "Por favor corrija los errores en el formulario",
+        variant: "destructive",
+      });
+      return;
+    }
+
     try {
       const { password, ...updateData } = formData;
       // Only include password if it's not empty
       const finalData = password ? { ...updateData, password } : updateData;
-      
+
       await updateCompanyMutation.mutateAsync({
         id: editingCompany.id,
-        data: finalData
+        data: finalData,
+      });
+
+      toast({
+        title: "Éxito",
+        description: `Empresa "${editingCompany.name}" actualizada exitosamente`,
       });
       setEditingCompany(null);
       resetForm();
     } catch (error) {
       console.error("Failed to update company:", error);
+      toast({
+        title: "Error",
+        description: "Error al actualizar la empresa",
+        variant: "destructive",
+      });
     }
   };
 
@@ -204,10 +451,57 @@ export default function CompaniesPage() {
     if (!deletingCompany) return;
 
     try {
-      await deleteCompanyMutation.mutateAsync(deletingCompany.id);
+      const result = await deleteCompanyMutation.mutateAsync(
+        deletingCompany.id
+      );
+
+      // Show detailed success message with deletion summary
+      const deletedData = result?.deletedData;
+      let description = `Empresa "${deletingCompany.name}" eliminada exitosamente`;
+
+      if (deletedData) {
+        description += `\n\nEliminado en cascada:`;
+        if (deletedData.jobOffers > 0)
+          description += `\n• ${deletedData.jobOffers} ofertas de trabajo`;
+        if (deletedData.jobApplications > 0)
+          description += `\n• ${deletedData.jobApplications} postulaciones`;
+        if (deletedData.newsArticles > 0)
+          description += `\n• ${deletedData.newsArticles} artículos de noticias`;
+        if (deletedData.newsComments > 0)
+          description += `\n• ${deletedData.newsComments} comentarios de noticias`;
+        if (deletedData.youthApplicationInterests > 0)
+          description += `\n• ${deletedData.youthApplicationInterests} intereses de jóvenes`;
+        if (deletedData.disconnectedProfiles > 0)
+          description += `\n• ${deletedData.disconnectedProfiles} perfiles desvinculados`;
+        if (deletedData.userAccountDeleted)
+          description += `\n• Cuenta de usuario eliminada`;
+      }
+
+      toast({
+        title: "✅ Eliminación Completa",
+        description: description,
+      });
+
       setDeletingCompany(null);
-    } catch (error) {
+    } catch (error: any) {
       console.error("Failed to delete company:", error);
+
+      // Extract error message from the API response
+      let errorMessage = "Error al eliminar la empresa";
+
+      if (error?.response?.data?.error) {
+        errorMessage = error.response.data.error;
+      } else if (error?.message) {
+        errorMessage = error.message;
+      } else if (error?.data?.error) {
+        errorMessage = error.data.error;
+      }
+
+      toast({
+        title: "Error",
+        description: errorMessage,
+        variant: "destructive",
+      });
     }
   };
 
@@ -229,13 +523,15 @@ export default function CompaniesPage() {
       <div className="flex items-center justify-center h-64">
         <div className="text-center">
           <XCircle className="h-12 w-12 text-red-500 mx-auto mb-4" />
-          <h3 className="text-lg font-semibold mb-2">Error al cargar empresas</h3>
+          <h3 className="text-lg font-semibold mb-2">
+            Error al cargar empresas
+          </h3>
           <p className="text-muted-foreground mb-4">
-            {companiesError instanceof Error ? companiesError.message : "Error desconocido"}
+            {companiesError instanceof Error
+              ? companiesError.message
+              : "Error desconocido"}
           </p>
-          <Button onClick={() => window.location.reload()}>
-            Reintentar
-          </Button>
+          <Button onClick={() => window.location.reload()}>Reintentar</Button>
         </div>
       </div>
     );
@@ -263,10 +559,12 @@ export default function CompaniesPage() {
             }}
           >
             <DialogTrigger asChild>
-              <Button>
-                <Plus className="mr-2 h-4 w-4" />
-                Crear Empresa
-              </Button>
+              <div className="flex gap-2">
+                <Button>
+                  <Plus className="mr-2 h-4 w-4" />
+                  Crear Empresa
+                </Button>
+              </div>
             </DialogTrigger>
             <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
               <DialogHeader>
@@ -278,39 +576,71 @@ export default function CompaniesPage() {
                   <Input
                     id="name"
                     value={formData.name}
-                    onChange={(e) => setFormData({ ...formData, name: e.target.value })}
+                    onChange={(e) =>
+                      setFormData({ ...formData, name: e.target.value })
+                    }
                     placeholder="Ingrese el nombre de la empresa"
+                    className={validationErrors.name ? "border-red-500" : ""}
+                    disabled={createCompanyMutation.isPending}
                   />
+                  {validationErrors.name && (
+                    <p className="text-sm text-red-500">
+                      {validationErrors.name}
+                    </p>
+                  )}
                 </div>
-                
+
                 <div className="space-y-2">
                   <Label htmlFor="email">Email *</Label>
                   <Input
                     id="email"
                     type="email"
                     value={formData.email}
-                    onChange={(e) => setFormData({ ...formData, email: e.target.value })}
+                    onChange={(e) =>
+                      setFormData({ ...formData, email: e.target.value })
+                    }
                     placeholder="contacto@empresa.com"
+                    className={validationErrors.email ? "border-red-500" : ""}
+                    disabled={createCompanyMutation.isPending}
                   />
+                  {validationErrors.email && (
+                    <p className="text-sm text-red-500">
+                      {validationErrors.email}
+                    </p>
+                  )}
                 </div>
 
                 <div className="space-y-2">
                   <Label htmlFor="municipalityId">Municipio *</Label>
                   <Select
                     value={formData.municipalityId}
-                    onValueChange={(value) => setFormData({ ...formData, municipalityId: value })}
+                    onValueChange={(value) =>
+                      setFormData({ ...formData, municipalityId: value })
+                    }
                   >
-                    <SelectTrigger>
+                    <SelectTrigger
+                      className={
+                        validationErrors.municipalityId ? "border-red-500" : ""
+                      }
+                    >
                       <SelectValue placeholder="Selecciona un municipio" />
                     </SelectTrigger>
                     <SelectContent>
                       {municipalities.map((municipality) => (
-                        <SelectItem key={municipality.id} value={municipality.id}>
+                        <SelectItem
+                          key={municipality.id}
+                          value={municipality.id}
+                        >
                           {municipality.name} - {municipality.department}
                         </SelectItem>
                       ))}
                     </SelectContent>
                   </Select>
+                  {validationErrors.municipalityId && (
+                    <p className="text-sm text-red-500">
+                      {validationErrors.municipalityId}
+                    </p>
+                  )}
                 </div>
 
                 <div className="space-y-2">
@@ -318,7 +648,12 @@ export default function CompaniesPage() {
                   <Input
                     id="businessSector"
                     value={formData.businessSector}
-                    onChange={(e) => setFormData({ ...formData, businessSector: e.target.value })}
+                    onChange={(e) =>
+                      setFormData({
+                        ...formData,
+                        businessSector: e.target.value,
+                      })
+                    }
                     placeholder="Ej: Tecnología, Salud, Educación"
                   />
                 </div>
@@ -327,16 +662,26 @@ export default function CompaniesPage() {
                   <Label htmlFor="companySize">Tamaño de la Empresa</Label>
                   <Select
                     value={formData.companySize || ""}
-                    onValueChange={(value) => setFormData({ ...formData, companySize: value as any })}
+                    onValueChange={(value) =>
+                      setFormData({ ...formData, companySize: value as any })
+                    }
                   >
                     <SelectTrigger>
                       <SelectValue placeholder="Seleccione el tamaño" />
                     </SelectTrigger>
                     <SelectContent>
-                      <SelectItem value="MICRO">Micro (1-10 empleados)</SelectItem>
-                      <SelectItem value="SMALL">Pequeña (11-50 empleados)</SelectItem>
-                      <SelectItem value="MEDIUM">Mediana (51-250 empleados)</SelectItem>
-                      <SelectItem value="LARGE">Grande (250+ empleados)</SelectItem>
+                      <SelectItem value="MICRO">
+                        Micro (1-10 empleados)
+                      </SelectItem>
+                      <SelectItem value="SMALL">
+                        Pequeña (11-50 empleados)
+                      </SelectItem>
+                      <SelectItem value="MEDIUM">
+                        Mediana (51-250 empleados)
+                      </SelectItem>
+                      <SelectItem value="LARGE">
+                        Grande (250+ empleados)
+                      </SelectItem>
                     </SelectContent>
                   </Select>
                 </div>
@@ -347,7 +692,12 @@ export default function CompaniesPage() {
                     id="foundedYear"
                     type="number"
                     value={formData.foundedYear}
-                    onChange={(e) => setFormData({ ...formData, foundedYear: parseInt(e.target.value) })}
+                    onChange={(e) =>
+                      setFormData({
+                        ...formData,
+                        foundedYear: parseInt(e.target.value),
+                      })
+                    }
                     min="1900"
                     max={new Date().getFullYear()}
                   />
@@ -358,7 +708,9 @@ export default function CompaniesPage() {
                   <Input
                     id="phone"
                     value={formData.phone}
-                    onChange={(e) => setFormData({ ...formData, phone: e.target.value })}
+                    onChange={(e) =>
+                      setFormData({ ...formData, phone: e.target.value })
+                    }
                     placeholder="+591 12345678"
                   />
                 </div>
@@ -368,7 +720,9 @@ export default function CompaniesPage() {
                   <Input
                     id="website"
                     value={formData.website}
-                    onChange={(e) => setFormData({ ...formData, website: e.target.value })}
+                    onChange={(e) =>
+                      setFormData({ ...formData, website: e.target.value })
+                    }
                     placeholder="https://www.empresa.com"
                   />
                 </div>
@@ -378,7 +732,9 @@ export default function CompaniesPage() {
                   <Input
                     id="address"
                     value={formData.address}
-                    onChange={(e) => setFormData({ ...formData, address: e.target.value })}
+                    onChange={(e) =>
+                      setFormData({ ...formData, address: e.target.value })
+                    }
                     placeholder="Dirección completa de la empresa"
                   />
                 </div>
@@ -388,32 +744,114 @@ export default function CompaniesPage() {
                   <Textarea
                     id="description"
                     value={formData.description}
-                    onChange={(e) => setFormData({ ...formData, description: e.target.value })}
+                    onChange={(e) =>
+                      setFormData({ ...formData, description: e.target.value })
+                    }
                     placeholder="Descripción de la empresa y sus actividades"
                     rows={3}
                   />
                 </div>
 
-                {/* Login Credentials */}
+                {/* Login Credentials Section */}
+                <div className="space-y-2 col-span-2">
+                  <div className="flex items-center justify-between">
+                    <Label className="text-base font-semibold">
+                      Credenciales de Acceso
+                    </Label>
+                    <Button
+                      type="button"
+                      variant="outline"
+                      size="sm"
+                      onClick={handleAutoGenerateCredentials}
+                      disabled={
+                        createCompanyMutation.isPending ||
+                        !formData.name.trim() ||
+                        !formData.email.trim()
+                      }
+                    >
+                      <RefreshCw className="mr-2 h-4 w-4" />
+                      Auto-generar
+                    </Button>
+                  </div>
+                </div>
+
                 <div className="space-y-2">
                   <Label htmlFor="username">Usuario de Login *</Label>
                   <Input
                     id="username"
                     value={formData.username}
-                    onChange={(e) => setFormData({ ...formData, username: e.target.value })}
+                    onChange={(e) =>
+                      setFormData({ ...formData, username: e.target.value })
+                    }
                     placeholder="usuario_empresa"
+                    className={
+                      validationErrors.username ? "border-red-500" : ""
+                    }
                   />
+                  {validationErrors.username && (
+                    <p className="text-sm text-red-500">
+                      {validationErrors.username}
+                    </p>
+                  )}
                 </div>
 
                 <div className="space-y-2">
                   <Label htmlFor="password">Contraseña *</Label>
-                  <Input
-                    id="password"
-                    type="password"
-                    value={formData.password}
-                    onChange={(e) => setFormData({ ...formData, password: e.target.value })}
-                    placeholder="Contraseña segura"
-                  />
+                  <div className="relative">
+                    <Input
+                      id="password"
+                      type={showPassword ? "text" : "password"}
+                      value={formData.password}
+                      onChange={(e) =>
+                        setFormData({ ...formData, password: e.target.value })
+                      }
+                      placeholder="Contraseña segura"
+                      className={
+                        validationErrors.password
+                          ? "border-red-500 pr-20"
+                          : "pr-20"
+                      }
+                    />
+                    <Button
+                      type="button"
+                      variant="ghost"
+                      size="sm"
+                      className="absolute right-0 top-0 h-full px-3 hover:bg-transparent"
+                      onClick={() => setShowPassword(!showPassword)}
+                    >
+                      {showPassword ? (
+                        <EyeOff className="h-4 w-4" />
+                      ) : (
+                        <Eye className="h-4 w-4" />
+                      )}
+                    </Button>
+                  </div>
+                  {validationErrors.password && (
+                    <p className="text-sm text-red-500">
+                      {validationErrors.password}
+                    </p>
+                  )}
+                  {formData.password && (
+                    <div className="text-xs text-muted-foreground">
+                      <div className="flex items-center gap-2">
+                        <span>Fuerza:</span>
+                        <div className="flex gap-1">
+                          {[1, 2, 3, 4, 5].map((level) => (
+                            <div
+                              key={level}
+                              className={`h-2 w-4 rounded ${
+                                level <=
+                                validatePasswordStrength(formData.password)
+                                  .score
+                                  ? "bg-green-500"
+                                  : "bg-gray-200"
+                              }`}
+                            />
+                          ))}
+                        </div>
+                      </div>
+                    </div>
+                  )}
                 </div>
               </div>
 
@@ -426,9 +864,23 @@ export default function CompaniesPage() {
                 </Button>
                 <Button
                   onClick={handleCreateCompany}
-                  disabled={createCompanyMutation.isPending || !formData.name || !formData.email || !formData.municipalityId || !formData.username || !formData.password}
+                  disabled={
+                    createCompanyMutation.isPending ||
+                    !formData.name ||
+                    !formData.email ||
+                    !formData.municipalityId ||
+                    !formData.username ||
+                    !formData.password
+                  }
                 >
-                  {createCompanyMutation.isPending ? "Creando..." : "Crear Empresa"}
+                  {createCompanyMutation.isPending ? (
+                    <>
+                      <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>
+                      Creando...
+                    </>
+                  ) : (
+                    "Crear Empresa"
+                  )}
                 </Button>
               </div>
             </DialogContent>
@@ -440,41 +892,57 @@ export default function CompaniesPage() {
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Total Empresas</CardTitle>
+            <CardTitle className="text-sm font-medium">
+              Total Empresas
+            </CardTitle>
             <Building2 className="h-4 w-4 text-primary" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold text-primary">{companies.length}</div>
+            <div className="text-2xl font-bold text-primary">
+              {companies.length}
+            </div>
           </CardContent>
         </Card>
 
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Empresas Activas</CardTitle>
+            <CardTitle className="text-sm font-medium">
+              Empresas Activas
+            </CardTitle>
             <CheckCircle className="h-4 w-4 text-green-600" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold text-green-600">{metadata.totalActive}</div>
+            <div className="text-2xl font-bold text-green-600">
+              {metadata.totalActive}
+            </div>
           </CardContent>
         </Card>
 
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Ofertas de Trabajo</CardTitle>
+            <CardTitle className="text-sm font-medium">
+              Ofertas de Trabajo
+            </CardTitle>
             <Briefcase className="h-4 w-4 text-blue-600" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold text-blue-600">{metadata.totalJobOffers}</div>
+            <div className="text-2xl font-bold text-blue-600">
+              {metadata.totalJobOffers}
+            </div>
           </CardContent>
         </Card>
 
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Total Empleados</CardTitle>
+            <CardTitle className="text-sm font-medium">
+              Total Empleados
+            </CardTitle>
             <Users className="h-4 w-4 text-purple-600" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold text-purple-600">{metadata.totalEmployees}</div>
+            <div className="text-2xl font-bold text-purple-600">
+              {metadata.totalEmployees}
+            </div>
           </CardContent>
         </Card>
       </div>
@@ -571,7 +1039,9 @@ export default function CompaniesPage() {
                     </Badge>
                   </TableCell>
                   <TableCell>
-                    <Badge variant={company.isActive ? "default" : "destructive"}>
+                    <Badge
+                      variant={company.isActive ? "default" : "destructive"}
+                    >
                       {company.isActive ? "Activa" : "Inactiva"}
                     </Badge>
                   </TableCell>
@@ -599,28 +1069,32 @@ export default function CompaniesPage() {
                   </TableCell>
                   {canManageCompanies && (
                     <TableCell>
-                      <DropdownMenu>
-                        <DropdownMenuTrigger asChild>
-                          <Button variant="ghost" className="h-8 w-8 p-0">
-                            <MoreHorizontal className="h-4 w-4" />
+                      <div className="flex items-center gap-2">
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          onClick={() => handleEditCompany(company)}
+                          className="h-8 px-2"
+                        >
+                          <Edit className="h-4 w-4" />
+                          <span className="ml-1">Editar</span>
+                        </Button>
+                        {canDeleteCompanies ? (
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            onClick={() => setDeletingCompany(company)}
+                            className="h-8 px-2 text-red-600 hover:text-red-700 hover:bg-red-50"
+                          >
+                            <Trash2 className="h-4 w-4" />
+                            <span className="ml-1">Eliminar</span>
                           </Button>
-                        </DropdownMenuTrigger>
-                        <DropdownMenuContent align="end">
-                          <DropdownMenuItem onClick={() => handleEditCompany(company)}>
-                            <Edit className="mr-2 h-4 w-4" />
-                            Editar
-                          </DropdownMenuItem>
-                          {isSuperAdmin && (
-                            <DropdownMenuItem 
-                              onClick={() => setDeletingCompany(company)}
-                              className="text-red-600 focus:text-red-600"
-                            >
-                              <Trash2 className="mr-2 h-4 w-4" />
-                              Eliminar
-                            </DropdownMenuItem>
-                          )}
-                        </DropdownMenuContent>
-                      </DropdownMenu>
+                        ) : (
+                          <div className="text-xs text-muted-foreground px-2">
+                            No tiene permisos para eliminar
+                          </div>
+                        )}
+                      </div>
                     </TableCell>
                   )}
                 </TableRow>
@@ -631,7 +1105,10 @@ export default function CompaniesPage() {
       </Card>
 
       {/* Edit Dialog */}
-      <Dialog open={!!editingCompany} onOpenChange={() => setEditingCompany(null)}>
+      <Dialog
+        open={!!editingCompany}
+        onOpenChange={() => setEditingCompany(null)}
+      >
         <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
           <DialogHeader>
             <DialogTitle>Editar Empresa: {editingCompany?.name}</DialogTitle>
@@ -642,29 +1119,47 @@ export default function CompaniesPage() {
               <Input
                 id="edit-name"
                 value={formData.name}
-                onChange={(e) => setFormData({ ...formData, name: e.target.value })}
+                onChange={(e) =>
+                  setFormData({ ...formData, name: e.target.value })
+                }
                 placeholder="Ingrese el nombre de la empresa"
+                className={validationErrors.name ? "border-red-500" : ""}
               />
+              {validationErrors.name && (
+                <p className="text-sm text-red-500">{validationErrors.name}</p>
+              )}
             </div>
-            
+
             <div className="space-y-2">
               <Label htmlFor="edit-email">Email *</Label>
               <Input
                 id="edit-email"
                 type="email"
                 value={formData.email}
-                onChange={(e) => setFormData({ ...formData, email: e.target.value })}
+                onChange={(e) =>
+                  setFormData({ ...formData, email: e.target.value })
+                }
                 placeholder="contacto@empresa.com"
+                className={validationErrors.email ? "border-red-500" : ""}
               />
+              {validationErrors.email && (
+                <p className="text-sm text-red-500">{validationErrors.email}</p>
+              )}
             </div>
 
             <div className="space-y-2">
               <Label htmlFor="edit-municipalityId">Municipio *</Label>
               <Select
                 value={formData.municipalityId}
-                onValueChange={(value) => setFormData({ ...formData, municipalityId: value })}
+                onValueChange={(value) =>
+                  setFormData({ ...formData, municipalityId: value })
+                }
               >
-                <SelectTrigger>
+                <SelectTrigger
+                  className={
+                    validationErrors.municipalityId ? "border-red-500" : ""
+                  }
+                >
                   <SelectValue placeholder="Selecciona un municipio" />
                 </SelectTrigger>
                 <SelectContent>
@@ -675,6 +1170,11 @@ export default function CompaniesPage() {
                   ))}
                 </SelectContent>
               </Select>
+              {validationErrors.municipalityId && (
+                <p className="text-sm text-red-500">
+                  {validationErrors.municipalityId}
+                </p>
+              )}
             </div>
 
             <div className="space-y-2">
@@ -682,7 +1182,9 @@ export default function CompaniesPage() {
               <Input
                 id="edit-businessSector"
                 value={formData.businessSector}
-                onChange={(e) => setFormData({ ...formData, businessSector: e.target.value })}
+                onChange={(e) =>
+                  setFormData({ ...formData, businessSector: e.target.value })
+                }
                 placeholder="Ej: Tecnología, Salud, Educación"
               />
             </div>
@@ -691,15 +1193,21 @@ export default function CompaniesPage() {
               <Label htmlFor="edit-companySize">Tamaño de la Empresa</Label>
               <Select
                 value={formData.companySize || ""}
-                onValueChange={(value) => setFormData({ ...formData, companySize: value as any })}
+                onValueChange={(value) =>
+                  setFormData({ ...formData, companySize: value as any })
+                }
               >
                 <SelectTrigger>
                   <SelectValue placeholder="Seleccione el tamaño" />
                 </SelectTrigger>
                 <SelectContent>
                   <SelectItem value="MICRO">Micro (1-10 empleados)</SelectItem>
-                  <SelectItem value="SMALL">Pequeña (11-50 empleados)</SelectItem>
-                  <SelectItem value="MEDIUM">Mediana (51-250 empleados)</SelectItem>
+                  <SelectItem value="SMALL">
+                    Pequeña (11-50 empleados)
+                  </SelectItem>
+                  <SelectItem value="MEDIUM">
+                    Mediana (51-250 empleados)
+                  </SelectItem>
                   <SelectItem value="LARGE">Grande (250+ empleados)</SelectItem>
                 </SelectContent>
               </Select>
@@ -711,7 +1219,12 @@ export default function CompaniesPage() {
                 id="edit-foundedYear"
                 type="number"
                 value={formData.foundedYear}
-                onChange={(e) => setFormData({ ...formData, foundedYear: parseInt(e.target.value) })}
+                onChange={(e) =>
+                  setFormData({
+                    ...formData,
+                    foundedYear: parseInt(e.target.value),
+                  })
+                }
                 min="1900"
                 max={new Date().getFullYear()}
               />
@@ -722,7 +1235,9 @@ export default function CompaniesPage() {
               <Input
                 id="edit-phone"
                 value={formData.phone}
-                onChange={(e) => setFormData({ ...formData, phone: e.target.value })}
+                onChange={(e) =>
+                  setFormData({ ...formData, phone: e.target.value })
+                }
                 placeholder="+591 12345678"
               />
             </div>
@@ -732,7 +1247,9 @@ export default function CompaniesPage() {
               <Input
                 id="edit-website"
                 value={formData.website}
-                onChange={(e) => setFormData({ ...formData, website: e.target.value })}
+                onChange={(e) =>
+                  setFormData({ ...formData, website: e.target.value })
+                }
                 placeholder="https://www.empresa.com"
               />
             </div>
@@ -742,7 +1259,9 @@ export default function CompaniesPage() {
               <Input
                 id="edit-address"
                 value={formData.address}
-                onChange={(e) => setFormData({ ...formData, address: e.target.value })}
+                onChange={(e) =>
+                  setFormData({ ...formData, address: e.target.value })
+                }
                 placeholder="Dirección completa de la empresa"
               />
             </div>
@@ -752,7 +1271,9 @@ export default function CompaniesPage() {
               <Textarea
                 id="edit-description"
                 value={formData.description}
-                onChange={(e) => setFormData({ ...formData, description: e.target.value })}
+                onChange={(e) =>
+                  setFormData({ ...formData, description: e.target.value })
+                }
                 placeholder="Descripción de la empresa y sus actividades"
                 rows={3}
               />
@@ -764,9 +1285,17 @@ export default function CompaniesPage() {
               <Input
                 id="edit-username"
                 value={formData.username}
-                onChange={(e) => setFormData({ ...formData, username: e.target.value })}
+                onChange={(e) =>
+                  setFormData({ ...formData, username: e.target.value })
+                }
                 placeholder="usuario_empresa"
+                className={validationErrors.username ? "border-red-500" : ""}
               />
+              {validationErrors.username && (
+                <p className="text-sm text-red-500">
+                  {validationErrors.username}
+                </p>
+              )}
             </div>
 
             <div className="space-y-2">
@@ -775,7 +1304,9 @@ export default function CompaniesPage() {
                 id="edit-password"
                 type="password"
                 value={formData.password}
-                onChange={(e) => setFormData({ ...formData, password: e.target.value })}
+                onChange={(e) =>
+                  setFormData({ ...formData, password: e.target.value })
+                }
                 placeholder="Dejar vacío para mantener la actual"
               />
             </div>
@@ -787,20 +1318,26 @@ export default function CompaniesPage() {
                 <input
                   type="checkbox"
                   id="edit-isActive"
-                  checked={formData.isActive ?? editingCompany?.isActive ?? true}
-                  onChange={(e) => setFormData({ ...formData, isActive: e.target.checked })}
+                  checked={
+                    formData.isActive ?? editingCompany?.isActive ?? true
+                  }
+                  onChange={(e) =>
+                    setFormData({ ...formData, isActive: e.target.checked })
+                  }
                   className="rounded"
                 />
                 <Label htmlFor="edit-isActive">
-                  {formData.isActive ?? editingCompany?.isActive ? "Empresa Activa" : "Empresa Inactiva"}
+                  {(formData.isActive ?? editingCompany?.isActive)
+                    ? "Empresa Activa"
+                    : "Empresa Inactiva"}
                 </Label>
               </div>
             </div>
           </div>
 
           <div className="flex justify-end gap-2 pt-4">
-            <Button 
-              variant="outline" 
+            <Button
+              variant="outline"
               onClick={() => {
                 setEditingCompany(null);
                 resetForm();
@@ -808,45 +1345,85 @@ export default function CompaniesPage() {
             >
               Cancelar
             </Button>
-            <Button 
-              onClick={handleUpdateCompany} 
-              disabled={updateCompanyMutation.isPending || !formData.name || !formData.email || !formData.municipalityId || !formData.username}
+            <Button
+              onClick={handleUpdateCompany}
+              disabled={
+                updateCompanyMutation.isPending ||
+                !formData.name ||
+                !formData.email ||
+                !formData.municipalityId ||
+                !formData.username
+              }
             >
-              {updateCompanyMutation.isPending ? "Actualizando..." : "Actualizar Empresa"}
+              {updateCompanyMutation.isPending
+                ? "Actualizando..."
+                : "Actualizar Empresa"}
             </Button>
           </div>
         </DialogContent>
       </Dialog>
 
       {/* Delete Confirmation */}
-      <AlertDialog open={!!deletingCompany} onOpenChange={() => setDeletingCompany(null)}>
+      <AlertDialog
+        open={!!deletingCompany}
+        onOpenChange={() => setDeletingCompany(null)}
+      >
         <AlertDialogContent>
           <AlertDialogHeader>
-            <AlertDialogTitle className="text-red-600">⚠️ Eliminar Empresa</AlertDialogTitle>
-            <AlertDialogDescription className="space-y-3">
-              <p>
-                <strong>Esta acción no se puede deshacer.</strong> Se eliminará permanentemente la empresa
-                <strong> "{deletingCompany?.name}"</strong> y todos sus datos relacionados:
-              </p>
-              
+            <AlertDialogTitle className="text-red-600">
+              ⚠️ Eliminar Empresa
+            </AlertDialogTitle>
+            <div className="space-y-3 text-sm text-muted-foreground">
+              <div>
+                <strong>Esta acción no se puede deshacer.</strong> Se eliminará
+                permanentemente la empresa
+                <strong> "{deletingCompany?.name}"</strong> y todos sus datos
+                relacionados:
+              </div>
+
               {deletingCompany && (
                 <div className="bg-red-50 p-3 rounded-md border border-red-200">
-                  <h4 className="font-semibold text-red-800 mb-2">Se eliminarán:</h4>
+                  <h4 className="font-semibold text-red-800 mb-2">
+                    Se eliminarán permanentemente:
+                  </h4>
                   <ul className="text-sm text-red-700 space-y-1">
-                    <li>• {deletingCompany.jobOffersCount} ofertas de trabajo</li>
+                    <li>
+                      • <strong>La empresa completa</strong> y todos sus datos
+                    </li>
+                    <li>
+                      • <strong>La cuenta de usuario</strong> asociada a la
+                      empresa
+                    </li>
+                    <li>
+                      • {deletingCompany.jobOffersCount} ofertas de trabajo
+                    </li>
                     <li>• Todas las postulaciones a estas ofertas</li>
                     <li>• Mensajes y comunicaciones relacionadas</li>
-                    <li>• {deletingCompany.employeesCount} perfiles de empleados (se desvinculan)</li>
+                    <li>
+                      • {deletingCompany.employeesCount} perfiles de empleados
+                      (se desvinculan, no se eliminan)
+                    </li>
                     <li>• Intereses de jóvenes en la empresa</li>
                     <li>• Preguntas y respuestas de entrevistas</li>
+                    <li>• Artículos de noticias creados por la empresa</li>
+                    <li>• Comentarios de noticias de la empresa</li>
                   </ul>
+
+                  <div className="mt-3 p-2 bg-red-100 rounded border border-red-300">
+                    <p className="text-xs text-red-800">
+                      <strong>⚠️ ADVERTENCIA:</strong> Esta es una eliminación
+                      en cascada completa. Todos los datos relacionados se
+                      eliminarán permanentemente y no se pueden recuperar.
+                    </p>
+                  </div>
                 </div>
               )}
-              
-              <p className="text-sm text-gray-600">
-                Solo los usuarios con rol SUPERADMIN pueden eliminar empresas.
-              </p>
-            </AlertDialogDescription>
+
+              <div className="text-sm text-gray-600">
+                Solo los usuarios con rol SUPERADMIN o GOBIERNOS_MUNICIPALES
+                pueden eliminar empresas.
+              </div>
+            </div>
           </AlertDialogHeader>
           <AlertDialogFooter>
             <AlertDialogCancel>Cancelar</AlertDialogCancel>
@@ -855,11 +1432,111 @@ export default function CompaniesPage() {
               disabled={deleteCompanyMutation.isPending}
               className="bg-red-600 hover:bg-red-700"
             >
-              {deleteCompanyMutation.isPending ? "Eliminando..." : "Eliminar Definitivamente"}
+              {deleteCompanyMutation.isPending ? (
+                <>
+                  <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>
+                  Eliminando...
+                </>
+              ) : (
+                "Eliminar Definitivamente"
+              )}
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
+
+      {/* Generated Credentials Modal */}
+      <Dialog
+        open={showGeneratedCredentials}
+        onOpenChange={setShowGeneratedCredentials}
+      >
+        <DialogContent className="max-w-md">
+          <DialogHeader>
+            <DialogTitle className="text-green-600">
+              ✅ Credenciales Generadas
+            </DialogTitle>
+          </DialogHeader>
+          <div className="space-y-4">
+            <div className="bg-green-50 p-3 rounded-md border border-green-200">
+              <p className="text-sm text-green-800">
+                <strong>✅ Empresa creada exitosamente!</strong> A continuación
+                se muestran las credenciales de acceso. Guárdelas en un lugar
+                seguro.
+              </p>
+            </div>
+
+            {generatedCredentials && (
+              <>
+                <div className="space-y-2">
+                  <Label>Usuario</Label>
+                  <div className="flex items-center gap-2">
+                    <Input
+                      value={generatedCredentials.username}
+                      readOnly
+                      className="font-mono"
+                    />
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() =>
+                        copyToClipboard(
+                          generatedCredentials.username,
+                          "Usuario"
+                        )
+                      }
+                    >
+                      <Copy className="h-4 w-4" />
+                    </Button>
+                  </div>
+                </div>
+
+                <div className="space-y-2">
+                  <Label>Contraseña</Label>
+                  <div className="flex items-center gap-2">
+                    <Input
+                      value={generatedCredentials.password}
+                      readOnly
+                      className="font-mono"
+                    />
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() =>
+                        copyToClipboard(
+                          generatedCredentials.password,
+                          "Contraseña"
+                        )
+                      }
+                    >
+                      <Copy className="h-4 w-4" />
+                    </Button>
+                  </div>
+                </div>
+              </>
+            )}
+
+            <div className="bg-yellow-50 p-3 rounded-md border border-yellow-200">
+              <p className="text-sm text-yellow-800">
+                <strong>Importante:</strong> Estas credenciales solo se
+                mostrarán una vez. Asegúrese de copiarlas antes de cerrar esta
+                ventana.
+              </p>
+            </div>
+          </div>
+
+          <div className="flex justify-end pt-4">
+            <Button
+              onClick={() => {
+                setShowGeneratedCredentials(false);
+                setIsCreateDialogOpen(false);
+                resetForm();
+              }}
+            >
+              Entendido
+            </Button>
+          </div>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }

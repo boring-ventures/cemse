@@ -35,7 +35,6 @@ import {
   WorkModality,
   ExperienceLevel,
   JobStatus,
-
 } from "@/types/jobs";
 import { useAuthContext } from "@/hooks/use-auth";
 import { useJobCreation } from "@/hooks/use-job-creation";
@@ -62,6 +61,7 @@ interface JobFormData {
   coordinates: [number, number] | null;
   workSchedule: string;
   department: string;
+  municipality: string; // Add missing municipality field
   educationRequired: string;
 }
 
@@ -81,48 +81,49 @@ export default function CreateJobPage() {
     setShowTermsModal(true);
   };
 
-     const handleFiles = (files: FileList | null) => {
-     if (!files) return;
-     const newFiles = Array.from(files);
-     setImages((prev) => [...prev, ...newFiles]);
-     
-     // Create preview URLs for display
-     newFiles.forEach((file) => {
-       const reader = new FileReader();
-       reader.onloadend = () => {
-         if (reader.result) {
-           setImageUrls((prev) => [...prev, reader.result as string]);
-         }
-       };
-       reader.readAsDataURL(file);
-     });
-   };
+  const handleFiles = (files: FileList | null) => {
+    if (!files) return;
+    const newFiles = Array.from(files);
+    setImages((prev) => [...prev, ...newFiles]);
 
-     const removeImage = (index: number) => {
-     setImages((prev) => prev.filter((_, i) => i !== index));
-     setImageUrls((prev) => prev.filter((_, i) => i !== index));
-   };
+    // Create preview URLs for display
+    newFiles.forEach((file) => {
+      const reader = new FileReader();
+      reader.onloadend = () => {
+        if (reader.result) {
+          setImageUrls((prev) => [...prev, reader.result as string]);
+        }
+      };
+      reader.readAsDataURL(file);
+    });
+  };
+
+  const removeImage = (index: number) => {
+    setImages((prev) => prev.filter((_, i) => i !== index));
+    setImageUrls((prev) => prev.filter((_, i) => i !== index));
+  };
 
   // Form state
   const [jobData, setJobData] = useState<JobFormData>({
     title: "",
     description: "",
     location: "Cochabamba, Bolivia",
-    contractType: "" as ContractType,
-    workModality: "" as WorkModality,
-    experienceLevel: "" as ExperienceLevel,
+    contractType: "FULL_TIME" as ContractType,
+    workModality: "ON_SITE" as WorkModality,
+    experienceLevel: "NO_EXPERIENCE" as ExperienceLevel,
     salaryMin: "",
     salaryMax: "",
     salaryCurrency: "BOB",
-    requiredSkills: [],
+    requiredSkills: ["Sin especificar"],
     desiredSkills: [],
     benefits: [],
-    requirements: [],
+    requirements: ["Sin requisitos específicos"],
     responsibilities: [],
     closingDate: "",
     coordinates: null,
-    workSchedule: "",
+    workSchedule: "Lunes a viernes, 8:00 a 17:00",
     department: "Cochabamba",
+    municipality: "Cochabamba",
     educationRequired: "",
   });
 
@@ -131,7 +132,6 @@ export default function CreateJobPage() {
   const [benefitInput, setBenefitInput] = useState("");
   const [requirementInput, setRequirementInput] = useState("");
   const [responsibilityInput, setResponsibilityInput] = useState("");
-
 
   const contractTypeOptions = [
     { value: "FULL_TIME", label: "Tiempo completo" },
@@ -175,18 +175,17 @@ export default function CreateJobPage() {
     }));
   };
 
-
-
   // Improved validation function
   const validateForm = (): boolean => {
     const requiredFields = {
       title: "Título del empleo",
-      description: "Descripción del empleo", 
+      description: "Descripción del empleo",
       contractType: "Tipo de contrato",
       workModality: "Modalidad de trabajo",
       experienceLevel: "Nivel de experiencia",
       location: "Ubicación",
-      workSchedule: "Horario de trabajo"
+      workSchedule: "Horario de trabajo",
+      municipality: "Municipio",
     };
 
     const errors: string[] = [];
@@ -194,7 +193,7 @@ export default function CreateJobPage() {
     // Check required string fields
     Object.entries(requiredFields).forEach(([field, label]) => {
       const value = jobData[field as keyof JobFormData];
-      if (!value || (typeof value === 'string' && value.trim() === '')) {
+      if (!value || (typeof value === "string" && value.trim() === "")) {
         errors.push(label);
       }
     });
@@ -207,7 +206,7 @@ export default function CreateJobPage() {
     if (errors.length > 0) {
       toast({
         title: "Campos requeridos",
-        description: `Por favor completa: ${errors.join(', ')}`,
+        description: `Por favor completa: ${errors.join(", ")}`,
         variant: "destructive",
       });
       return false;
@@ -220,7 +219,7 @@ export default function CreateJobPage() {
   const handleSubmit = async (status: JobStatus) => {
     // Early validation
     if (!validateForm()) return;
-    
+
     if (!user?.id) {
       toast({
         title: "Error de autenticación",
@@ -230,23 +229,31 @@ export default function CreateJobPage() {
       return;
     }
 
+    // Debug: Log the form data being sent
+    console.log("🔍 Job Create Page - Form data being submitted:", {
+      jobData,
+      user: { id: user.id, role: user.role, company: user.company },
+      status,
+      imagesCount: images.length,
+    });
+
     await createJob(jobData, user, images, status);
   };
 
   // Debug user authentication
-  console.log('🔍 Job Create Page - User authentication check:', {
+  console.log("🔍 Job Create Page - User authentication check:", {
     user: !!user,
     userObject: user,
     role: user?.role,
     isLoading,
     userId: user?.id,
     companyId: user?.company?.id,
-    companyInfo: user?.company
+    companyInfo: user?.company,
   });
 
   // Check if user is authenticated and is a company
   if (!user) {
-    console.log('❌ No user found - showing authentication error');
+    console.log("❌ No user found - showing authentication error");
     return (
       <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
         <div className="text-center">
@@ -266,9 +273,13 @@ export default function CreateJobPage() {
     );
   }
 
-  const isCompanyUser = user.role === 'COMPANIES' || user.role === 'EMPRESAS';
+  const isCompanyUser = user.role === "COMPANIES" || user.role === "EMPRESAS";
   if (!isCompanyUser) {
-    console.log('❌ User role mismatch - Current role:', user.role, 'Expected: COMPANIES or EMPRESAS');
+    console.log(
+      "❌ User role mismatch - Current role:",
+      user.role,
+      "Expected: COMPANIES or EMPRESAS"
+    );
     return (
       <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
         <div className="text-center">
@@ -280,7 +291,8 @@ export default function CreateJobPage() {
           </p>
           <div className="mt-4">
             <p className="text-sm text-gray-500">
-              Debug: Tu rol actual es "{user.role}" pero necesitas ser "COMPANIES" o "EMPRESAS"
+              Debug: Tu rol actual es "{user.role}" pero necesitas ser
+              "COMPANIES" o "EMPRESAS"
             </p>
           </div>
         </div>
@@ -389,8 +401,6 @@ export default function CreateJobPage() {
 
   return (
     <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
-
-
       <Dialog open={showTermsModal} onOpenChange={setShowTermsModal}>
         <DialogContent className="z-[9999] max-w-lg">
           <DialogHeader>
@@ -441,23 +451,24 @@ export default function CreateJobPage() {
           </div>
         </div>
         <div className="space-x-2">
-          <Button 
-            variant="secondary" 
+          <Button
+            variant="secondary"
             onClick={async () => {
               try {
-                const response = await fetch('/api/debug/user-info');
+                const response = await fetch("/api/debug/user-info");
                 const debugInfo = await response.json();
-                console.log('🔍 DEBUG USER INFO:', debugInfo);
+                console.log("🔍 DEBUG USER INFO:", debugInfo);
                 toast({
                   title: "Debug Info",
-                  description: "Check browser console for detailed user information",
+                  description:
+                    "Check browser console for detailed user information",
                 });
               } catch (error) {
-                console.error('Debug error:', error);
+                console.error("Debug error:", error);
                 toast({
                   title: "Debug Error",
                   description: "Failed to get debug info",
-                  variant: "destructive"
+                  variant: "destructive",
                 });
               }
             }}
@@ -594,7 +605,7 @@ export default function CreateJobPage() {
               </div>
             </div>
 
-                         <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+            <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
               <div>
                 <Label htmlFor="salaryMin">Salario mínimo (BOB)</Label>
                 <Input
@@ -611,88 +622,101 @@ export default function CreateJobPage() {
                 />
               </div>
 
-                             <div>
-                 <Label htmlFor="salaryMax">Salario máximo (BOB)</Label>
-                 <Input
-                   id="salaryMax"
-                   type="number"
-                   placeholder="5000"
-                   value={jobData.salaryMax}
-                   onChange={(e) =>
-                     setJobData((prev) => ({
-                       ...prev,
-                       salaryMax: e.target.value,
-                     }))
-                   }
-                 />
-               </div>
-               <div>
-                 <Label htmlFor="closingDate">Fecha límite de aplicación</Label>
-                 <Input
-                   id="closingDate"
-                   type="date"
-                   value={jobData.closingDate}
-                   onChange={(e) =>
-                     setJobData((prev) => ({
-                       ...prev,
-                       closingDate: e.target.value,
-                     }))
-                   }
-                 />
-               </div>
+              <div>
+                <Label htmlFor="salaryMax">Salario máximo (BOB)</Label>
+                <Input
+                  id="salaryMax"
+                  type="number"
+                  placeholder="5000"
+                  value={jobData.salaryMax}
+                  onChange={(e) =>
+                    setJobData((prev) => ({
+                      ...prev,
+                      salaryMax: e.target.value,
+                    }))
+                  }
+                />
+              </div>
+              <div>
+                <Label htmlFor="closingDate">Fecha límite de aplicación</Label>
+                <Input
+                  id="closingDate"
+                  type="date"
+                  value={jobData.closingDate}
+                  onChange={(e) =>
+                    setJobData((prev) => ({
+                      ...prev,
+                      closingDate: e.target.value,
+                    }))
+                  }
+                />
+              </div>
 
-                             <div>
-                 <Label htmlFor="department">Departamento</Label>
-                 <Input
-                   id="department"
-                   value={jobData.department}
-                   onChange={(e) =>
-                     setJobData((prev) => ({
-                       ...prev,
-                       department: e.target.value,
-                     }))
-                   }
-                 />
-               </div>
-               <div>
-                 <Label htmlFor="educationRequired">Educación requerida</Label>
-                 <Select
-                   value={jobData.educationRequired}
-                   onValueChange={(value) =>
-                     setJobData((prev) => ({
-                       ...prev,
-                       educationRequired: value,
-                     }))
-                   }
-                 >
-                   <SelectTrigger>
-                     <SelectValue placeholder="Selecciona nivel educativo" />
-                   </SelectTrigger>
-                   <SelectContent>
-                     <SelectItem value="PRIMARY">Primaria</SelectItem>
-                     <SelectItem value="SECONDARY">Secundaria</SelectItem>
-                     <SelectItem value="TECHNICAL">Técnico</SelectItem>
-                     <SelectItem value="UNIVERSITY">Universidad</SelectItem>
-                     <SelectItem value="POSTGRADUATE">Postgrado</SelectItem>
-                     <SelectItem value="OTHER">Otro</SelectItem>
-                   </SelectContent>
-                 </Select>
-               </div>
+              <div>
+                <Label htmlFor="department">Departamento</Label>
+                <Input
+                  id="department"
+                  value={jobData.department}
+                  onChange={(e) =>
+                    setJobData((prev) => ({
+                      ...prev,
+                      department: e.target.value,
+                    }))
+                  }
+                />
+              </div>
+              <div>
+                <Label htmlFor="municipality">Municipio</Label>
+                <Input
+                  id="municipality"
+                  value={jobData.municipality}
+                  onChange={(e) =>
+                    setJobData((prev) => ({
+                      ...prev,
+                      municipality: e.target.value,
+                    }))
+                  }
+                />
+              </div>
+              <div>
+                <Label htmlFor="educationRequired">Educación requerida</Label>
+                <Select
+                  value={jobData.educationRequired}
+                  onValueChange={(value) =>
+                    setJobData((prev) => ({
+                      ...prev,
+                      educationRequired: value,
+                    }))
+                  }
+                >
+                  <SelectTrigger>
+                    <SelectValue placeholder="Selecciona nivel educativo" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="PRIMARY">Primaria</SelectItem>
+                    <SelectItem value="SECONDARY">Secundaria</SelectItem>
+                    <SelectItem value="TECHNICAL">Técnico</SelectItem>
+                    <SelectItem value="UNIVERSITY">Universidad</SelectItem>
+                    <SelectItem value="POSTGRADUATE">Postgrado</SelectItem>
+                    <SelectItem value="OTHER">Otro</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
 
-                             <div className="md:col-span-4">
-                 <Label htmlFor="workSchedule">Horario de trabajo *</Label>
-                 <Input
-                   id="workSchedule"
-                   placeholder="Ej: Lunes a viernes, 8:00 a 17:00"
-                   value={jobData.workSchedule || ""}
-                   onChange={(e) =>
-                     setJobData((prev) => ({
-                       ...prev,
-                       workSchedule: e.target.value,
-                     }))
-                   }
-                 />
-               </div>
+              <div className="md:col-span-4">
+                <Label htmlFor="workSchedule">Horario de trabajo *</Label>
+                <Input
+                  id="workSchedule"
+                  placeholder="Ej: Lunes a viernes, 8:00 a 17:00"
+                  value={jobData.workSchedule || ""}
+                  onChange={(e) =>
+                    setJobData((prev) => ({
+                      ...prev,
+                      workSchedule: e.target.value,
+                    }))
+                  }
+                />
+              </div>
             </div>
           </CardContent>
         </Card>
@@ -752,14 +776,22 @@ export default function CreateJobPage() {
                   onKeyPress={(e) => {
                     if (e.key === "Enter") {
                       e.preventDefault();
-                      addToArray("desiredSkills", desiredSkillInput, setDesiredSkillInput);
+                      addToArray(
+                        "desiredSkills",
+                        desiredSkillInput,
+                        setDesiredSkillInput
+                      );
                     }
                   }}
                 />
                 <Button
                   type="button"
                   onClick={() =>
-                    addToArray("desiredSkills", desiredSkillInput, setDesiredSkillInput)
+                    addToArray(
+                      "desiredSkills",
+                      desiredSkillInput,
+                      setDesiredSkillInput
+                    )
                   }
                 >
                   Agregar
@@ -921,10 +953,6 @@ export default function CreateJobPage() {
           </CardContent>
         </Card>
 
-
-
-        
-
         {!showTermsModal && (
           <Card>
             <CardHeader>
@@ -973,30 +1001,30 @@ export default function CreateJobPage() {
               </div>
             </div>
 
-                         {imageUrls.length > 0 && (
-               <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
-                 {imageUrls.map((src, index) => (
-                   <div
-                     key={index}
-                     className="relative group rounded-lg overflow-hidden border"
-                   >
-                     <img
-                       src={src}
-                       alt={`imagen-${index}`}
-                       className="object-cover w-full h-32"
-                     />
-                     <Button
-                       size="icon"
-                       variant="destructive"
-                       className="absolute top-2 right-2 opacity-0 group-hover:opacity-100 transition-opacity"
-                       onClick={() => removeImage(index)}
-                     >
-                       <Trash className="w-4 h-4" />
-                     </Button>
-                   </div>
-                 ))}
-               </div>
-             )}
+            {imageUrls.length > 0 && (
+              <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
+                {imageUrls.map((src, index) => (
+                  <div
+                    key={index}
+                    className="relative group rounded-lg overflow-hidden border"
+                  >
+                    <img
+                      src={src}
+                      alt={`imagen-${index}`}
+                      className="object-cover w-full h-32"
+                    />
+                    <Button
+                      size="icon"
+                      variant="destructive"
+                      className="absolute top-2 right-2 opacity-0 group-hover:opacity-100 transition-opacity"
+                      onClick={() => removeImage(index)}
+                    >
+                      <Trash className="w-4 h-4" />
+                    </Button>
+                  </div>
+                ))}
+              </div>
+            )}
           </CardContent>
         </Card>
 

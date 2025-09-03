@@ -630,19 +630,21 @@ export function DashboardAdolescent() {
   const activities = dashboardData?.recentActivities || [];
 
   return (
-    <div className="space-y-6 sm:space-y-8 p-4 sm:p-6">
+    <div className="space-y-4 sm:space-y-6 md:space-y-8 p-3 sm:p-4 md:p-6 w-full max-w-full overflow-hidden">
       {/* Welcome Section */}
-      <div className="bg-gradient-to-r from-green-600 to-blue-600 rounded-lg sm:rounded-xl p-4 sm:p-6 text-white">
-        <div className="flex items-center justify-between">
-          <div>
-            <h1 className="text-2xl sm:text-3xl font-bold mb-2">¡Bienvenido Joven!</h1>
-            <p className="text-sm sm:text-base text-gray-200">
+      <div className="bg-gradient-to-r from-green-600 to-blue-600 rounded-lg sm:rounded-xl p-3 sm:p-4 md:p-6 text-white">
+        <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 sm:gap-4">
+          <div className="min-w-0 flex-1">
+            <h1 className="text-xl sm:text-2xl md:text-3xl font-bold mb-2 break-words">
+              ¡Bienvenido Joven!
+            </h1>
+            <p className="text-xs sm:text-sm md:text-base text-gray-200 break-words">
               Explora oportunidades, desarrolla tus habilidades y construye tu
               futuro profesional
             </p>
           </div>
-          <div className="hidden sm:flex">
-            <GraduationCap className="w-12 sm:w-16 h-12 sm:h-16 text-gray-200" />
+          <div className="hidden sm:flex flex-shrink-0">
+            <GraduationCap className="w-10 sm:w-12 md:w-16 h-10 sm:h-12 md:h-16 text-gray-200" />
           </div>
         </div>
       </div>
@@ -651,11 +653,11 @@ export function DashboardAdolescent() {
       <div className="bg-amber-50 border border-amber-200 rounded-lg p-3 sm:p-4">
         <div className="flex flex-col sm:flex-row sm:items-center gap-3">
           <Shield className="w-5 h-5 text-amber-600 flex-shrink-0" />
-          <div>
+          <div className="min-w-0 flex-1">
             <h3 className="text-sm font-medium text-amber-800">
               Recordatorio Importante
             </h3>
-            <p className="text-sm text-amber-700">
+            <p className="text-sm text-amber-700 break-words">
               Recuerda que para ciertas actividades necesitas autorización de
               tus padres o tutores.
             </p>
@@ -667,14 +669,16 @@ export function DashboardAdolescent() {
       <LocalNewsCarousel />
 
       {/* Quick Access Modules */}
-      <div className="grid grid-cols-1 gap-4 sm:gap-6 sm:grid-cols-2 lg:grid-cols-3">
+      <div className="grid grid-cols-1 gap-3 sm:gap-4 md:gap-6 sm:grid-cols-2 lg:grid-cols-3">
         <Card className="hover:shadow-lg transition-shadow cursor-pointer">
           <CardHeader className="pb-3">
             <div className="flex flex-col sm:flex-row sm:items-center gap-3 text-center sm:text-left">
               <div className="w-10 h-10 bg-gray-600 rounded-lg flex items-center justify-center mx-auto sm:mx-0">
                 <Search className="w-5 h-5 text-white" />
               </div>
-              <CardTitle className="text-base sm:text-lg">Búsqueda de Empleo</CardTitle>
+              <CardTitle className="text-base sm:text-lg">
+                Búsqueda de Empleo
+              </CardTitle>
             </div>
           </CardHeader>
           <CardContent>
@@ -696,7 +700,9 @@ export function DashboardAdolescent() {
               <div className="w-10 h-10 bg-gray-600 rounded-lg flex items-center justify-center mx-auto sm:mx-0">
                 <GraduationCap className="w-5 h-5 text-white" />
               </div>
-              <CardTitle className="text-base sm:text-lg">Capacitación</CardTitle>
+              <CardTitle className="text-base sm:text-lg">
+                Capacitación
+              </CardTitle>
             </div>
           </CardHeader>
           <CardContent>
@@ -704,7 +710,10 @@ export function DashboardAdolescent() {
               Desarrolla nuevas habilidades y obtén certificaciones
             </p>
             <Button asChild size="sm" className="w-full">
-              <Link href="/courses" className="flex items-center justify-center">
+              <Link
+                href="/courses"
+                className="flex items-center justify-center"
+              >
                 Ver Cursos
                 <ArrowRight className="w-4 h-4 ml-2" />
               </Link>
@@ -718,7 +727,9 @@ export function DashboardAdolescent() {
               <div className="w-10 h-10 bg-gray-600 rounded-lg flex items-center justify-center mx-auto sm:mx-0">
                 <Target className="w-5 h-5 text-white" />
               </div>
-              <CardTitle className="text-base sm:text-lg">Emprendimiento</CardTitle>
+              <CardTitle className="text-base sm:text-lg">
+                Emprendimiento
+              </CardTitle>
             </div>
           </CardHeader>
           <CardContent>
@@ -726,7 +737,10 @@ export function DashboardAdolescent() {
               Desarrolla ideas de negocio y habilidades empresariales
             </p>
             <Button asChild size="sm" className="w-full">
-              <Link href="/entrepreneurship" className="flex items-center justify-center">
+              <Link
+                href="/entrepreneurship"
+                className="flex items-center justify-center"
+              >
                 Explorar Ideas
                 <ArrowRight className="w-4 h-4 ml-2" />
               </Link>
@@ -767,10 +781,15 @@ export function DashboardAdolescent() {
                   className="flex flex-col sm:flex-row sm:items-center sm:justify-between p-3 bg-gray-50 rounded-lg gap-2 sm:gap-0"
                 >
                   <div className="flex items-center gap-3">
-                    <div className="w-4 h-4 text-gray-600 flex-shrink-0">{activity.icon}</div>
+                    <div className="w-4 h-4 text-gray-600 flex-shrink-0">
+                      {activity.icon}
+                    </div>
                     <span className="text-sm">{activity.title}</span>
                   </div>
-                  <Badge variant="secondary" className="self-start sm:self-center text-xs">
+                  <Badge
+                    variant="secondary"
+                    className="self-start sm:self-center text-xs"
+                  >
                     {activity.timestamp}
                   </Badge>
                 </div>
@@ -800,7 +819,9 @@ export function DashboardAdolescent() {
                 <TrendingUp className="w-5 sm:w-6 h-5 sm:h-6 text-white" />
               </div>
               <div className="text-center sm:text-left">
-                <CardTitle className="text-lg sm:text-xl">Progreso Personal</CardTitle>
+                <CardTitle className="text-lg sm:text-xl">
+                  Progreso Personal
+                </CardTitle>
                 <CardDescription className="text-sm">
                   Un vistazo completo a tu actividad y avances en la plataforma
                 </CardDescription>
@@ -914,7 +935,9 @@ export function DashboardAdolescent() {
                   <Award className="w-6 sm:w-8 h-6 sm:h-8 text-orange-600" />
                 </div>
                 <div>
-                  <div className="text-2xl sm:text-3xl font-bold text-gray-900">4</div>
+                  <div className="text-2xl sm:text-3xl font-bold text-gray-900">
+                    4
+                  </div>
                   <p className="text-xs sm:text-sm font-medium text-gray-600">
                     Certificados Obtenidos
                   </p>
@@ -939,7 +962,9 @@ export function DashboardAdolescent() {
                 <Clock className="w-4 sm:w-5 h-4 sm:h-5 text-yellow-600" />
               </div>
               <div>
-                <div className="text-base sm:text-lg font-semibold text-gray-900">12h</div>
+                <div className="text-base sm:text-lg font-semibold text-gray-900">
+                  12h
+                </div>
                 <p className="text-xs text-gray-600">
                   Tiempo de estudio esta semana
                 </p>
@@ -951,7 +976,9 @@ export function DashboardAdolescent() {
                 <Users className="w-4 sm:w-5 h-4 sm:h-5 text-indigo-600" />
               </div>
               <div>
-                <div className="text-base sm:text-lg font-semibold text-gray-900">8</div>
+                <div className="text-base sm:text-lg font-semibold text-gray-900">
+                  8
+                </div>
                 <p className="text-xs text-gray-600">
                   Conexiones profesionales
                 </p>
@@ -963,7 +990,9 @@ export function DashboardAdolescent() {
                 <Star className="w-4 sm:w-5 h-4 sm:h-5 text-pink-600" />
               </div>
               <div>
-                <div className="text-base sm:text-lg font-semibold text-gray-900">4.8</div>
+                <div className="text-base sm:text-lg font-semibold text-gray-900">
+                  4.8
+                </div>
                 <p className="text-xs text-gray-600">Calificación promedio</p>
               </div>
             </div>
@@ -975,7 +1004,9 @@ export function DashboardAdolescent() {
       <Card className="border-dashed">
         <CardContent className="p-4 sm:p-6 text-center">
           <Heart className="w-6 sm:w-8 h-6 sm:h-8 text-pink-500 mx-auto mb-3 sm:mb-4" />
-          <h3 className="text-base sm:text-lg font-medium mb-2">¿Necesitas ayuda?</h3>
+          <h3 className="text-base sm:text-lg font-medium mb-2">
+            ¿Necesitas ayuda?
+          </h3>
           <p className="text-sm sm:text-base text-gray-600 mb-4">
             Estamos aquí para apoyarte en tu desarrollo académico y profesional
           </p>

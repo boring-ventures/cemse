@@ -7,7 +7,7 @@ console.log("🚨 ROUTE FILE LOADED: /api/company/[id]/route.ts");
 
 export async function PUT(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
     // Get authentication token from cookies
@@ -23,8 +23,9 @@ export async function PUT(
     }
 
     // For development, accept any token format
-    const isAuthenticated = token.startsWith('mock-dev-token-') || token.length > 10;
-    
+    const isAuthenticated =
+      token.startsWith("mock-dev-token-") || token.length > 10;
+
     if (!isAuthenticated) {
       return NextResponse.json(
         { error: "Invalid authentication token" },
@@ -32,21 +33,18 @@ export async function PUT(
       );
     }
 
-    const resolvedParams = params;
+    const resolvedParams = await params;
     const body = await request.json();
-    
+
     console.log(`🔄 PUT /api/company/${resolvedParams.id} - Updating company`);
 
     // Check if company exists
     const existingCompany = await prisma.company.findUnique({
-      where: { id: resolvedParams.id }
+      where: { id: resolvedParams.id },
     });
 
     if (!existingCompany) {
-      return NextResponse.json(
-        { error: "Company not found" },
-        { status: 404 }
-      );
+      return NextResponse.json({ error: "Company not found" }, { status: 404 });
     }
 
     // Update company using Prisma
@@ -62,7 +60,12 @@ export async function PUT(
         email: body.email,
         phone: body.phone,
         address: body.address,
-        isActive: body.isActive !== undefined ? body.isActive : existingCompany.isActive,
+        taxId: body.taxId,
+        legalRepresentative: body.legalRepresentative,
+        isActive:
+          body.isActive !== undefined
+            ? body.isActive
+            : existingCompany.isActive,
         municipalityId: body.municipalityId || existingCompany.municipalityId,
       },
       include: {
@@ -71,16 +74,15 @@ export async function PUT(
             id: true,
             name: true,
             department: true,
-          }
+          },
         },
         creator: {
           select: {
-            id: true,
             username: true,
             role: true,
-          }
-        }
-      }
+          },
+        },
+      },
     });
 
     console.log("✅ Company updated successfully:", updatedCompany.name);
@@ -97,6 +99,8 @@ export async function PUT(
       email: updatedCompany.email,
       phone: updatedCompany.phone,
       address: updatedCompany.address,
+      taxId: updatedCompany.taxId,
+      legalRepresentative: updatedCompany.legalRepresentative,
       isActive: updatedCompany.isActive,
       username: updatedCompany.username,
       loginEmail: updatedCompany.loginEmail,
@@ -118,11 +122,13 @@ export async function PUT(
 
 export async function DELETE(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
-    const resolvedParams = params;
-    console.log(`🗑️ DELETE /api/company/${resolvedParams.id} - Starting deletion`);
+    const resolvedParams = await params;
+    console.log(
+      `🗑️ DELETE /api/company/${resolvedParams.id} - Starting deletion`
+    );
 
     // Get authentication token from cookies
     const cookieStore = await cookies();
@@ -131,7 +137,7 @@ export async function DELETE(
     console.log("🔍 DEBUG: Cookie inspection:", {
       hasToken: !!token,
       tokenLength: token?.length || 0,
-      tokenStart: token?.substring(0, 20) + '...' || 'N/A',
+      tokenStart: token?.substring(0, 20) + "..." || "N/A",
     });
 
     // Basic authentication check - allow if token exists (mock or real)
@@ -144,8 +150,9 @@ export async function DELETE(
     }
 
     // For development, accept any token format
-    const isAuthenticated = token.startsWith('mock-dev-token-') || token.length > 10;
-    
+    const isAuthenticated =
+      token.startsWith("mock-dev-token-") || token.length > 10;
+
     if (!isAuthenticated) {
       console.log("❌ Invalid authentication token");
       return NextResponse.json(
@@ -159,8 +166,8 @@ export async function DELETE(
     // Decode token to get current user ID to prevent session corruption
     let currentUserId: string | null = null;
     try {
-      if (token && token.includes('.')) {
-        const tokenParts = token.split('.');
+      if (token && token.includes(".")) {
+        const tokenParts = token.split(".");
         if (tokenParts.length === 3) {
           const base64Url = tokenParts[1];
           const base64 = base64Url.replace(/-/g, "+").replace(/_/g, "/");
@@ -181,17 +188,14 @@ export async function DELETE(
       where: { id: companyId },
       include: {
         municipality: {
-          select: { name: true }
-        }
-      }
+          select: { name: true },
+        },
+      },
     });
 
     if (!existingCompany) {
       console.log(`❌ Company not found: ${companyId}`);
-      return NextResponse.json(
-        { error: "Company not found" },
-        { status: 404 }
-      );
+      return NextResponse.json({ error: "Company not found" }, { status: 404 });
     }
 
     console.log(`🏢 Deleting company: ${existingCompany.name} (${companyId})`);
@@ -200,52 +204,82 @@ export async function DELETE(
     const deletionResult = await prisma.$transaction(async (tx) => {
       // Count related data before deletion for reporting
       const jobOffersCount = await tx.jobOffer.count({
-        where: { companyId: companyId }
+        where: { companyId: companyId },
       });
 
       const jobApplicationsCount = await tx.jobApplication.count({
-        where: { 
-          jobOffer: { companyId: companyId }
-        }
+        where: {
+          jobOffer: { companyId: companyId },
+        },
+      });
+
+      // Count news articles and comments created by the company
+      const newsArticlesCount = await tx.newsArticle.count({
+        where: {
+          authorId: existingCompany.createdBy,
+        },
+      });
+
+      const newsCommentsCount = await tx.newsComment.count({
+        where: {
+          userId: existingCompany.createdBy,
+        },
       });
 
       // Delete related data in correct order (foreign key constraints)
-      
-      // 1. Delete job applications first
+
+      // 1. Delete news comments first (they reference news articles)
+      await tx.newsComment.deleteMany({
+        where: {
+          userId: existingCompany.createdBy,
+        },
+      });
+
+      // 2. Delete news articles created by the company
+      await tx.newsArticle.deleteMany({
+        where: {
+          authorId: existingCompany.createdBy,
+        },
+      });
+
+      // 3. Delete job applications
       await tx.jobApplication.deleteMany({
         where: {
-          jobOffer: { companyId: companyId }
-        }
+          jobOffer: { companyId: companyId },
+        },
       });
 
-      // 2. Delete job offers
+      // 4. Delete job offers
       await tx.jobOffer.deleteMany({
-        where: { companyId: companyId }
+        where: { companyId: companyId },
       });
 
-      // 3. Delete youth application interests
-      const youthInterestsCount = await tx.youthApplicationCompanyInterest.count({
-        where: { companyId: companyId }
-      });
-      
+      // 5. Delete youth application interests
+      const youthInterestsCount =
+        await tx.youthApplicationCompanyInterest.count({
+          where: { companyId: companyId },
+        });
+
       await tx.youthApplicationCompanyInterest.deleteMany({
-        where: { companyId: companyId }
+        where: { companyId: companyId },
       });
 
-      // 4. Disconnect profiles associated with the company
+      // 6. Disconnect profiles associated with the company
       const profilesCount = await tx.profile.count({
-        where: { companyId: companyId }
+        where: { companyId: companyId },
       });
 
       // Check if current user's profile would be affected
       let currentUserProfile = null;
       if (currentUserId) {
         currentUserProfile = await tx.profile.findUnique({
-          where: { userId: currentUserId }
+          where: { userId: currentUserId },
         });
-        
+
         if (currentUserProfile?.companyId === companyId) {
-          console.warn(`⚠️ Current user's profile is associated with company being deleted. This could affect their session.`);
+          console.warn(
+            `⚠️ Current user's profile is associated with company being deleted. This could affect their session.`
+          );
         }
       }
 
@@ -253,14 +287,22 @@ export async function DELETE(
       // This operation sets companyId to null for all profiles linked to the company
       await tx.profile.updateMany({
         where: { companyId: companyId },
-        data: { companyId: null }
+        data: { companyId: null },
       });
-      
-      console.log(`🔄 Disconnected ${profilesCount} profiles from company ${companyId}`);
 
-      // 5. Finally delete the company
+      console.log(
+        `🔄 Disconnected ${profilesCount} profiles from company ${companyId}`
+      );
+
+      // 7. Delete the company
       await tx.company.delete({
-        where: { id: companyId }
+        where: { id: companyId },
+      });
+
+      // 8. Finally, delete the user account that created the company
+      // This will also cascade delete any refresh tokens
+      await tx.user.delete({
+        where: { id: existingCompany.createdBy },
       });
 
       return {
@@ -268,50 +310,58 @@ export async function DELETE(
         municipality: existingCompany.municipality?.name || "Unknown",
         jobOffers: jobOffersCount,
         jobApplications: jobApplicationsCount,
-        jobQuestions: 0, // Not tracked in current schema
+        newsArticles: newsArticlesCount,
+        newsComments: newsCommentsCount,
         disconnectedProfiles: profilesCount,
         youthApplicationInterests: youthInterestsCount,
+        userAccountDeleted: true,
       };
     });
 
     console.log("✅ Company deletion successful:", deletionResult);
 
     // Prepare response
-    const response = NextResponse.json({
-      message: "Empresa eliminada exitosamente",
-      deletedData: deletionResult,
-      // Include a flag if current user might need to refresh their session
-      requiresSessionRefresh: currentUserId && deletionResult.disconnectedProfiles > 0
-    }, { status: 200 });
+    const response = NextResponse.json(
+      {
+        message:
+          "Empresa eliminada exitosamente con eliminación en cascada completa",
+        deletedData: deletionResult,
+        // Include a flag if current user might need to refresh their session
+        requiresSessionRefresh:
+          currentUserId && deletionResult.disconnectedProfiles > 0,
+      },
+      { status: 200 }
+    );
 
     // If current user's profile was affected, add a header to indicate session refresh needed
     if (currentUserId && deletionResult.disconnectedProfiles > 0) {
-      response.headers.set('X-Session-Refresh-Recommended', 'true');
-      console.log(`ℹ️ Added session refresh recommendation due to profile disconnection`);
+      response.headers.set("X-Session-Refresh-Recommended", "true");
+      console.log(
+        `ℹ️ Added session refresh recommendation due to profile disconnection`
+      );
     }
 
     return response;
-
   } catch (error) {
     console.error("❌ Error in DELETE /api/company/[id]:", error);
-    
+
     if (error instanceof Error) {
       // Handle specific Prisma errors
-      if (error.message.includes('Record to delete does not exist')) {
+      if (error.message.includes("Record to delete does not exist")) {
         return NextResponse.json(
           { error: "Company not found" },
           { status: 404 }
         );
       }
-      
-      if (error.message.includes('Foreign key constraint')) {
+
+      if (error.message.includes("Foreign key constraint")) {
         return NextResponse.json(
           { error: "Cannot delete company with existing dependencies" },
           { status: 400 }
         );
       }
     }
-    
+
     return NextResponse.json(
       { error: "Error interno del servidor" },
       { status: 500 }
@@ -321,7 +371,7 @@ export async function DELETE(
 
 export async function GET(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
     // Get authentication token from cookies
@@ -337,8 +387,9 @@ export async function GET(
     }
 
     // For development, accept any token format
-    const isAuthenticated = token.startsWith('mock-dev-token-') || token.length > 10;
-    
+    const isAuthenticated =
+      token.startsWith("mock-dev-token-") || token.length > 10;
+
     if (!isAuthenticated) {
       return NextResponse.json(
         { error: "Invalid authentication token" },
@@ -346,7 +397,7 @@ export async function GET(
       );
     }
 
-    const resolvedParams = params;
+    const resolvedParams = await params;
     console.log(`🔍 GET /api/company/${resolvedParams.id} - Fetching company`);
 
     // Fetch company using Prisma
@@ -358,23 +409,19 @@ export async function GET(
             id: true,
             name: true,
             department: true,
-          }
+          },
         },
         creator: {
           select: {
-            id: true,
             username: true,
             role: true,
-          }
-        }
-      }
+          },
+        },
+      },
     });
 
     if (!company) {
-      return NextResponse.json(
-        { error: "Company not found" },
-        { status: 404 }
-      );
+      return NextResponse.json({ error: "Company not found" }, { status: 404 });
     }
 
     // Transform the data to match the expected format
@@ -389,6 +436,8 @@ export async function GET(
       email: company.email,
       phone: company.phone,
       address: company.address,
+      taxId: company.taxId,
+      legalRepresentative: company.legalRepresentative,
       isActive: company.isActive,
       username: company.username,
       loginEmail: company.loginEmail,
@@ -407,4 +456,4 @@ export async function GET(
       { status: 500 }
     );
   }
-} 
+}

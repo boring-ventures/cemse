@@ -1,31 +1,31 @@
-'use client';
+"use client";
 
-import { useState } from 'react';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Button } from '@/components/ui/button';
-import { Badge } from '@/components/ui/badge';
+import { useState } from "react";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
+import { Badge } from "@/components/ui/badge";
 import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
   DropdownMenuTrigger,
-} from '@/components/ui/dropdown-menu';
-import { 
-  Download, 
-  Star, 
-  FileText, 
-  Video, 
-  Music, 
-  Image, 
+} from "@/components/ui/dropdown-menu";
+import {
+  Download,
+  Star,
+  FileText,
+  Video,
+  Music,
+  Image,
   File,
   Calendar,
   User,
   Eye,
   Edit,
   Trash2,
-  MoreVertical
-} from 'lucide-react';
-import { Resource } from '@/types/api';
+  MoreVertical,
+} from "lucide-react";
+import { Resource } from "@/types/api";
 
 interface ResourceCardProps {
   resource: Resource;
@@ -34,36 +34,45 @@ interface ResourceCardProps {
   onEdit?: (resource: Resource) => void;
   onDelete?: (resource: Resource) => void;
   showActions?: boolean;
+  showDownloadActions?: boolean;
 }
 
-export function ResourceCard({ 
-  resource, 
-  onDownload, 
-  onRate, 
-  onEdit, 
-  onDelete, 
-  showActions = false 
+export function ResourceCard({
+  resource,
+  onDownload,
+  onRate,
+  onEdit,
+  onDelete,
+  showActions = false,
+  showDownloadActions = true,
 }: ResourceCardProps) {
   const [rating, setRating] = useState(resource.rating || 0);
   const [userRating, setUserRating] = useState(0);
 
   const getTypeIcon = (type: string) => {
     switch (type) {
-      case 'DOCUMENT': return <FileText className="h-5 w-5" />;
-      case 'VIDEO': return <Video className="h-5 w-5" />;
-      case 'AUDIO': return <Music className="h-5 w-5" />;
-      case 'IMAGE': return <Image className="h-5 w-5" />;
-      case 'TEXT': return <File className="h-5 w-5" />;
-      default: return <FileText className="h-5 w-5" />;
+      case "DOCUMENT":
+        return <FileText className="h-5 w-5" />;
+      case "VIDEO":
+        return <Video className="h-5 w-5" />;
+      case "AUDIO":
+        return <Music className="h-5 w-5" />;
+      case "IMAGE":
+        return <Image className="h-5 w-5" />;
+      case "TEXT":
+        return <File className="h-5 w-5" />;
+      default:
+        return <FileText className="h-5 w-5" />;
     }
   };
 
   const formatDate = (dateString: string | Date) => {
-    const date = typeof dateString === 'string' ? new Date(dateString) : dateString;
-    return date.toLocaleDateString('es-ES', {
-      year: 'numeric',
-      month: 'short',
-      day: 'numeric'
+    const date =
+      typeof dateString === "string" ? new Date(dateString) : dateString;
+    return date.toLocaleDateString("es-ES", {
+      year: "numeric",
+      month: "short",
+      day: "numeric",
     });
   };
 
@@ -106,7 +115,7 @@ export function ResourceCard({
                     <Edit className="h-4 w-4 mr-2" />
                     Editar
                   </DropdownMenuItem>
-                  <DropdownMenuItem 
+                  <DropdownMenuItem
                     onClick={() => onDelete?.(resource)}
                     className="text-destructive"
                   >
@@ -120,20 +129,22 @@ export function ResourceCard({
         </div>
         <CardTitle className="text-lg line-clamp-2">{resource.title}</CardTitle>
       </CardHeader>
-      
+
       <CardContent className="flex-1 flex flex-col">
         <p className="text-sm text-muted-foreground line-clamp-3 mb-4">
           {resource.description}
         </p>
-        
+
         <div className="space-y-2 mb-4">
           <div className="flex items-center gap-2 text-xs text-muted-foreground">
             <User className="h-3 w-3" />
-            <span>{resource.author || 'Anónimo'}</span>
+            <span>{resource.author || "Anónimo"}</span>
           </div>
           <div className="flex items-center gap-2 text-xs text-muted-foreground">
             <Calendar className="h-3 w-3" />
-            <span>{formatDate(resource.publishedDate || resource.createdAt)}</span>
+            <span>
+              {formatDate(resource.publishedDate || resource.createdAt)}
+            </span>
           </div>
           <div className="flex items-center gap-2 text-xs text-muted-foreground">
             <Download className="h-3 w-3" />
@@ -149,8 +160,8 @@ export function ResourceCard({
               onClick={() => handleRate(star)}
               className="text-yellow-400 hover:text-yellow-500 transition-colors"
             >
-              <Star 
-                className={`h-4 w-4 ${star <= (userRating || rating) ? 'fill-current' : ''}`} 
+              <Star
+                className={`h-4 w-4 ${star <= (userRating || rating) ? "fill-current" : ""}`}
               />
             </button>
           ))}
@@ -176,24 +187,34 @@ export function ResourceCard({
         )}
 
         {/* Actions */}
-        <div className="mt-auto flex gap-2">
-          <Button 
-            onClick={handleDownload}
-            size="sm" 
-            className="flex-1"
-          >
-            <Download className="h-4 w-4 mr-2" />
-            Descargar
-          </Button>
-          <Button 
-            variant="outline" 
-            size="sm"
-            onClick={() => window.open(resource.downloadUrl || resource.externalUrl, '_blank')}
-            disabled={!resource.downloadUrl && !resource.externalUrl}
-          >
-            <Eye className="h-4 w-4" />
-          </Button>
-        </div>
+        {showDownloadActions ? (
+          <div className="mt-auto flex gap-2">
+            <Button onClick={handleDownload} size="sm" className="flex-1">
+              <Download className="h-4 w-4 mr-2" />
+              Descargar
+            </Button>
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() =>
+                window.open(
+                  resource.downloadUrl || resource.externalUrl,
+                  "_blank"
+                )
+              }
+              disabled={!resource.downloadUrl && !resource.externalUrl}
+            >
+              <Eye className="h-4 w-4" />
+            </Button>
+          </div>
+        ) : (
+          <div className="mt-auto p-3 bg-blue-50 border border-blue-200 rounded-md">
+            <p className="text-xs text-blue-700 text-center">
+              Solo los jóvenes pueden descargar recursos. Inicia sesión con una
+              cuenta de joven para acceder a las descargas.
+            </p>
+          </div>
+        )}
       </CardContent>
     </Card>
   );

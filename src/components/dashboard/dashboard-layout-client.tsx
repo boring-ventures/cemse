@@ -28,13 +28,14 @@ export function DashboardLayoutClient({ children }: DashboardLayoutProps) {
           <div
             id="content"
             className={cn(
-              "ml-auto w-full max-w-full",
+              "ml-auto w-full max-w-full min-w-0", // Added min-w-0 to prevent flex item overflow
               "peer-data-[state=collapsed]:w-[calc(100%-var(--sidebar-width-icon)-1rem)]",
               "peer-data-[state=expanded]:w-[calc(100%-var(--sidebar-width))]",
               "transition-[width] duration-200 ease-linear",
               "flex min-h-screen flex-col",
               "group-data-[scroll-locked=1]/body:h-full",
-              "group-data-[scroll-locked=1]/body:has-[main.fixed-main]:min-h-screen"
+              "group-data-[scroll-locked=1]/body:has-[main.fixed-main]:min-h-screen",
+              "overflow-x-hidden" // Prevent horizontal overflow
             )}
           >
             <AdaptiveHeader />

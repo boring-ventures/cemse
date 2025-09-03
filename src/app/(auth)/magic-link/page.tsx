@@ -9,6 +9,9 @@ export const metadata: Metadata = {
   description: "Sign in without a password",
 };
 
+// Force dynamic rendering to avoid build-time issues
+export const dynamic = "force-dynamic";
+
 export default function MagicLinkPage() {
   return (
     <AuthLayout>

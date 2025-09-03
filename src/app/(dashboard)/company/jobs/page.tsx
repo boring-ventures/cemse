@@ -13,14 +13,23 @@ import {
   Plus,
   Briefcase,
   Users,
-  Eye,
   Edit,
   Trash2,
   TrendingUp,
   Calendar,
 } from "lucide-react";
-import JobApplicationsModal from "@/components/jobs/company/job-applications-modal";
+
 import { useRouter } from "next/navigation";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 
 const statusColors = {
   ACTIVE: "bg-green-100 text-green-800",
@@ -42,10 +51,14 @@ export default function CompanyJobsPage() {
   const router = useRouter();
   const [jobOffers, setJobOffers] = useState<JobOffer[]>([]);
   const [loading, setLoading] = useState(true);
-  const [selectedJobOffer, setSelectedJobOffer] = useState<JobOffer | null>(
-    null
-  );
-  const [isApplicationsModalOpen, setIsApplicationsModalOpen] = useState(false);
+
+  const [deleteConfirmation, setDeleteConfirmation] = useState<{
+    isOpen: boolean;
+    jobOffer: JobOffer | null;
+  }>({
+    isOpen: false,
+    jobOffer: null,
+  });
 
   useEffect(() => {
     if (user?.id) {
@@ -68,22 +81,23 @@ export default function CompanyJobsPage() {
 
       // Fetch job offers
       const response = await fetch(`/api/joboffer?companyId=${companyId}`, {
-        method: 'GET',
+        method: "GET",
         headers: {
-          'Content-Type': 'application/json'
-        }
+          "Content-Type": "application/json",
+        },
       });
 
       if (!response.ok) {
         if (response.status === 401) {
           toast({
             title: "Error de autenticación",
-            description: "Sesión expirada. Por favor, inicia sesión nuevamente.",
+            description:
+              "Sesión expirada. Por favor, inicia sesión nuevamente.",
             variant: "destructive",
           });
           return;
         }
-        
+
         const errorText = await response.text();
         console.error("API error response:", errorText);
         throw new Error(`HTTP error! status: ${response.status}`);
@@ -91,24 +105,31 @@ export default function CompanyJobsPage() {
 
       const data = await response.json();
       console.log("Job offers fetched successfully:", data);
-      
+
       const jobOffers = data.jobOffers || data || [];
       setJobOffers(jobOffers);
-
     } catch (error) {
       console.error("Error fetching job offers:", error);
-      
+
       if (error instanceof Error) {
-        if (error.message.includes('Authentication failed') || error.message.includes('401')) {
+        if (
+          error.message.includes("Authentication failed") ||
+          error.message.includes("401")
+        ) {
           toast({
             title: "Error de autenticación",
-            description: "Sesión expirada. Por favor, inicia sesión nuevamente.",
+            description:
+              "Sesión expirada. Por favor, inicia sesión nuevamente.",
             variant: "destructive",
           });
-        } else if (error.message.includes('fetch failed') || error.message.includes('Network')) {
+        } else if (
+          error.message.includes("fetch failed") ||
+          error.message.includes("Network")
+        ) {
           toast({
             title: "Error de conexión",
-            description: "No se pudo conectar al servidor. Verifica tu conexión a internet.",
+            description:
+              "No se pudo conectar al servidor. Verifica tu conexión a internet.",
             variant: "destructive",
           });
         } else {
@@ -149,27 +170,117 @@ export default function CompanyJobsPage() {
   };
 
   const handleDeleteJobOffer = async (jobOfferId: string) => {
-    if (
-      !confirm("¿Estás seguro de que quieres eliminar este puesto de trabajo?")
-    ) {
-      return;
-    }
+    // Get the job offer details for better confirmation
+    const jobOffer = jobOffers.find((job) => job.id === jobOfferId);
+    if (!jobOffer) return;
+
+    // Open the confirmation modal
+    setDeleteConfirmation({
+      isOpen: true,
+      jobOffer: jobOffer,
+    });
+  };
+
+  const confirmDelete = async () => {
+    if (!deleteConfirmation.jobOffer) return;
+
+    const jobOfferId = deleteConfirmation.jobOffer.id;
+    const jobTitle = deleteConfirmation.jobOffer.title;
 
     try {
-      await JobOfferService.deleteJobOffer(jobOfferId);
+      setLoading(true);
+
+      // Call the API directly to delete the job offer
+      const response = await fetch(`/api/joboffer/${jobOfferId}`, {
+        method: "DELETE",
+        credentials: "include", // Include cookies for authentication
+        headers: {
+          "Content-Type": "application/json",
+        },
+      });
+
+      if (!response.ok) {
+        if (response.status === 401) {
+          toast({
+            title: "Error de autenticación",
+            description:
+              "Sesión expirada. Por favor, inicia sesión nuevamente.",
+            variant: "destructive",
+          });
+          return;
+        }
+
+        if (response.status === 403) {
+          toast({
+            title: "Error de permisos",
+            description:
+              "No tienes permisos para eliminar esta oferta de trabajo.",
+            variant: "destructive",
+          });
+          return;
+        }
+
+        if (response.status === 404) {
+          toast({
+            title: "Error",
+            description: "La oferta de trabajo no fue encontrada.",
+            variant: "destructive",
+          });
+          return;
+        }
+
+        const errorData = await response.json();
+        throw new Error(
+          errorData.error || `Error ${response.status}: ${response.statusText}`
+        );
+      }
+
+      // Remove the job offer from the local state
       setJobOffers((prev) => prev.filter((job) => job.id !== jobOfferId));
+
       toast({
         title: "Éxito",
-        description: "Puesto de trabajo eliminado correctamente",
+        description: `"${jobTitle}" ha sido eliminado correctamente`,
       });
+
+      // Close the modal
+      setDeleteConfirmation({ isOpen: false, jobOffer: null });
     } catch (error) {
       console.error("Error deleting job offer:", error);
+
+      let errorMessage = "No se pudo eliminar el puesto de trabajo";
+
+      if (error instanceof Error) {
+        if (
+          error.message.includes("fetch failed") ||
+          error.message.includes("Network")
+        ) {
+          errorMessage = "Error de conexión. Verifica tu conexión a internet.";
+        } else if (error.message.includes("401")) {
+          errorMessage =
+            "Sesión expirada. Por favor, inicia sesión nuevamente.";
+        } else if (error.message.includes("403")) {
+          errorMessage =
+            "No tienes permisos para eliminar esta oferta de trabajo.";
+        } else if (error.message.includes("404")) {
+          errorMessage = "La oferta de trabajo no fue encontrada.";
+        } else {
+          errorMessage = error.message;
+        }
+      }
+
       toast({
         title: "Error",
-        description: "No se pudo eliminar el puesto de trabajo",
+        description: errorMessage,
         variant: "destructive",
       });
+    } finally {
+      setLoading(false);
     }
+  };
+
+  const cancelDelete = () => {
+    setDeleteConfirmation({ isOpen: false, jobOffer: null });
   };
 
   const formatDate = (dateString: string) => {
@@ -187,25 +298,19 @@ export default function CompanyJobsPage() {
       (sum, job) => sum + (job.applicationsCount || 0),
       0
     );
-    const totalViews = jobOffers.reduce(
-      (sum, job) => sum + (job.viewsCount || 0),
-      0
-    );
 
-    return { total, active, totalApplications, totalViews };
+    return { total, active, totalApplications };
   };
 
   const stats = getStats();
-
-
 
   if (loading) {
     return (
       <div className="space-y-6">
         <div className="animate-pulse">
           <div className="h-8 bg-gray-200 rounded w-1/3 mb-6"></div>
-          <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6">
-            {[1, 2, 3, 4].map((i) => (
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
+            {[1, 2, 3].map((i) => (
               <div key={i} className="h-24 bg-gray-200 rounded"></div>
             ))}
           </div>
@@ -215,6 +320,43 @@ export default function CompanyJobsPage() {
             ))}
           </div>
         </div>
+
+        {/* Delete Confirmation Modal */}
+        <AlertDialog
+          open={deleteConfirmation.isOpen}
+          onOpenChange={(open) => {
+            if (!open) {
+              setDeleteConfirmation({ isOpen: false, jobOffer: null });
+            }
+          }}
+        >
+          <AlertDialogContent>
+            <AlertDialogHeader>
+              <AlertDialogTitle>Confirmar eliminación</AlertDialogTitle>
+              <AlertDialogDescription>
+                ¿Estás seguro de que quieres eliminar "
+                {deleteConfirmation.jobOffer?.title}"?
+                <br />
+                <br />
+                <strong>Esta acción no se puede deshacer</strong> y se
+                eliminarán todas las aplicaciones asociadas a esta oferta de
+                trabajo.
+              </AlertDialogDescription>
+            </AlertDialogHeader>
+            <AlertDialogFooter>
+              <AlertDialogCancel onClick={cancelDelete}>
+                Cancelar
+              </AlertDialogCancel>
+              <AlertDialogAction
+                onClick={confirmDelete}
+                className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+                disabled={loading}
+              >
+                {loading ? "Eliminando..." : "Sí, eliminar"}
+              </AlertDialogAction>
+            </AlertDialogFooter>
+          </AlertDialogContent>
+        </AlertDialog>
       </div>
     );
   }
@@ -237,7 +379,7 @@ export default function CompanyJobsPage() {
       </div>
 
       {/* Estadísticas */}
-      <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
         <Card>
           <CardContent className="p-6">
             <div className="flex items-center justify-between">
@@ -276,20 +418,6 @@ export default function CompanyJobsPage() {
                 <p className="text-2xl font-bold">{stats.totalApplications}</p>
               </div>
               <Users className="w-8 h-8 text-purple-600" />
-            </div>
-          </CardContent>
-        </Card>
-
-        <Card>
-          <CardContent className="p-6">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-sm font-medium text-gray-600">
-                  Total Visualizaciones
-                </p>
-                <p className="text-2xl font-bold">{stats.totalViews}</p>
-              </div>
-              <Eye className="w-8 h-8 text-orange-600" />
             </div>
           </CardContent>
         </Card>
@@ -358,17 +486,14 @@ export default function CompanyJobsPage() {
                       <div className="flex items-center gap-6 text-sm">
                         <div
                           className="flex items-center gap-1 cursor-pointer hover:text-blue-600 transition-colors"
-                          onClick={() => {
-                            setSelectedJobOffer(jobOffer);
-                            setIsApplicationsModalOpen(true);
-                          }}
+                          onClick={() =>
+                            router.push(
+                              `/company/jobs/${jobOffer.id}/applications`
+                            )
+                          }
                         >
                           <Users className="w-4 h-4" />
                           {jobOffer.applicationsCount || 0} aplicaciones
-                        </div>
-                        <div className="flex items-center gap-1">
-                          <Eye className="w-4 h-4" />
-                          {jobOffer.viewsCount || 0} visualizaciones
                         </div>
                         <div className="flex items-center gap-1">
                           <Calendar className="w-4 h-4" />
@@ -389,10 +514,11 @@ export default function CompanyJobsPage() {
                       <Button
                         variant="outline"
                         size="sm"
-                        onClick={() => {
-                          setSelectedJobOffer(jobOffer);
-                          setIsApplicationsModalOpen(true);
-                        }}
+                        onClick={() =>
+                          router.push(
+                            `/company/jobs/${jobOffer.id}/applications`
+                          )
+                        }
                       >
                         <Users className="w-4 h-4 mr-2" />
                         Ver Aplicaciones
@@ -401,9 +527,10 @@ export default function CompanyJobsPage() {
                         variant="outline"
                         size="sm"
                         onClick={() => handleDeleteJobOffer(jobOffer.id)}
+                        disabled={loading}
                       >
                         <Trash2 className="w-4 h-4 mr-2" />
-                        Eliminar
+                        {loading ? "Eliminando..." : "Eliminar"}
                       </Button>
                     </div>
                   </div>
@@ -414,15 +541,41 @@ export default function CompanyJobsPage() {
         )}
       </div>
 
-      {/* Modal de Aplicaciones */}
-      <JobApplicationsModal
-        jobOffer={selectedJobOffer}
-        isOpen={isApplicationsModalOpen}
-        onClose={() => {
-          setIsApplicationsModalOpen(false);
-          setSelectedJobOffer(null);
+      {/* Delete Confirmation Modal */}
+      <AlertDialog
+        open={deleteConfirmation.isOpen}
+        onOpenChange={(open) => {
+          if (!open) {
+            setDeleteConfirmation({ isOpen: false, jobOffer: null });
+          }
         }}
-      />
+      >
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Confirmar eliminación</AlertDialogTitle>
+            <AlertDialogDescription>
+              ¿Estás seguro de que quieres eliminar "
+              {deleteConfirmation.jobOffer?.title}"?
+              <br />
+              <br />
+              <strong>Esta acción no se puede deshacer</strong> y se eliminarán
+              todas las aplicaciones asociadas a esta oferta de trabajo.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel onClick={cancelDelete}>
+              Cancelar
+            </AlertDialogCancel>
+            <AlertDialogAction
+              onClick={confirmDelete}
+              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+              disabled={loading}
+            >
+              {loading ? "Eliminando..." : "Sí, eliminar"}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 }

@@ -1,6 +1,6 @@
 "use client";
 
-import type React from "react";
+import React from "react";
 
 import { useState } from "react";
 import {
@@ -9,26 +9,16 @@ import {
   Phone,
   Mail,
   Globe,
-  Users,
   Edit,
   Save,
   X,
   Camera,
-  TrendingUp,
   Target,
   Award,
-  DollarSign,
-  ExternalLink,
   FileText,
-  Plus,
-  Search,
-  MoreHorizontal,
-  Trash2,
-  Download,
-  Play,
-  Headphones,
-  Calculator,
-  BookOpen,
+  Lock,
+  Eye,
+  EyeOff,
 } from "lucide-react";
 import {
   Card,
@@ -49,91 +39,115 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { Switch } from "@/components/ui/switch";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { Separator } from "@/components/ui/separator";
-import {
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-  DialogTrigger,
-} from "@/components/ui/dialog";
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu";
-import { Checkbox } from "@/components/ui/checkbox";
+import { Alert, AlertDescription } from "@/components/ui/alert";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import MapMarker from "@/components/MapMarker";
 import Image from "next/image";
-import { useProfile } from "@/hooks/useProfileApi";
+import { useCompanyProfile } from "@/hooks/useCompanyProfile";
+import { usePasswordChange } from "@/hooks/usePasswordChange";
+import { useAuthContext } from "@/hooks/use-auth";
 
+// Interface matching the actual database schema
 interface CompanyProfile {
   id: string;
   name: string;
-  description: string;
-  logo: string;
-  coverImage: string;
-  industry: string;
-  size: string;
-  founded: string;
-  website: string;
-  email: string;
-  phone: string;
-  address: string;
-  city: string;
-  country: string;
-  mission: string;
-  vision: string;
-  values: string[];
-  metrics: {
-    employees: number;
-    revenue: number;
-    growth: number;
-    projects: number;
+  description: string | null;
+  businessSector: string | null;
+  companySize: "MICRO" | "SMALL" | "MEDIUM" | "LARGE" | null;
+  foundedYear: number | null;
+  website: string | null;
+  email: string | null;
+  phone: string | null;
+  address: string | null;
+  taxId: string | null;
+  legalRepresentative: string | null;
+  municipality: {
+    id: string;
+    name: string;
+    department: string;
   };
-  socialMedia: {
-    linkedin: string;
-    twitter: string;
-    facebook: string;
-  };
-  settings: {
-    publicProfile: boolean;
-    showMetrics: boolean;
-    allowMessages: boolean;
-    emailNotifications: boolean;
-  };
-}
-
-interface CompanyResource {
-  id: string;
-  title: string;
-  description: string;
-  type:
-    | "template"
-    | "guide"
-    | "video"
-    | "podcast"
-    | "tool"
-    | "case_study"
-    | "whitepaper";
-  category: string;
-  fileUrl: string;
-  thumbnail: string;
-  tags: string[];
-  status: "published" | "draft";
-  featured: boolean;
-  downloads: number;
-  views: number;
-  createdAt: Date;
-  companyId: string;
+  isActive: boolean;
+  createdAt: string;
+  updatedAt: string;
 }
 
 export default function CompanyProfilePage() {
-  const { data: profile, loading, error } = useProfile("current");
+  const { profile, loading, error } = useCompanyProfile();
+  const { user } = useAuthContext();
+
+  // Debug: Log the current state
+  console.log("🔍 CompanyProfilePage - Current state:", {
+    profile,
+    loading,
+    error,
+    hasProfile: !!profile,
+    errorMessage: error?.message,
+  });
+
+  console.log("🔍 CompanyProfilePage - Hook result:", {
+    profile,
+    loading,
+    error,
+  });
+
+  // Debug: Log the user object to see what company data is available
+  console.log("🔍 CompanyProfilePage - User object:", {
+    user,
+    userCompany: user?.company,
+    userRole: user?.role,
+  });
+
+  // Debug: Log the profile data structure
+  if (profile) {
+    console.log("🔍 CompanyProfilePage - Profile data structure:", {
+      id: profile.id,
+      name: profile.name,
+      description: profile.description,
+      businessSector: profile.businessSector,
+      companySize: profile.companySize,
+      foundedYear: profile.foundedYear,
+      website: profile.website,
+      email: profile.email,
+      phone: profile.phone,
+      address: profile.address,
+      taxId: profile.taxId,
+      legalRepresentative: profile.legalRepresentative,
+      municipality: profile.municipality,
+      isActive: profile.isActive,
+      createdAt: profile.createdAt,
+      updatedAt: profile.updatedAt,
+    });
+  }
+
+  // Debug: Log the user object to see what company data is available
+  console.log("🔍 CompanyProfilePage - User object:", {
+    user,
+    userCompany: user?.company,
+    userRole: user?.role,
+  });
+
+  // Debug: Log the profile data structure
+  if (profile) {
+    console.log("🔍 CompanyProfilePage - Profile data structure:", {
+      id: profile.id,
+      name: profile.name,
+      description: profile.description,
+      businessSector: profile.businessSector,
+      companySize: profile.companySize,
+      foundedYear: profile.foundedYear,
+      website: profile.website,
+      email: profile.email,
+      phone: profile.phone,
+      address: profile.address,
+      taxId: profile.taxId,
+      legalRepresentative: profile.legalRepresentative,
+      municipality: profile.municipality,
+      isActive: profile.isActive,
+      createdAt: profile.createdAt,
+      updatedAt: profile.updatedAt,
+    });
+  }
 
   const [isEditing, setIsEditing] = useState(false);
   const [editedProfile, setEditedProfile] = useState<CompanyProfile | null>(
@@ -141,45 +155,86 @@ export default function CompanyProfilePage() {
   );
   const [logoFile, setLogoFile] = useState<File | null>(null);
   const [coverFile, setCoverFile] = useState<File | null>(null);
+  const [saveLoading, setSaveLoading] = useState(false);
 
-  // Resources state
-  const [resources, setResources] = useState<CompanyResource[]>([]);
-  const [showCreateResourceDialog, setShowCreateResourceDialog] =
-    useState(false);
-  const [resourceForm, setResourceForm] = useState<CompanyResource>({
-    id: "",
-    title: "",
-    description: "",
-    type: "template",
-    category: "Planificación",
-    fileUrl: "",
-    thumbnail: "",
-    tags: [],
-    status: "draft",
-    featured: false,
-    downloads: 0,
-    views: 0,
-    createdAt: new Date(),
-    companyId: "",
+  // Password change state
+  const [showCurrentPassword, setShowCurrentPassword] = useState(false);
+  const [showNewPassword, setShowNewPassword] = useState(false);
+  const [showConfirmPassword, setShowConfirmPassword] = useState(false);
+  const [passwordForm, setPasswordForm] = useState({
+    currentPassword: "",
+    newPassword: "",
+    confirmPassword: "",
   });
-  const [searchTerm, setSearchTerm] = useState("");
-  const [typeFilter, setTypeFilter] = useState<string>("all");
+
+  const {
+    changePassword,
+    loading: passwordLoading,
+    error: passwordError,
+    success: passwordSuccess,
+    reset: resetPassword,
+  } = usePasswordChange();
 
   // Update editedProfile when profile data is loaded
   React.useEffect(() => {
+    console.log(
+      "🔍 CompanyProfilePage - useEffect triggered with profile:",
+      profile
+    );
     if (profile) {
+      console.log("🔍 CompanyProfilePage - Setting editedProfile:", profile);
       setEditedProfile(profile);
     }
   }, [profile]);
 
   const handleSave = async () => {
+    if (!editedProfile) return;
+
+    setSaveLoading(true);
     try {
-      // Simulate API call
-      console.log("Saving profile:", editedProfile);
-      // setProfile(editedProfile); // This function doesn't exist, removing
+      // Call the API to update the company profile
+      const response = await fetch(`/api/company/${editedProfile.id}`, {
+        method: "PUT",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          name: editedProfile.name,
+          description: editedProfile.description,
+          businessSector: editedProfile.businessSector,
+          companySize: editedProfile.companySize,
+          foundedYear: editedProfile.foundedYear,
+          website: editedProfile.website,
+          email: editedProfile.email,
+          phone: editedProfile.phone,
+          address: editedProfile.address,
+          taxId: editedProfile.taxId,
+          legalRepresentative: editedProfile.legalRepresentative,
+        }),
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.error || "Failed to update profile");
+      }
+
+      const result = await response.json();
+      console.log("Profile updated successfully:", result);
+
+      // Update the local profile state
+      if (profile) {
+        setEditedProfile({ ...profile, ...editedProfile });
+      }
+
       setIsEditing(false);
     } catch (error) {
       console.error("Error saving profile:", error);
+      alert(
+        "Error al guardar el perfil: " +
+          (error instanceof Error ? error.message : "Error desconocido")
+      );
+    } finally {
+      setSaveLoading(false);
     }
   };
 
@@ -192,128 +247,35 @@ export default function CompanyProfilePage() {
     setCoverFile(null);
   };
 
-  // Resource management functions
-  const handleCreateResource = async () => {
-    try {
-      // Simulate API call
-      const newResource = {
-        ...resourceForm,
-        id: Date.now().toString(),
-        companyId: profile?.id || "",
-        createdAt: new Date(),
-      };
-      setResources([...resources, newResource]);
-      setShowCreateResourceDialog(false);
-      resetResourceForm();
-    } catch (error) {
-      console.error("Error creating resource:", error);
+  const handlePasswordChange = async (e: React.FormEvent) => {
+    e.preventDefault();
+
+    if (passwordForm.newPassword !== passwordForm.confirmPassword) {
+      return;
     }
-  };
 
-  const handleDeleteResource = (resourceId: string) => {
-    setResources(resources.filter((r) => r.id !== resourceId));
-  };
-
-  const resetResourceForm = () => {
-    setResourceForm({
-      id: "",
-      title: "",
-      description: "",
-      type: "template",
-      category: "Planificación",
-      fileUrl: "",
-      thumbnail: "",
-      tags: [],
-      status: "draft",
-      featured: false,
-      downloads: 0,
-      views: 0,
-      createdAt: new Date(),
-      companyId: "",
+    await changePassword({
+      currentPassword: passwordForm.currentPassword,
+      newPassword: passwordForm.newPassword,
     });
-  };
 
-  const getResourceIcon = (type: string) => {
-    switch (type) {
-      case "template":
-        return <FileText className="h-4 w-4" />;
-      case "guide":
-        return <BookOpen className="h-4 w-4" />;
-      case "video":
-        return <Play className="h-4 w-4" />;
-      case "podcast":
-        return <Headphones className="h-4 w-4" />;
-      case "tool":
-        return <Calculator className="h-4 w-4" />;
-      case "case_study":
-        return <FileText className="h-4 w-4" />;
-      case "whitepaper":
-        return <FileText className="h-4 w-4" />;
-      default:
-        return <FileText className="h-4 w-4" />;
-    }
-  };
-
-  const resourceCategories = [
-    "Planificación",
-    "Validación",
-    "Finanzas",
-    "Marketing",
-    "Legal",
-    "Tecnología",
-    "Operaciones",
-    "Recursos Humanos",
-    "Ventas",
-    "Estrategia",
-  ];
-
-  const resourceTypes = [
-    { value: "template", label: "Plantilla" },
-    { value: "guide", label: "Guía" },
-    { value: "video", label: "Video" },
-    { value: "podcast", label: "Podcast" },
-    { value: "tool", label: "Herramienta" },
-    { value: "case_study", label: "Caso de Estudio" },
-    { value: "whitepaper", label: "White Paper" },
-  ];
-
-  const filteredResources = resources.filter((resource) => {
-    const matchesSearch =
-      resource.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      resource.description.toLowerCase().includes(searchTerm.toLowerCase());
-    const matchesType = typeFilter === "all" || resource.type === typeFilter;
-    return matchesSearch && matchesType;
-  });
-
-  const handleLogoUpload = (event: React.ChangeEvent<HTMLInputElement>) => {
-    const file = event.target.files?.[0];
-    if (file && editedProfile) {
-      setLogoFile(file);
-      const reader = new FileReader();
-      reader.onload = () => {
-        setEditedProfile({ ...editedProfile, logo: reader.result as string });
-      };
-      reader.readAsDataURL(file);
-    }
-  };
-
-  const handleCoverUpload = (event: React.ChangeEvent<HTMLInputElement>) => {
-    const file = event.target.files?.[0];
-    if (file && editedProfile) {
-      setCoverFile(file);
-      const reader = new FileReader();
-      reader.onload = () => {
-        setEditedProfile({
-          ...editedProfile,
-          coverImage: reader.result as string,
-        });
-      };
-      reader.readAsDataURL(file);
+    // Reset form on success
+    if (passwordSuccess) {
+      setPasswordForm({
+        currentPassword: "",
+        newPassword: "",
+        confirmPassword: "",
+      });
     }
   };
 
   // Show loading state
   if (loading || !profile || !editedProfile) {
+    console.log("🔍 CompanyProfilePage - Rendering loading state:", {
+      loading,
+      profile: !!profile,
+      editedProfile: !!editedProfile,
+    });
     return (
       <div className="space-y-6">
         <div className="flex justify-between items-center">
@@ -327,12 +289,23 @@ export default function CompanyProfilePage() {
         <div className="flex items-center justify-center p-8">
           <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
         </div>
+        <div className="text-center text-sm text-muted-foreground">
+          <p>Loading: {loading ? "true" : "false"}</p>
+          <p>Profile: {profile ? "loaded" : "null"}</p>
+          <p>EditedProfile: {editedProfile ? "loaded" : "null"}</p>
+          {error && <p className="text-red-500">Error: {error.message}</p>}
+        </div>
       </div>
     );
   }
 
   // Show error state
   if (error) {
+    // Check if it's a "not found" error
+    const isNotFoundError =
+      error.message.includes("Not Found") ||
+      error.message.includes("not found");
+
     return (
       <div className="space-y-6">
         <div className="flex justify-between items-center">
@@ -343,13 +316,58 @@ export default function CompanyProfilePage() {
             </p>
           </div>
         </div>
-        <div className="flex items-center justify-center p-8">
-          <div className="text-center">
-            <p className="text-red-600">
-              Error al cargar el perfil: {error.message}
-            </p>
+
+        {isNotFoundError ? (
+          <div className="flex items-center justify-center p-8">
+            <div className="text-center max-w-md">
+              <Building2 className="w-16 h-16 text-muted-foreground mx-auto mb-4" />
+              <h3 className="text-lg font-semibold mb-2">
+                No se encontró el perfil de la empresa
+              </h3>
+              <p className="text-muted-foreground mb-4">
+                Parece que tu empresa aún no tiene un perfil configurado o el
+                perfil no existe en la base de datos.
+              </p>
+              <div className="space-y-3">
+                <Button
+                  onClick={() => window.location.reload()}
+                  variant="outline"
+                  className="w-full"
+                >
+                  Reintentar
+                </Button>
+                <Button
+                  onClick={() => {
+                    // For now, redirect to the company creation page
+                    // In the future, this could open a modal to create the profile
+                    window.location.href = "/admin/companies";
+                  }}
+                  className="w-full"
+                >
+                  Ir a Administración de Empresas
+                </Button>
+                <p className="text-xs text-muted-foreground mt-2">
+                  ID de usuario: {user?.id || "N/A"}
+                </p>
+              </div>
+            </div>
           </div>
-        </div>
+        ) : (
+          <div className="flex items-center justify-center p-8">
+            <div className="text-center">
+              <p className="text-red-600">
+                Error al cargar el perfil: {error.message}
+              </p>
+              <Button
+                onClick={() => window.location.reload()}
+                className="mt-4"
+                variant="outline"
+              >
+                Reintentar
+              </Button>
+            </div>
+          </div>
+        )}
       </div>
     );
   }
@@ -371,9 +389,13 @@ export default function CompanyProfilePage() {
                 <X className="w-4 h-4 mr-2" />
                 Cancelar
               </Button>
-              <Button onClick={handleSave}>
-                <Save className="w-4 h-4 mr-2" />
-                Guardar Cambios
+              <Button onClick={handleSave} disabled={saveLoading}>
+                {saveLoading ? (
+                  <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>
+                ) : (
+                  <Save className="w-4 h-4 mr-2" />
+                )}
+                {saveLoading ? "Guardando..." : "Guardar Cambios"}
               </Button>
             </>
           ) : (
@@ -386,44 +408,12 @@ export default function CompanyProfilePage() {
       </div>
 
       <Tabs defaultValue="general" className="space-y-6">
-        <TabsList className="grid w-full grid-cols-3">
+        <TabsList className="grid w-full grid-cols-2">
           <TabsTrigger value="general">Información General</TabsTrigger>
-          <TabsTrigger value="resources">Recursos</TabsTrigger>
-          <TabsTrigger value="metrics">Métricas</TabsTrigger>
+          <TabsTrigger value="security">Seguridad</TabsTrigger>
         </TabsList>
 
         <TabsContent value="general" className="space-y-6">
-          {/* Cover Image */}
-          <Card>
-            <CardContent className="p-0">
-              <div className="relative h-48 w-full overflow-hidden rounded-t-lg">
-                <Image
-                  src={editedProfile?.coverImage || "/placeholder.svg"}
-                  alt="Portada de la empresa"
-                  fill
-                  className="object-cover"
-                />
-                {isEditing && (
-                  <div className="absolute inset-0 bg-black/50 flex items-center justify-center rounded-t-lg">
-                    <Label htmlFor="cover-upload" className="cursor-pointer">
-                      <div className="flex items-center gap-2 text-white bg-black/50 px-4 py-2 rounded-lg">
-                        <Camera className="w-4 h-4" />
-                        Cambiar Portada
-                      </div>
-                      <Input
-                        id="cover-upload"
-                        type="file"
-                        accept="image/*"
-                        onChange={handleCoverUpload}
-                        className="hidden"
-                      />
-                    </Label>
-                  </div>
-                )}
-              </div>
-            </CardContent>
-          </Card>
-
           {/* Basic Info */}
           <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
             <Card className="lg:col-span-2">
@@ -435,8 +425,8 @@ export default function CompanyProfilePage() {
                   <div className="relative">
                     <Avatar className="w-20 h-20">
                       <AvatarImage
-                        src={editedProfile?.logo || "/placeholder.svg"}
-                        alt={editedProfile?.name || "Empresa"}
+                        src="/placeholder.svg"
+                        alt={profile.name || "Empresa"}
                       />
                       <AvatarFallback>
                         <Building2 className="w-8 h-8" />
@@ -452,7 +442,12 @@ export default function CompanyProfilePage() {
                           id="logo-upload"
                           type="file"
                           accept="image/*"
-                          onChange={handleLogoUpload}
+                          onChange={(e) => {
+                            const file = e.target.files?.[0];
+                            if (file) {
+                              setLogoFile(file);
+                            }
+                          }}
                           className="hidden"
                         />
                       </Label>
@@ -461,26 +456,27 @@ export default function CompanyProfilePage() {
                   <div className="flex-1 space-y-2">
                     {isEditing ? (
                       <Input
-                        value={editedProfile?.name || ""}
+                        value={editedProfile.name || ""}
                         onChange={(e) =>
                           setEditedProfile({
-                            ...editedProfile!,
+                            ...editedProfile,
                             name: e.target.value,
                           })
                         }
                         className="text-2xl font-bold"
+                        placeholder="Nombre de la empresa"
                       />
                     ) : (
                       <h2 className="text-2xl font-bold">
-                        {profile?.name || "Empresa"}
+                        {profile.name || "Sin nombre"}
                       </h2>
                     )}
                     <div className="flex gap-2">
                       <Badge variant="secondary">
-                        {profile?.industry || "Sector"}
+                        {profile.businessSector || "Sector no definido"}
                       </Badge>
                       <Badge variant="outline">
-                        {profile?.size || "Tamaño"}
+                        {profile.companySize || "Tamaño no definido"}
                       </Badge>
                     </div>
                   </div>
@@ -491,7 +487,7 @@ export default function CompanyProfilePage() {
                     <Label>Descripción</Label>
                     {isEditing ? (
                       <Textarea
-                        value={editedProfile.description}
+                        value={editedProfile.description || ""}
                         onChange={(e) =>
                           setEditedProfile({
                             ...editedProfile,
@@ -499,29 +495,30 @@ export default function CompanyProfilePage() {
                           })
                         }
                         rows={3}
+                        placeholder="Describe tu empresa..."
                       />
                     ) : (
                       <p className="text-muted-foreground mt-1">
-                        {profile.description}
+                        {profile.description || "Sin descripción"}
                       </p>
                     )}
                   </div>
 
                   <div className="grid grid-cols-2 gap-4">
                     <div>
-                      <Label>Sector</Label>
+                      <Label>Sector de Negocio</Label>
                       {isEditing ? (
                         <Select
-                          value={editedProfile.industry}
+                          value={editedProfile.businessSector || ""}
                           onValueChange={(value) =>
                             setEditedProfile({
                               ...editedProfile,
-                              industry: value,
+                              businessSector: value,
                             })
                           }
                         >
                           <SelectTrigger>
-                            <SelectValue />
+                            <SelectValue placeholder="Seleccionar sector" />
                           </SelectTrigger>
                           <SelectContent>
                             <SelectItem value="Tecnología">
@@ -534,32 +531,124 @@ export default function CompanyProfilePage() {
                               Manufactura
                             </SelectItem>
                             <SelectItem value="Servicios">Servicios</SelectItem>
+                            <SelectItem value="Comercio">Comercio</SelectItem>
+                            <SelectItem value="Construcción">
+                              Construcción
+                            </SelectItem>
+                            <SelectItem value="Agricultura">
+                              Agricultura
+                            </SelectItem>
+                            <SelectItem value="Otros">Otros</SelectItem>
                           </SelectContent>
                         </Select>
                       ) : (
                         <p className="text-sm text-muted-foreground mt-1">
-                          {profile.industry}
+                          {profile.businessSector || "No definido"}
                         </p>
                       )}
                     </div>
                     <div>
-                      <Label>Año de Fundación</Label>
+                      <Label>Tamaño de la Empresa</Label>
                       {isEditing ? (
-                        <Input
-                          value={editedProfile.founded}
-                          onChange={(e) =>
+                        <Select
+                          value={editedProfile.companySize || ""}
+                          onValueChange={(
+                            value: "MICRO" | "SMALL" | "MEDIUM" | "LARGE"
+                          ) =>
                             setEditedProfile({
                               ...editedProfile,
-                              founded: e.target.value,
+                              companySize: value,
                             })
                           }
-                        />
+                        >
+                          <SelectTrigger>
+                            <SelectValue placeholder="Seleccionar tamaño" />
+                          </SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="MICRO">
+                              Micro (1-10 empleados)
+                            </SelectItem>
+                            <SelectItem value="SMALL">
+                              Pequeña (11-50 empleados)
+                            </SelectItem>
+                            <SelectItem value="MEDIUM">
+                              Mediana (51-200 empleados)
+                            </SelectItem>
+                            <SelectItem value="LARGE">
+                              Grande (200+ empleados)
+                            </SelectItem>
+                          </SelectContent>
+                        </Select>
                       ) : (
                         <p className="text-sm text-muted-foreground mt-1">
-                          {profile.founded}
+                          {profile.companySize || "No definido"}
                         </p>
                       )}
                     </div>
+                  </div>
+
+                  <div className="grid grid-cols-2 gap-4">
+                    <div>
+                      <Label>Año de Fundación</Label>
+                      {isEditing ? (
+                        <Input
+                          value={editedProfile.foundedYear?.toString() || ""}
+                          onChange={(e) =>
+                            setEditedProfile({
+                              ...editedProfile,
+                              foundedYear: e.target.value
+                                ? parseInt(e.target.value)
+                                : null,
+                            })
+                          }
+                          type="number"
+                          placeholder="Ej: 2020"
+                        />
+                      ) : (
+                        <p className="text-sm text-muted-foreground mt-1">
+                          {profile.foundedYear || "No definido"}
+                        </p>
+                      )}
+                    </div>
+                    <div>
+                      <Label>RUC/Tax ID</Label>
+                      {isEditing ? (
+                        <Input
+                          value={editedProfile.taxId || ""}
+                          onChange={(e) =>
+                            setEditedProfile({
+                              ...editedProfile,
+                              taxId: e.target.value,
+                            })
+                          }
+                          placeholder="RUC de la empresa"
+                        />
+                      ) : (
+                        <p className="text-sm text-muted-foreground mt-1">
+                          {profile.taxId || "No definido"}
+                        </p>
+                      )}
+                    </div>
+                  </div>
+
+                  <div>
+                    <Label>Representante Legal</Label>
+                    {isEditing ? (
+                      <Input
+                        value={editedProfile.legalRepresentative || ""}
+                        onChange={(e) =>
+                          setEditedProfile({
+                            ...editedProfile,
+                            legalRepresentative: e.target.value,
+                          })
+                        }
+                        placeholder="Nombre del representante legal"
+                      />
+                    ) : (
+                      <p className="text-sm text-muted-foreground mt-1">
+                        {profile.legalRepresentative || "No definido"}
+                      </p>
+                    )}
                   </div>
                 </div>
               </CardContent>
@@ -570,12 +659,28 @@ export default function CompanyProfilePage() {
                 <CardTitle>Información de Contacto</CardTitle>
               </CardHeader>
               <CardContent className="space-y-4">
+                {/* Debug: Show raw values */}
+                {process.env.NODE_ENV === "development" && (
+                  <div className="text-xs text-muted-foreground bg-gray-100 p-2 rounded mb-4">
+                    <strong>Debug - Raw values:</strong>
+                    <br />
+                    Website: {JSON.stringify(profile?.website)}
+                    <br />
+                    Email: {JSON.stringify(profile?.email)}
+                    <br />
+                    Phone: {JSON.stringify(profile?.phone)}
+                    <br />
+                    Address: {JSON.stringify(profile?.address)}
+                    <br />
+                    Municipality: {JSON.stringify(profile?.municipality)}
+                  </div>
+                )}
                 <div className="space-y-3">
                   <div className="flex items-center gap-2">
                     <Globe className="w-4 h-4 text-muted-foreground" />
                     {isEditing ? (
                       <Input
-                        value={editedProfile.website}
+                        value={editedProfile.website || ""}
                         onChange={(e) =>
                           setEditedProfile({
                             ...editedProfile,
@@ -585,19 +690,27 @@ export default function CompanyProfilePage() {
                         placeholder="https://..."
                       />
                     ) : (
-                      <a
-                        href={profile.website}
-                        className="text-blue-600 hover:underline text-sm"
-                      >
-                        {profile.website}
-                      </a>
+                      <span className="text-sm">
+                        {profile.website ? (
+                          <a
+                            href={profile.website}
+                            className="text-blue-600 hover:underline"
+                            target="_blank"
+                            rel="noopener noreferrer"
+                          >
+                            {profile.website}
+                          </a>
+                        ) : (
+                          "No definido"
+                        )}
+                      </span>
                     )}
                   </div>
                   <div className="flex items-center gap-2">
                     <Mail className="w-4 h-4 text-muted-foreground" />
                     {isEditing ? (
                       <Input
-                        value={editedProfile.email}
+                        value={editedProfile.email || ""}
                         onChange={(e) =>
                           setEditedProfile({
                             ...editedProfile,
@@ -605,68 +718,59 @@ export default function CompanyProfilePage() {
                           })
                         }
                         type="email"
+                        placeholder="email@empresa.com"
                       />
                     ) : (
-                      <span className="text-sm">{profile.email}</span>
+                      <span className="text-sm">
+                        {profile.email || "No definido"}
+                      </span>
                     )}
                   </div>
                   <div className="flex items-center gap-2">
                     <Phone className="w-4 h-4 text-muted-foreground" />
                     {isEditing ? (
                       <Input
-                        value={editedProfile.phone}
+                        value={editedProfile.phone || ""}
                         onChange={(e) =>
                           setEditedProfile({
                             ...editedProfile,
                             phone: e.target.value,
                           })
                         }
+                        placeholder="+591 2 1234567"
                       />
                     ) : (
-                      <span className="text-sm">{profile.phone}</span>
+                      <span className="text-sm">
+                        {profile.phone || "No definido"}
+                      </span>
                     )}
                   </div>
                   <div className="flex flex-col gap-2">
                     <MapPin className="w-4 h-4 text-muted-foreground" />
                     {!isEditing ? (
-                      <MapMarker
-                        name={profile.name}
-                        position={[-16.5, -68.15]} // Coordenadas de La Paz
-                      />
+                      <div className="text-sm">
+                        <p>{profile.address || "Dirección no definida"}</p>
+                        <p className="text-muted-foreground">
+                          {profile.municipality?.name ||
+                            "Municipio no definido"}
+                        </p>
+                      </div>
                     ) : (
                       <div className="space-y-2">
                         <Input
-                          value={editedProfile.address}
+                          value={editedProfile.address || ""}
                           onChange={(e) =>
                             setEditedProfile({
                               ...editedProfile,
                               address: e.target.value,
                             })
                           }
-                          placeholder="Dirección"
+                          placeholder="Dirección de la empresa"
                         />
-                        <div className="grid grid-cols-2 gap-2">
-                          <Input
-                            value={editedProfile.city}
-                            onChange={(e) =>
-                              setEditedProfile({
-                                ...editedProfile,
-                                city: e.target.value,
-                              })
-                            }
-                            placeholder="Ciudad"
-                          />
-                          <Input
-                            value={editedProfile.country}
-                            onChange={(e) =>
-                              setEditedProfile({
-                                ...editedProfile,
-                                country: e.target.value,
-                              })
-                            }
-                            placeholder="País"
-                          />
-                        </div>
+                        <p className="text-xs text-muted-foreground">
+                          Municipio:{" "}
+                          {profile.municipality?.name || "No definido"}
+                        </p>
                       </div>
                     )}
                   </div>
@@ -674,535 +778,171 @@ export default function CompanyProfilePage() {
               </CardContent>
             </Card>
           </div>
-
-          {/* Mission, Vision, Values */}
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-            <Card>
-              <CardHeader>
-                <CardTitle className="flex items-center gap-2">
-                  <Target className="w-5 h-5" />
-                  Misión
-                </CardTitle>
-              </CardHeader>
-              <CardContent>
-                {isEditing ? (
-                  <Textarea
-                    value={editedProfile.mission}
-                    onChange={(e) =>
-                      setEditedProfile({
-                        ...editedProfile,
-                        mission: e.target.value,
-                      })
-                    }
-                    rows={3}
-                  />
-                ) : (
-                  <p className="text-muted-foreground">{profile.mission}</p>
-                )}
-              </CardContent>
-            </Card>
-
-            <Card>
-              <CardHeader>
-                <CardTitle className="flex items-center gap-2">
-                  <Award className="w-5 h-5" />
-                  Visión
-                </CardTitle>
-              </CardHeader>
-              <CardContent>
-                {isEditing ? (
-                  <Textarea
-                    value={editedProfile.vision}
-                    onChange={(e) =>
-                      setEditedProfile({
-                        ...editedProfile,
-                        vision: e.target.value,
-                      })
-                    }
-                    rows={3}
-                  />
-                ) : (
-                  <p className="text-muted-foreground">{profile.vision}</p>
-                )}
-              </CardContent>
-            </Card>
-          </div>
-
-          <Card>
-            <CardHeader>
-              <CardTitle>Valores Corporativos</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="flex flex-wrap gap-2">
-                {profile.values.map((value, index) => (
-                  <Badge key={index} variant="outline">
-                    {value}
-                  </Badge>
-                ))}
-              </div>
-            </CardContent>
-          </Card>
-
-          <Card>
-            <CardHeader>
-              <CardTitle>Redes Sociales</CardTitle>
-              <CardDescription>
-                Conecta tus perfiles de redes sociales para mayor visibilidad
-              </CardDescription>
-            </CardHeader>
-            <CardContent className="space-y-4">
-              <div className="space-y-3">
-                <div>
-                  <Label>LinkedIn</Label>
-                  <Input
-                    value={
-                      isEditing
-                        ? editedProfile.socialMedia.linkedin
-                        : profile.socialMedia.linkedin
-                    }
-                    onChange={(e) =>
-                      setEditedProfile({
-                        ...editedProfile,
-                        socialMedia: {
-                          ...editedProfile.socialMedia,
-                          linkedin: e.target.value,
-                        },
-                      })
-                    }
-                    placeholder="https://linkedin.com/company/tu-empresa"
-                    disabled={!isEditing}
-                  />
-                </div>
-                <div>
-                  <Label>Twitter</Label>
-                  <Input
-                    value={
-                      isEditing
-                        ? editedProfile.socialMedia.twitter
-                        : profile.socialMedia.twitter
-                    }
-                    onChange={(e) =>
-                      setEditedProfile({
-                        ...editedProfile,
-                        socialMedia: {
-                          ...editedProfile.socialMedia,
-                          twitter: e.target.value,
-                        },
-                      })
-                    }
-                    placeholder="https://twitter.com/tu-empresa"
-                    disabled={!isEditing}
-                  />
-                </div>
-                <div>
-                  <Label>Facebook</Label>
-                  <Input
-                    value={
-                      isEditing
-                        ? editedProfile.socialMedia.facebook
-                        : profile.socialMedia.facebook
-                    }
-                    onChange={(e) =>
-                      setEditedProfile({
-                        ...editedProfile,
-                        socialMedia: {
-                          ...editedProfile.socialMedia,
-                          facebook: e.target.value,
-                        },
-                      })
-                    }
-                    placeholder="https://facebook.com/tu-empresa"
-                    disabled={!isEditing}
-                  />
-                </div>
-              </div>
-            </CardContent>
-          </Card>
         </TabsContent>
 
-        <TabsContent value="resources" className="space-y-6">
-          {/* Resources Header */}
-          <div className="flex items-center justify-between">
-            <div>
-              <h3 className="text-lg font-semibold">Centro de Recursos</h3>
-              <p className="text-muted-foreground">
-                Comparte plantillas, guías, videos y herramientas con la
-                comunidad
-              </p>
-            </div>
-            <Dialog
-              open={showCreateResourceDialog}
-              onOpenChange={setShowCreateResourceDialog}
-            >
-              <DialogTrigger asChild>
-                <Button>
-                  <Plus className="h-4 w-4 mr-2" />
-                  Crear Recurso
-                </Button>
-              </DialogTrigger>
-              <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
-                <DialogHeader>
-                  <DialogTitle>Crear Nuevo Recurso</DialogTitle>
-                </DialogHeader>
+        <TabsContent value="security" className="space-y-6">
+          <Card>
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                <Lock className="w-5 h-5" />
+                Cambiar Contraseña
+              </CardTitle>
+              <CardDescription>
+                Actualiza tu contraseña para mantener tu cuenta segura
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
+              <form onSubmit={handlePasswordChange} className="space-y-4">
+                {passwordError && (
+                  <Alert variant="destructive">
+                    <AlertDescription>{passwordError}</AlertDescription>
+                  </Alert>
+                )}
 
-                <div className="space-y-4">
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    <div className="space-y-2">
-                      <Label htmlFor="title">Título *</Label>
-                      <Input
-                        id="title"
-                        value={resourceForm.title}
-                        onChange={(e) =>
-                          setResourceForm((prev) => ({
-                            ...prev,
-                            title: e.target.value,
-                          }))
-                        }
-                        placeholder="Título del recurso"
-                      />
-                    </div>
-                    <div className="space-y-2">
-                      <Label htmlFor="type">Tipo *</Label>
-                      <Select
-                        value={resourceForm.type}
-                        onValueChange={(value: any) =>
-                          setResourceForm((prev) => ({ ...prev, type: value }))
-                        }
-                      >
-                        <SelectTrigger>
-                          <SelectValue />
-                        </SelectTrigger>
-                        <SelectContent>
-                          {resourceTypes.map((type) => (
-                            <SelectItem key={type.value} value={type.value}>
-                              {type.label}
-                            </SelectItem>
-                          ))}
-                        </SelectContent>
-                      </Select>
-                    </div>
-                  </div>
+                {passwordSuccess && (
+                  <Alert>
+                    <AlertDescription>{passwordSuccess}</AlertDescription>
+                  </Alert>
+                )}
 
-                  <div className="space-y-2">
-                    <Label htmlFor="description">Descripción *</Label>
-                    <Textarea
-                      id="description"
-                      value={resourceForm.description}
-                      onChange={(e) =>
-                        setResourceForm((prev) => ({
-                          ...prev,
-                          description: e.target.value,
-                        }))
-                      }
-                      placeholder="Descripción detallada del recurso"
-                      rows={3}
-                    />
-                  </div>
-
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    <div className="space-y-2">
-                      <Label htmlFor="category">Categoría *</Label>
-                      <Select
-                        value={resourceForm.category}
-                        onValueChange={(value) =>
-                          setResourceForm((prev) => ({
-                            ...prev,
-                            category: value,
-                          }))
-                        }
-                      >
-                        <SelectTrigger>
-                          <SelectValue placeholder="Seleccionar categoría" />
-                        </SelectTrigger>
-                        <SelectContent>
-                          {resourceCategories.map((category) => (
-                            <SelectItem key={category} value={category}>
-                              {category}
-                            </SelectItem>
-                          ))}
-                        </SelectContent>
-                      </Select>
-                    </div>
-                    <div className="space-y-2">
-                      <Label htmlFor="fileUrl">URL del Archivo</Label>
-                      <Input
-                        id="fileUrl"
-                        value={resourceForm.fileUrl}
-                        onChange={(e) =>
-                          setResourceForm((prev) => ({
-                            ...prev,
-                            fileUrl: e.target.value,
-                          }))
-                        }
-                        placeholder="https://... o /downloads/..."
-                      />
-                    </div>
-                  </div>
-
-                  <div className="space-y-2">
-                    <Label htmlFor="tags">Etiquetas</Label>
+                <div className="space-y-2">
+                  <Label htmlFor="current-password">Contraseña Actual</Label>
+                  <div className="relative">
                     <Input
-                      id="tags"
-                      value={resourceForm.tags.join(", ")}
+                      id="current-password"
+                      type={showCurrentPassword ? "text" : "password"}
+                      value={passwordForm.currentPassword}
                       onChange={(e) =>
-                        setResourceForm((prev) => ({
-                          ...prev,
-                          tags: e.target.value
-                            .split(",")
-                            .map((tag) => tag.trim())
-                            .filter(Boolean),
-                        }))
+                        setPasswordForm({
+                          ...passwordForm,
+                          currentPassword: e.target.value,
+                        })
                       }
-                      placeholder="etiqueta1, etiqueta2, etiqueta3"
+                      placeholder="Ingresa tu contraseña actual"
+                      required
                     />
-                  </div>
-
-                  <div className="flex items-center space-x-2">
-                    <Checkbox
-                      id="featured"
-                      checked={resourceForm.featured}
-                      onCheckedChange={(checked) =>
-                        setResourceForm((prev) => ({
-                          ...prev,
-                          featured: !!checked,
-                        }))
-                      }
-                    />
-                    <Label htmlFor="featured">Recurso destacado</Label>
-                  </div>
-
-                  <div className="flex justify-end space-x-2 pt-4">
                     <Button
-                      variant="outline"
-                      onClick={() => setShowCreateResourceDialog(false)}
+                      type="button"
+                      variant="ghost"
+                      size="sm"
+                      className="absolute right-0 top-0 h-full px-3 py-2 hover:bg-transparent"
+                      onClick={() =>
+                        setShowCurrentPassword(!showCurrentPassword)
+                      }
                     >
-                      Cancelar
-                    </Button>
-                    <Button onClick={handleCreateResource}>
-                      Crear Recurso
+                      {showCurrentPassword ? (
+                        <EyeOff className="h-4 w-4" />
+                      ) : (
+                        <Eye className="h-4 w-4" />
+                      )}
                     </Button>
                   </div>
                 </div>
-              </DialogContent>
-            </Dialog>
-          </div>
 
-          {/* Search and Filters */}
-          <div className="flex gap-4">
-            <div className="relative flex-1">
-              <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-              <Input
-                placeholder="Buscar recursos..."
-                className="pl-10"
-                value={searchTerm}
-                onChange={(e) => setSearchTerm(e.target.value)}
-              />
-            </div>
-            <Select value={typeFilter} onValueChange={setTypeFilter}>
-              <SelectTrigger className="w-[150px]">
-                <SelectValue placeholder="Tipo" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="all">Todos</SelectItem>
-                {resourceTypes.map((type) => (
-                  <SelectItem key={type.value} value={type.value}>
-                    {type.label}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-          </div>
-
-          {/* Resources Grid */}
-          {filteredResources.length > 0 ? (
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-              {filteredResources.map((resource) => (
-                <Card
-                  key={resource.id}
-                  className="hover:shadow-md transition-shadow"
-                >
-                  <CardHeader className="pb-3">
-                    <div className="flex items-start justify-between">
-                      <div className="flex items-center gap-2">
-                        {getResourceIcon(resource.type)}
-                        <Badge variant="outline" className="text-xs">
-                          {
-                            resourceTypes.find((t) => t.value === resource.type)
-                              ?.label
-                          }
-                        </Badge>
-                      </div>
-                      <DropdownMenu>
-                        <DropdownMenuTrigger asChild>
-                          <Button variant="ghost" size="sm">
-                            <MoreHorizontal className="h-4 w-4" />
-                          </Button>
-                        </DropdownMenuTrigger>
-                        <DropdownMenuContent align="end">
-                          <DropdownMenuItem>
-                            <Download className="h-4 w-4 mr-2" />
-                            Descargar
-                          </DropdownMenuItem>
-                          <DropdownMenuItem>
-                            <Edit className="h-4 w-4 mr-2" />
-                            Editar
-                          </DropdownMenuItem>
-                          <DropdownMenuItem
-                            className="text-red-600"
-                            onClick={() => handleDeleteResource(resource.id)}
-                          >
-                            <Trash2 className="h-4 w-4 mr-2" />
-                            Eliminar
-                          </DropdownMenuItem>
-                        </DropdownMenuContent>
-                      </DropdownMenu>
-                    </div>
-                    <CardTitle className="text-lg">{resource.title}</CardTitle>
-                    <CardDescription className="line-clamp-2">
-                      {resource.description}
-                    </CardDescription>
-                  </CardHeader>
-                  <CardContent className="pt-0">
-                    <div className="flex items-center justify-between text-sm text-muted-foreground">
-                      <div className="flex items-center gap-4">
-                        <span>{resource.downloads} descargas</span>
-                        <span>{resource.views} vistas</span>
-                      </div>
-                      {resource.featured && (
-                        <Badge variant="secondary" className="text-xs">
-                          Destacado
-                        </Badge>
+                <div className="space-y-2">
+                  <Label htmlFor="new-password">Nueva Contraseña</Label>
+                  <div className="relative">
+                    <Input
+                      id="new-password"
+                      type={showNewPassword ? "text" : "password"}
+                      value={passwordForm.newPassword}
+                      onChange={(e) =>
+                        setPasswordForm({
+                          ...passwordForm,
+                          newPassword: e.target.value,
+                        })
+                      }
+                      placeholder="Ingresa tu nueva contraseña"
+                      required
+                    />
+                    <Button
+                      type="button"
+                      variant="ghost"
+                      size="sm"
+                      className="absolute right-0 top-0 h-full px-3 py-2 hover:bg-transparent"
+                      onClick={() => setShowNewPassword(!showNewPassword)}
+                    >
+                      {showNewPassword ? (
+                        <EyeOff className="h-4 w-4" />
+                      ) : (
+                        <Eye className="h-4 w-4" />
                       )}
-                    </div>
-                    <div className="flex flex-wrap gap-1 mt-2">
-                      {resource.tags.slice(0, 3).map((tag, index) => (
-                        <Badge
-                          key={index}
-                          variant="outline"
-                          className="text-xs"
-                        >
-                          {tag}
-                        </Badge>
-                      ))}
-                      {resource.tags.length > 3 && (
-                        <Badge variant="outline" className="text-xs">
-                          +{resource.tags.length - 3}
-                        </Badge>
+                    </Button>
+                  </div>
+                </div>
+
+                <div className="space-y-2">
+                  <Label htmlFor="confirm-password">
+                    Confirmar Nueva Contraseña
+                  </Label>
+                  <div className="relative">
+                    <Input
+                      id="confirm-password"
+                      type={showConfirmPassword ? "text" : "password"}
+                      value={passwordForm.confirmPassword}
+                      onChange={(e) =>
+                        setPasswordForm({
+                          ...passwordForm,
+                          confirmPassword: e.target.value,
+                        })
+                      }
+                      placeholder="Confirma tu nueva contraseña"
+                      required
+                    />
+                    <Button
+                      type="button"
+                      variant="ghost"
+                      size="sm"
+                      className="absolute right-0 top-0 h-full px-3 py-2 hover:bg-transparent"
+                      onClick={() =>
+                        setShowConfirmPassword(!showConfirmPassword)
+                      }
+                    >
+                      {showConfirmPassword ? (
+                        <EyeOff className="h-4 w-4" />
+                      ) : (
+                        <Eye className="h-4 w-4" />
                       )}
-                    </div>
-                  </CardContent>
-                </Card>
-              ))}
-            </div>
-          ) : (
-            <div className="text-center py-12">
-              <FileText className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
-              <h3 className="text-lg font-medium mb-2">No hay recursos aún</h3>
-              <p className="text-muted-foreground mb-4">
-                {searchTerm || typeFilter !== "all"
-                  ? "No se encontraron recursos con los filtros aplicados"
-                  : "Comienza creando tu primer recurso para compartir con la comunidad"}
-              </p>
-              {!searchTerm && typeFilter === "all" && (
-                <Button onClick={() => setShowCreateResourceDialog(true)}>
-                  <Plus className="h-4 w-4 mr-2" />
-                  Crear Primer Recurso
-                </Button>
-              )}
-            </div>
-          )}
-        </TabsContent>
-
-        <TabsContent value="metrics" className="space-y-6">
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-            <Card>
-              <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                <CardTitle className="text-sm font-medium">Empleados</CardTitle>
-                <Users className="h-4 w-4 text-muted-foreground" />
-              </CardHeader>
-              <CardContent>
-                <div className="text-2xl font-bold">
-                  {profile.metrics.employees}
+                    </Button>
+                  </div>
                 </div>
-                <p className="text-xs text-muted-foreground">Equipo actual</p>
-              </CardContent>
-            </Card>
 
-            <Card>
-              <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                <CardTitle className="text-sm font-medium">
-                  Ingresos Anuales
-                </CardTitle>
-                <TrendingUp className="h-4 w-4 text-muted-foreground" />
-              </CardHeader>
-              <CardContent>
-                <div className="text-2xl font-bold">
-                  Bs. {profile.metrics.revenue.toLocaleString()}
-                </div>
-                <p className="text-xs text-muted-foreground">Año fiscal 2023</p>
-              </CardContent>
-            </Card>
+                {passwordForm.newPassword !== passwordForm.confirmPassword &&
+                  passwordForm.confirmPassword && (
+                    <p className="text-sm text-red-600">
+                      Las contraseñas no coinciden
+                    </p>
+                  )}
 
-            <Card>
-              <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                <CardTitle className="text-sm font-medium">
-                  Crecimiento
-                </CardTitle>
-                <TrendingUp className="h-4 w-4 text-muted-foreground" />
-              </CardHeader>
-              <CardContent>
-                <div className="text-2xl font-bold text-green-600">
-                  +{profile.metrics.growth}%
+                <div className="flex gap-2">
+                  <Button
+                    type="submit"
+                    disabled={
+                      passwordLoading ||
+                      !passwordForm.currentPassword ||
+                      !passwordForm.newPassword ||
+                      !passwordForm.confirmPassword ||
+                      passwordForm.newPassword !== passwordForm.confirmPassword
+                    }
+                  >
+                    {passwordLoading ? "Cambiando..." : "Cambiar Contraseña"}
+                  </Button>
+                  <Button
+                    type="button"
+                    variant="outline"
+                    onClick={() => {
+                      resetPassword();
+                      setPasswordForm({
+                        currentPassword: "",
+                        newPassword: "",
+                        confirmPassword: "",
+                      });
+                    }}
+                  >
+                    Limpiar
+                  </Button>
                 </div>
-                <p className="text-xs text-muted-foreground">
-                  Vs. año anterior
-                </p>
-              </CardContent>
-            </Card>
-
-            <Card>
-              <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                <CardTitle className="text-sm font-medium">Proyectos</CardTitle>
-                <Building2 className="h-4 w-4 text-muted-foreground" />
-              </CardHeader>
-              <CardContent>
-                <div className="text-2xl font-bold">
-                  {profile.metrics.projects}
-                </div>
-                <p className="text-xs text-muted-foreground">Completados</p>
-              </CardContent>
-            </Card>
-          </div>
-
-          <Card>
-            <CardHeader>
-              <CardTitle>Configuración de Métricas</CardTitle>
-              <CardDescription>
-                Controla qué métricas son visibles en tu perfil público
-              </CardDescription>
-            </CardHeader>
-            <CardContent>
-              <div className="flex items-center justify-between">
-                <div>
-                  <Label>Mostrar métricas públicamente</Label>
-                  <p className="text-sm text-muted-foreground">
-                    Las métricas serán visibles para otros usuarios de la
-                    plataforma
-                  </p>
-                </div>
-                <Switch
-                  checked={editedProfile.settings.showMetrics}
-                  onCheckedChange={(checked) =>
-                    setEditedProfile({
-                      ...editedProfile,
-                      settings: {
-                        ...editedProfile.settings,
-                        showMetrics: checked,
-                      },
-                    })
-                  }
-                />
-              </div>
+              </form>
             </CardContent>
           </Card>
         </TabsContent>

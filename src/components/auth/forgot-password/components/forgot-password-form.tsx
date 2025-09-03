@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import React, { useState } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
@@ -35,7 +35,15 @@ export function ForgotPasswordForm({
 }: ForgotPasswordFormProps) {
   const [isLoading, setIsLoading] = useState(false);
   const [isSuccess, setIsSuccess] = useState(false);
-  const supabase = createClientComponentClient();
+  const [isClient, setIsClient] = useState(false);
+
+  // Only create Supabase client on the client side
+  const supabase = isClient ? createClientComponentClient() : null;
+
+  // Ensure we're on the client side
+  React.useEffect(() => {
+    setIsClient(true);
+  }, []);
 
   const form = useForm<FormValues>({
     resolver: zodResolver(formSchema),
@@ -48,19 +56,39 @@ export function ForgotPasswordForm({
     try {
       setIsLoading(true);
 
+      // Check if Supabase client is available
+      if (!supabase) {
+        throw new Error("Supabase client not available");
+      }
+
       // Get the site URL from the environment or current location
       const siteUrl =
-        process.env.NEXT_PUBLIC_SITE_URL || 
-        (typeof window !== 'undefined' ? window.location.origin : '');
+        process.env.NEXT_PUBLIC_SITE_URL ||
+        (typeof window !== "undefined"
+          ? window.location.origin
+          : "https://cemse-back-production.up.railway.app");
 
       // Ensure we have a valid site URL
       if (!siteUrl) {
-        throw new Error('Site URL not configured');
+        throw new Error("Site URL not configured");
+      }
+
+      // Validate the URL is properly formatted
+      let redirectUrl: string;
+      try {
+        redirectUrl = `${siteUrl}/reset-password`;
+        // Validate the URL by constructing it
+        new URL(redirectUrl);
+      } catch (urlError) {
+        console.error("Invalid URL construction:", urlError);
+        // Fallback to a safe default
+        redirectUrl =
+          "https://cemse-back-production.up.railway.app/reset-password";
       }
 
       // Call Supabase's resetPasswordForEmail method
       const { error } = await supabase.auth.resetPasswordForEmail(data.email, {
-        redirectTo: `${siteUrl}/reset-password`,
+        redirectTo: redirectUrl,
       });
 
       if (error) {
@@ -110,8 +138,16 @@ export function ForgotPasswordForm({
                 </FormItem>
               )}
             />
-            <Button type="submit" className="w-full" disabled={isLoading}>
-              {isLoading ? "Sending..." : "Send reset link"}
+            <Button
+              type="submit"
+              className="w-full"
+              disabled={isLoading || !isClient}
+            >
+              {isLoading
+                ? "Sending..."
+                : !isClient
+                  ? "Loading..."
+                  : "Send reset link"}
             </Button>
           </form>
         </Form>
