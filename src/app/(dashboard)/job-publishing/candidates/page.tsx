@@ -74,7 +74,7 @@ import { Checkbox } from "@/components/ui/checkbox";
 import { useRef } from "react";
 import { useJobOffers } from "@/hooks/useJobOfferApi";
 import { useProfiles } from "@/hooks/useProfileApi";
-import { useJobMessages } from "@/hooks/use-job-messages";
+import { useYouthApplicationMessages } from "@/hooks/use-youth-application-messages";
 
 interface CandidatesData {
   candidates: JobApplication[];
@@ -125,10 +125,17 @@ export default function CandidatesPage() {
     useState<JobApplication | null>(null);
   const [showChatModal, setShowChatModal] = useState(false);
   const [newMessage, setNewMessage] = useState("");
-  const [messages, setMessages] = useState<any[]>([]);
-  const [messagesLoading, setMessagesLoading] = useState(false);
-  const [messageSending, setMessageSending] = useState(false);
-  const [messageError, setMessageError] = useState<string | null>(null);
+
+  // Chat hook for the selected candidate
+  const {
+    messages,
+    loading: messagesLoading,
+    sending: messageSending,
+    error: messageError,
+    sendMessage: sendJobMessage,
+    markAsRead,
+    refreshMessages,
+  } = useYouthApplicationMessages(selectedCandidate?.id || "");
 
   useEffect(() => {
     fetchCandidates();
@@ -137,47 +144,9 @@ export default function CandidatesPage() {
   // Load messages when chat modal opens
   useEffect(() => {
     if (showChatModal && selectedCandidate) {
-      loadMessages();
+      refreshMessages();
     }
   }, [showChatModal, selectedCandidate]);
-
-  const loadMessages = async () => {
-    if (!selectedCandidate) return;
-
-    try {
-      setMessagesLoading(true);
-      setMessageError(null);
-
-      const response = await fetch(
-        `/api/youthapplication/${selectedCandidate.id}/message`,
-        {
-          method: "GET",
-          headers: {
-            "Content-Type": "application/json",
-          },
-          credentials: "include", // Use cookies for authentication
-        }
-      );
-
-      if (!response.ok) {
-        throw new Error("Error al cargar mensajes");
-      }
-
-      const data = await response.json();
-      setMessages(data || []);
-    } catch (error) {
-      console.error("Error loading messages:", error);
-      setMessageError(
-        error instanceof Error ? error.message : "Error al cargar mensajes"
-      );
-    } finally {
-      setMessagesLoading(false);
-    }
-  };
-
-  const refreshMessages = () => {
-    loadMessages();
-  };
 
   const fetchCandidates = async () => {
     try {
@@ -370,29 +339,10 @@ export default function CandidatesPage() {
     if (!newMessage.trim() || !selectedCandidate) return;
 
     try {
-      setMessageSending(true);
-      setMessageError(null);
-      const response = await fetch(
-        `/api/youthapplication/${selectedCandidate.id}/message`,
-        {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-          },
-          credentials: "include", // Use cookies for authentication
-          body: JSON.stringify({
-            content: newMessage.trim(),
-            messageType: "TEXT",
-          }),
-        }
-      );
-
-      if (!response.ok) {
-        throw new Error("Error al enviar mensaje");
-      }
-
-      const data = await response.json();
-      setMessages((prev) => [...prev, data]);
+      await sendJobMessage({
+        content: newMessage.trim(),
+        messageType: "TEXT",
+      });
       setNewMessage("");
 
       // Show success toast
@@ -401,29 +351,33 @@ export default function CandidatesPage() {
         description: "El mensaje se ha enviado correctamente",
       });
     } catch (error) {
-      setMessageError(
-        error instanceof Error ? error.message : "No se pudo enviar el mensaje"
-      );
       toast({
         title: "Error",
         description: "No se pudo enviar el mensaje",
         variant: "destructive",
       });
-    } finally {
-      setMessageSending(false);
     }
   };
 
   const formatMessageTime = (dateString: string) => {
-    return new Date(dateString).toLocaleTimeString("es-ES", {
-      hour: "2-digit",
-      minute: "2-digit",
-    });
-  };
+    const date = new Date(dateString);
+    const now = new Date();
+    const diffInHours = Math.floor(
+      (now.getTime() - date.getTime()) / (1000 * 60 * 60)
+    );
 
-  const isOwnMessage = (message: any) => {
-    // Check if the message sender is the current user (company)
-    return message.senderType === "COMPANY";
+    if (diffInHours < 1) {
+      return "Ahora";
+    } else if (diffInHours < 24) {
+      return `Hace ${diffInHours}h`;
+    } else {
+      return date.toLocaleDateString("es-ES", {
+        day: "numeric",
+        month: "short",
+        hour: "2-digit",
+        minute: "2-digit",
+      });
+    }
   };
 
   const getStatusBadge = (status: ApplicationStatus) => {
@@ -1261,13 +1215,20 @@ export default function CandidatesPage() {
                           }`}
                         >
                           <p className="text-sm">{message.content}</p>
-                        </div>
-                        <div
-                          className={`text-xs mt-1 ${
-                            isOwnMessage ? "text-blue-100" : "text-gray-500"
-                          }`}
-                        >
-                          {formatMessageTime(message.createdAt)}
+                          <div className="flex items-center justify-between mt-1">
+                            <p
+                              className={`text-xs mt-1 ${
+                                isOwnMessage ? "text-blue-100" : "text-gray-500"
+                              }`}
+                            >
+                              {formatMessageTime(message.createdAt)}
+                            </p>
+                            {isOwnMessage && (
+                              <div className="text-xs text-blue-100">
+                                {message.status === "READ" ? "✓✓" : "✓"}
+                              </div>
+                            )}
+                          </div>
                         </div>
                       </div>
                     </div>

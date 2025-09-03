@@ -45,8 +45,10 @@ import {
   YouthApplicationService,
   YouthApplication,
 } from "@/services/youth-application.service";
-import YouthApplicationChat from "@/components/youth-applications/YouthApplicationChat";
 import YouthApplicationEditModal from "@/components/youth-applications/YouthApplicationEditModal";
+import { Textarea } from "@/components/ui/textarea";
+import { useYouthApplicationMessages } from "@/hooks/use-youth-application-messages";
+import { useAuthContext } from "@/hooks/use-auth";
 
 interface YouthApplicationStats {
   total: number;
@@ -89,6 +91,21 @@ export default function MyYouthApplicationsPage() {
   const [showEditModal, setShowEditModal] = useState(false);
   const [editingApplication, setEditingApplication] =
     useState<YouthApplication | null>(null);
+
+  // Chat state
+  const [newMessage, setNewMessage] = useState("");
+  const { user } = useAuthContext();
+
+  // Chat hook for the selected application
+  const {
+    messages,
+    loading: messagesLoading,
+    sending: messageSending,
+    error: messageError,
+    sendMessage: sendJobMessage,
+    markAsRead,
+    refreshMessages,
+  } = useYouthApplicationMessages(selectedApplication?.id || "");
 
   useEffect(() => {
     console.log(
@@ -218,6 +235,41 @@ export default function MyYouthApplicationsPage() {
   const handleOpenEdit = (application: YouthApplication) => {
     setEditingApplication(application);
     setShowEditModal(true);
+  };
+
+  const handleSendMessage = async () => {
+    if (!newMessage.trim() || !selectedApplication) return;
+
+    try {
+      await sendJobMessage({
+        content: newMessage.trim(),
+        messageType: "TEXT",
+      });
+      setNewMessage("");
+    } catch (error) {
+      console.error("Error sending message:", error);
+    }
+  };
+
+  const formatMessageTime = (dateString: string) => {
+    const date = new Date(dateString);
+    const now = new Date();
+    const diffInHours = Math.floor(
+      (now.getTime() - date.getTime()) / (1000 * 60 * 60)
+    );
+
+    if (diffInHours < 1) {
+      return "Ahora";
+    } else if (diffInHours < 24) {
+      return `Hace ${diffInHours}h`;
+    } else {
+      return date.toLocaleDateString("es-ES", {
+        day: "numeric",
+        month: "short",
+        hour: "2-digit",
+        minute: "2-digit",
+      });
+    }
   };
 
   if (loading) {
@@ -558,20 +610,136 @@ export default function MyYouthApplicationsPage() {
             </div>
           </DialogHeader>
 
-          <div className="flex-1 min-h-0 p-6">
-            {selectedApplication && (
-              <YouthApplicationChat
-                applicationId={selectedApplication.id}
-                youthProfile={{
-                  firstName:
-                    selectedApplication.youthProfile?.firstName || "Joven",
-                  lastName:
-                    selectedApplication.youthProfile?.lastName ||
-                    "Desarrollador",
-                  avatarUrl: selectedApplication.youthProfile?.avatarUrl,
-                }}
-              />
+          <div className="flex-1 overflow-y-auto p-6">
+            {messagesLoading ? (
+              <div className="flex justify-center items-center h-full">
+                <div className="text-center">
+                  <Skeleton className="h-10 w-10 mx-auto mb-2" />
+                  <p className="text-sm text-gray-500">Cargando mensajes...</p>
+                </div>
+              </div>
+            ) : messageError ? (
+              <div className="text-center py-12 text-red-600">
+                <MessageSquare className="w-12 h-12 text-red-400 mb-4 mx-auto" />
+                <p className="mb-2">Error al cargar mensajes</p>
+                <p className="text-sm text-gray-600 mb-4">{messageError}</p>
+                <Button
+                  variant="outline"
+                  onClick={refreshMessages}
+                  disabled={messagesLoading}
+                >
+                  Reintentar
+                </Button>
+              </div>
+            ) : messages.length === 0 ? (
+              <div className="text-center py-12 text-gray-600">
+                <MessageSquare className="w-12 h-12 text-gray-400 mb-4 mx-auto" />
+                <p>No hay mensajes en esta conversación.</p>
+                <p className="text-sm text-gray-500 mt-2">
+                  Inicia la conversación enviando un mensaje.
+                </p>
+              </div>
+            ) : (
+              <div className="space-y-4">
+                {messages.map((message) => {
+                  const isOwnMessage =
+                    message.senderType === "YOUTH" &&
+                    message.senderId === user?.id;
+                  const isCompanyMessage = message.senderType === "COMPANY";
+
+                  return (
+                    <div
+                      key={message.id}
+                      className={`flex ${isOwnMessage ? "justify-end" : "justify-start"}`}
+                    >
+                      <div
+                        className={`max-w-[70%] ${isOwnMessage ? "order-2" : "order-1"}`}
+                      >
+                        {/* Sender info */}
+                        <div
+                          className={`text-xs mb-1 ${
+                            isOwnMessage
+                              ? "text-right text-blue-600"
+                              : "text-left text-gray-600"
+                          }`}
+                        >
+                          {isOwnMessage
+                            ? "Tú"
+                            : isCompanyMessage
+                              ? "Empresa"
+                              : "Usuario"}
+                        </div>
+
+                        {/* Message bubble */}
+                        <div
+                          className={`p-3 rounded-lg ${
+                            isOwnMessage
+                              ? "bg-blue-500 text-white"
+                              : "bg-gray-200 text-gray-800"
+                          }`}
+                        >
+                          <p className="text-sm">{message.content}</p>
+                          <div className="flex items-center justify-between mt-1">
+                            <p
+                              className={`text-xs mt-1 ${
+                                isOwnMessage ? "text-blue-100" : "text-gray-500"
+                              }`}
+                            >
+                              {formatMessageTime(message.createdAt)}
+                            </p>
+                            {isOwnMessage && (
+                              <div className="text-xs text-blue-100">
+                                {message.status === "READ" ? "✓✓" : "✓"}
+                              </div>
+                            )}
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
             )}
+          </div>
+          <div className="p-6 pt-0 border-t">
+            {messageError && (
+              <div className="mb-3 p-3 bg-red-50 border border-red-200 rounded-lg">
+                <p className="text-sm text-red-600">{messageError}</p>
+              </div>
+            )}
+            <Textarea
+              placeholder="Escribe un mensaje..."
+              value={newMessage}
+              onChange={(e) => setNewMessage(e.target.value)}
+              onKeyPress={(e) => {
+                if (e.key === "Enter" && !e.shiftKey) {
+                  e.preventDefault();
+                  handleSendMessage();
+                }
+              }}
+              className="min-h-[50px] max-h-[150px] resize-none"
+              disabled={messageSending}
+            />
+            <div className="flex justify-between items-center mt-2">
+              <p className="text-xs text-gray-500">
+                Presiona Enter para enviar, Shift+Enter para nueva línea
+              </p>
+              <Button
+                size="sm"
+                onClick={handleSendMessage}
+                disabled={messageSending || !newMessage.trim()}
+                className="min-w-[80px]"
+              >
+                {messageSending ? (
+                  <div className="flex items-center">
+                    <div className="w-3 h-3 border border-white border-t-transparent rounded-full animate-spin mr-1"></div>
+                    Enviando...
+                  </div>
+                ) : (
+                  "Enviar"
+                )}
+              </Button>
+            </div>
           </div>
         </DialogContent>
       </Dialog>
