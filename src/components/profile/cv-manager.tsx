@@ -7,16 +7,22 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import { Badge } from "@/components/ui/badge";
 import { Progress } from "@/components/ui/progress";
-import { 
-  Upload, 
-  FileText, 
-  Download, 
-  Trash2, 
-  Edit, 
-  Save, 
+import {
+  Upload,
+  FileText,
+  Download,
+  Trash2,
+  Edit,
+  Save,
   X,
   User,
   Mail,
@@ -33,7 +39,7 @@ import {
   ChevronRight,
   ChevronDown,
   Plus,
-  Code
+  Code,
 } from "lucide-react";
 import { BACKEND_ENDPOINTS } from "@/lib/backend-config";
 import { useCV } from "@/hooks/useCV";
@@ -42,15 +48,15 @@ import { CoverLetterTemplateSelector } from "./templates/cover-letter-templates"
 import { ImageUpload } from "./image-upload";
 
 export function CVManager() {
-  const { 
-    cvData, 
-    coverLetterData, 
-    loading, 
-    error, 
-    updateCVData, 
-    saveCoverLetterData 
+  const {
+    cvData,
+    coverLetterData,
+    loading,
+    error,
+    updateCVData,
+    saveCoverLetterData,
   } = useCV();
-  
+
   const [activeTab, setActiveTab] = useState("edit");
   const [isEditing, setIsEditing] = useState(false);
   const [newSkill, setNewSkill] = useState("");
@@ -59,7 +65,7 @@ export function CVManager() {
   const [profileImage, setProfileImage] = useState("");
   const [showImageUpload, setShowImageUpload] = useState(false);
   const [uploadError, setUploadError] = useState("");
-  
+
   // Local form state for immediate responsiveness
   const [localFormData, setLocalFormData] = useState({
     jobTitle: "",
@@ -76,9 +82,9 @@ export function CVManager() {
       country: "",
       municipality: "",
       department: "",
-    }
+    },
   });
-  
+
   // Estado para secciones colapsables
   const [collapsedSections, setCollapsedSections] = useState({
     education: false,
@@ -87,7 +93,7 @@ export function CVManager() {
     workExperience: false,
     projects: false,
     skills: false,
-    interests: false
+    interests: false,
   });
 
   // Sync profile image with CV data
@@ -98,8 +104,10 @@ export function CVManager() {
   }, [cvData?.personalInfo?.profileImage]);
 
   // Sync local form data with CV data
+  // FIXED: Only sync on initial load to prevent data loss
+  const [hasInitialized, setHasInitialized] = useState(false);
   useEffect(() => {
-    if (cvData) {
+    if (cvData && !hasInitialized) {
       setLocalFormData({
         jobTitle: cvData.jobTitle || "",
         professionalSummary: cvData.professionalSummary || "",
@@ -115,10 +123,11 @@ export function CVManager() {
           country: cvData.personalInfo?.country || "",
           municipality: cvData.personalInfo?.municipality || "",
           department: cvData.personalInfo?.department || "",
-        }
+        },
       });
+      setHasInitialized(true);
     }
-  }, [cvData]);
+  }, [cvData, hasInitialized]);
 
   // Debounce refs for API calls
   const jobTitleTimeoutRef = useRef<NodeJS.Timeout | null>(null);
@@ -126,84 +135,100 @@ export function CVManager() {
   const personalInfoTimeoutRef = useRef<NodeJS.Timeout | null>(null);
 
   // Helper function for immediate local updates with debounced API calls
-  const handleJobTitleChange = useCallback((value: string) => {
-    setLocalFormData(prev => ({ ...prev, jobTitle: value }));
-    
-    // Clear existing timeout
-    if (jobTitleTimeoutRef.current) {
-      clearTimeout(jobTitleTimeoutRef.current);
-    }
-    
-    // Set new timeout for API call
-    jobTitleTimeoutRef.current = setTimeout(() => {
-      updateCVData({ jobTitle: value });
-    }, 800);
-  }, [updateCVData]);
+  const handleJobTitleChange = useCallback(
+    (value: string) => {
+      setLocalFormData((prev) => ({ ...prev, jobTitle: value }));
 
-  const handleProfessionalSummaryChange = useCallback((value: string) => {
-    setLocalFormData(prev => ({ ...prev, professionalSummary: value }));
-    
-    // Clear existing timeout
-    if (professionalSummaryTimeoutRef.current) {
-      clearTimeout(professionalSummaryTimeoutRef.current);
-    }
-    
-    // Set new timeout for API call
-    professionalSummaryTimeoutRef.current = setTimeout(() => {
-      updateCVData({ professionalSummary: value });
-    }, 800);
-  }, [updateCVData]);
-
-  const handleLocalPersonalInfoChange = useCallback((field: string, value: string) => {
-    // Update local state immediately for responsive UI
-    setLocalFormData(prev => {
-      const newData = {
-        ...prev,
-        personalInfo: {
-          ...prev.personalInfo,
-          [field]: value
-        }
-      };
-      
-      // Clear existing timeout to prevent multiple API calls
-      if (personalInfoTimeoutRef.current) {
-        clearTimeout(personalInfoTimeoutRef.current);
+      // Clear existing timeout
+      if (jobTitleTimeoutRef.current) {
+        clearTimeout(jobTitleTimeoutRef.current);
       }
-      
-      // Debounced API call with the updated local data
-      personalInfoTimeoutRef.current = setTimeout(() => {
-        const updatedPersonalInfo = {
-          ...newData.personalInfo,
-          // Include additional fields that might not be in local state
-          birthDate: cvData?.personalInfo?.birthDate,
-          gender: cvData?.personalInfo?.gender,
-          profileImage: cvData?.personalInfo?.profileImage,
+
+      // Set new timeout for API call
+      jobTitleTimeoutRef.current = setTimeout(() => {
+        updateCVData({ jobTitle: value });
+      }, 800);
+    },
+    [updateCVData]
+  );
+
+  const handleProfessionalSummaryChange = useCallback(
+    (value: string) => {
+      setLocalFormData((prev) => ({ ...prev, professionalSummary: value }));
+
+      // Clear existing timeout
+      if (professionalSummaryTimeoutRef.current) {
+        clearTimeout(professionalSummaryTimeoutRef.current);
+      }
+
+      // Set new timeout for API call
+      professionalSummaryTimeoutRef.current = setTimeout(() => {
+        updateCVData({ professionalSummary: value });
+      }, 800);
+    },
+    [updateCVData]
+  );
+
+  const handleLocalPersonalInfoChange = useCallback(
+    (field: string, value: string) => {
+      // Update local state immediately for responsive UI
+      setLocalFormData((prev) => {
+        const newData = {
+          ...prev,
+          personalInfo: {
+            ...prev.personalInfo,
+            [field]: value,
+          },
         };
 
-        updateCVData({
-          personalInfo: updatedPersonalInfo
-        }).catch(error => {
-          console.error('Error updating personal info:', error);
-        });
-      }, 800);
-      
-      return newData;
-    });
-  }, [cvData?.personalInfo?.birthDate, cvData?.personalInfo?.gender, cvData?.personalInfo?.profileImage, updateCVData]);
+        // Clear existing timeout to prevent multiple API calls
+        if (personalInfoTimeoutRef.current) {
+          clearTimeout(personalInfoTimeoutRef.current);
+        }
+
+        // Debounced API call with the updated local data
+        personalInfoTimeoutRef.current = setTimeout(() => {
+          const updatedPersonalInfo = {
+            ...newData.personalInfo,
+            // Include additional fields that might not be in local state
+            birthDate: cvData?.personalInfo?.birthDate,
+            gender: cvData?.personalInfo?.gender,
+            profileImage: cvData?.personalInfo?.profileImage,
+          };
+
+          updateCVData({
+            personalInfo: updatedPersonalInfo,
+          }).catch((error) => {
+            console.error("Error updating personal info:", error);
+          });
+        }, 800);
+
+        return newData;
+      });
+    },
+    [
+      cvData?.personalInfo?.birthDate,
+      cvData?.personalInfo?.gender,
+      cvData?.personalInfo?.profileImage,
+      updateCVData,
+    ]
+  );
 
   // Cleanup timeouts on unmount
   useEffect(() => {
     return () => {
       if (jobTitleTimeoutRef.current) clearTimeout(jobTitleTimeoutRef.current);
-      if (professionalSummaryTimeoutRef.current) clearTimeout(professionalSummaryTimeoutRef.current);
-      if (personalInfoTimeoutRef.current) clearTimeout(personalInfoTimeoutRef.current);
+      if (professionalSummaryTimeoutRef.current)
+        clearTimeout(professionalSummaryTimeoutRef.current);
+      if (personalInfoTimeoutRef.current)
+        clearTimeout(personalInfoTimeoutRef.current);
     };
   }, []);
 
   const toggleSection = (section: keyof typeof collapsedSections) => {
-    setCollapsedSections(prev => ({
+    setCollapsedSections((prev) => ({
       ...prev,
-      [section]: !prev[section]
+      [section]: !prev[section],
     }));
   };
 
@@ -211,36 +236,40 @@ export function CVManager() {
     try {
       setUploading(true);
       setUploadError("");
-      
+
       const formData = new FormData();
-      formData.append('image', file);
+      formData.append("image", file);
 
       // Use local Next.js API route with cookie authentication
-      const response = await fetch('/api/files/upload/profile-image', {
-        method: 'POST',
-        credentials: 'include', // Include cookies for authentication
-        body: formData
+      const response = await fetch("/api/files/upload/profile-image", {
+        method: "POST",
+        credentials: "include", // Include cookies for authentication
+        body: formData,
       });
 
       if (!response.ok) {
         if (response.status === 401) {
-          throw new Error('Authentication failed');
+          throw new Error("Authentication failed");
         }
         const errorData = await response.json();
-        throw new Error(errorData.error || `HTTP error! status: ${response.status}`);
+        throw new Error(
+          errorData.error || `HTTP error! status: ${response.status}`
+        );
       }
 
       const data = await response.json();
       const imageUrl = data.imageUrl || data.url;
-      
+
       // Update both local state and CV data
       setProfileImage(imageUrl);
       await updateProfileAvatar(imageUrl);
-      
+
       setShowImageUpload(false);
     } catch (error) {
-      console.error('Error uploading image:', error);
-      setUploadError(error instanceof Error ? error.message : 'Error al subir la imagen');
+      console.error("Error uploading image:", error);
+      setUploadError(
+        error instanceof Error ? error.message : "Error al subir la imagen"
+      );
     } finally {
       setUploading(false);
     }
@@ -254,17 +283,17 @@ export function CVManager() {
         // Include additional fields that might not be in local state
         birthDate: cvData?.personalInfo?.birthDate,
         gender: cvData?.personalInfo?.gender,
-        profileImage: imageUrl || undefined
+        profileImage: imageUrl || undefined,
       };
 
       await updateCVData({
-        personalInfo: updatedPersonalInfo
+        personalInfo: updatedPersonalInfo,
       });
-      
+
       setProfileImage(imageUrl || "");
     } catch (error) {
-      console.error('Error updating avatar:', error);
-      setUploadError('Error al actualizar el avatar');
+      console.error("Error updating avatar:", error);
+      setUploadError("Error al actualizar el avatar");
     }
   };
 
@@ -283,60 +312,76 @@ export function CVManager() {
         universityEndDate: null,
         universityStatus: "",
         gpa: 0,
-        academicAchievements: []
+        academicAchievements: [],
       };
 
       await updateCVData({
         education: {
           ...currentEducation,
-          [field]: value
-        }
+          [field]: value,
+        },
       });
     } catch (error) {
-      console.error('Error updating education:', error);
+      console.error("Error updating education:", error);
     }
   };
 
-  const handleSkillsChange = async (skills: { name: string; experienceLevel?: string }[]) => {
+  const handleSkillsChange = async (
+    skills: { name: string; experienceLevel?: string }[]
+  ) => {
     try {
       await updateCVData({
-        skills
+        skills,
       });
     } catch (error) {
-      console.error('Error updating skills:', error);
+      console.error("Error updating skills:", error);
     }
   };
 
   const handleInterestsChange = async (interests: string[]) => {
     try {
       await updateCVData({
-        interests
+        interests,
       });
     } catch (error) {
-      console.error('Error updating interests:', error);
+      console.error("Error updating interests:", error);
     }
   };
 
   const addSkill = () => {
-    if (newSkill.trim() && !cvData?.skills?.some(skill => skill.name === newSkill.trim())) {
-      handleSkillsChange([...(cvData?.skills || []), { name: newSkill.trim(), experienceLevel: "Skillful" }]);
+    if (
+      newSkill.trim() &&
+      !cvData?.skills?.some((skill) => skill.name === newSkill.trim())
+    ) {
+      handleSkillsChange([
+        ...(cvData?.skills || []),
+        { name: newSkill.trim(), experienceLevel: "Skillful" },
+      ]);
       setNewSkill("");
     }
   };
 
   const removeSkill = (skillToRemove: string) => {
-    handleSkillsChange(cvData?.skills?.filter(skill => skill.name !== skillToRemove) || []);
+    handleSkillsChange(
+      cvData?.skills?.filter((skill) => skill.name !== skillToRemove) || []
+    );
   };
 
   const addInterest = () => {
-    if (newInterest.trim() && !cvData?.interests?.includes(newInterest.trim())) {
+    if (
+      newInterest.trim() &&
+      !cvData?.interests?.includes(newInterest.trim())
+    ) {
       handleInterestsChange([...(cvData?.interests || []), newInterest.trim()]);
       setNewInterest("");
     }
   };
 
   const removeInterest = (interestToRemove: string) => {
-    handleInterestsChange(cvData?.interests?.filter(interest => interest !== interestToRemove) || []);
+    handleInterestsChange(
+      cvData?.interests?.filter((interest) => interest !== interestToRemove) ||
+        []
+    );
   };
 
   if (loading) {
@@ -363,9 +408,12 @@ export function CVManager() {
       {/* Header */}
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-3xl font-bold text-gray-900">Gestor de CV y Carta de Presentación</h1>
+          <h1 className="text-3xl font-bold text-gray-900">
+            Gestor de CV y Carta de Presentación
+          </h1>
           <p className="text-gray-600 mt-2">
-            Crea y personaliza tu CV y carta de presentación con múltiples plantillas profesionales
+            Crea y personaliza tu CV y carta de presentación con múltiples
+            plantillas profesionales
           </p>
         </div>
         <div className="flex gap-2">
@@ -382,12 +430,14 @@ export function CVManager() {
               </>
             )}
           </Button>
-          <Button 
+          <Button
             variant="outline"
             onClick={() => {
               setActiveTab("cv");
               setTimeout(() => {
-                const downloadBtn = document.querySelector('[data-cv-download]') as HTMLButtonElement;
+                const downloadBtn = document.querySelector(
+                  "[data-cv-download]"
+                ) as HTMLButtonElement;
                 if (downloadBtn) downloadBtn.click();
               }, 100);
             }}
@@ -395,12 +445,14 @@ export function CVManager() {
             <Download className="h-4 w-4 mr-2" />
             Descargar CV
           </Button>
-          <Button 
+          <Button
             variant="outline"
             onClick={() => {
               setActiveTab("cover-letter");
               setTimeout(() => {
-                const downloadBtn = document.querySelector('[data-cover-letter-download]') as HTMLButtonElement;
+                const downloadBtn = document.querySelector(
+                  "[data-cover-letter-download]"
+                ) as HTMLButtonElement;
                 if (downloadBtn) downloadBtn.click();
               }, 100);
             }}
@@ -413,13 +465,17 @@ export function CVManager() {
               // Download both CV and cover letter
               setActiveTab("cv");
               setTimeout(() => {
-                const cvDownloadBtn = document.querySelector('[data-cv-download]') as HTMLButtonElement;
+                const cvDownloadBtn = document.querySelector(
+                  "[data-cv-download]"
+                ) as HTMLButtonElement;
                 if (cvDownloadBtn) cvDownloadBtn.click();
-                
+
                 setTimeout(() => {
                   setActiveTab("cover-letter");
                   setTimeout(() => {
-                    const coverLetterDownloadBtn = document.querySelector('[data-cover-letter-download]') as HTMLButtonElement;
+                    const coverLetterDownloadBtn = document.querySelector(
+                      "[data-cover-letter-download]"
+                    ) as HTMLButtonElement;
                     if (coverLetterDownloadBtn) coverLetterDownloadBtn.click();
                   }, 100);
                 }, 1000);
@@ -433,7 +489,11 @@ export function CVManager() {
       </div>
 
       {/* Main Content */}
-      <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-6">
+      <Tabs
+        value={activeTab}
+        onValueChange={setActiveTab}
+        className="space-y-6"
+      >
         <TabsList className="grid w-full grid-cols-3">
           <TabsTrigger value="edit" className="flex items-center gap-2">
             <User className="h-4 w-4" />
@@ -509,7 +569,12 @@ export function CVManager() {
                     <Input
                       id="firstName"
                       value={localFormData.personalInfo.firstName}
-                      onChange={(e) => handleLocalPersonalInfoChange("firstName", e.target.value)}
+                      onChange={(e) =>
+                        handleLocalPersonalInfoChange(
+                          "firstName",
+                          e.target.value
+                        )
+                      }
                       placeholder="Tu nombre"
                     />
                   </div>
@@ -518,19 +583,26 @@ export function CVManager() {
                     <Input
                       id="lastName"
                       value={localFormData.personalInfo.lastName}
-                      onChange={(e) => handleLocalPersonalInfoChange("lastName", e.target.value)}
+                      onChange={(e) =>
+                        handleLocalPersonalInfoChange(
+                          "lastName",
+                          e.target.value
+                        )
+                      }
                       placeholder="Tu apellido"
                     />
                   </div>
                 </div>
-                
+
                 <div>
                   <Label htmlFor="email">Email</Label>
                   <Input
                     id="email"
                     type="email"
                     value={localFormData.personalInfo.email}
-                    onChange={(e) => handleLocalPersonalInfoChange("email", e.target.value)}
+                    onChange={(e) =>
+                      handleLocalPersonalInfoChange("email", e.target.value)
+                    }
                     placeholder="tu@email.com"
                   />
                 </div>
@@ -540,7 +612,9 @@ export function CVManager() {
                   <Input
                     id="phone"
                     value={localFormData.personalInfo.phone}
-                    onChange={(e) => handleLocalPersonalInfoChange("phone", e.target.value)}
+                    onChange={(e) =>
+                      handleLocalPersonalInfoChange("phone", e.target.value)
+                    }
                     placeholder="+591 70012345"
                   />
                 </div>
@@ -550,7 +624,12 @@ export function CVManager() {
                   <Input
                     id="addressLine"
                     value={localFormData.personalInfo.addressLine}
-                    onChange={(e) => handleLocalPersonalInfoChange("addressLine", e.target.value)}
+                    onChange={(e) =>
+                      handleLocalPersonalInfoChange(
+                        "addressLine",
+                        e.target.value
+                      )
+                    }
                     placeholder="Av. Principal 123"
                   />
                 </div>
@@ -561,7 +640,9 @@ export function CVManager() {
                     <Input
                       id="city"
                       value={localFormData.personalInfo.city}
-                      onChange={(e) => handleLocalPersonalInfoChange("city", e.target.value)}
+                      onChange={(e) =>
+                        handleLocalPersonalInfoChange("city", e.target.value)
+                      }
                       placeholder="La Paz"
                     />
                   </div>
@@ -570,7 +651,9 @@ export function CVManager() {
                     <Input
                       id="state"
                       value={localFormData.personalInfo.state}
-                      onChange={(e) => handleLocalPersonalInfoChange("state", e.target.value)}
+                      onChange={(e) =>
+                        handleLocalPersonalInfoChange("state", e.target.value)
+                      }
                       placeholder="La Paz"
                     />
                   </div>
@@ -579,7 +662,9 @@ export function CVManager() {
                     <Input
                       id="country"
                       value={localFormData.personalInfo.country}
-                      onChange={(e) => handleLocalPersonalInfoChange("country", e.target.value)}
+                      onChange={(e) =>
+                        handleLocalPersonalInfoChange("country", e.target.value)
+                      }
                       placeholder="Bolivia"
                     />
                   </div>
@@ -598,17 +683,22 @@ export function CVManager() {
             </CardHeader>
             <CardContent className="space-y-4">
               <div>
-                <Label htmlFor="professionalSummary">Descripción Profesional</Label>
+                <Label htmlFor="professionalSummary">
+                  Descripción Profesional
+                </Label>
                 <Textarea
                   id="professionalSummary"
                   value={localFormData.professionalSummary}
-                  onChange={(e) => handleProfessionalSummaryChange(e.target.value)}
+                  onChange={(e) =>
+                    handleProfessionalSummaryChange(e.target.value)
+                  }
                   placeholder="Joven profesional con sólidos conocimientos en desarrollo web y tecnologías modernas. Comprometido con el aprendizaje continuo y el desarrollo de soluciones innovadoras."
                   rows={4}
                   className="resize-none"
                 />
                 <p className="text-sm text-gray-500 mt-1">
-                  Escribe 2-4 oraciones cortas y enérgicas sobre lo genial que eres. Menciona el rol y lo que hiciste.
+                  Escribe 2-4 oraciones cortas y enérgicas sobre lo genial que
+                  eres. Menciona el rol y lo que hiciste.
                 </p>
               </div>
             </CardContent>
@@ -617,9 +707,9 @@ export function CVManager() {
           {/* Secciones Colapsables */}
           {/* Educación */}
           <Card>
-            <CardHeader 
+            <CardHeader
               className="cursor-pointer hover:bg-gray-50 transition-colors"
-              onClick={() => toggleSection('education')}
+              onClick={() => toggleSection("education")}
             >
               <div className="flex items-center justify-between">
                 <CardTitle className="flex items-center gap-2">
@@ -641,7 +731,9 @@ export function CVManager() {
                     <Label htmlFor="level">Nivel Educativo</Label>
                     <Select
                       value={cvData?.education?.level || ""}
-                      onValueChange={(value) => handleEducationChange("level", value)}
+                      onValueChange={(value) =>
+                        handleEducationChange("level", value)
+                      }
                     >
                       <SelectTrigger>
                         <SelectValue placeholder="Selecciona el nivel" />
@@ -658,11 +750,18 @@ export function CVManager() {
                   </div>
 
                   <div>
-                    <Label htmlFor="currentInstitution">Institución Actual</Label>
+                    <Label htmlFor="currentInstitution">
+                      Institución Actual
+                    </Label>
                     <Input
                       id="currentInstitution"
                       value={cvData?.education?.currentInstitution || ""}
-                      onChange={(e) => handleEducationChange("currentInstitution", e.target.value)}
+                      onChange={(e) =>
+                        handleEducationChange(
+                          "currentInstitution",
+                          e.target.value
+                        )
+                      }
                       placeholder="Colegio San José"
                     />
                   </div>
@@ -673,7 +772,9 @@ export function CVManager() {
                       id="graduationYear"
                       type="number"
                       value={cvData?.education?.graduationYear || ""}
-                      onChange={(e) => handleEducationChange("graduationYear", e.target.value)}
+                      onChange={(e) =>
+                        handleEducationChange("graduationYear", e.target.value)
+                      }
                       placeholder="2023"
                       min="1950"
                       max="2030"
@@ -684,13 +785,17 @@ export function CVManager() {
                     <Label htmlFor="isStudying">Estado de Estudio</Label>
                     <Select
                       value={cvData?.education?.isStudying ? "true" : "false"}
-                      onValueChange={(value) => handleEducationChange("isStudying", value === "true")}
+                      onValueChange={(value) =>
+                        handleEducationChange("isStudying", value === "true")
+                      }
                     >
                       <SelectTrigger>
                         <SelectValue placeholder="Estado de estudio" />
                       </SelectTrigger>
                       <SelectContent>
-                        <SelectItem value="true">Estudiando actualmente</SelectItem>
+                        <SelectItem value="true">
+                          Estudiando actualmente
+                        </SelectItem>
                         <SelectItem value="false">Graduado</SelectItem>
                       </SelectContent>
                     </Select>
@@ -699,53 +804,82 @@ export function CVManager() {
 
                 {/* Información Universitaria */}
                 <div className="border-t pt-4">
-                  <h4 className="font-medium mb-4">Información Universitaria</h4>
+                  <h4 className="font-medium mb-4">
+                    Información Universitaria
+                  </h4>
                   <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
                     <div>
                       <Label htmlFor="currentDegree">Grado Actual</Label>
                       <Input
                         id="currentDegree"
                         value={cvData?.education?.currentDegree || ""}
-                        onChange={(e) => handleEducationChange("currentDegree", e.target.value)}
+                        onChange={(e) =>
+                          handleEducationChange("currentDegree", e.target.value)
+                        }
                         placeholder="Ingeniería en Sistemas"
                       />
                     </div>
 
                     <div>
-                      <Label htmlFor="universityName">Nombre de la Universidad</Label>
+                      <Label htmlFor="universityName">
+                        Nombre de la Universidad
+                      </Label>
                       <Input
                         id="universityName"
                         value={cvData?.education?.universityName || ""}
-                        onChange={(e) => handleEducationChange("universityName", e.target.value)}
+                        onChange={(e) =>
+                          handleEducationChange(
+                            "universityName",
+                            e.target.value
+                          )
+                        }
                         placeholder="Universidad de La Paz"
                       />
                     </div>
 
                     <div>
-                      <Label htmlFor="universityStartDate">Fecha de Inicio</Label>
+                      <Label htmlFor="universityStartDate">
+                        Fecha de Inicio
+                      </Label>
                       <Input
                         id="universityStartDate"
                         type="month"
                         value={cvData?.education?.universityStartDate || ""}
-                        onChange={(e) => handleEducationChange("universityStartDate", e.target.value)}
+                        onChange={(e) =>
+                          handleEducationChange(
+                            "universityStartDate",
+                            e.target.value
+                          )
+                        }
                       />
                     </div>
 
                     <div>
-                      <Label htmlFor="universityEndDate">Fecha de Fin (opcional)</Label>
+                      <Label htmlFor="universityEndDate">
+                        Fecha de Fin (opcional)
+                      </Label>
                       <Input
                         id="universityEndDate"
                         type="month"
                         value={cvData?.education?.universityEndDate || ""}
-                        onChange={(e) => handleEducationChange("universityEndDate", e.target.value)}
+                        onChange={(e) =>
+                          handleEducationChange(
+                            "universityEndDate",
+                            e.target.value
+                          )
+                        }
                       />
                     </div>
 
                     <div>
-                      <Label htmlFor="universityStatus">Estado Universitario</Label>
+                      <Label htmlFor="universityStatus">
+                        Estado Universitario
+                      </Label>
                       <Select
                         value={cvData?.education?.universityStatus || ""}
-                        onValueChange={(value) => handleEducationChange("universityStatus", value)}
+                        onValueChange={(value) =>
+                          handleEducationChange("universityStatus", value)
+                        }
                       >
                         <SelectTrigger>
                           <SelectValue placeholder="Estado universitario" />
@@ -768,7 +902,12 @@ export function CVManager() {
                         min="0"
                         max="4"
                         value={cvData?.education?.gpa || ""}
-                        onChange={(e) => handleEducationChange("gpa", parseFloat(e.target.value))}
+                        onChange={(e) =>
+                          handleEducationChange(
+                            "gpa",
+                            parseFloat(e.target.value)
+                          )
+                        }
                         placeholder="3.5"
                       />
                     </div>
@@ -783,14 +922,17 @@ export function CVManager() {
                       variant="outline"
                       size="sm"
                       onClick={() => {
-                        const newHistory = [...(cvData?.education?.educationHistory || []), {
-                          institution: "",
-                          degree: "",
-                          startDate: "",
-                          endDate: null,
-                          status: "",
-                          gpa: undefined
-                        }];
+                        const newHistory = [
+                          ...(cvData?.education?.educationHistory || []),
+                          {
+                            institution: "",
+                            degree: "",
+                            startDate: "",
+                            endDate: null,
+                            status: "",
+                            gpa: undefined,
+                          },
+                        ];
                         handleEducationChange("educationHistory", newHistory);
                       }}
                     >
@@ -798,75 +940,124 @@ export function CVManager() {
                       Agregar Educación
                     </Button>
                   </div>
-                  
+
                   <div className="space-y-4">
                     {cvData?.education?.educationHistory?.map((item, index) => (
-                      <div key={index} className="border rounded-lg p-4 space-y-3">
+                      <div
+                        key={index}
+                        className="border rounded-lg p-4 space-y-3"
+                      >
                         <div className="flex justify-between items-start">
                           <h5 className="font-medium">Educación {index + 1}</h5>
                           <Button
                             variant="ghost"
                             size="sm"
                             onClick={() => {
-                              const newHistory = cvData.education.educationHistory?.filter((_, i) => i !== index) || [];
-                              handleEducationChange("educationHistory", newHistory);
+                              const newHistory =
+                                cvData.education.educationHistory?.filter(
+                                  (_, i) => i !== index
+                                ) || [];
+                              handleEducationChange(
+                                "educationHistory",
+                                newHistory
+                              );
                             }}
                             className="text-red-600 hover:text-red-700"
                           >
                             <X className="h-4 w-4" />
                           </Button>
                         </div>
-                        
+
                         <div className="grid grid-cols-1 lg:grid-cols-2 gap-3">
                           <div>
-                            <Label htmlFor={`institution-${index}`}>Institución</Label>
+                            <Label htmlFor={`institution-${index}`}>
+                              Institución
+                            </Label>
                             <Input
                               id={`institution-${index}`}
                               value={item.institution || ""}
                               onChange={(e) => {
-                                const newHistory = [...(cvData.education.educationHistory || [])];
-                                newHistory[index] = { ...item, institution: e.target.value };
-                                handleEducationChange("educationHistory", newHistory);
+                                const newHistory = [
+                                  ...(cvData.education.educationHistory || []),
+                                ];
+                                newHistory[index] = {
+                                  ...item,
+                                  institution: e.target.value,
+                                };
+                                handleEducationChange(
+                                  "educationHistory",
+                                  newHistory
+                                );
                               }}
                               placeholder="Nombre de la institución"
                             />
                           </div>
                           <div>
-                            <Label htmlFor={`degree-${index}`}>Grado/Título</Label>
+                            <Label htmlFor={`degree-${index}`}>
+                              Grado/Título
+                            </Label>
                             <Input
                               id={`degree-${index}`}
                               value={item.degree || ""}
                               onChange={(e) => {
-                                const newHistory = [...(cvData.education.educationHistory || [])];
-                                newHistory[index] = { ...item, degree: e.target.value };
-                                handleEducationChange("educationHistory", newHistory);
+                                const newHistory = [
+                                  ...(cvData.education.educationHistory || []),
+                                ];
+                                newHistory[index] = {
+                                  ...item,
+                                  degree: e.target.value,
+                                };
+                                handleEducationChange(
+                                  "educationHistory",
+                                  newHistory
+                                );
                               }}
                               placeholder="Bachillerato, Licenciatura, etc."
                             />
                           </div>
                           <div>
-                            <Label htmlFor={`startDate-${index}`}>Fecha de Inicio</Label>
+                            <Label htmlFor={`startDate-${index}`}>
+                              Fecha de Inicio
+                            </Label>
                             <Input
                               id={`startDate-${index}`}
                               type="month"
                               value={item.startDate || ""}
                               onChange={(e) => {
-                                const newHistory = [...(cvData.education.educationHistory || [])];
-                                newHistory[index] = { ...item, startDate: e.target.value };
-                                handleEducationChange("educationHistory", newHistory);
+                                const newHistory = [
+                                  ...(cvData.education.educationHistory || []),
+                                ];
+                                newHistory[index] = {
+                                  ...item,
+                                  startDate: e.target.value,
+                                };
+                                handleEducationChange(
+                                  "educationHistory",
+                                  newHistory
+                                );
                               }}
                             />
                           </div>
                           <div>
-                            <Label htmlFor={`endDate-${index}`}>Fecha de Fin</Label>
+                            <Label htmlFor={`endDate-${index}`}>
+                              Fecha de Fin
+                            </Label>
                             <Input
                               id={`endDate-${index}`}
                               type="month"
                               value={item.endDate || ""}
                               onChange={(e) => {
-                                const newHistory = [...(cvData.education.educationHistory || [])];
-                                newHistory[index] = { ...item, endDate: e.target.value };
-                                handleEducationChange("educationHistory", newHistory);
+                                const newHistory = [
+                                  ...(cvData.education.educationHistory || []),
+                                ];
+                                newHistory[index] = {
+                                  ...item,
+                                  endDate: e.target.value,
+                                };
+                                handleEducationChange(
+                                  "educationHistory",
+                                  newHistory
+                                );
                               }}
                             />
                           </div>
@@ -875,24 +1066,39 @@ export function CVManager() {
                             <Select
                               value={item.status || ""}
                               onValueChange={(value) => {
-                                const newHistory = [...(cvData.education.educationHistory || [])];
+                                const newHistory = [
+                                  ...(cvData.education.educationHistory || []),
+                                ];
                                 newHistory[index] = { ...item, status: value };
-                                handleEducationChange("educationHistory", newHistory);
+                                handleEducationChange(
+                                  "educationHistory",
+                                  newHistory
+                                );
                               }}
                             >
                               <SelectTrigger>
                                 <SelectValue placeholder="Estado" />
                               </SelectTrigger>
                               <SelectContent>
-                                <SelectItem value="Graduado">Graduado</SelectItem>
-                                <SelectItem value="Estudiante">Estudiante</SelectItem>
-                                <SelectItem value="Egresado">Egresado</SelectItem>
-                                <SelectItem value="Truncado">Truncado</SelectItem>
+                                <SelectItem value="Graduado">
+                                  Graduado
+                                </SelectItem>
+                                <SelectItem value="Estudiante">
+                                  Estudiante
+                                </SelectItem>
+                                <SelectItem value="Egresado">
+                                  Egresado
+                                </SelectItem>
+                                <SelectItem value="Truncado">
+                                  Truncado
+                                </SelectItem>
                               </SelectContent>
                             </Select>
                           </div>
                           <div>
-                            <Label htmlFor={`gpa-${index}`}>GPA (opcional)</Label>
+                            <Label htmlFor={`gpa-${index}`}>
+                              GPA (opcional)
+                            </Label>
                             <Input
                               id={`gpa-${index}`}
                               type="number"
@@ -901,9 +1107,17 @@ export function CVManager() {
                               max="4"
                               value={item.gpa || ""}
                               onChange={(e) => {
-                                const newHistory = [...(cvData.education.educationHistory || [])];
-                                newHistory[index] = { ...item, gpa: parseFloat(e.target.value) };
-                                handleEducationChange("educationHistory", newHistory);
+                                const newHistory = [
+                                  ...(cvData.education.educationHistory || []),
+                                ];
+                                newHistory[index] = {
+                                  ...item,
+                                  gpa: parseFloat(e.target.value),
+                                };
+                                handleEducationChange(
+                                  "educationHistory",
+                                  newHistory
+                                );
                               }}
                               placeholder="3.5"
                             />
@@ -922,106 +1136,173 @@ export function CVManager() {
                       variant="outline"
                       size="sm"
                       onClick={() => {
-                        const newAchievements = [...(cvData?.education?.academicAchievements || []), {
-                          title: "",
-                          date: "",
-                          description: "",
-                          type: "honor"
-                        }];
-                        handleEducationChange("academicAchievements", newAchievements);
+                        const newAchievements = [
+                          ...(cvData?.education?.academicAchievements || []),
+                          {
+                            title: "",
+                            date: "",
+                            description: "",
+                            type: "honor",
+                          },
+                        ];
+                        handleEducationChange(
+                          "academicAchievements",
+                          newAchievements
+                        );
                       }}
                     >
                       <Plus className="h-4 w-4 mr-2" />
                       Agregar Logro
                     </Button>
                   </div>
-                  
+
                   <div className="space-y-4">
-                    {cvData?.education?.academicAchievements?.map((achievement, index) => (
-                      <div key={index} className="border rounded-lg p-4 space-y-3">
-                        <div className="flex justify-between items-start">
-                          <h5 className="font-medium">Logro {index + 1}</h5>
-                          <Button
-                            variant="ghost"
-                            size="sm"
-                            onClick={() => {
-                              const newAchievements = cvData.education.academicAchievements?.filter((_, i) => i !== index) || [];
-                              handleEducationChange("academicAchievements", newAchievements);
-                            }}
-                            className="text-red-600 hover:text-red-700"
-                          >
-                            <X className="h-4 w-4" />
-                          </Button>
-                        </div>
-                        
-                        <div className="grid grid-cols-1 lg:grid-cols-2 gap-3">
-                          <div>
-                            <Label htmlFor={`achievementTitle-${index}`}>Título del Logro</Label>
-                            <Input
-                              id={`achievementTitle-${index}`}
-                              value={achievement.title || ""}
-                              onChange={(e) => {
-                                const newAchievements = [...(cvData.education.academicAchievements || [])];
-                                newAchievements[index] = { ...achievement, title: e.target.value };
-                                handleEducationChange("academicAchievements", newAchievements);
+                    {cvData?.education?.academicAchievements?.map(
+                      (achievement, index) => (
+                        <div
+                          key={index}
+                          className="border rounded-lg p-4 space-y-3"
+                        >
+                          <div className="flex justify-between items-start">
+                            <h5 className="font-medium">Logro {index + 1}</h5>
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              onClick={() => {
+                                const newAchievements =
+                                  cvData.education.academicAchievements?.filter(
+                                    (_, i) => i !== index
+                                  ) || [];
+                                handleEducationChange(
+                                  "academicAchievements",
+                                  newAchievements
+                                );
                               }}
-                              placeholder="Primer lugar en Hackathon"
-                            />
-                          </div>
-                          <div>
-                            <Label htmlFor={`achievementDate-${index}`}>Fecha</Label>
-                            <Input
-                              id={`achievementDate-${index}`}
-                              type="month"
-                              value={achievement.date || ""}
-                              onChange={(e) => {
-                                const newAchievements = [...(cvData.education.academicAchievements || [])];
-                                newAchievements[index] = { ...achievement, date: e.target.value };
-                                handleEducationChange("academicAchievements", newAchievements);
-                              }}
-                            />
-                          </div>
-                          <div>
-                            <Label htmlFor={`achievementType-${index}`}>Tipo</Label>
-                            <Select
-                              value={achievement.type || ""}
-                              onValueChange={(value) => {
-                                const newAchievements = [...(cvData.education.academicAchievements || [])];
-                                newAchievements[index] = { ...achievement, type: value };
-                                handleEducationChange("academicAchievements", newAchievements);
-                              }}
+                              className="text-red-600 hover:text-red-700"
                             >
-                              <SelectTrigger>
-                                <SelectValue placeholder="Tipo de logro" />
-                              </SelectTrigger>
-                              <SelectContent>
-                                <SelectItem value="honor">Honor</SelectItem>
-                                <SelectItem value="award">Premio</SelectItem>
-                                <SelectItem value="certification">Certificación</SelectItem>
-                                <SelectItem value="scholarship">Beca</SelectItem>
-                                <SelectItem value="publication">Publicación</SelectItem>
-                                <SelectItem value="other">Otro</SelectItem>
-                              </SelectContent>
-                            </Select>
+                              <X className="h-4 w-4" />
+                            </Button>
+                          </div>
+
+                          <div className="grid grid-cols-1 lg:grid-cols-2 gap-3">
+                            <div>
+                              <Label htmlFor={`achievementTitle-${index}`}>
+                                Título del Logro
+                              </Label>
+                              <Input
+                                id={`achievementTitle-${index}`}
+                                value={achievement.title || ""}
+                                onChange={(e) => {
+                                  const newAchievements = [
+                                    ...(cvData.education.academicAchievements ||
+                                      []),
+                                  ];
+                                  newAchievements[index] = {
+                                    ...achievement,
+                                    title: e.target.value,
+                                  };
+                                  handleEducationChange(
+                                    "academicAchievements",
+                                    newAchievements
+                                  );
+                                }}
+                                placeholder="Primer lugar en Hackathon"
+                              />
+                            </div>
+                            <div>
+                              <Label htmlFor={`achievementDate-${index}`}>
+                                Fecha
+                              </Label>
+                              <Input
+                                id={`achievementDate-${index}`}
+                                type="month"
+                                value={achievement.date || ""}
+                                onChange={(e) => {
+                                  const newAchievements = [
+                                    ...(cvData.education.academicAchievements ||
+                                      []),
+                                  ];
+                                  newAchievements[index] = {
+                                    ...achievement,
+                                    date: e.target.value,
+                                  };
+                                  handleEducationChange(
+                                    "academicAchievements",
+                                    newAchievements
+                                  );
+                                }}
+                              />
+                            </div>
+                            <div>
+                              <Label htmlFor={`achievementType-${index}`}>
+                                Tipo
+                              </Label>
+                              <Select
+                                value={achievement.type || ""}
+                                onValueChange={(value) => {
+                                  const newAchievements = [
+                                    ...(cvData.education.academicAchievements ||
+                                      []),
+                                  ];
+                                  newAchievements[index] = {
+                                    ...achievement,
+                                    type: value,
+                                  };
+                                  handleEducationChange(
+                                    "academicAchievements",
+                                    newAchievements
+                                  );
+                                }}
+                              >
+                                <SelectTrigger>
+                                  <SelectValue placeholder="Tipo de logro" />
+                                </SelectTrigger>
+                                <SelectContent>
+                                  <SelectItem value="honor">Honor</SelectItem>
+                                  <SelectItem value="award">Premio</SelectItem>
+                                  <SelectItem value="certification">
+                                    Certificación
+                                  </SelectItem>
+                                  <SelectItem value="scholarship">
+                                    Beca
+                                  </SelectItem>
+                                  <SelectItem value="publication">
+                                    Publicación
+                                  </SelectItem>
+                                  <SelectItem value="other">Otro</SelectItem>
+                                </SelectContent>
+                              </Select>
+                            </div>
+                          </div>
+
+                          <div>
+                            <Label htmlFor={`achievementDescription-${index}`}>
+                              Descripción
+                            </Label>
+                            <Textarea
+                              id={`achievementDescription-${index}`}
+                              value={achievement.description || ""}
+                              onChange={(e) => {
+                                const newAchievements = [
+                                  ...(cvData.education.academicAchievements ||
+                                    []),
+                                ];
+                                newAchievements[index] = {
+                                  ...achievement,
+                                  description: e.target.value,
+                                };
+                                handleEducationChange(
+                                  "academicAchievements",
+                                  newAchievements
+                                );
+                              }}
+                              placeholder="Descripción detallada del logro académico"
+                              rows={3}
+                            />
                           </div>
                         </div>
-                        
-                        <div>
-                          <Label htmlFor={`achievementDescription-${index}`}>Descripción</Label>
-                          <Textarea
-                            id={`achievementDescription-${index}`}
-                            value={achievement.description || ""}
-                            onChange={(e) => {
-                              const newAchievements = [...(cvData.education.academicAchievements || [])];
-                              newAchievements[index] = { ...achievement, description: e.target.value };
-                              handleEducationChange("academicAchievements", newAchievements);
-                            }}
-                            placeholder="Descripción detallada del logro académico"
-                            rows={3}
-                          />
-                        </div>
-                      </div>
-                    ))}
+                      )
+                    )}
                   </div>
                 </div>
               </CardContent>
@@ -1030,9 +1311,9 @@ export function CVManager() {
 
           {/* Idiomas */}
           <Card>
-            <CardHeader 
+            <CardHeader
               className="cursor-pointer hover:bg-gray-50 transition-colors"
-              onClick={() => toggleSection('languages')}
+              onClick={() => toggleSection("languages")}
             >
               <div className="flex items-center justify-between">
                 <CardTitle className="flex items-center gap-2">
@@ -1056,7 +1337,9 @@ export function CVManager() {
                         variant="ghost"
                         size="sm"
                         onClick={() => {
-                          const newLanguages = cvData.languages?.filter((_, i) => i !== index) || [];
+                          const newLanguages =
+                            cvData.languages?.filter((_, i) => i !== index) ||
+                            [];
                           updateCVData({ languages: newLanguages });
                         }}
                         className="text-red-600 hover:text-red-700"
@@ -1064,7 +1347,7 @@ export function CVManager() {
                         <X className="h-4 w-4" />
                       </Button>
                     </div>
-                    
+
                     <div className="grid grid-cols-2 gap-3">
                       <div>
                         <Label htmlFor={`languageName-${index}`}>Idioma</Label>
@@ -1073,19 +1356,27 @@ export function CVManager() {
                           value={language.name || ""}
                           onChange={(e) => {
                             const newLanguages = [...(cvData.languages || [])];
-                            newLanguages[index] = { ...language, name: e.target.value };
+                            newLanguages[index] = {
+                              ...language,
+                              name: e.target.value,
+                            };
                             updateCVData({ languages: newLanguages });
                           }}
                           placeholder="Español"
                         />
                       </div>
                       <div>
-                        <Label htmlFor={`languageProficiency-${index}`}>Nivel</Label>
+                        <Label htmlFor={`languageProficiency-${index}`}>
+                          Nivel
+                        </Label>
                         <Select
                           value={language.proficiency || ""}
                           onValueChange={(value) => {
                             const newLanguages = [...(cvData.languages || [])];
-                            newLanguages[index] = { ...language, proficiency: value };
+                            newLanguages[index] = {
+                              ...language,
+                              proficiency: value,
+                            };
                             updateCVData({ languages: newLanguages });
                           }}
                         >
@@ -1093,10 +1384,18 @@ export function CVManager() {
                             <SelectValue placeholder="Selecciona nivel" />
                           </SelectTrigger>
                           <SelectContent>
-                            <SelectItem value="Native speaker">Hablante nativo</SelectItem>
-                            <SelectItem value="Highly proficient">Altamente competente</SelectItem>
-                            <SelectItem value="Proficient">Competente</SelectItem>
-                            <SelectItem value="Intermediate">Intermedio</SelectItem>
+                            <SelectItem value="Native speaker">
+                              Hablante nativo
+                            </SelectItem>
+                            <SelectItem value="Highly proficient">
+                              Altamente competente
+                            </SelectItem>
+                            <SelectItem value="Proficient">
+                              Competente
+                            </SelectItem>
+                            <SelectItem value="Intermediate">
+                              Intermedio
+                            </SelectItem>
                             <SelectItem value="Basic">Básico</SelectItem>
                           </SelectContent>
                         </Select>
@@ -1104,14 +1403,17 @@ export function CVManager() {
                     </div>
                   </div>
                 ))}
-                
+
                 <Button
                   variant="outline"
                   onClick={() => {
-                    const newLanguages = [...(cvData?.languages || []), {
-                      name: "",
-                      proficiency: ""
-                    }];
+                    const newLanguages = [
+                      ...(cvData?.languages || []),
+                      {
+                        name: "",
+                        proficiency: "",
+                      },
+                    ];
                     updateCVData({ languages: newLanguages });
                   }}
                   className="w-full"
@@ -1125,9 +1427,9 @@ export function CVManager() {
 
           {/* Enlaces Sociales */}
           <Card>
-            <CardHeader 
+            <CardHeader
               className="cursor-pointer hover:bg-gray-50 transition-colors"
-              onClick={() => toggleSection('socialLinks')}
+              onClick={() => toggleSection("socialLinks")}
             >
               <div className="flex items-center justify-between">
                 <CardTitle className="flex items-center gap-2">
@@ -1151,7 +1453,9 @@ export function CVManager() {
                         variant="ghost"
                         size="sm"
                         onClick={() => {
-                          const newLinks = cvData.socialLinks?.filter((_, i) => i !== index) || [];
+                          const newLinks =
+                            cvData.socialLinks?.filter((_, i) => i !== index) ||
+                            [];
                           updateCVData({ socialLinks: newLinks });
                         }}
                         className="text-red-600 hover:text-red-700"
@@ -1159,7 +1463,7 @@ export function CVManager() {
                         <X className="h-4 w-4" />
                       </Button>
                     </div>
-                    
+
                     <div className="grid grid-cols-2 gap-3">
                       <div>
                         <Label htmlFor={`platform-${index}`}>Plataforma</Label>
@@ -1200,14 +1504,17 @@ export function CVManager() {
                     </div>
                   </div>
                 ))}
-                
+
                 <Button
                   variant="outline"
                   onClick={() => {
-                    const newLinks = [...(cvData?.socialLinks || []), {
-                      platform: "",
-                      url: ""
-                    }];
+                    const newLinks = [
+                      ...(cvData?.socialLinks || []),
+                      {
+                        platform: "",
+                        url: "",
+                      },
+                    ];
                     updateCVData({ socialLinks: newLinks });
                   }}
                   className="w-full"
@@ -1221,9 +1528,9 @@ export function CVManager() {
 
           {/* Experiencia Laboral */}
           <Card>
-            <CardHeader 
+            <CardHeader
               className="cursor-pointer hover:bg-gray-50 transition-colors"
-              onClick={() => toggleSection('workExperience')}
+              onClick={() => toggleSection("workExperience")}
             >
               <div className="flex items-center justify-between">
                 <CardTitle className="flex items-center gap-2">
@@ -1247,7 +1554,10 @@ export function CVManager() {
                         variant="ghost"
                         size="sm"
                         onClick={() => {
-                          const newExperience = cvData.workExperience?.filter((_, i) => i !== index) || [];
+                          const newExperience =
+                            cvData.workExperience?.filter(
+                              (_, i) => i !== index
+                            ) || [];
                           updateCVData({ workExperience: newExperience });
                         }}
                         className="text-red-600 hover:text-red-700"
@@ -1255,7 +1565,7 @@ export function CVManager() {
                         <X className="h-4 w-4" />
                       </Button>
                     </div>
-                    
+
                     <div className="grid grid-cols-2 gap-3">
                       <div>
                         <Label htmlFor={`jobTitle-${index}`}>Puesto</Label>
@@ -1263,8 +1573,13 @@ export function CVManager() {
                           id={`jobTitle-${index}`}
                           value={experience.jobTitle || ""}
                           onChange={(e) => {
-                            const newExperience = [...(cvData.workExperience || [])];
-                            newExperience[index] = { ...experience, jobTitle: e.target.value };
+                            const newExperience = [
+                              ...(cvData.workExperience || []),
+                            ];
+                            newExperience[index] = {
+                              ...experience,
+                              jobTitle: e.target.value,
+                            };
                             updateCVData({ workExperience: newExperience });
                           }}
                           placeholder="Desarrollador Frontend"
@@ -1276,25 +1591,37 @@ export function CVManager() {
                           id={`company-${index}`}
                           value={experience.company || ""}
                           onChange={(e) => {
-                            const newExperience = [...(cvData.workExperience || [])];
-                            newExperience[index] = { ...experience, company: e.target.value };
+                            const newExperience = [
+                              ...(cvData.workExperience || []),
+                            ];
+                            newExperience[index] = {
+                              ...experience,
+                              company: e.target.value,
+                            };
                             updateCVData({ workExperience: newExperience });
                           }}
                           placeholder="TechCorp Bolivia"
                         />
                       </div>
                     </div>
-                    
+
                     <div className="grid grid-cols-2 gap-3">
                       <div>
-                        <Label htmlFor={`startDate-${index}`}>Fecha de Inicio</Label>
+                        <Label htmlFor={`startDate-${index}`}>
+                          Fecha de Inicio
+                        </Label>
                         <Input
                           id={`startDate-${index}`}
                           type="month"
                           value={experience.startDate || ""}
                           onChange={(e) => {
-                            const newExperience = [...(cvData.workExperience || [])];
-                            newExperience[index] = { ...experience, startDate: e.target.value };
+                            const newExperience = [
+                              ...(cvData.workExperience || []),
+                            ];
+                            newExperience[index] = {
+                              ...experience,
+                              startDate: e.target.value,
+                            };
                             updateCVData({ workExperience: newExperience });
                           }}
                         />
@@ -1306,22 +1633,34 @@ export function CVManager() {
                           type="month"
                           value={experience.endDate || ""}
                           onChange={(e) => {
-                            const newExperience = [...(cvData.workExperience || [])];
-                            newExperience[index] = { ...experience, endDate: e.target.value };
+                            const newExperience = [
+                              ...(cvData.workExperience || []),
+                            ];
+                            newExperience[index] = {
+                              ...experience,
+                              endDate: e.target.value,
+                            };
                             updateCVData({ workExperience: newExperience });
                           }}
                         />
                       </div>
                     </div>
-                    
+
                     <div>
-                      <Label htmlFor={`description-${index}`}>Descripción</Label>
+                      <Label htmlFor={`description-${index}`}>
+                        Descripción
+                      </Label>
                       <Textarea
                         id={`description-${index}`}
                         value={experience.description || ""}
                         onChange={(e) => {
-                          const newExperience = [...(cvData.workExperience || [])];
-                          newExperience[index] = { ...experience, description: e.target.value };
+                          const newExperience = [
+                            ...(cvData.workExperience || []),
+                          ];
+                          newExperience[index] = {
+                            ...experience,
+                            description: e.target.value,
+                          };
                           updateCVData({ workExperience: newExperience });
                         }}
                         placeholder="Desarrollo de interfaces de usuario con React y JavaScript."
@@ -1330,17 +1669,20 @@ export function CVManager() {
                     </div>
                   </div>
                 ))}
-                
+
                 <Button
                   variant="outline"
                   onClick={() => {
-                    const newExperience = [...(cvData?.workExperience || []), {
-                      jobTitle: "",
-                      company: "",
-                      startDate: "",
-                      endDate: "",
-                      description: ""
-                    }];
+                    const newExperience = [
+                      ...(cvData?.workExperience || []),
+                      {
+                        jobTitle: "",
+                        company: "",
+                        startDate: "",
+                        endDate: "",
+                        description: "",
+                      },
+                    ];
                     updateCVData({ workExperience: newExperience });
                   }}
                   className="w-full"
@@ -1354,9 +1696,9 @@ export function CVManager() {
 
           {/* Proyectos */}
           <Card>
-            <CardHeader 
+            <CardHeader
               className="cursor-pointer hover:bg-gray-50 transition-colors"
-              onClick={() => toggleSection('projects')}
+              onClick={() => toggleSection("projects")}
             >
               <div className="flex items-center justify-between">
                 <CardTitle className="flex items-center gap-2">
@@ -1380,7 +1722,9 @@ export function CVManager() {
                         variant="ghost"
                         size="sm"
                         onClick={() => {
-                          const newProjects = cvData.projects?.filter((_, i) => i !== index) || [];
+                          const newProjects =
+                            cvData.projects?.filter((_, i) => i !== index) ||
+                            [];
                           updateCVData({ projects: newProjects });
                         }}
                         className="text-red-600 hover:text-red-700"
@@ -1388,73 +1732,98 @@ export function CVManager() {
                         <X className="h-4 w-4" />
                       </Button>
                     </div>
-                    
+
                     <div className="grid grid-cols-2 gap-3">
                       <div>
-                        <Label htmlFor={`projectTitle-${index}`}>Título del Proyecto</Label>
+                        <Label htmlFor={`projectTitle-${index}`}>
+                          Título del Proyecto
+                        </Label>
                         <Input
                           id={`projectTitle-${index}`}
                           value={project.title || ""}
                           onChange={(e) => {
                             const newProjects = [...(cvData.projects || [])];
-                            newProjects[index] = { ...project, title: e.target.value };
+                            newProjects[index] = {
+                              ...project,
+                              title: e.target.value,
+                            };
                             updateCVData({ projects: newProjects });
                           }}
                           placeholder="ACTUARIUS Mobile Application"
                         />
                       </div>
                       <div>
-                        <Label htmlFor={`projectLocation-${index}`}>Ubicación</Label>
+                        <Label htmlFor={`projectLocation-${index}`}>
+                          Ubicación
+                        </Label>
                         <Input
                           id={`projectLocation-${index}`}
                           value={project.location || ""}
                           onChange={(e) => {
                             const newProjects = [...(cvData.projects || [])];
-                            newProjects[index] = { ...project, location: e.target.value };
+                            newProjects[index] = {
+                              ...project,
+                              location: e.target.value,
+                            };
                             updateCVData({ projects: newProjects });
                           }}
                           placeholder="Querétaro"
                         />
                       </div>
                     </div>
-                    
+
                     <div className="grid grid-cols-2 gap-3">
                       <div>
-                        <Label htmlFor={`projectStartDate-${index}`}>Fecha de Inicio</Label>
+                        <Label htmlFor={`projectStartDate-${index}`}>
+                          Fecha de Inicio
+                        </Label>
                         <Input
                           id={`projectStartDate-${index}`}
                           type="month"
                           value={project.startDate || ""}
                           onChange={(e) => {
                             const newProjects = [...(cvData.projects || [])];
-                            newProjects[index] = { ...project, startDate: e.target.value };
+                            newProjects[index] = {
+                              ...project,
+                              startDate: e.target.value,
+                            };
                             updateCVData({ projects: newProjects });
                           }}
                         />
                       </div>
                       <div>
-                        <Label htmlFor={`projectEndDate-${index}`}>Fecha de Fin</Label>
+                        <Label htmlFor={`projectEndDate-${index}`}>
+                          Fecha de Fin
+                        </Label>
                         <Input
                           id={`projectEndDate-${index}`}
                           type="month"
                           value={project.endDate || ""}
                           onChange={(e) => {
                             const newProjects = [...(cvData.projects || [])];
-                            newProjects[index] = { ...project, endDate: e.target.value };
+                            newProjects[index] = {
+                              ...project,
+                              endDate: e.target.value,
+                            };
                             updateCVData({ projects: newProjects });
                           }}
                         />
                       </div>
                     </div>
-                    
+
                     <div>
-                      <Label htmlFor={`projectDescription-${index}`}>Descripción</Label>
+                      <Label htmlFor={`projectDescription-${index}`}>
+                        Descripción
+                      </Label>
                       <Textarea
                         id={`projectDescription-${index}`}
                         value={project.description || ""}
                         onChange={(e) => {
                           const newProjects = [...(cvData.projects || [])];
-                          newProjects[index] = { ...project, description: e.target.value };
+                          newProjects[index] = {
+                            ...project,
+                            description: e.target.value,
+                          };
                           updateCVData({ projects: newProjects });
                         }}
                         placeholder="Desarrollo de aplicación móvil para gestión de seguros."
@@ -1463,17 +1832,20 @@ export function CVManager() {
                     </div>
                   </div>
                 ))}
-                
+
                 <Button
                   variant="outline"
                   onClick={() => {
-                    const newProjects = [...(cvData?.projects || []), {
-                      title: "",
-                      location: "",
-                      startDate: "",
-                      endDate: "",
-                      description: ""
-                    }];
+                    const newProjects = [
+                      ...(cvData?.projects || []),
+                      {
+                        title: "",
+                        location: "",
+                        startDate: "",
+                        endDate: "",
+                        description: "",
+                      },
+                    ];
                     updateCVData({ projects: newProjects });
                   }}
                   className="w-full"
@@ -1487,9 +1859,9 @@ export function CVManager() {
 
           {/* Habilidades */}
           <Card>
-            <CardHeader 
+            <CardHeader
               className="cursor-pointer hover:bg-gray-50 transition-colors"
-              onClick={() => toggleSection('skills')}
+              onClick={() => toggleSection("skills")}
             >
               <div className="flex items-center justify-between">
                 <CardTitle className="flex items-center gap-2">
@@ -1510,22 +1882,24 @@ export function CVManager() {
                     value={newSkill}
                     onChange={(e) => setNewSkill(e.target.value)}
                     placeholder="Nueva habilidad"
-                    onKeyPress={(e) => e.key === 'Enter' && addSkill()}
+                    onKeyPress={(e) => e.key === "Enter" && addSkill()}
                   />
                   <Button onClick={addSkill} size="sm">
                     <Plus className="h-4 w-4" />
                   </Button>
                 </div>
-                
+
                 <div className="flex flex-wrap gap-2">
                   {cvData?.skills?.map((skill, index) => (
                     <Badge key={index} variant="secondary" className="gap-1">
                       {skill.name}
                       {skill.experienceLevel && (
-                        <span className="text-xs">({skill.experienceLevel})</span>
+                        <span className="text-xs">
+                          ({skill.experienceLevel})
+                        </span>
                       )}
-                      <X 
-                        className="h-3 w-3 cursor-pointer" 
+                      <X
+                        className="h-3 w-3 cursor-pointer"
                         onClick={() => removeSkill(skill.name)}
                       />
                     </Badge>
@@ -1537,9 +1911,9 @@ export function CVManager() {
 
           {/* Intereses */}
           <Card>
-            <CardHeader 
+            <CardHeader
               className="cursor-pointer hover:bg-gray-50 transition-colors"
-              onClick={() => toggleSection('interests')}
+              onClick={() => toggleSection("interests")}
             >
               <div className="flex items-center justify-between">
                 <CardTitle className="flex items-center gap-2">
@@ -1560,19 +1934,19 @@ export function CVManager() {
                     value={newInterest}
                     onChange={(e) => setNewInterest(e.target.value)}
                     placeholder="Nuevo interés"
-                    onKeyPress={(e) => e.key === 'Enter' && addInterest()}
+                    onKeyPress={(e) => e.key === "Enter" && addInterest()}
                   />
                   <Button onClick={addInterest} size="sm">
                     <Plus className="h-4 w-4" />
                   </Button>
                 </div>
-                
+
                 <div className="flex flex-wrap gap-2">
                   {cvData?.interests?.map((interest, index) => (
                     <Badge key={index} variant="outline" className="gap-1">
                       {interest}
-                      <X 
-                        className="h-3 w-3 cursor-pointer" 
+                      <X
+                        className="h-3 w-3 cursor-pointer"
                         onClick={() => removeInterest(interest)}
                       />
                     </Badge>
@@ -1599,8 +1973,8 @@ export function CVManager() {
         </CardHeader>
         <CardContent>
           <div className="flex flex-wrap gap-4">
-            <Button 
-              variant="outline" 
+            <Button
+              variant="outline"
               className="gap-2"
               onClick={() => {
                 setActiveTab("cv");
@@ -1612,8 +1986,8 @@ export function CVManager() {
               <Printer className="h-4 w-4" />
               Imprimir CV
             </Button>
-            <Button 
-              variant="outline" 
+            <Button
+              variant="outline"
               className="gap-2"
               onClick={() => {
                 setActiveTab("cover-letter");
@@ -1625,13 +1999,15 @@ export function CVManager() {
               <Printer className="h-4 w-4" />
               Imprimir Carta
             </Button>
-            <Button 
-              variant="outline" 
+            <Button
+              variant="outline"
               className="gap-2"
               onClick={() => {
                 setActiveTab("cv");
                 setTimeout(() => {
-                  const downloadBtn = document.querySelector('[data-cv-download]') as HTMLButtonElement;
+                  const downloadBtn = document.querySelector(
+                    "[data-cv-download]"
+                  ) as HTMLButtonElement;
                   if (downloadBtn) downloadBtn.click();
                 }, 100);
               }}
@@ -1639,13 +2015,15 @@ export function CVManager() {
               <Download className="h-4 w-4" />
               Descargar CV PDF
             </Button>
-            <Button 
-              variant="outline" 
+            <Button
+              variant="outline"
               className="gap-2"
               onClick={() => {
                 setActiveTab("cover-letter");
                 setTimeout(() => {
-                  const downloadBtn = document.querySelector('[data-cover-letter-download]') as HTMLButtonElement;
+                  const downloadBtn = document.querySelector(
+                    "[data-cover-letter-download]"
+                  ) as HTMLButtonElement;
                   if (downloadBtn) downloadBtn.click();
                 }, 100);
               }}
@@ -1653,20 +2031,25 @@ export function CVManager() {
               <Download className="h-4 w-4" />
               Descargar Carta PDF
             </Button>
-            <Button 
+            <Button
               className="gap-2"
               onClick={() => {
                 // Download both CV and cover letter
                 setActiveTab("cv");
                 setTimeout(() => {
-                  const cvDownloadBtn = document.querySelector('[data-cv-download]') as HTMLButtonElement;
+                  const cvDownloadBtn = document.querySelector(
+                    "[data-cv-download]"
+                  ) as HTMLButtonElement;
                   if (cvDownloadBtn) cvDownloadBtn.click();
-                  
+
                   setTimeout(() => {
                     setActiveTab("cover-letter");
                     setTimeout(() => {
-                      const coverLetterDownloadBtn = document.querySelector('[data-cover-letter-download]') as HTMLButtonElement;
-                      if (coverLetterDownloadBtn) coverLetterDownloadBtn.click();
+                      const coverLetterDownloadBtn = document.querySelector(
+                        "[data-cover-letter-download]"
+                      ) as HTMLButtonElement;
+                      if (coverLetterDownloadBtn)
+                        coverLetterDownloadBtn.click();
                     }, 100);
                   }, 1000);
                 }, 100);

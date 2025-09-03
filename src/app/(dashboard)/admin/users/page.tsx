@@ -1,8 +1,6 @@
 "use client";
 
-import type React from "react";
-
-import { useState } from "react";
+import React, { useState, useEffect } from "react";
 import {
   Plus,
   MoreVertical,
@@ -69,11 +67,22 @@ import {
 } from "@/components/ui/alert-dialog";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { useProfilesByRole } from "@/hooks/useProfileApi";
+import {
+  useProfilesByRole,
+  useCreateProfile,
+  useUpdateProfile,
+  useDeleteProfile,
+} from "@/hooks/useProfileApi";
 import { Profile } from "@/types/profile";
+import { useToast } from "@/components/ui/use-toast";
 
 export default function StudentsManagementPage() {
-  const { data: students, loading } = useProfilesByRole("YOUTH");
+  const { data: students, loading, error } = useProfilesByRole("YOUTH");
+  const createProfile = useCreateProfile();
+  const updateProfile = useUpdateProfile();
+  const deleteProfile = useDeleteProfile();
+  const { toast } = useToast();
+
   const [searchTerm, setSearchTerm] = useState("");
   const [educationFilter, setEducationFilter] = useState("all");
   const [statusFilter, setStatusFilter] = useState("all");
@@ -83,14 +92,40 @@ export default function StudentsManagementPage() {
   const [selectedStudent, setSelectedStudent] = useState<Profile | null>(null);
   const [successDialogOpen, setSuccessDialogOpen] = useState(false);
 
-  const [stats] = useState({
-    total: 0,
-    active: 0,
-    inactive: 0,
-    pending: 0,
-    totalStudents: 0,
-    averageCompletion: 0,
-  });
+  // Calculate real stats from data
+  const stats = React.useMemo(() => {
+    if (!students)
+      return {
+        total: 0,
+        active: 0,
+        inactive: 0,
+        pending: 0,
+        totalStudents: 0,
+        averageCompletion: 0,
+      };
+
+    const total = students.length;
+    const active = students.filter((s) => s.status === "ACTIVE").length;
+    const inactive = students.filter((s) => s.status === "INACTIVE").length;
+    const pending = students.filter((s) => s.status === "PENDING").length;
+    const totalStudents = total;
+    const averageCompletion =
+      total > 0
+        ? Math.round(
+            students.reduce((sum, s) => sum + (s.profileCompletion || 0), 0) /
+              total
+          )
+        : 0;
+
+    return {
+      total,
+      active,
+      inactive,
+      pending,
+      totalStudents,
+      averageCompletion,
+    };
+  }, [students]);
 
   // Form state for create/edit
   const [formData, setFormData] = useState<Partial<Profile>>({
@@ -103,8 +138,8 @@ export default function StudentsManagementPage() {
     department: "",
     country: "Bolivia",
     birthDate: undefined,
-    gender: "",
-    educationLevel: "",
+    gender: undefined,
+    educationLevel: undefined,
     currentInstitution: "",
     graduationYear: undefined,
     isStudying: false,
@@ -148,8 +183,8 @@ export default function StudentsManagementPage() {
       department: "",
       country: "Bolivia",
       birthDate: undefined,
-      gender: "",
-      educationLevel: "",
+      gender: undefined,
+      educationLevel: undefined,
       currentInstitution: "",
       graduationYear: undefined,
       isStudying: false,
@@ -175,49 +210,36 @@ export default function StudentsManagementPage() {
         !formData.country ||
         !formData.status
       ) {
-        // Show error toast or handle incomplete data
+        toast({
+          title: "Error",
+          description: "Por favor complete todos los campos requeridos",
+          variant: "destructive",
+        });
         return;
       }
 
-      const newStudent: Profile = {
-        id: Date.now().toString(),
-        userId: Date.now().toString(),
-        firstName: formData.firstName,
-        lastName: formData.lastName,
-        email: formData.email,
-        avatarUrl: formData.avatarUrl || "/placeholder.svg",
-        phone: formData.phone,
-        address: formData.address,
-        municipality: formData.municipality,
-        department: formData.department,
-        country: formData.country,
-        birthDate: formData.birthDate,
-        gender: formData.gender,
-        educationLevel: formData.educationLevel,
-        currentInstitution: formData.currentInstitution,
-        graduationYear: formData.graduationYear,
-        isStudying: formData.isStudying || false,
-        skills: formData.skills || [],
-        interests: formData.interests || [],
-        status: formData.status,
-        profileCompletion: formData.profileCompletion || 0,
-        createdAt: new Date(),
-        updatedAt: new Date(),
+      const newStudentData = {
+        ...formData,
+        role: "YOUTH" as const,
+        active: true,
       };
 
-      console.log("Creating student:", newStudent);
+      await createProfile.create(newStudentData);
 
-      // Aquí iría la lógica para guardar el estudiante (API o localStorage)
-      // Por ahora lo dejamos simulado
-
-      setShowCreateDialog(false); // cierra el modal de creación
+      setShowCreateDialog(false);
       resetForm();
-      setSuccessDialogOpen(true); // abre el modal de éxito
-      setTimeout(() => {
-        setShowCreateDialog(true);
-      }, 200);
+      setSuccessDialogOpen(true);
+      toast({
+        title: "Éxito",
+        description: "Estudiante creado exitosamente",
+      });
     } catch (error) {
       console.error("Error creating student:", error);
+      toast({
+        title: "Error",
+        description: "Error al crear el estudiante",
+        variant: "destructive",
+      });
     }
   };
 
@@ -230,28 +252,51 @@ export default function StudentsManagementPage() {
 
   const handleUpdate = async () => {
     try {
-      const updatedStudent = {
+      if (!selectedStudent?.id) return;
+
+      const updatedStudentData = {
         ...formData,
-        id: selectedStudent?.id,
         updatedAt: new Date(),
       };
 
-      console.log("Updating student:", updatedStudent);
+      await updateProfile.update(selectedStudent.id, updatedStudentData);
+
       setShowEditDialog(false);
       setSelectedStudent(null);
       resetForm();
+      toast({
+        title: "Éxito",
+        description: "Estudiante actualizado exitosamente",
+      });
     } catch (error) {
       console.error("Error updating student:", error);
+      toast({
+        title: "Error",
+        description: "Error al actualizar el estudiante",
+        variant: "destructive",
+      });
     }
   };
 
   const handleDelete = async () => {
     try {
-      console.log("Deleting student:", selectedStudent?.id);
+      if (!selectedStudent?.id) return;
+
+      await deleteProfile.remove(selectedStudent.id);
+
       setShowDeleteDialog(false);
       setSelectedStudent(null);
+      toast({
+        title: "Éxito",
+        description: "Estudiante eliminado exitosamente",
+      });
     } catch (error) {
       console.error("Error deleting student:", error);
+      toast({
+        title: "Error",
+        description: "Error al eliminar el estudiante",
+        variant: "destructive",
+      });
     }
   };
 
@@ -281,21 +326,62 @@ export default function StudentsManagementPage() {
     }
   };
 
-  const filteredStudents = (students || []).filter((student) => {
-    if (!student) return false;
+  // Enhanced filtering with real data
+  const filteredStudents = React.useMemo(() => {
+    if (!students) return [];
 
-    const searchLower = (searchTerm || "").toLowerCase();
-    const studentName =
-      `${student.firstName || ""} ${student.lastName || ""}`.toLowerCase();
-    const studentEmail = (student.email || "").toLowerCase();
-    const studentMunicipality = (student.municipality || "").toLowerCase();
+    return students.filter((student) => {
+      if (!student) return false;
 
+      const searchLower = (searchTerm || "").toLowerCase();
+      const studentName =
+        `${student.firstName || ""} ${student.lastName || ""}`.toLowerCase();
+      const studentEmail = (student.email || "").toLowerCase();
+      const studentMunicipality = (student.municipality || "").toLowerCase();
+
+      const matchesSearch =
+        studentName.includes(searchLower) ||
+        studentEmail.includes(searchLower) ||
+        studentMunicipality.includes(searchLower);
+
+      const matchesEducation =
+        educationFilter === "all" || student.educationLevel === educationFilter;
+
+      const matchesStatus =
+        statusFilter === "all" ||
+        student.status?.toLowerCase() === statusFilter.toLowerCase();
+
+      return matchesSearch && matchesEducation && matchesStatus;
+    });
+  }, [students, searchTerm, educationFilter, statusFilter]);
+
+  // Show error if data loading fails
+  if (error) {
     return (
-      studentName.includes(searchLower) ||
-      studentEmail.includes(searchLower) ||
-      studentMunicipality.includes(searchLower)
+      <div className="space-y-6">
+        <div className="flex justify-between items-center">
+          <div>
+            <h1 className="text-3xl font-bold">Gestión de Estudiantes</h1>
+            <p className="text-muted-foreground">
+              Administra todos los estudiantes registrados en la plataforma
+            </p>
+          </div>
+        </div>
+        <Card>
+          <CardContent className="pt-6">
+            <div className="text-center py-8">
+              <p className="text-red-600">
+                Error al cargar los datos: {error.message}
+              </p>
+              <Button onClick={() => window.location.reload()} className="mt-4">
+                Reintentar
+              </Button>
+            </div>
+          </CardContent>
+        </Card>
+      </div>
     );
-  });
+  }
 
   return (
     <div className="space-y-6">
@@ -461,7 +547,7 @@ export default function StudentsManagementPage() {
                       onValueChange={(value) =>
                         setFormData({
                           ...formData,
-                          status: value as Student["status"],
+                          status: value as Profile["status"],
                         })
                       }
                     >
@@ -484,7 +570,10 @@ export default function StudentsManagementPage() {
                       <Select
                         value={formData.educationLevel}
                         onValueChange={(value) =>
-                          setFormData({ ...formData, educationLevel: value })
+                          setFormData({
+                            ...formData,
+                            educationLevel: value as any,
+                          })
                         }
                       >
                         <SelectTrigger>
@@ -677,9 +766,13 @@ export default function StudentsManagementPage() {
                 </Button>
                 <Button
                   onClick={handleCreate}
-                  disabled={!formData.firstName || !formData.lastName}
+                  disabled={
+                    !formData.firstName ||
+                    !formData.lastName ||
+                    createProfile.loading
+                  }
                 >
-                  Crear Estudiante
+                  {createProfile.loading ? "Creando..." : "Crear Estudiante"}
                 </Button>
               </div>
             </DialogContent>
@@ -790,9 +883,9 @@ export default function StudentsManagementPage() {
               </SelectTrigger>
               <SelectContent>
                 <SelectItem value="all">Todos los estados</SelectItem>
-                <SelectItem value="active">Activas</SelectItem>
-                <SelectItem value="pending">Pendientes</SelectItem>
-                <SelectItem value="inactive">Inactivas</SelectItem>
+                <SelectItem value="ACTIVE">Activas</SelectItem>
+                <SelectItem value="PENDING">Pendientes</SelectItem>
+                <SelectItem value="INACTIVE">Inactivas</SelectItem>
               </SelectContent>
             </Select>
           </div>
@@ -815,20 +908,28 @@ export default function StudentsManagementPage() {
                 <TableHead>Educación</TableHead>
                 <TableHead>Ubicación</TableHead>
                 <TableHead>Estado</TableHead>
+                <TableHead>Completitud</TableHead>
                 <TableHead>Acciones</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
               {loading ? (
                 <TableRow>
-                  <TableCell colSpan={5} className="text-center py-8">
-                    Cargando estudiantes...
+                  <TableCell colSpan={6} className="text-center py-8">
+                    <div className="flex items-center justify-center gap-2">
+                      <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-gray-900"></div>
+                      Cargando estudiantes...
+                    </div>
                   </TableCell>
                 </TableRow>
               ) : filteredStudents?.length === 0 ? (
                 <TableRow>
-                  <TableCell colSpan={5} className="text-center py-8">
-                    No se encontraron estudiantes
+                  <TableCell colSpan={6} className="text-center py-8">
+                    {searchTerm ||
+                    educationFilter !== "all" ||
+                    statusFilter !== "all"
+                      ? "No se encontraron estudiantes con los filtros aplicados"
+                      : "No hay estudiantes registrados"}
                   </TableCell>
                 </TableRow>
               ) : (
@@ -875,6 +976,21 @@ export default function StudentsManagementPage() {
                       <Badge className={getStatusColor(student.status)}>
                         {getStatusText(student.status)}
                       </Badge>
+                    </TableCell>
+                    <TableCell>
+                      <div className="flex items-center gap-2">
+                        <div className="w-16 bg-gray-200 rounded-full h-2">
+                          <div
+                            className="bg-blue-600 h-2 rounded-full"
+                            style={{
+                              width: `${student.profileCompletion || 0}%`,
+                            }}
+                          ></div>
+                        </div>
+                        <span className="text-sm text-muted-foreground">
+                          {student.profileCompletion || 0}%
+                        </span>
+                      </div>
                     </TableCell>
                     <TableCell>
                       <DropdownMenu>
@@ -1005,7 +1121,11 @@ export default function StudentsManagementPage() {
             >
               Cancelar
             </Button>
-            <Button onClick={handleUpdate}>Actualizar Estudiante</Button>
+            <Button onClick={handleUpdate} disabled={updateProfile.loading}>
+              {updateProfile.loading
+                ? "Actualizando..."
+                : "Actualizar Estudiante"}
+            </Button>
           </div>
         </DialogContent>
       </Dialog>
@@ -1028,8 +1148,9 @@ export default function StudentsManagementPage() {
             <AlertDialogAction
               onClick={handleDelete}
               className="bg-red-600 hover:bg-red-700"
+              disabled={deleteProfile.loading}
             >
-              Eliminar
+              {deleteProfile.loading ? "Eliminando..." : "Eliminar"}
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>
@@ -1038,9 +1159,9 @@ export default function StudentsManagementPage() {
       <Dialog open={successDialogOpen} onOpenChange={setSuccessDialogOpen}>
         <DialogContent>
           <DialogHeader>
-            <DialogTitle>¡Empresa creada!</DialogTitle>
+            <DialogTitle>¡Estudiante creado!</DialogTitle>
             <DialogDescription>
-              La empresa fue registrada exitosamente en el sistema.
+              El estudiante fue registrado exitosamente en el sistema.
             </DialogDescription>
           </DialogHeader>
           <div className="flex justify-end">

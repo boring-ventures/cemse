@@ -10,6 +10,7 @@ import { Building2, MapPin, User, Copy, Check } from "lucide-react";
 import { useCurrentMunicipalityByUsername } from "@/hooks/useMunicipalityByUsername";
 import { useCurrentMunicipality } from "@/hooks/useMunicipalityApi";
 import type { Municipality } from "@/types/municipality";
+import { copyToClipboard } from "@/lib/utils";
 
 interface MunicipalityIdentifierDisplayProps {
   municipality?: Municipality;
@@ -30,14 +31,17 @@ export function MunicipalityIdentifierDisplay({
   const currentMunicipality =
     municipality || municipalityById || municipalityByUsername;
 
-  const copyToClipboard = async (text: string, field: string) => {
-    try {
-      await navigator.clipboard.writeText(text);
-      setCopiedField(field);
-      setTimeout(() => setCopiedField(null), 2000);
-    } catch (error) {
-      console.error("Failed to copy to clipboard:", error);
-    }
+  const copyToClipboardHandler = async (text: string, field: string) => {
+    const success = await copyToClipboard(
+      text,
+      () => {
+        setCopiedField(field);
+        setTimeout(() => setCopiedField(null), 2000);
+      },
+      (errorMessage) => {
+        console.error("Failed to copy to clipboard:", errorMessage);
+      }
+    );
   };
 
   if (!currentMunicipality) {
@@ -98,7 +102,9 @@ export function MunicipalityIdentifierDisplay({
               <Button
                 variant="outline"
                 size="sm"
-                onClick={() => copyToClipboard(currentMunicipality.id, "id")}
+                onClick={() =>
+                  copyToClipboardHandler(currentMunicipality.id, "id")
+                }
               >
                 {copiedField === "id" ? (
                   <Check className="h-4 w-4 text-green-600" />
@@ -125,7 +131,10 @@ export function MunicipalityIdentifierDisplay({
                   variant="outline"
                   size="sm"
                   onClick={() =>
-                    copyToClipboard(currentMunicipality.username, "username")
+                    copyToClipboardHandler(
+                      currentMunicipality.username,
+                      "username"
+                    )
                   }
                 >
                   {copiedField === "username" ? (

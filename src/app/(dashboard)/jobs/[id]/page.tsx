@@ -39,6 +39,7 @@ import { JobApplicationService } from "@/services/job-application.service";
 import { useToast } from "@/hooks/use-toast";
 import { useJobOffer } from "@/hooks/useJobOfferApi";
 import { CheckCircle, XCircle, Loader2 } from "lucide-react";
+import { copyToClipboard } from "@/lib/utils";
 
 export default function JobDetailPage() {
   const [isSaved, setIsSaved] = useState(false);
@@ -287,7 +288,15 @@ export default function JobDetailPage() {
         url: window.location.href,
       });
     } else {
-      navigator.clipboard.writeText(window.location.href);
+      copyToClipboard(
+        window.location.href,
+        () => {
+          // Success callback - could add toast here if needed
+        },
+        (errorMessage) => {
+          console.error("Failed to copy job URL:", errorMessage);
+        }
+      );
       // TODO: Mostrar notificación toast
     }
   };

@@ -54,6 +54,7 @@ import {
 } from "lucide-react";
 import { useModuleCertificates } from "@/hooks/useModuleCertificateApi";
 import { toast } from "sonner";
+import { copyToClipboard } from "@/lib/utils";
 
 export default function CourseCertificatesPage() {
   const params = useParams();
@@ -147,15 +148,19 @@ export default function CourseCertificatesPage() {
 
   // Filter certificates
   const filteredCertificates = mockCertificates.filter((cert) => {
-    const matchesSearch = 
+    const matchesSearch =
       cert.studentName.toLowerCase().includes(searchQuery.toLowerCase()) ||
       cert.studentEmail.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      (cert.moduleTitle && cert.moduleTitle.toLowerCase().includes(searchQuery.toLowerCase())) ||
-      (cert.courseTitle && cert.courseTitle.toLowerCase().includes(searchQuery.toLowerCase()));
-    
-    const matchesModule = moduleFilter === "all" || cert.moduleId === moduleFilter;
-    const matchesStatus = statusFilter === "all" || cert.status === statusFilter;
-    
+      (cert.moduleTitle &&
+        cert.moduleTitle.toLowerCase().includes(searchQuery.toLowerCase())) ||
+      (cert.courseTitle &&
+        cert.courseTitle.toLowerCase().includes(searchQuery.toLowerCase()));
+
+    const matchesModule =
+      moduleFilter === "all" || cert.moduleId === moduleFilter;
+    const matchesStatus =
+      statusFilter === "all" || cert.status === statusFilter;
+
     return matchesSearch && matchesModule && matchesStatus;
   });
 
@@ -174,22 +179,51 @@ export default function CourseCertificatesPage() {
 
   const getGradeBadge = (grade: number | null) => {
     if (!grade) return <Badge variant="outline">Sin calificación</Badge>;
-    
-    if (grade >= 90) return <Badge variant="default" className="bg-green-600">Excelente ({grade}%)</Badge>;
-    if (grade >= 80) return <Badge variant="default" className="bg-blue-600">Muy Bueno ({grade}%)</Badge>;
-    if (grade >= 70) return <Badge variant="default" className="bg-yellow-600">Bueno ({grade}%)</Badge>;
-    return <Badge variant="default" className="bg-orange-600">Aprobado ({grade}%)</Badge>;
+
+    if (grade >= 90)
+      return (
+        <Badge variant="default" className="bg-green-600">
+          Excelente ({grade}%)
+        </Badge>
+      );
+    if (grade >= 80)
+      return (
+        <Badge variant="default" className="bg-blue-600">
+          Muy Bueno ({grade}%)
+        </Badge>
+      );
+    if (grade >= 70)
+      return (
+        <Badge variant="default" className="bg-yellow-600">
+          Bueno ({grade}%)
+        </Badge>
+      );
+    return (
+      <Badge variant="default" className="bg-orange-600">
+        Aprobado ({grade}%)
+      </Badge>
+    );
   };
 
   const getCertificateStats = () => {
     const totalCertificates = mockCertificates.length;
-    const issuedCertificates = mockCertificates.filter(c => c.status === "issued").length;
-    const pendingCertificates = mockCertificates.filter(c => c.status === "pending").length;
-    const moduleCertificates = mockCertificates.filter(c => c.certificateType === "module").length;
-    const courseCertificates = mockCertificates.filter(c => c.certificateType === "course").length;
-    const averageGrade = mockCertificates
-      .filter(c => c.grade !== null)
-      .reduce((acc, c) => acc + (c.grade || 0), 0) / mockCertificates.filter(c => c.grade !== null).length;
+    const issuedCertificates = mockCertificates.filter(
+      (c) => c.status === "issued"
+    ).length;
+    const pendingCertificates = mockCertificates.filter(
+      (c) => c.status === "pending"
+    ).length;
+    const moduleCertificates = mockCertificates.filter(
+      (c) => c.certificateType === "module"
+    ).length;
+    const courseCertificates = mockCertificates.filter(
+      (c) => c.certificateType === "course"
+    ).length;
+    const averageGrade =
+      mockCertificates
+        .filter((c) => c.grade !== null)
+        .reduce((acc, c) => acc + (c.grade || 0), 0) /
+      mockCertificates.filter((c) => c.grade !== null).length;
 
     return {
       totalCertificates,
@@ -203,13 +237,16 @@ export default function CourseCertificatesPage() {
 
   const stats = getCertificateStats();
 
-  const handleDownloadCertificate = (certificateUrl: string, studentName: string) => {
+  const handleDownloadCertificate = (
+    certificateUrl: string,
+    studentName: string
+  ) => {
     // In real implementation, this would trigger a download
     toast.success(`Descargando certificado de ${studentName}`);
   };
 
   const handleViewCertificate = (certificateUrl: string) => {
-    window.open(certificateUrl, '_blank');
+    window.open(certificateUrl, "_blank");
   };
 
   const handleGenerateCertificate = (certificateId: string) => {
@@ -256,20 +293,25 @@ export default function CourseCertificatesPage() {
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Total Certificados</CardTitle>
+            <CardTitle className="text-sm font-medium">
+              Total Certificados
+            </CardTitle>
             <GraduationCap className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold">{stats.totalCertificates}</div>
             <p className="text-xs text-muted-foreground">
-              {stats.issuedCertificates} emitidos, {stats.pendingCertificates} pendientes
+              {stats.issuedCertificates} emitidos, {stats.pendingCertificates}{" "}
+              pendientes
             </p>
           </CardContent>
         </Card>
 
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Certificados de Módulos</CardTitle>
+            <CardTitle className="text-sm font-medium">
+              Certificados de Módulos
+            </CardTitle>
             <Award className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
@@ -282,7 +324,9 @@ export default function CourseCertificatesPage() {
 
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Certificados de Curso</CardTitle>
+            <CardTitle className="text-sm font-medium">
+              Certificados de Curso
+            </CardTitle>
             <Star className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
@@ -295,7 +339,9 @@ export default function CourseCertificatesPage() {
 
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Calificación Promedio</CardTitle>
+            <CardTitle className="text-sm font-medium">
+              Calificación Promedio
+            </CardTitle>
             <CheckCircle className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
@@ -382,22 +428,22 @@ export default function CourseCertificatesPage() {
                     <TableCell>
                       <div>
                         <div className="font-medium">
-                          {cert.certificateType === "course" ? cert.courseTitle : cert.moduleTitle}
+                          {cert.certificateType === "course"
+                            ? cert.courseTitle
+                            : cert.moduleTitle}
                         </div>
                         <div className="text-sm text-muted-foreground">
-                          {cert.certificateType === "course" ? "Certificado de Curso" : "Certificado de Módulo"}
+                          {cert.certificateType === "course"
+                            ? "Certificado de Curso"
+                            : "Certificado de Módulo"}
                         </div>
                         <div className="text-xs text-muted-foreground">
                           ID: {cert.id}
                         </div>
                       </div>
                     </TableCell>
-                    <TableCell>
-                      {getGradeBadge(cert.grade)}
-                    </TableCell>
-                    <TableCell>
-                      {getStatusBadge(cert.status)}
-                    </TableCell>
+                    <TableCell>{getGradeBadge(cert.grade)}</TableCell>
+                    <TableCell>{getStatusBadge(cert.status)}</TableCell>
                     <TableCell>
                       {cert.issuedAt ? (
                         <div>
@@ -409,7 +455,9 @@ export default function CourseCertificatesPage() {
                           </div>
                         </div>
                       ) : (
-                        <span className="text-muted-foreground">No emitido</span>
+                        <span className="text-muted-foreground">
+                          No emitido
+                        </span>
                       )}
                     </TableCell>
                     <TableCell>
@@ -432,32 +480,72 @@ export default function CourseCertificatesPage() {
                         <DropdownMenuContent align="end">
                           {cert.certificateUrl && (
                             <>
-                              <DropdownMenuItem onClick={() => handleViewCertificate(cert.certificateUrl!)}>
+                              <DropdownMenuItem
+                                onClick={() =>
+                                  handleViewCertificate(cert.certificateUrl!)
+                                }
+                              >
                                 <Eye className="h-4 w-4 mr-2" />
                                 Ver certificado
                               </DropdownMenuItem>
-                              <DropdownMenuItem onClick={() => handleDownloadCertificate(cert.certificateUrl!, cert.studentName)}>
+                              <DropdownMenuItem
+                                onClick={() =>
+                                  handleDownloadCertificate(
+                                    cert.certificateUrl!,
+                                    cert.studentName
+                                  )
+                                }
+                              >
                                 <Download className="h-4 w-4 mr-2" />
                                 Descargar
                               </DropdownMenuItem>
-                              <DropdownMenuItem onClick={() => handleSendCertificate(cert.studentEmail, cert.studentName)}>
+                              <DropdownMenuItem
+                                onClick={() =>
+                                  handleSendCertificate(
+                                    cert.studentEmail,
+                                    cert.studentName
+                                  )
+                                }
+                              >
                                 <Mail className="h-4 w-4 mr-2" />
                                 Enviar por email
                               </DropdownMenuItem>
                             </>
                           )}
-                          {!cert.certificateUrl && cert.status === "pending" && (
-                            <DropdownMenuItem onClick={() => handleGenerateCertificate(cert.id)}>
-                              <Plus className="h-4 w-4 mr-2" />
-                              Generar certificado
-                            </DropdownMenuItem>
-                          )}
-                          <DropdownMenuItem onClick={() => navigator.clipboard.writeText(cert.id)}>
+                          {!cert.certificateUrl &&
+                            cert.status === "pending" && (
+                              <DropdownMenuItem
+                                onClick={() =>
+                                  handleGenerateCertificate(cert.id)
+                                }
+                              >
+                                <Plus className="h-4 w-4 mr-2" />
+                                Generar certificado
+                              </DropdownMenuItem>
+                            )}
+                          <DropdownMenuItem
+                            onClick={async () => {
+                              await copyToClipboard(
+                                cert.id,
+                                () => {
+                                  // Success callback - could add toast here if needed
+                                },
+                                (errorMessage) => {
+                                  console.error(
+                                    "Failed to copy certificate ID:",
+                                    errorMessage
+                                  );
+                                }
+                              );
+                            }}
+                          >
                             <Copy className="h-4 w-4 mr-2" />
                             Copiar ID
                           </DropdownMenuItem>
                           <DropdownMenuItem asChild>
-                            <Link href={`/admin/courses/${courseId}/certificates/${cert.id}/edit`}>
+                            <Link
+                              href={`/admin/courses/${courseId}/certificates/${cert.id}/edit`}
+                            >
                               <Edit className="h-4 w-4 mr-2" />
                               Editar
                             </Link>

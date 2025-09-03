@@ -22,6 +22,7 @@ import {
   Mail,
 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
+import { copyToClipboard } from "@/lib/utils";
 
 interface Credentials {
   username: string;
@@ -47,22 +48,25 @@ export function CredentialsModal({
 
   if (!credentials) return null;
 
-  const copyToClipboard = async (text: string, field: string) => {
-    try {
-      await navigator.clipboard.writeText(text);
-      setCopiedField(field);
-      toast({
-        title: "Copiado",
-        description: `${field} copiado al portapapeles`,
-      });
-      setTimeout(() => setCopiedField(null), 2000);
-    } catch {
-      toast({
-        title: "Error",
-        description: "No se pudo copiar al portapapeles",
-        variant: "destructive",
-      });
-    }
+  const copyToClipboardHandler = async (text: string, field: string) => {
+    const success = await copyToClipboard(
+      text,
+      () => {
+        setCopiedField(field);
+        toast({
+          title: "Copiado",
+          description: `${field} copiado al portapapeles`,
+        });
+        setTimeout(() => setCopiedField(null), 2000);
+      },
+      (errorMessage) => {
+        toast({
+          title: "Error",
+          description: errorMessage,
+          variant: "destructive",
+        });
+      }
+    );
   };
 
   const downloadCredentials = () => {
@@ -208,7 +212,7 @@ La contraseña no se puede recuperar una vez creada la cuenta.`;
                     variant="ghost"
                     size="sm"
                     onClick={() =>
-                      copyToClipboard(credentials.username, "Usuario")
+                      copyToClipboardHandler(credentials.username, "Usuario")
                     }
                   >
                     {copiedField === "Usuario" ? (
@@ -248,7 +252,10 @@ La contraseña no se puede recuperar una vez creada la cuenta.`;
                       variant="ghost"
                       size="sm"
                       onClick={() =>
-                        copyToClipboard(credentials.password, "Contraseña")
+                        copyToClipboardHandler(
+                          credentials.password,
+                          "Contraseña"
+                        )
                       }
                     >
                       {copiedField === "Contraseña" ? (
@@ -276,7 +283,9 @@ La contraseña no se puede recuperar una vez creada la cuenta.`;
                   <Button
                     variant="ghost"
                     size="sm"
-                    onClick={() => copyToClipboard(credentials.email, "Email")}
+                    onClick={() =>
+                      copyToClipboardHandler(credentials.email, "Email")
+                    }
                   >
                     {copiedField === "Email" ? (
                       <Check className="h-4 w-4 text-green-600" />

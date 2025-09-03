@@ -78,6 +78,7 @@ import type {
   CreateCompanyRequest,
 } from "@/services/companies.service";
 import { useToast } from "@/hooks/use-toast";
+import { copyToClipboard } from "@/lib/utils";
 
 // Utility function to generate credentials
 const generateCredentials = (companyName: string, email: string) => {
@@ -287,12 +288,23 @@ export default function CompaniesPage() {
   };
 
   // Copy credentials to clipboard
-  const copyToClipboard = (text: string, type: string) => {
-    navigator.clipboard.writeText(text);
-    toast({
-      title: "Copiado",
-      description: `${type} copiado al portapapeles`,
-    });
+  const copyToClipboardHandler = async (text: string, type: string) => {
+    await copyToClipboard(
+      text,
+      () => {
+        toast({
+          title: "Copiado",
+          description: `${type} copiado al portapapeles`,
+        });
+      },
+      (errorMessage) => {
+        toast({
+          title: "Error",
+          description: errorMessage,
+          variant: "destructive",
+        });
+      }
+    );
   };
 
   // Handlers
@@ -1479,7 +1491,7 @@ export default function CompaniesPage() {
                       variant="outline"
                       size="sm"
                       onClick={() =>
-                        copyToClipboard(
+                        copyToClipboardHandler(
                           generatedCredentials.username,
                           "Usuario"
                         )
@@ -1502,7 +1514,7 @@ export default function CompaniesPage() {
                       variant="outline"
                       size="sm"
                       onClick={() =>
-                        copyToClipboard(
+                        copyToClipboardHandler(
                           generatedCredentials.password,
                           "Contraseña"
                         )

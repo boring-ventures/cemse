@@ -233,3 +233,57 @@ export function isYouthRole(role: string | null | undefined): boolean {
   const normalizedRole = normalizeUserRole(role);
   return normalizedRole === "JOVENES" || normalizedRole === "ADOLESCENTES";
 }
+
+/**
+ * Robust copy to clipboard function with fallback support
+ * @param text - The text to copy to clipboard
+ * @param onSuccess - Optional callback for successful copy
+ * @param onError - Optional callback for copy errors
+ * @returns Promise<boolean> - True if copy was successful, false otherwise
+ */
+export async function copyToClipboard(
+  text: string,
+  onSuccess?: () => void,
+  onError?: (error: string) => void
+): Promise<boolean> {
+  try {
+    // Check if clipboard API is available and we're in a secure context
+    if (navigator.clipboard && window.isSecureContext) {
+      await navigator.clipboard.writeText(text);
+      onSuccess?.();
+      return true;
+    } else {
+      // Fallback for older browsers or non-secure contexts
+      const textArea = document.createElement("textarea");
+      textArea.value = text;
+      textArea.style.position = "fixed";
+      textArea.style.left = "-999999px";
+      textArea.style.top = "-999999px";
+      textArea.style.opacity = "0";
+      textArea.style.pointerEvents = "none";
+      document.body.appendChild(textArea);
+      textArea.focus();
+      textArea.select();
+
+      try {
+        const successful = document.execCommand("copy");
+        if (successful) {
+          onSuccess?.();
+          return true;
+        } else {
+          throw new Error("execCommand copy failed");
+        }
+      } catch (err) {
+        throw new Error("Fallback copy failed");
+      } finally {
+        document.body.removeChild(textArea);
+      }
+    }
+  } catch (error) {
+    console.error("Copy to clipboard failed:", error);
+    const errorMessage =
+      "No se pudo copiar al portapapeles. Intenta seleccionar y copiar manualmente.";
+    onError?.(errorMessage);
+    return false;
+  }
+}
