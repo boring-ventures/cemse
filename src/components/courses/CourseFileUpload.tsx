@@ -16,11 +16,15 @@ import {
 interface CourseFileUploadProps {
   onFilesChange: (files: { thumbnail?: File; videoPreview?: File }) => void;
   className?: string;
+  uploadProgress?: number;
+  isUploading?: boolean;
 }
 
 export const CourseFileUpload: React.FC<CourseFileUploadProps> = ({
   onFilesChange,
   className = "",
+  uploadProgress = 0,
+  isUploading = false,
 }) => {
   const [selectedFiles, setSelectedFiles] = useState<{
     thumbnail?: File;
@@ -145,6 +149,31 @@ export const CourseFileUpload: React.FC<CourseFileUploadProps> = ({
 
   return (
     <div className={`space-y-4 ${className}`}>
+      {/* Upload Progress Indicator */}
+      {isUploading && (
+        <div className="space-y-2">
+          <div className="flex items-center justify-between text-sm">
+            <span>Subiendo archivos...</span>
+            <span>{uploadProgress}%</span>
+          </div>
+          <div className="w-full bg-gray-200 rounded-full h-2">
+            <div
+              className="bg-blue-600 h-2 rounded-full transition-all duration-300"
+              style={{ width: `${uploadProgress}%` }}
+            />
+          </div>
+        </div>
+      )}
+
+      {/* File Size Warning */}
+      <div className="bg-blue-50 border border-blue-200 rounded-lg p-3">
+        <p className="text-sm text-blue-800">
+          <strong>Límites de archivo:</strong> Imágenes máximo 5MB, Videos
+          máximo 2GB. Para archivos muy grandes, asegúrate de tener una conexión
+          estable.
+        </p>
+      </div>
+
       {/* Thumbnail Upload */}
       <div className="space-y-2">
         <label className="text-sm font-medium">

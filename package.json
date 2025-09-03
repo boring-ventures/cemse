@@ -3,10 +3,10 @@
   "version": "0.1.0",
   "private": true,
   "scripts": {
-    "dev": "next dev --turbopack --max-old-space-size=4096",
+    "dev": "node server.js",
     "build": "next build",
     "build:no-lint": "DISABLE_ESLINT_PLUGIN=true next build",
-    "start": "next start",
+    "start": "node server.js",
     "lint": "next lint",
     "clean": "node clean-cache.js",
     "dev:clean": "npm run clean && npm run dev",
