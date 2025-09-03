@@ -38,7 +38,11 @@ import { toast } from "sonner";
 export default function CreateCoursePage() {
   const router = useRouter();
   const createCourseMutation = useCreateCourse();
-  const { uploadFiles, isUploading: isFileUploading } = useCourseFileUpload();
+  const {
+    uploadFiles,
+    isUploading: isFileUploading,
+    uploadProgress,
+  } = useCourseFileUpload();
 
   const [selectedFiles, setSelectedFiles] = useState<{
     thumbnail?: File;
@@ -282,6 +286,8 @@ export default function CreateCoursePage() {
               <CourseFileUpload
                 onFilesChange={handleFilesChange}
                 className="w-full"
+                uploadProgress={uploadProgress}
+                isUploading={isFileUploading}
               />
             </div>
           </CardContent>

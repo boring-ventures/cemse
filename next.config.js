@@ -13,6 +13,7 @@ const nextConfig = {
   // Configure body size limits for file uploads
   // For Next.js 15, body size limits are handled by the server configuration
   // and individual route handlers
+  // Remove deprecated experimental options
   env: {
     NEXT_PUBLIC_USE_BACKEND: "true",
     NEXT_PUBLIC_BACKEND_URL: "https://cemse-back-production.up.railway.app",

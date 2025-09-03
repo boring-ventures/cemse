@@ -4,6 +4,7 @@ import React, { useState, useRef } from "react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
+import { Progress } from "@/components/ui/progress";
 import {
   Upload,
   CheckCircle,
@@ -16,11 +17,15 @@ import {
 interface CourseFileUploadProps {
   onFilesChange: (files: { thumbnail?: File; videoPreview?: File }) => void;
   className?: string;
+  uploadProgress?: number;
+  isUploading?: boolean;
 }
 
 export const CourseFileUpload: React.FC<CourseFileUploadProps> = ({
   onFilesChange,
   className = "",
+  uploadProgress = 0,
+  isUploading = false,
 }) => {
   const [selectedFiles, setSelectedFiles] = useState<{
     thumbnail?: File;
@@ -55,8 +60,8 @@ export const CourseFileUpload: React.FC<CourseFileUploadProps> = ({
       alert("El archivo de imagen es demasiado grande. Máximo 5MB");
       return;
     }
-    if (type === "videoPreview" && file.size > 1024 * 1024 * 1024) {
-      alert("El archivo de video es demasiado grande. Máximo 1GB");
+    if (type === "videoPreview" && file.size > 2 * 1024 * 1024 * 1024) {
+      alert("El archivo de video es demasiado grande. Máximo 2GB");
       return;
     }
 
@@ -140,11 +145,31 @@ export const CourseFileUpload: React.FC<CourseFileUploadProps> = ({
   };
 
   const getMaxSize = (type: "thumbnail" | "videoPreview") => {
-    return type === "thumbnail" ? "5MB" : "1GB";
+    return type === "thumbnail" ? "5MB" : "2GB";
   };
 
   return (
     <div className={`space-y-4 ${className}`}>
+      {/* Upload Progress Indicator */}
+      {isUploading && (
+        <div className="space-y-2">
+          <div className="flex items-center justify-between text-sm">
+            <span>Subiendo archivos...</span>
+            <span>{uploadProgress}%</span>
+          </div>
+          <Progress value={uploadProgress} className="w-full" />
+        </div>
+      )}
+
+      {/* File Size Warning */}
+      <div className="bg-blue-50 border border-blue-200 rounded-lg p-3">
+        <p className="text-sm text-blue-800">
+          <strong>Límites de archivo:</strong> Imágenes máximo 5MB, Videos
+          máximo 2GB. Para archivos muy grandes, asegúrate de tener una conexión
+          estable.
+        </p>
+      </div>
+
       {/* Thumbnail Upload */}
       <div className="space-y-2">
         <label className="text-sm font-medium">

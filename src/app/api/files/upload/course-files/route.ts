@@ -7,7 +7,7 @@ import jwt from "jsonwebtoken";
 // Configure maximum file sizes
 // Note: These limits are also enforced in the client-side CourseFileUpload component
 const MAX_THUMBNAIL_SIZE = 5 * 1024 * 1024; // 5MB
-const MAX_VIDEO_SIZE = 1024 * 1024 * 1024; // 1GB (reduced from 1GB for better performance)
+const MAX_VIDEO_SIZE = 2 * 1024 * 1024 * 1024; // 2GB (increased for better file handling)
 
 // Configure runtime for large file uploads
 export const runtime = "nodejs";
@@ -41,9 +41,10 @@ export async function POST(request: NextRequest) {
       const sizeInMB = parseInt(contentLength) / (1024 * 1024);
       console.log(`📚 API: Request size: ${sizeInMB.toFixed(2)} MB`);
 
-      if (sizeInMB > 1024) {
+      if (sizeInMB > 2048) {
+        // 2GB limit
         return NextResponse.json(
-          { error: "El archivo es demasiado grande. Máximo 1GB por archivo" },
+          { error: "El archivo es demasiado grande. Máximo 2GB por archivo" },
           { status: 413 }
         );
       }
@@ -174,10 +175,10 @@ export async function POST(request: NextRequest) {
         );
       }
 
-      // Validate size (max 1GB)
+      // Validate size (max 2GB)
       if (videoPreview.size > MAX_VIDEO_SIZE) {
         return NextResponse.json(
-          { error: "El archivo videoPreview es demasiado grande. Máximo 1GB" },
+          { error: "El archivo videoPreview es demasiado grande. Máximo 2GB" },
           { status: 400 }
         );
       }
