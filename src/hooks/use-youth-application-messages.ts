@@ -45,7 +45,7 @@ export function useYouthApplicationMessages(applicationId: string) {
       setLoading(true);
       setError(null);
 
-      const url = `/api/youthapplication/${applicationId}/message`;
+      const url = `/api/youthapplication-messages/${applicationId}/messages`;
       console.log(
         "🔍 useYouthApplicationMessages - Fetching messages from URL:",
         url
@@ -65,7 +65,16 @@ export function useYouthApplicationMessages(applicationId: string) {
       }
 
       const data = await response.json();
-      setMessages(data || []);
+      console.log("🔍 useYouthApplicationMessages - Raw API response:", data);
+
+      // Handle the backend response structure: {messages: [], pagination: {...}}
+      const messagesArray = data.messages || [];
+      console.log(
+        "🔍 useYouthApplicationMessages - Extracted messages:",
+        messagesArray
+      );
+
+      setMessages(messagesArray);
     } catch (err) {
       console.error("Error fetching messages:", err);
       setError(err instanceof Error ? err.message : "Error al cargar mensajes");
@@ -88,7 +97,7 @@ export function useYouthApplicationMessages(applicationId: string) {
       setSending(true);
       setError(null);
 
-      const url = `/api/youthapplication/${applicationId}/message`;
+      const url = `/api/youthapplication-messages/send-message`;
       console.log(
         "🔍 useYouthApplicationMessages - Sending message to URL:",
         url
@@ -100,6 +109,7 @@ export function useYouthApplicationMessages(applicationId: string) {
           "Content-Type": "application/json",
         },
         body: JSON.stringify({
+          applicationId,
           content: messageData.content,
           messageType: messageData.messageType || "TEXT",
         }),
@@ -137,7 +147,7 @@ export function useYouthApplicationMessages(applicationId: string) {
 
     try {
       await fetch(
-        `/api/youthapplication/${applicationId}/message/${messageId}/read`,
+        `/api/youthapplication-messages/${applicationId}/messages/${messageId}/read`,
         {
           method: "PUT",
           credentials: "include", // Use cookies for authentication
@@ -162,13 +172,16 @@ export function useYouthApplicationMessages(applicationId: string) {
   // Get unread count
   const getUnreadCount = async () => {
     try {
-      const response = await fetch("/api/youthapplication/unread-count", {
-        method: "GET",
-        credentials: "include", // Use cookies for authentication
-        headers: {
-          "Content-Type": "application/json",
-        },
-      });
+      const response = await fetch(
+        "/api/youthapplication-messages/unread-count",
+        {
+          method: "GET",
+          credentials: "include", // Use cookies for authentication
+          headers: {
+            "Content-Type": "application/json",
+          },
+        }
+      );
 
       if (response.ok) {
         const data = await response.json();

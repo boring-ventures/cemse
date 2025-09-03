@@ -1175,7 +1175,7 @@ export default function CandidatesPage() {
                     Reintentar
                   </Button>
                 </div>
-              ) : messages.length === 0 ? (
+              ) : !messages || messages.length === 0 ? (
                 <div className="text-center py-8">
                   <MessageSquare className="w-12 h-12 text-gray-400 mb-4 mx-auto" />
                   <p className="text-muted-foreground">No hay mensajes aún</p>
@@ -1184,7 +1184,7 @@ export default function CandidatesPage() {
                   </p>
                 </div>
               ) : (
-                messages.map((message) => {
+                (messages || []).map((message) => {
                   const isOwnMessage = message.senderType === "COMPANY";
                   return (
                     <div
