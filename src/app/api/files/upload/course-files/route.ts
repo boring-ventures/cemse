@@ -17,6 +17,9 @@ export const maxDuration = 300; // 5 minutes timeout for large uploads
 export const dynamic = "force-dynamic";
 export const revalidate = 0;
 
+// For Next.js 15, try to handle large files by streaming
+export const preferredRegion = "auto";
+
 const JWT_SECRET = process.env.JWT_SECRET || "supersecretkey";
 
 function verifyToken(token: string) {
