@@ -97,7 +97,7 @@ const nextConfig = {
           {
             key: "Content-Security-Policy",
             value:
-              "default-src 'self'; script-src 'self' 'unsafe-inline' 'unsafe-eval' https://js.stripe.com https://*.supabase.co; connect-src 'self' https://*.supabase.co wss://*.supabase.co https://api.stripe.com https://cemse-back-production.up.railway.app https://bucket-production-1a58.up.railway.app http://localhost:9000 http://127.0.0.1:9000; style-src 'self' 'unsafe-inline' https://unpkg.com; img-src 'self' data: https://*.supabase.co https://* https://cemse-back-production.up.railway.app https://bucket-production-1a58.up.railway.app blob:; media-src *; font-src 'self' data:; frame-src 'self' https://js.stripe.com https://www.youtube.com https://youtube.com; object-src 'none'",
+              "default-src 'self'; script-src 'self' 'unsafe-inline' 'unsafe-eval' https://js.stripe.com https://*.supabase.co; connect-src 'self' https://*.supabase.co wss://*.supabase.co https://api.stripe.com https://cemse-back-production.up.railway.app https://bucket-production-1a58.up.railway.app http://localhost:9000 http://127.0.0.1:9000; style-src 'self' 'unsafe-inline' https://unpkg.com; img-src 'self' data: https://*.supabase.co https://* https://cemse-back-production.up.railway.app https://bucket-production-1a58.up.railway.app blob:; media-src 'self' blob: data: https://*; font-src 'self' data:; frame-src 'self' https://js.stripe.com https://www.youtube.com https://youtube.com; object-src 'none'",
           },
           {
             key: "Cache-Control",
