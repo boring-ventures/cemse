@@ -203,13 +203,24 @@ export const useOptimisticMessage = () => {
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: ({
+    mutationFn: async ({
       applicationId,
       data,
     }: {
       applicationId: string;
       data: SendMessageRequest;
-    }) => YouthApplicationService.sendMessage(applicationId, data),
+    }) => {
+      console.log("🔍 useOptimisticMessage - Calling sendMessage:", {
+        applicationId,
+        data,
+      });
+      const result = await YouthApplicationService.sendMessage(
+        applicationId,
+        data
+      );
+      console.log("✅ useOptimisticMessage - sendMessage result:", result);
+      return result;
+    },
     onMutate: async ({ applicationId, data }) => {
       // Cancelar queries en curso
       await queryClient.cancelQueries({

@@ -51,14 +51,28 @@ export default function YouthApplicationChat({
     const messageContent = message.trim();
     setMessage("");
 
+    console.log("🔍 YouthApplicationChat - Attempting to send message:", {
+      applicationId,
+      content: messageContent,
+      user: user?.id,
+      userRole: user?.role,
+    });
+
     try {
-      await sendMessage.mutateAsync({
+      const result = await sendMessage.mutateAsync({
         applicationId,
         data: { content: messageContent },
       });
+      console.log(
+        "✅ YouthApplicationChat - Message sent successfully:",
+        result
+      );
     } catch (error) {
-      console.error("Error sending message:", error);
-      // El error ya se maneja en el hook
+      console.error("❌ YouthApplicationChat - Error sending message:", error);
+      // Show user-friendly error message
+      alert(
+        `Error al enviar mensaje: ${error instanceof Error ? error.message : "Error desconocido"}`
+      );
     }
   };
 
