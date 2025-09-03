@@ -631,7 +631,7 @@ export default function MyYouthApplicationsPage() {
                   Reintentar
                 </Button>
               </div>
-            ) : messages.length === 0 ? (
+            ) : !messages || messages.length === 0 ? (
               <div className="text-center py-12 text-gray-600">
                 <MessageSquare className="w-12 h-12 text-gray-400 mb-4 mx-auto" />
                 <p>No hay mensajes en esta conversación.</p>
@@ -641,7 +641,7 @@ export default function MyYouthApplicationsPage() {
               </div>
             ) : (
               <div className="space-y-4">
-                {messages.map((message) => {
+                {(messages || []).map((message) => {
                   const isOwnMessage =
                     message.senderType === "YOUTH" &&
                     message.senderId === user?.id;
