@@ -4,6 +4,19 @@ import { writeFile, mkdir } from "fs/promises";
 import { join } from "path";
 import jwt from "jsonwebtoken";
 
+// Configure maximum file sizes
+// Note: These limits are also enforced in the client-side CourseFileUpload component
+const MAX_THUMBNAIL_SIZE = 5 * 1024 * 1024; // 5MB
+const MAX_VIDEO_SIZE = 1024 * 1024 * 1024; // 1GB (reduced from 1GB for better performance)
+
+// Configure runtime for large file uploads
+export const runtime = "nodejs";
+export const maxDuration = 300; // 5 minutes timeout for large uploads
+
+// Configure body size limit for this route
+export const dynamic = "force-dynamic";
+export const revalidate = 0;
+
 const JWT_SECRET = process.env.JWT_SECRET || "supersecretkey";
 
 function verifyToken(token: string) {
@@ -18,6 +31,20 @@ function verifyToken(token: string) {
 export async function POST(request: NextRequest) {
   try {
     console.log("📚 API: Course files upload request received");
+
+    // Check content length to prevent memory issues
+    const contentLength = request.headers.get("content-length");
+    if (contentLength) {
+      const sizeInMB = parseInt(contentLength) / (1024 * 1024);
+      console.log(`📚 API: Request size: ${sizeInMB.toFixed(2)} MB`);
+
+      if (sizeInMB > 1024) {
+        return NextResponse.json(
+          { error: "El archivo es demasiado grande. Máximo 1GB por archivo" },
+          { status: 413 }
+        );
+      }
+    }
 
     // Get token from cookies
     const cookieStore = await cookies();
@@ -68,7 +95,22 @@ export async function POST(request: NextRequest) {
 
     console.log("📚 API: Authenticated user:", decoded.username || decoded.id);
 
-    const formData = await request.formData();
+    let formData;
+    try {
+      formData = await request.formData();
+    } catch (error) {
+      console.error("📚 API: Error parsing form data:", error);
+      if (error instanceof Error && error.message.includes("too large")) {
+        return NextResponse.json(
+          { error: "El archivo es demasiado grande. Máximo 1GB por archivo" },
+          { status: 413 }
+        );
+      }
+      return NextResponse.json(
+        { error: "Error al procesar los archivos" },
+        { status: 400 }
+      );
+    }
     const thumbnail = formData.get("thumbnail") as File;
     const videoPreview = formData.get("videoPreview") as File;
 
@@ -85,7 +127,7 @@ export async function POST(request: NextRequest) {
       }
 
       // Validate size (max 5MB)
-      if (thumbnail.size > 5 * 1024 * 1024) {
+      if (thumbnail.size > MAX_THUMBNAIL_SIZE) {
         return NextResponse.json(
           { error: "El archivo thumbnail es demasiado grande. Máximo 5MB" },
           { status: 400 }
@@ -130,7 +172,7 @@ export async function POST(request: NextRequest) {
       }
 
       // Validate size (max 1GB)
-      if (videoPreview.size > 1024 * 1024 * 1024) {
+      if (videoPreview.size > MAX_VIDEO_SIZE) {
         return NextResponse.json(
           { error: "El archivo videoPreview es demasiado grande. Máximo 1GB" },
           { status: 400 }
@@ -179,8 +221,31 @@ export async function POST(request: NextRequest) {
     });
   } catch (error) {
     console.error("Error al subir archivos de curso:", error);
+
+    // Provide more specific error messages
+    if (error instanceof Error) {
+      if (
+        error.message.includes("too large") ||
+        error.message.includes("413")
+      ) {
+        return NextResponse.json(
+          { error: "El archivo es demasiado grande. Máximo 1GB por archivo" },
+          { status: 413 }
+        );
+      }
+      if (error.message.includes("form data")) {
+        return NextResponse.json(
+          {
+            error:
+              "Error al procesar los archivos. Verifica el tamaño y formato.",
+          },
+          { status: 400 }
+        );
+      }
+    }
+
     return NextResponse.json(
-      { error: "Error interno del servidor" },
+      { error: "Error interno del servidor. Por favor, inténtalo de nuevo." },
       { status: 500 }
     );
   }

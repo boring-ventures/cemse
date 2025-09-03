@@ -65,11 +65,11 @@ export function ResourceUploadForm({
   const handleFileSelect = (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
     if (file) {
-      // Validar tamaño (100MB)
-      if (file.size > 100 * 1024 * 1024) {
+      // Validar tamaño (1gb)
+      if (file.size > 1024 * 1024 * 1024) {
         toast({
           title: "Error",
-          description: "El archivo es demasiado grande. Máximo 100MB.",
+          description: "El archivo es demasiado grande. Máximo 1GB.",
           variant: "destructive",
         });
         return;
@@ -259,7 +259,7 @@ export function ResourceUploadForm({
                         : "Haz clic para seleccionar un archivo"}
                     </p>
                     <p className="text-xs text-gray-500">
-                      Máximo 100MB. Formatos: PDF, DOC, XLS, PPT, ZIP, MP4, MP3,
+                      Máximo 1GB. Formatos: PDF, DOC, XLS, PPT, ZIP, MP4, MP3,
                       JPG, etc.
                     </p>
                   </div>

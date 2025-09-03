@@ -8,6 +8,18 @@ const nextConfig = {
   typescript: {
     ignoreBuildErrors: true,
   },
+  // Increase body size limit for file uploads
+  experimental: {
+    serverComponentsExternalPackages: ["sharp"],
+  },
+  // Configure body size limits for file uploads
+  // Note: For Next.js 13+ App Router, use environment variables instead
+  // api: {
+  //   bodyParser: {
+  //     sizeLimit: "1024mb",
+  //   },
+  //   responseLimit: false,
+  // },
   env: {
     NEXT_PUBLIC_USE_BACKEND: "true",
     NEXT_PUBLIC_BACKEND_URL: "https://cemse-back-production.up.railway.app",
