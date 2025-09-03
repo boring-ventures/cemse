@@ -22,6 +22,7 @@ import { Separator } from "@/components/ui/separator";
 import { Badge } from "@/components/ui/badge";
 import { X, Plus, Save } from "lucide-react";
 import { getAuthHeaders } from "@/lib/api";
+import MapPicker from "@/components/dashboard/MapPicker";
 
 const jobOfferSchema = z.object({
   title: z.string().min(1, "Title is required"),
@@ -31,16 +32,34 @@ const jobOfferSchema = z.object({
   salaryMin: z.string().optional(),
   salaryMax: z.string().optional(),
   salaryCurrency: z.string().default("BOB"),
-  contractType: z.enum(["FULL_TIME", "PART_TIME", "INTERNSHIP", "VOLUNTEER", "FREELANCE"]),
+  contractType: z.enum([
+    "FULL_TIME",
+    "PART_TIME",
+    "INTERNSHIP",
+    "VOLUNTEER",
+    "FREELANCE",
+  ]),
   workSchedule: z.string().min(1, "Work schedule is required"),
   workModality: z.enum(["ON_SITE", "REMOTE", "HYBRID"]),
   location: z.string().min(1, "Location is required"),
-  latitude: z.string().optional(),
-  longitude: z.string().optional(),
   municipality: z.string().min(1, "Municipality is required"),
   department: z.string().default("Cochabamba"),
-  experienceLevel: z.enum(["NO_EXPERIENCE", "ENTRY_LEVEL", "MID_LEVEL", "SENIOR_LEVEL"]),
-  educationRequired: z.enum(["PRIMARY", "SECONDARY", "TECHNICAL", "UNIVERSITY", "POSTGRADUATE", "OTHER"]).optional(),
+  experienceLevel: z.enum([
+    "NO_EXPERIENCE",
+    "ENTRY_LEVEL",
+    "MID_LEVEL",
+    "SENIOR_LEVEL",
+  ]),
+  educationRequired: z
+    .enum([
+      "PRIMARY",
+      "SECONDARY",
+      "TECHNICAL",
+      "UNIVERSITY",
+      "POSTGRADUATE",
+      "OTHER",
+    ])
+    .optional(),
   skillsRequired: z.array(z.string()).default([]),
   desiredSkills: z.array(z.string()).default([]),
   applicationDeadline: z.string().optional(),
@@ -64,11 +83,24 @@ interface JobOfferFormProps {
   isEditing?: boolean;
 }
 
-export function JobOfferForm({ jobOffer, onSubmit, isEditing = false }: JobOfferFormProps) {
-  const [skillsRequired, setSkillsRequired] = useState<string[]>(jobOffer?.skillsRequired || []);
-  const [desiredSkills, setDesiredSkills] = useState<string[]>(jobOffer?.desiredSkills || []);
+export function JobOfferForm({
+  jobOffer,
+  onSubmit,
+  isEditing = false,
+}: JobOfferFormProps) {
+  const [skillsRequired, setSkillsRequired] = useState<string[]>(
+    jobOffer?.skillsRequired || []
+  );
+  const [desiredSkills, setDesiredSkills] = useState<string[]>(
+    jobOffer?.desiredSkills || []
+  );
   const [newSkillRequired, setNewSkillRequired] = useState("");
   const [newDesiredSkill, setNewDesiredSkill] = useState("");
+  const [coordinates, setCoordinates] = useState<[number, number] | null>(
+    jobOffer?.latitude && jobOffer?.longitude
+      ? [jobOffer.latitude, jobOffer.longitude]
+      : null
+  );
 
   const {
     register,
@@ -98,17 +130,21 @@ export function JobOfferForm({ jobOffer, onSubmit, isEditing = false }: JobOffer
       companyId: jobOffer?.companyId || "",
       status: jobOffer?.status || "ACTIVE",
       featured: jobOffer?.featured || false,
-      applicationDeadline: jobOffer?.applicationDeadline ? new Date(jobOffer.applicationDeadline).toISOString().split('T')[0] : "",
-      expiresAt: jobOffer?.expiresAt ? new Date(jobOffer.expiresAt).toISOString().split('T')[0] : "",
+      applicationDeadline: jobOffer?.applicationDeadline
+        ? new Date(jobOffer.applicationDeadline).toISOString().split("T")[0]
+        : "",
+      expiresAt: jobOffer?.expiresAt
+        ? new Date(jobOffer.expiresAt).toISOString().split("T")[0]
+        : "",
     },
   });
 
   // Fetch companies for dropdown
-  const { data: companies } = useQuery<Company[]>({
+  const { data: companiesResponse } = useQuery<{ companies: Company[] }>({
     queryKey: ["companies"],
     queryFn: async () => {
       const response = await fetch("/api/company", {
-        headers: getAuthHeaders(),
+        headers: await getAuthHeaders(),
       });
       if (!response.ok) {
         throw new Error("Failed to fetch companies");
@@ -117,31 +153,49 @@ export function JobOfferForm({ jobOffer, onSubmit, isEditing = false }: JobOffer
     },
   });
 
+  const companies = companiesResponse?.companies || [];
+
   useEffect(() => {
     setValue("skillsRequired", skillsRequired);
     setValue("desiredSkills", desiredSkills);
   }, [skillsRequired, desiredSkills, setValue]);
 
+  // Initialize form when editing
+  useEffect(() => {
+    if (isEditing && jobOffer) {
+      // Set coordinates if they exist
+      if (jobOffer.latitude && jobOffer.longitude) {
+        setCoordinates([jobOffer.latitude, jobOffer.longitude]);
+      }
+    }
+  }, [isEditing, jobOffer]);
+
   const addSkillRequired = () => {
-    if (newSkillRequired.trim() && !skillsRequired.includes(newSkillRequired.trim())) {
+    if (
+      newSkillRequired.trim() &&
+      !skillsRequired.includes(newSkillRequired.trim())
+    ) {
       setSkillsRequired([...skillsRequired, newSkillRequired.trim()]);
       setNewSkillRequired("");
     }
   };
 
   const removeSkillRequired = (skill: string) => {
-    setSkillsRequired(skillsRequired.filter(s => s !== skill));
+    setSkillsRequired(skillsRequired.filter((s) => s !== skill));
   };
 
   const addDesiredSkill = () => {
-    if (newDesiredSkill.trim() && !desiredSkills.includes(newDesiredSkill.trim())) {
+    if (
+      newDesiredSkill.trim() &&
+      !desiredSkills.includes(newDesiredSkill.trim())
+    ) {
       setDesiredSkills([...desiredSkills, newDesiredSkill.trim()]);
       setNewDesiredSkill("");
     }
   };
 
   const removeDesiredSkill = (skill: string) => {
-    setDesiredSkills(desiredSkills.filter(s => s !== skill));
+    setDesiredSkills(desiredSkills.filter((s) => s !== skill));
   };
 
   const handleFormSubmit = (data: JobOfferFormData) => {
@@ -149,10 +203,11 @@ export function JobOfferForm({ jobOffer, onSubmit, isEditing = false }: JobOffer
       ...data,
       skillsRequired,
       desiredSkills,
-      salaryMin: data.salaryMin ? parseFloat(data.salaryMin) : null,
-      salaryMax: data.salaryMax ? parseFloat(data.salaryMax) : null,
-      applicationDeadline: data.applicationDeadline ? new Date(data.applicationDeadline).toISOString() : null,
-      expiresAt: data.expiresAt ? new Date(data.expiresAt).toISOString() : null,
+      coordinates: coordinates,
+      salaryMin: data.salaryMin || undefined,
+      salaryMax: data.salaryMax || undefined,
+      applicationDeadline: data.applicationDeadline || undefined,
+      expiresAt: data.expiresAt || undefined,
     };
     onSubmit(formData);
   };
@@ -196,7 +251,9 @@ export function JobOfferForm({ jobOffer, onSubmit, isEditing = false }: JobOffer
                 </SelectContent>
               </Select>
               {errors.companyId && (
-                <p className="text-sm text-red-600">{errors.companyId.message}</p>
+                <p className="text-sm text-red-600">
+                  {errors.companyId.message}
+                </p>
               )}
             </div>
           </div>
@@ -210,7 +267,9 @@ export function JobOfferForm({ jobOffer, onSubmit, isEditing = false }: JobOffer
               rows={4}
             />
             {errors.description && (
-              <p className="text-sm text-red-600">{errors.description.message}</p>
+              <p className="text-sm text-red-600">
+                {errors.description.message}
+              </p>
             )}
           </div>
 
@@ -223,7 +282,9 @@ export function JobOfferForm({ jobOffer, onSubmit, isEditing = false }: JobOffer
               rows={3}
             />
             {errors.requirements && (
-              <p className="text-sm text-red-600">{errors.requirements.message}</p>
+              <p className="text-sm text-red-600">
+                {errors.requirements.message}
+              </p>
             )}
           </div>
 
@@ -250,7 +311,9 @@ export function JobOfferForm({ jobOffer, onSubmit, isEditing = false }: JobOffer
               <Label htmlFor="contractType">Contract Type *</Label>
               <Select
                 value={watch("contractType")}
-                onValueChange={(value) => setValue("contractType", value as any)}
+                onValueChange={(value) =>
+                  setValue("contractType", value as any)
+                }
               >
                 <SelectTrigger>
                   <SelectValue />
@@ -264,7 +327,9 @@ export function JobOfferForm({ jobOffer, onSubmit, isEditing = false }: JobOffer
                 </SelectContent>
               </Select>
               {errors.contractType && (
-                <p className="text-sm text-red-600">{errors.contractType.message}</p>
+                <p className="text-sm text-red-600">
+                  {errors.contractType.message}
+                </p>
               )}
             </div>
 
@@ -272,7 +337,9 @@ export function JobOfferForm({ jobOffer, onSubmit, isEditing = false }: JobOffer
               <Label htmlFor="workModality">Work Modality *</Label>
               <Select
                 value={watch("workModality")}
-                onValueChange={(value) => setValue("workModality", value as any)}
+                onValueChange={(value) =>
+                  setValue("workModality", value as any)
+                }
               >
                 <SelectTrigger>
                   <SelectValue />
@@ -284,7 +351,9 @@ export function JobOfferForm({ jobOffer, onSubmit, isEditing = false }: JobOffer
                 </SelectContent>
               </Select>
               {errors.workModality && (
-                <p className="text-sm text-red-600">{errors.workModality.message}</p>
+                <p className="text-sm text-red-600">
+                  {errors.workModality.message}
+                </p>
               )}
             </div>
 
@@ -292,7 +361,9 @@ export function JobOfferForm({ jobOffer, onSubmit, isEditing = false }: JobOffer
               <Label htmlFor="experienceLevel">Experience Level *</Label>
               <Select
                 value={watch("experienceLevel")}
-                onValueChange={(value) => setValue("experienceLevel", value as any)}
+                onValueChange={(value) =>
+                  setValue("experienceLevel", value as any)
+                }
               >
                 <SelectTrigger>
                   <SelectValue />
@@ -305,7 +376,9 @@ export function JobOfferForm({ jobOffer, onSubmit, isEditing = false }: JobOffer
                 </SelectContent>
               </Select>
               {errors.experienceLevel && (
-                <p className="text-sm text-red-600">{errors.experienceLevel.message}</p>
+                <p className="text-sm text-red-600">
+                  {errors.experienceLevel.message}
+                </p>
               )}
             </div>
           </div>
@@ -319,7 +392,9 @@ export function JobOfferForm({ jobOffer, onSubmit, isEditing = false }: JobOffer
                 placeholder="e.g., Monday to Friday, 9 AM - 6 PM"
               />
               {errors.workSchedule && (
-                <p className="text-sm text-red-600">{errors.workSchedule.message}</p>
+                <p className="text-sm text-red-600">
+                  {errors.workSchedule.message}
+                </p>
               )}
             </div>
 
@@ -327,7 +402,9 @@ export function JobOfferForm({ jobOffer, onSubmit, isEditing = false }: JobOffer
               <Label htmlFor="educationRequired">Education Required</Label>
               <Select
                 value={watch("educationRequired")}
-                onValueChange={(value) => setValue("educationRequired", value as any)}
+                onValueChange={(value) =>
+                  setValue("educationRequired", value as any)
+                }
               >
                 <SelectTrigger>
                   <SelectValue placeholder="Select education level" />
@@ -361,7 +438,9 @@ export function JobOfferForm({ jobOffer, onSubmit, isEditing = false }: JobOffer
                 placeholder="e.g., Cochabamba, Bolivia"
               />
               {errors.location && (
-                <p className="text-sm text-red-600">{errors.location.message}</p>
+                <p className="text-sm text-red-600">
+                  {errors.location.message}
+                </p>
               )}
             </div>
 
@@ -373,7 +452,9 @@ export function JobOfferForm({ jobOffer, onSubmit, isEditing = false }: JobOffer
                 placeholder="e.g., Cochabamba"
               />
               {errors.municipality && (
-                <p className="text-sm text-red-600">{errors.municipality.message}</p>
+                <p className="text-sm text-red-600">
+                  {errors.municipality.message}
+                </p>
               )}
             </div>
 
@@ -388,27 +469,18 @@ export function JobOfferForm({ jobOffer, onSubmit, isEditing = false }: JobOffer
             </div>
           </div>
 
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <div className="space-y-4">
             <div className="space-y-2">
-              <Label htmlFor="latitude">Latitude (Optional)</Label>
-              <Input
-                id="latitude"
-                type="number"
-                step="any"
-                {...register("latitude")}
-                placeholder="e.g., -17.3895"
+              <Label>Selecciona en el mapa la ubicación del empleo</Label>
+              <MapPicker
+                initialCoordinates={coordinates}
+                onChange={(coords) => setCoordinates(coords)}
               />
-            </div>
-
-            <div className="space-y-2">
-              <Label htmlFor="longitude">Longitude (Optional)</Label>
-              <Input
-                id="longitude"
-                type="number"
-                step="any"
-                {...register("longitude")}
-                placeholder="e.g., -66.1568"
-              />
+              {coordinates && (
+                <p className="text-sm text-muted-foreground mt-2">
+                  Latitud: {coordinates[0]}, Longitud: {coordinates[1]}
+                </p>
+              )}
             </div>
           </div>
         </CardContent>
@@ -474,7 +546,9 @@ export function JobOfferForm({ jobOffer, onSubmit, isEditing = false }: JobOffer
                 value={newSkillRequired}
                 onChange={(e) => setNewSkillRequired(e.target.value)}
                 placeholder="Add a required skill"
-                onKeyPress={(e) => e.key === "Enter" && (e.preventDefault(), addSkillRequired())}
+                onKeyPress={(e) =>
+                  e.key === "Enter" && (e.preventDefault(), addSkillRequired())
+                }
               />
               <Button type="button" onClick={addSkillRequired} size="sm">
                 <Plus className="h-4 w-4" />
@@ -482,7 +556,11 @@ export function JobOfferForm({ jobOffer, onSubmit, isEditing = false }: JobOffer
             </div>
             <div className="flex flex-wrap gap-2">
               {skillsRequired.map((skill) => (
-                <Badge key={skill} variant="secondary" className="flex items-center gap-1">
+                <Badge
+                  key={skill}
+                  variant="secondary"
+                  className="flex items-center gap-1"
+                >
                   {skill}
                   <button
                     type="button"
@@ -506,7 +584,9 @@ export function JobOfferForm({ jobOffer, onSubmit, isEditing = false }: JobOffer
                 value={newDesiredSkill}
                 onChange={(e) => setNewDesiredSkill(e.target.value)}
                 placeholder="Add a desired skill"
-                onKeyPress={(e) => e.key === "Enter" && (e.preventDefault(), addDesiredSkill())}
+                onKeyPress={(e) =>
+                  e.key === "Enter" && (e.preventDefault(), addDesiredSkill())
+                }
               />
               <Button type="button" onClick={addDesiredSkill} size="sm">
                 <Plus className="h-4 w-4" />
@@ -514,7 +594,11 @@ export function JobOfferForm({ jobOffer, onSubmit, isEditing = false }: JobOffer
             </div>
             <div className="flex flex-wrap gap-2">
               {desiredSkills.map((skill) => (
-                <Badge key={skill} variant="outline" className="flex items-center gap-1">
+                <Badge
+                  key={skill}
+                  variant="outline"
+                  className="flex items-center gap-1"
+                >
                   {skill}
                   <button
                     type="button"
@@ -548,11 +632,7 @@ export function JobOfferForm({ jobOffer, onSubmit, isEditing = false }: JobOffer
 
             <div className="space-y-2">
               <Label htmlFor="expiresAt">Expiration Date</Label>
-              <Input
-                id="expiresAt"
-                type="date"
-                {...register("expiresAt")}
-              />
+              <Input id="expiresAt" type="date" {...register("expiresAt")} />
             </div>
           </div>
 
@@ -579,7 +659,9 @@ export function JobOfferForm({ jobOffer, onSubmit, isEditing = false }: JobOffer
               <Checkbox
                 id="featured"
                 checked={watch("featured")}
-                onCheckedChange={(checked) => setValue("featured", checked as boolean)}
+                onCheckedChange={(checked) =>
+                  setValue("featured", checked as boolean)
+                }
               />
               <Label htmlFor="featured">Featured Job Offer</Label>
             </div>
@@ -589,7 +671,11 @@ export function JobOfferForm({ jobOffer, onSubmit, isEditing = false }: JobOffer
 
       {/* Submit Button */}
       <div className="flex justify-end gap-4">
-        <Button type="submit" disabled={isSubmitting} className="w-full md:w-auto">
+        <Button
+          type="submit"
+          disabled={isSubmitting}
+          className="w-full md:w-auto"
+        >
           {isSubmitting ? (
             <>
               <div className="mr-2 h-4 w-4 animate-spin rounded-full border-2 border-current border-t-transparent" />

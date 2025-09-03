@@ -61,8 +61,13 @@ import {
   Copy,
   Share,
 } from "lucide-react";
-import { useLessonResources, useCreateResource, useUpdateResource, useDeleteResource } from "@/hooks/useLessonResourceApi";
-
+import {
+  useLessonResources,
+  useCreateResource,
+  useUpdateResource,
+  useDeleteResource,
+} from "@/hooks/useLessonResourceApi";
+import { copyToClipboard } from "@/lib/utils";
 
 import { ResourceViewer } from "@/components/resources/ResourceViewer";
 import { ResourceStats } from "@/components/resources/ResourceStats";
@@ -85,7 +90,15 @@ export default function LessonResourcesPage() {
   const [formData, setFormData] = useState({
     title: "",
     description: "",
-    type: "PDF" as "PDF" | "DOCUMENT" | "VIDEO" | "AUDIO" | "IMAGE" | "LINK" | "ZIP" | "OTHER",
+    type: "PDF" as
+      | "PDF"
+      | "DOCUMENT"
+      | "VIDEO"
+      | "AUDIO"
+      | "IMAGE"
+      | "LINK"
+      | "ZIP"
+      | "OTHER",
     url: "",
     filePath: "",
     fileSize: 0,
@@ -97,7 +110,8 @@ export default function LessonResourcesPage() {
   const [viewingResource, setViewingResource] = useState<any>(null);
 
   // Hooks
-  const { data: resourcesData, isLoading: resourcesLoading } = useLessonResources(lessonId);
+  const { data: resourcesData, isLoading: resourcesLoading } =
+    useLessonResources(lessonId);
   const resources = resourcesData?.resources || [];
   const createResource = useCreateResource();
   const updateResource = useUpdateResource();
@@ -111,13 +125,13 @@ export default function LessonResourcesPage() {
   const handleCreateResource = async () => {
     try {
       setIsUploading(true);
-      
+
       await createResource.mutateAsync({
         lessonId,
         ...formData,
         file: selectedFile || undefined,
       });
-      
+
       setIsCreateDialogOpen(false);
       setFormData({
         title: "",
@@ -140,13 +154,13 @@ export default function LessonResourcesPage() {
 
   const handleEditResource = async () => {
     if (!editingResource) return;
-    
+
     try {
       await updateResource.mutateAsync({
         id: editingResource.id,
         ...formData,
       });
-      
+
       setIsEditDialogOpen(false);
       setEditingResource(null);
       setFormData({
@@ -193,19 +207,19 @@ export default function LessonResourcesPage() {
 
   const getResourceTypeIcon = (type: string) => {
     switch (type) {
-      case 'PDF':
+      case "PDF":
         return <FileText className="h-4 w-4" />;
-      case 'DOCUMENT':
+      case "DOCUMENT":
         return <FileText className="h-4 w-4" />;
-      case 'VIDEO':
+      case "VIDEO":
         return <FileVideo className="h-4 w-4" />;
-      case 'AUDIO':
+      case "AUDIO":
         return <FileAudio className="h-4 w-4" />;
-      case 'IMAGE':
+      case "IMAGE":
         return <FileImage className="h-4 w-4" />;
-      case 'LINK':
+      case "LINK":
         return <LinkIcon className="h-4 w-4" />;
-      case 'ZIP':
+      case "ZIP":
         return <FileArchive className="h-4 w-4" />;
       default:
         return <File className="h-4 w-4" />;
@@ -214,31 +228,31 @@ export default function LessonResourcesPage() {
 
   const getResourceTypeLabel = (type: string) => {
     switch (type) {
-      case 'PDF':
-        return 'PDF';
-      case 'DOCUMENT':
-        return 'Documento';
-      case 'VIDEO':
-        return 'Video';
-      case 'AUDIO':
-        return 'Audio';
-      case 'IMAGE':
-        return 'Imagen';
-      case 'LINK':
-        return 'Enlace';
-      case 'ZIP':
-        return 'Archivo ZIP';
+      case "PDF":
+        return "PDF";
+      case "DOCUMENT":
+        return "Documento";
+      case "VIDEO":
+        return "Video";
+      case "AUDIO":
+        return "Audio";
+      case "IMAGE":
+        return "Imagen";
+      case "LINK":
+        return "Enlace";
+      case "ZIP":
+        return "Archivo ZIP";
       default:
-        return 'Otro';
+        return "Otro";
     }
   };
 
   const formatFileSize = (bytes: number) => {
-    if (bytes === 0) return '0 Bytes';
+    if (bytes === 0) return "0 Bytes";
     const k = 1024;
-    const sizes = ['Bytes', 'KB', 'MB', 'GB'];
+    const sizes = ["Bytes", "KB", "MB", "GB"];
     const i = Math.floor(Math.log(bytes) / Math.log(k));
-    return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i];
+    return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + " " + sizes[i];
   };
 
   const getResourceStats = (resourceId: string) => {
@@ -246,7 +260,7 @@ export default function LessonResourcesPage() {
     return {
       downloads: 45,
       views: 120,
-      lastDownloaded: new Date('2024-01-15T10:30:00Z'),
+      lastDownloaded: new Date("2024-01-15T10:30:00Z"),
     };
   };
 
@@ -267,7 +281,9 @@ export default function LessonResourcesPage() {
       <div className="flex justify-between items-center">
         <div className="flex items-center gap-4">
           <Button variant="ghost" asChild>
-            <Link href={`/admin/courses/${courseId}/modules/${moduleId}/lessons`}>
+            <Link
+              href={`/admin/courses/${courseId}/modules/${moduleId}/lessons`}
+            >
               <ArrowLeft className="h-4 w-4 mr-2" />
               Volver a Lecciones
             </Link>
@@ -299,7 +315,9 @@ export default function LessonResourcesPage() {
                 <Input
                   id="title"
                   value={formData.title}
-                  onChange={(e) => setFormData({ ...formData, title: e.target.value })}
+                  onChange={(e) =>
+                    setFormData({ ...formData, title: e.target.value })
+                  }
                   placeholder="Ej: Guía completa de HTML"
                 />
               </div>
@@ -308,7 +326,9 @@ export default function LessonResourcesPage() {
                 <Textarea
                   id="description"
                   value={formData.description}
-                  onChange={(e) => setFormData({ ...formData, description: e.target.value })}
+                  onChange={(e) =>
+                    setFormData({ ...formData, description: e.target.value })
+                  }
                   placeholder="Describe el recurso..."
                 />
               </div>
@@ -316,7 +336,9 @@ export default function LessonResourcesPage() {
                 <label htmlFor="type">Tipo de Recurso</label>
                 <Select
                   value={formData.type}
-                  onValueChange={(value: any) => setFormData({ ...formData, type: value })}
+                  onValueChange={(value: any) =>
+                    setFormData({ ...formData, type: value })
+                  }
                 >
                   <SelectTrigger>
                     <SelectValue />
@@ -334,11 +356,15 @@ export default function LessonResourcesPage() {
                 </Select>
               </div>
               <div className="grid gap-2">
-                <label htmlFor="url">URL del Recurso (opcional si subes un archivo)</label>
+                <label htmlFor="url">
+                  URL del Recurso (opcional si subes un archivo)
+                </label>
                 <Input
                   id="url"
                   value={formData.url}
-                  onChange={(e) => setFormData({ ...formData, url: e.target.value })}
+                  onChange={(e) =>
+                    setFormData({ ...formData, url: e.target.value })
+                  }
                   placeholder="https://example.com/resource.pdf"
                   disabled={!!selectedFile}
                 />
@@ -350,17 +376,23 @@ export default function LessonResourcesPage() {
                   onFileSelect={(file) => {
                     setSelectedFile(file);
                     // Auto-detect type based on file extension
-                    const extension = file.name.split('.').pop()?.toLowerCase();
+                    const extension = file.name.split(".").pop()?.toLowerCase();
                     let detectedType = formData.type;
-                    
-                    if (extension === 'pdf') detectedType = 'PDF';
-                    else if (['doc', 'docx'].includes(extension || '')) detectedType = 'DOCUMENT';
-                    else if (['mp4', 'webm', 'ogg'].includes(extension || '')) detectedType = 'VIDEO';
-                    else if (['mp3', 'wav'].includes(extension || '')) detectedType = 'AUDIO';
-                    else if (['jpg', 'jpeg', 'png', 'gif'].includes(extension || '')) detectedType = 'IMAGE';
-                    else if (extension === 'zip') detectedType = 'ZIP';
-                    else detectedType = 'OTHER';
-                    
+
+                    if (extension === "pdf") detectedType = "PDF";
+                    else if (["doc", "docx"].includes(extension || ""))
+                      detectedType = "DOCUMENT";
+                    else if (["mp4", "webm", "ogg"].includes(extension || ""))
+                      detectedType = "VIDEO";
+                    else if (["mp3", "wav"].includes(extension || ""))
+                      detectedType = "AUDIO";
+                    else if (
+                      ["jpg", "jpeg", "png", "gif"].includes(extension || "")
+                    )
+                      detectedType = "IMAGE";
+                    else if (extension === "zip") detectedType = "ZIP";
+                    else detectedType = "OTHER";
+
                     setFormData({ ...formData, type: detectedType });
                   }}
                   onFileRemove={() => setSelectedFile(null)}
@@ -374,7 +406,12 @@ export default function LessonResourcesPage() {
                     id="orderIndex"
                     type="number"
                     value={formData.orderIndex}
-                    onChange={(e) => setFormData({ ...formData, orderIndex: parseInt(e.target.value) })}
+                    onChange={(e) =>
+                      setFormData({
+                        ...formData,
+                        orderIndex: parseInt(e.target.value),
+                      })
+                    }
                     min="1"
                   />
                 </div>
@@ -384,7 +421,12 @@ export default function LessonResourcesPage() {
                     id="fileSize"
                     type="number"
                     value={formData.fileSize}
-                    onChange={(e) => setFormData({ ...formData, fileSize: parseInt(e.target.value) })}
+                    onChange={(e) =>
+                      setFormData({
+                        ...formData,
+                        fileSize: parseInt(e.target.value),
+                      })
+                    }
                     min="0"
                   />
                 </div>
@@ -394,17 +436,30 @@ export default function LessonResourcesPage() {
                   type="checkbox"
                   id="isDownloadable"
                   checked={formData.isDownloadable}
-                  onChange={(e) => setFormData({ ...formData, isDownloadable: e.target.checked })}
+                  onChange={(e) =>
+                    setFormData({
+                      ...formData,
+                      isDownloadable: e.target.checked,
+                    })
+                  }
                 />
                 <label htmlFor="isDownloadable">Permitir descarga</label>
               </div>
             </div>
             <DialogFooter>
-              <Button variant="outline" onClick={() => setIsCreateDialogOpen(false)}>
+              <Button
+                variant="outline"
+                onClick={() => setIsCreateDialogOpen(false)}
+              >
                 Cancelar
               </Button>
-              <Button onClick={handleCreateResource} disabled={createResource.isPending || isUploading}>
-                {createResource.isPending || isUploading ? "Subiendo..." : "Crear Recurso"}
+              <Button
+                onClick={handleCreateResource}
+                disabled={createResource.isPending || isUploading}
+              >
+                {createResource.isPending || isUploading
+                  ? "Subiendo..."
+                  : "Crear Recurso"}
               </Button>
             </DialogFooter>
           </DialogContent>
@@ -478,11 +533,15 @@ export default function LessonResourcesPage() {
                       <TableCell>
                         <Badge variant="outline">
                           {getResourceTypeIcon(resource.type)}
-                          <span className="ml-1">{getResourceTypeLabel(resource.type)}</span>
+                          <span className="ml-1">
+                            {getResourceTypeLabel(resource.type)}
+                          </span>
                         </Badge>
                       </TableCell>
                       <TableCell>
-                        {resource.fileSize ? formatFileSize(resource.fileSize) : "N/A"}
+                        {resource.fileSize
+                          ? formatFileSize(resource.fileSize)
+                          : "N/A"}
                       </TableCell>
                       <TableCell>
                         <div className="space-y-1">
@@ -496,18 +555,27 @@ export default function LessonResourcesPage() {
                           </div>
                           <div className="flex items-center gap-2 text-sm">
                             <span className="text-xs text-muted-foreground">
-                              Última: {stats.lastDownloaded.toLocaleDateString()}
+                              Última:{" "}
+                              {stats.lastDownloaded.toLocaleDateString()}
                             </span>
                           </div>
                         </div>
                       </TableCell>
                       <TableCell>
-                        <Badge variant={resource.isDownloadable ? "default" : "secondary"}>
-                          {resource.isDownloadable ? "Disponible" : "No disponible"}
+                        <Badge
+                          variant={
+                            resource.isDownloadable ? "default" : "secondary"
+                          }
+                        >
+                          {resource.isDownloadable
+                            ? "Disponible"
+                            : "No disponible"}
                         </Badge>
                       </TableCell>
                       <TableCell>
-                        {resource.updatedAt ? new Date(resource.updatedAt).toLocaleDateString() : "N/A"}
+                        {resource.updatedAt
+                          ? new Date(resource.updatedAt).toLocaleDateString()
+                          : "N/A"}
                       </TableCell>
                       <TableCell className="text-right">
                         <DropdownMenu>
@@ -517,7 +585,9 @@ export default function LessonResourcesPage() {
                             </Button>
                           </DropdownMenuTrigger>
                           <DropdownMenuContent align="end">
-                            <DropdownMenuItem onClick={() => setViewingResource(resource)}>
+                            <DropdownMenuItem
+                              onClick={() => setViewingResource(resource)}
+                            >
                               <Eye className="h-4 w-4 mr-2" />
                               Vista previa
                             </DropdownMenuItem>
@@ -530,16 +600,37 @@ export default function LessonResourcesPage() {
                               </DropdownMenuItem>
                             )}
                             <DropdownMenuItem asChild>
-                              <a href={resource.url} target="_blank" rel="noopener noreferrer">
+                              <a
+                                href={resource.url}
+                                target="_blank"
+                                rel="noopener noreferrer"
+                              >
                                 <ExternalLink className="h-4 w-4 mr-2" />
                                 Abrir enlace
                               </a>
                             </DropdownMenuItem>
-                            <DropdownMenuItem onClick={() => navigator.clipboard.writeText(resource.url)}>
+                            <DropdownMenuItem
+                              onClick={async () => {
+                                await copyToClipboard(
+                                  resource.url,
+                                  () => {
+                                    // Success callback - could add toast here if needed
+                                  },
+                                  (errorMessage) => {
+                                    console.error(
+                                      "Failed to copy resource URL:",
+                                      errorMessage
+                                    );
+                                  }
+                                );
+                              }}
+                            >
                               <Copy className="h-4 w-4 mr-2" />
                               Copiar URL
                             </DropdownMenuItem>
-                            <DropdownMenuItem onClick={() => openEditDialog(resource)}>
+                            <DropdownMenuItem
+                              onClick={() => openEditDialog(resource)}
+                            >
                               <Edit className="h-4 w-4 mr-2" />
                               Editar
                             </DropdownMenuItem>
@@ -595,7 +686,9 @@ export default function LessonResourcesPage() {
               <Input
                 id="edit-title"
                 value={formData.title}
-                onChange={(e) => setFormData({ ...formData, title: e.target.value })}
+                onChange={(e) =>
+                  setFormData({ ...formData, title: e.target.value })
+                }
                 placeholder="Ej: Guía completa de HTML"
               />
             </div>
@@ -604,7 +697,9 @@ export default function LessonResourcesPage() {
               <Textarea
                 id="edit-description"
                 value={formData.description}
-                onChange={(e) => setFormData({ ...formData, description: e.target.value })}
+                onChange={(e) =>
+                  setFormData({ ...formData, description: e.target.value })
+                }
                 placeholder="Describe el recurso..."
               />
             </div>
@@ -612,7 +707,9 @@ export default function LessonResourcesPage() {
               <label htmlFor="edit-type">Tipo de Recurso</label>
               <Select
                 value={formData.type}
-                onValueChange={(value: any) => setFormData({ ...formData, type: value })}
+                onValueChange={(value: any) =>
+                  setFormData({ ...formData, type: value })
+                }
               >
                 <SelectTrigger>
                   <SelectValue />
@@ -634,7 +731,9 @@ export default function LessonResourcesPage() {
               <Input
                 id="edit-url"
                 value={formData.url}
-                onChange={(e) => setFormData({ ...formData, url: e.target.value })}
+                onChange={(e) =>
+                  setFormData({ ...formData, url: e.target.value })
+                }
                 placeholder="https://example.com/resource.pdf"
               />
             </div>
@@ -645,7 +744,12 @@ export default function LessonResourcesPage() {
                   id="edit-orderIndex"
                   type="number"
                   value={formData.orderIndex}
-                  onChange={(e) => setFormData({ ...formData, orderIndex: parseInt(e.target.value) })}
+                  onChange={(e) =>
+                    setFormData({
+                      ...formData,
+                      orderIndex: parseInt(e.target.value),
+                    })
+                  }
                   min="1"
                 />
               </div>
@@ -655,7 +759,12 @@ export default function LessonResourcesPage() {
                   id="edit-fileSize"
                   type="number"
                   value={formData.fileSize}
-                  onChange={(e) => setFormData({ ...formData, fileSize: parseInt(e.target.value) })}
+                  onChange={(e) =>
+                    setFormData({
+                      ...formData,
+                      fileSize: parseInt(e.target.value),
+                    })
+                  }
                   min="0"
                 />
               </div>
@@ -665,17 +774,27 @@ export default function LessonResourcesPage() {
                 type="checkbox"
                 id="edit-isDownloadable"
                 checked={formData.isDownloadable}
-                onChange={(e) => setFormData({ ...formData, isDownloadable: e.target.checked })}
+                onChange={(e) =>
+                  setFormData({ ...formData, isDownloadable: e.target.checked })
+                }
               />
               <label htmlFor="edit-isDownloadable">Permitir descarga</label>
             </div>
           </div>
           <DialogFooter>
-            <Button variant="outline" onClick={() => setIsEditDialogOpen(false)}>
+            <Button
+              variant="outline"
+              onClick={() => setIsEditDialogOpen(false)}
+            >
               Cancelar
             </Button>
-            <Button onClick={handleEditResource} disabled={updateResource.isPending}>
-              {updateResource.isPending ? "Actualizando..." : "Actualizar Recurso"}
+            <Button
+              onClick={handleEditResource}
+              disabled={updateResource.isPending}
+            >
+              {updateResource.isPending
+                ? "Actualizando..."
+                : "Actualizar Recurso"}
             </Button>
           </DialogFooter>
         </DialogContent>

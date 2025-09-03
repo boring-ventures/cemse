@@ -1,17 +1,17 @@
 "use client";
 
-import React, { useState, useRef } from 'react';
-import { Button } from '@/components/ui/button';
-import { Card, CardContent } from '@/components/ui/card';
-import { Badge } from '@/components/ui/badge';
-import { 
-  Upload, 
-  CheckCircle, 
+import React, { useState, useRef } from "react";
+import { Button } from "@/components/ui/button";
+import { Card, CardContent } from "@/components/ui/card";
+import { Badge } from "@/components/ui/badge";
+import {
+  Upload,
+  CheckCircle,
   FileVideo,
   Trash2,
   Play,
-  Image as ImageIcon
-} from 'lucide-react';
+  Image as ImageIcon,
+} from "lucide-react";
 
 interface CourseFileUploadProps {
   onFilesChange: (files: { thumbnail?: File; videoPreview?: File }) => void;
@@ -20,7 +20,7 @@ interface CourseFileUploadProps {
 
 export const CourseFileUpload: React.FC<CourseFileUploadProps> = ({
   onFilesChange,
-  className = ""
+  className = "",
 }) => {
   const [selectedFiles, setSelectedFiles] = useState<{
     thumbnail?: File;
@@ -35,30 +35,34 @@ export const CourseFileUpload: React.FC<CourseFileUploadProps> = ({
   const thumbnailInputRef = useRef<HTMLInputElement>(null);
   const videoInputRef = useRef<HTMLInputElement>(null);
 
-  const handleFileSelect = (file: File, type: 'thumbnail' | 'videoPreview') => {
+  const handleFileSelect = (file: File, type: "thumbnail" | "videoPreview") => {
     // Validate file type
-    if (type === 'thumbnail' && !file.type.startsWith('image/')) {
-      alert('Por favor selecciona un archivo de imagen válido para el thumbnail');
+    if (type === "thumbnail" && !file.type.startsWith("image/")) {
+      alert(
+        "Por favor selecciona un archivo de imagen válido para el thumbnail"
+      );
       return;
     }
-    if (type === 'videoPreview' && !file.type.startsWith('video/')) {
-      alert('Por favor selecciona un archivo de video válido para el video preview');
+    if (type === "videoPreview" && !file.type.startsWith("video/")) {
+      alert(
+        "Por favor selecciona un archivo de video válido para el video preview"
+      );
       return;
     }
 
     // Validate file size
-    if (type === 'thumbnail' && file.size > 5 * 1024 * 1024) {
-      alert('El archivo de imagen es demasiado grande. Máximo 5MB');
+    if (type === "thumbnail" && file.size > 5 * 1024 * 1024) {
+      alert("El archivo de imagen es demasiado grande. Máximo 5MB");
       return;
     }
-    if (type === 'videoPreview' && file.size > 100 * 1024 * 1024) {
-      alert('El archivo de video es demasiado grande. Máximo 100MB');
+    if (type === "videoPreview" && file.size > 1024 * 1024 * 1024) {
+      alert("El archivo de video es demasiado grande. Máximo 1GB");
       return;
     }
 
     // Create preview URL
     const url = URL.createObjectURL(file);
-    setPreviewUrls(prev => ({ ...prev, [type]: url }));
+    setPreviewUrls((prev) => ({ ...prev, [type]: url }));
 
     // Update selected files
     const newFiles = { ...selectedFiles, [type]: file };
@@ -66,7 +70,7 @@ export const CourseFileUpload: React.FC<CourseFileUploadProps> = ({
     onFilesChange(newFiles);
   };
 
-  const removeFile = (type: 'thumbnail' | 'videoPreview') => {
+  const removeFile = (type: "thumbnail" | "videoPreview") => {
     // Revoke preview URL to free memory
     if (previewUrls[type]) {
       URL.revokeObjectURL(previewUrls[type]!);
@@ -88,14 +92,17 @@ export const CourseFileUpload: React.FC<CourseFileUploadProps> = ({
   const handleDrag = (e: React.DragEvent) => {
     e.preventDefault();
     e.stopPropagation();
-    if (e.type === 'dragenter' || e.type === 'dragover') {
+    if (e.type === "dragenter" || e.type === "dragover") {
       setDragActive(true);
-    } else if (e.type === 'dragleave') {
+    } else if (e.type === "dragleave") {
       setDragActive(false);
     }
   };
 
-  const handleDrop = (e: React.DragEvent, type: 'thumbnail' | 'videoPreview') => {
+  const handleDrop = (
+    e: React.DragEvent,
+    type: "thumbnail" | "videoPreview"
+  ) => {
     e.preventDefault();
     e.stopPropagation();
     setDragActive(false);
@@ -107,44 +114,50 @@ export const CourseFileUpload: React.FC<CourseFileUploadProps> = ({
   };
 
   const formatFileSize = (bytes: number): string => {
-    if (bytes === 0) return '0 Bytes';
+    if (bytes === 0) return "0 Bytes";
     const k = 1024;
-    const sizes = ['Bytes', 'KB', 'MB', 'GB'];
+    const sizes = ["Bytes", "KB", "MB", "GB"];
     const i = Math.floor(Math.log(bytes) / Math.log(k));
-    return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i];
+    return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + " " + sizes[i];
   };
 
-  const getFileTypeIcon = (type: 'thumbnail' | 'videoPreview') => {
-    return type === 'thumbnail' ? <ImageIcon className="h-6 w-6" /> : <FileVideo className="h-6 w-6" />;
+  const getFileTypeIcon = (type: "thumbnail" | "videoPreview") => {
+    return type === "thumbnail" ? (
+      <ImageIcon className="h-6 w-6" />
+    ) : (
+      <FileVideo className="h-6 w-6" />
+    );
   };
 
-  const getFileTypeLabel = (type: 'thumbnail' | 'videoPreview') => {
-    return type === 'thumbnail' ? 'Imagen de Portada' : 'Video de Presentación';
+  const getFileTypeLabel = (type: "thumbnail" | "videoPreview") => {
+    return type === "thumbnail" ? "Imagen de Portada" : "Video de Presentación";
   };
 
-  const getAcceptedTypes = (type: 'thumbnail' | 'videoPreview') => {
-    return type === 'thumbnail' 
-      ? '.jpg,.jpeg,.png,.gif,.webp'
-      : '.mp4,.webm,.ogg,.avi,.mov';
+  const getAcceptedTypes = (type: "thumbnail" | "videoPreview") => {
+    return type === "thumbnail"
+      ? ".jpg,.jpeg,.png,.gif,.webp"
+      : ".mp4,.webm,.ogg,.avi,.mov";
   };
 
-  const getMaxSize = (type: 'thumbnail' | 'videoPreview') => {
-    return type === 'thumbnail' ? '5MB' : '100MB';
+  const getMaxSize = (type: "thumbnail" | "videoPreview") => {
+    return type === "thumbnail" ? "5MB" : "1GB";
   };
 
   return (
     <div className={`space-y-4 ${className}`}>
       {/* Thumbnail Upload */}
       <div className="space-y-2">
-        <label className="text-sm font-medium">Imagen de Portada (Thumbnail)</label>
+        <label className="text-sm font-medium">
+          Imagen de Portada (Thumbnail)
+        </label>
         {!selectedFiles.thumbnail ? (
-          <Card 
+          <Card
             className={`border-2 border-dashed transition-colors cursor-pointer ${
-              dragActive 
-                ? 'border-blue-500 bg-blue-50' 
-                : 'border-gray-300 hover:border-gray-400'
+              dragActive
+                ? "border-blue-500 bg-blue-50"
+                : "border-gray-300 hover:border-gray-400"
             }`}
-            onDrop={(e) => handleDrop(e, 'thumbnail')}
+            onDrop={(e) => handleDrop(e, "thumbnail")}
             onDragOver={handleDrag}
             onDragLeave={handleDrag}
             onClick={() => thumbnailInputRef.current?.click()}
@@ -162,10 +175,10 @@ export const CourseFileUpload: React.FC<CourseFileUploadProps> = ({
                   Tipos permitidos: JPG, PNG, GIF, WebP
                 </p>
                 <p className="text-sm text-gray-500">
-                  Tamaño máximo: {getMaxSize('thumbnail')}
+                  Tamaño máximo: {getMaxSize("thumbnail")}
                 </p>
               </div>
-              <Button 
+              <Button
                 variant="outline"
                 className="mt-4"
                 onClick={(e) => e.stopPropagation()}
@@ -181,14 +194,16 @@ export const CourseFileUpload: React.FC<CourseFileUploadProps> = ({
               <div className="flex items-center justify-between">
                 <div className="flex items-center space-x-3">
                   <div className="flex-shrink-0">
-                    <img 
-                      src={previewUrls.thumbnail} 
-                      alt="Thumbnail preview" 
+                    <img
+                      src={previewUrls.thumbnail}
+                      alt="Thumbnail preview"
                       className="h-16 w-16 object-cover rounded"
                     />
                   </div>
                   <div>
-                    <p className="font-medium text-sm">{selectedFiles.thumbnail?.name}</p>
+                    <p className="font-medium text-sm">
+                      {selectedFiles.thumbnail?.name}
+                    </p>
                     <p className="text-sm text-gray-500">
                       {formatFileSize(selectedFiles.thumbnail?.size || 0)}
                     </p>
@@ -201,7 +216,7 @@ export const CourseFileUpload: React.FC<CourseFileUploadProps> = ({
                 <Button
                   variant="outline"
                   size="sm"
-                  onClick={() => removeFile('thumbnail')}
+                  onClick={() => removeFile("thumbnail")}
                   className="text-red-600 hover:text-red-700"
                 >
                   <Trash2 className="h-4 w-4" />
@@ -216,7 +231,7 @@ export const CourseFileUpload: React.FC<CourseFileUploadProps> = ({
           accept="image/*"
           onChange={(e) => {
             const file = e.target.files?.[0];
-            if (file) handleFileSelect(file, 'thumbnail');
+            if (file) handleFileSelect(file, "thumbnail");
           }}
           className="hidden"
         />
@@ -226,13 +241,13 @@ export const CourseFileUpload: React.FC<CourseFileUploadProps> = ({
       <div className="space-y-2">
         <label className="text-sm font-medium">Video de Presentación</label>
         {!selectedFiles.videoPreview ? (
-          <Card 
+          <Card
             className={`border-2 border-dashed transition-colors cursor-pointer ${
-              dragActive 
-                ? 'border-blue-500 bg-blue-50' 
-                : 'border-gray-300 hover:border-gray-400'
+              dragActive
+                ? "border-blue-500 bg-blue-50"
+                : "border-gray-300 hover:border-gray-400"
             }`}
-            onDrop={(e) => handleDrop(e, 'videoPreview')}
+            onDrop={(e) => handleDrop(e, "videoPreview")}
             onDragOver={handleDrag}
             onDragLeave={handleDrag}
             onClick={() => videoInputRef.current?.click()}
@@ -250,10 +265,10 @@ export const CourseFileUpload: React.FC<CourseFileUploadProps> = ({
                   Tipos permitidos: MP4, WebM, OGG, AVI, MOV
                 </p>
                 <p className="text-sm text-gray-500">
-                  Tamaño máximo: {getMaxSize('videoPreview')}
+                  Tamaño máximo: {getMaxSize("videoPreview")}
                 </p>
               </div>
-              <Button 
+              <Button
                 variant="outline"
                 className="mt-4"
                 onClick={(e) => e.stopPropagation()}
@@ -269,8 +284,8 @@ export const CourseFileUpload: React.FC<CourseFileUploadProps> = ({
               <div className="flex items-center justify-between">
                 <div className="flex items-center space-x-3">
                   <div className="flex-shrink-0 relative">
-                    <video 
-                      src={previewUrls.videoPreview} 
+                    <video
+                      src={previewUrls.videoPreview}
                       className="h-16 w-16 object-cover rounded"
                       muted
                     />
@@ -279,7 +294,9 @@ export const CourseFileUpload: React.FC<CourseFileUploadProps> = ({
                     </div>
                   </div>
                   <div>
-                    <p className="font-medium text-sm">{selectedFiles.videoPreview?.name}</p>
+                    <p className="font-medium text-sm">
+                      {selectedFiles.videoPreview?.name}
+                    </p>
                     <p className="text-sm text-gray-500">
                       {formatFileSize(selectedFiles.videoPreview?.size || 0)}
                     </p>
@@ -292,7 +309,7 @@ export const CourseFileUpload: React.FC<CourseFileUploadProps> = ({
                 <Button
                   variant="outline"
                   size="sm"
-                  onClick={() => removeFile('videoPreview')}
+                  onClick={() => removeFile("videoPreview")}
                   className="text-red-600 hover:text-red-700"
                 >
                   <Trash2 className="h-4 w-4" />
@@ -307,7 +324,7 @@ export const CourseFileUpload: React.FC<CourseFileUploadProps> = ({
           accept="video/*"
           onChange={(e) => {
             const file = e.target.files?.[0];
-            if (file) handleFileSelect(file, 'videoPreview');
+            if (file) handleFileSelect(file, "videoPreview");
           }}
           className="hidden"
         />
