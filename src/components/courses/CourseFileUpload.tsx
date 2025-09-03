@@ -4,6 +4,7 @@ import React, { useState, useRef } from "react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
+import { Progress } from "@/components/ui/progress";
 import {
   Upload,
   CheckCircle,
@@ -59,8 +60,8 @@ export const CourseFileUpload: React.FC<CourseFileUploadProps> = ({
       alert("El archivo de imagen es demasiado grande. Máximo 5MB");
       return;
     }
-    if (type === "videoPreview" && file.size > 1024 * 1024 * 1024) {
-      alert("El archivo de video es demasiado grande. Máximo 1GB");
+    if (type === "videoPreview" && file.size > 2 * 1024 * 1024 * 1024) {
+      alert("El archivo de video es demasiado grande. Máximo 2GB");
       return;
     }
 
@@ -144,7 +145,7 @@ export const CourseFileUpload: React.FC<CourseFileUploadProps> = ({
   };
 
   const getMaxSize = (type: "thumbnail" | "videoPreview") => {
-    return type === "thumbnail" ? "5MB" : "1GB";
+    return type === "thumbnail" ? "5MB" : "2GB";
   };
 
   return (
@@ -156,12 +157,7 @@ export const CourseFileUpload: React.FC<CourseFileUploadProps> = ({
             <span>Subiendo archivos...</span>
             <span>{uploadProgress}%</span>
           </div>
-          <div className="w-full bg-gray-200 rounded-full h-2">
-            <div
-              className="bg-blue-600 h-2 rounded-full transition-all duration-300"
-              style={{ width: `${uploadProgress}%` }}
-            />
-          </div>
+          <Progress value={uploadProgress} className="w-full" />
         </div>
       )}
 
