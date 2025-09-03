@@ -478,7 +478,7 @@ export default function CreateResourcePage() {
                     )}
 
                     <p className="text-xs text-gray-500">
-                      Tamaño máximo: 100MB.{" "}
+                      Tamaño máximo: 1GB.{" "}
                       {formData.type
                         ? `Tipos permitidos: ${getAcceptedFileTypes()}`
                         : "Selecciona un tipo de recurso primero."}
