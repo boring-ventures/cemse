@@ -14,7 +14,7 @@ export const revalidate = 0;
 export const config = {
   api: {
     bodyParser: {
-      sizeLimit: "10mb", // 10MB per chunk
+      sizeLimit: "512kb", // 512KB per chunk (with some buffer)
     },
   },
 };
@@ -99,16 +99,16 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // Validate chunk size (max 1MB per chunk)
-    if (chunk.size > 1 * 1024 * 1024) {
+    // Validate chunk size (max 256KB per chunk, but allow smaller chunks)
+    if (chunk.size > 256 * 1024) {
       return NextResponse.json(
-        { error: "Chunk size too large. Maximum 1MB per chunk" },
+        { error: "Chunk size too large. Maximum 256KB per chunk" },
         { status: 400 }
       );
     }
 
     console.log(
-      `📁 Chunk API: Processing chunk ${chunkNumber}/${totalChunks} for ${fileName} (${(chunk.size / (1024 * 1024)).toFixed(2)} MB)`
+      `📁 Chunk API: Processing chunk ${chunkNumber}/${totalChunks} for ${fileName} (${(chunk.size / 1024).toFixed(0)} KB)`
     );
 
     // Create temporary directory for chunks
