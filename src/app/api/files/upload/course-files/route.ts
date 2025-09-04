@@ -4,6 +4,21 @@ import { writeFile, mkdir } from "fs/promises";
 import { join } from "path";
 import jwt from "jsonwebtoken";
 
+// Configure runtime for file uploads
+export const runtime = "nodejs";
+export const maxDuration = 300; // 5 minutes timeout
+export const dynamic = "force-dynamic";
+export const revalidate = 0;
+
+// Configure body size limit for file uploads
+export const config = {
+  api: {
+    bodyParser: {
+      sizeLimit: "10mb", // 10MB per file
+    },
+  },
+};
+
 // Configure maximum file sizes
 // Note: These limits are also enforced in the client-side CourseFileUpload component
 const MAX_THUMBNAIL_SIZE = 5 * 1024 * 1024; // 5MB

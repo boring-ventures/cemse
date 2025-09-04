@@ -1,4 +1,4 @@
-version: '3.8'
+version: "3.8"
 
 services:
   # PostgreSQL Database
@@ -77,14 +77,14 @@ services:
       # Database
       DATABASE_URL: postgresql://postgres:postgres@db:5432/cemse_prod
       DIRECT_URL: postgresql://postgres:postgres@db:5432/cemse_prod
-      
+
       # Application
       NODE_ENV: production
       PORT: 3000
-      
+
       # Redis
       REDIS_URL: redis://redis:6379
-      
+
       # MinIO Configuration
       MINIO_ENDPOINT: minio
       MINIO_PORT: 9000
@@ -92,7 +92,7 @@ services:
       MINIO_SECRET_KEY: minioadmin
       MINIO_USE_SSL: false
       MINIO_BASE_URL: http://localhost:9000
-      
+
       # Next.js specific
       NEXT_PUBLIC_APP_URL: http://localhost:3000
     ports:
@@ -100,7 +100,15 @@ services:
     volumes:
       - ./public/uploads:/app/public/uploads
     healthcheck:
-      test: ["CMD", "wget", "--no-verbose", "--tries=1", "--spider", "http://localhost:3000/api/health"]
+      test:
+        [
+          "CMD",
+          "wget",
+          "--no-verbose",
+          "--tries=1",
+          "--spider",
+          "http://localhost:3000/api/health",
+        ]
       interval: 30s
       timeout: 10s
       retries: 3
@@ -127,4 +135,4 @@ volumes:
 
 networks:
   cemse-network:
-    driver: bridge 
+    driver: bridge

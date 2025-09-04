@@ -15,8 +15,8 @@ interface UseCourseFileUploadReturn {
   uploadProgress: number;
 }
 
-// Chunk size for large file uploads (5MB chunks to work around infrastructure limits)
-const CHUNK_SIZE = 5 * 1024 * 1024; // 5MB
+// Chunk size for large file uploads (1MB chunks to work around infrastructure limits)
+const CHUNK_SIZE = 1 * 1024 * 1024; // 1MB
 
 export const useCourseFileUpload = (): UseCourseFileUploadReturn => {
   const [isUploading, setIsUploading] = useState(false);
