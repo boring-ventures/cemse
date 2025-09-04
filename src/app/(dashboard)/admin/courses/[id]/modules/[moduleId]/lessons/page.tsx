@@ -272,6 +272,29 @@ export default function ModuleLessonsPage() {
     setUploadStage("Convirtiendo video a MP4...");
 
     try {
+      // TEMPORARY: Skip video conversion for testing
+      console.log(
+        "🧪 TEMPORARY: Skipping video conversion, returning original file"
+      );
+      setUploadStage("Saltando conversión de video (modo de prueba)...");
+
+      // Just return the original file with MP4 extension
+      const convertedFile = new File(
+        [file],
+        file.name.replace(/\.[^/.]+$/, ".mp4"),
+        { type: "video/mp4" }
+      );
+
+      console.log("✅ Video conversion skipped (test mode):", {
+        originalSize: file.size,
+        convertedSize: convertedFile.size,
+        originalType: file.type,
+        convertedType: convertedFile.type,
+      });
+
+      return convertedFile;
+
+      /* ORIGINAL CODE - COMMENTED OUT FOR TESTING
       const formData = new FormData();
       formData.append("video", file);
       formData.append("format", "mp4");
@@ -301,6 +324,7 @@ export default function ModuleLessonsPage() {
       });
 
       return convertedFile;
+      */
     } catch (error) {
       console.error("❌ Video conversion failed:", error);
       throw error;
