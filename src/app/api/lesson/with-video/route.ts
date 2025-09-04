@@ -25,6 +25,8 @@ const BUCKET_NAME = process.env.MINIO_BUCKET_NAME || "course-videos";
 export async function POST(request: NextRequest) {
   try {
     console.log("🎥 API: Received POST request for lesson with video upload");
+    console.log("🎥 API: Request headers:", Object.fromEntries(request.headers.entries()));
+    console.log("🎥 API: Memory usage at start:", process.memoryUsage());
 
     // Get auth token
     const token = request.headers.get("authorization")?.replace("Bearer ", "");
@@ -39,7 +41,10 @@ export async function POST(request: NextRequest) {
     const decoded = jwt.verify(token, JWT_SECRET) as any;
     console.log("🎥 API: Authenticated user:", decoded.username);
 
+    console.log("🎥 API: About to parse form data...");
     const formData = await request.formData();
+    console.log("🎥 API: Form data parsed successfully");
+    console.log("🎥 API: Memory usage after form data:", process.memoryUsage());
 
     // Extract lesson data
     const title = formData.get("title") as string;
@@ -100,8 +105,12 @@ export async function POST(request: NextRequest) {
       }
 
       // Convert File to Buffer
+      console.log("🎥 API: Converting file to buffer...");
       const arrayBuffer = await videoFile.arrayBuffer();
+      console.log("🎥 API: Array buffer created, size:", arrayBuffer.byteLength);
+      console.log("🎥 API: Memory usage after array buffer:", process.memoryUsage());
       const buffer = Buffer.from(arrayBuffer);
+      console.log("🎥 API: Buffer created, size:", buffer.length);
 
       // Validate video file before upload
       if (buffer.length === 0) {
@@ -120,6 +129,7 @@ export async function POST(request: NextRequest) {
       });
       
       // Upload video to MinIO
+      console.log("🎥 API: Starting MinIO upload...");
       await minioClient.putObject(
         BUCKET_NAME,
         fileName,
@@ -131,6 +141,7 @@ export async function POST(request: NextRequest) {
           "Content-Disposition": "inline", // Allow inline viewing
         }
       );
+      console.log("🎥 API: MinIO upload completed successfully");
       
       // Verify upload by checking object info
       const objectInfo = await minioClient.statObject(BUCKET_NAME, fileName);
