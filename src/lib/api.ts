@@ -315,7 +315,9 @@ export const apiCall = async (
         }
       }
 
-      throw new Error(`HTTP error! status: ${response.status}`);
+      const error = new Error(`HTTP error! status: ${response.status}`);
+      (error as any).status = response.status;
+      throw error;
     }
 
     return await response.json();
