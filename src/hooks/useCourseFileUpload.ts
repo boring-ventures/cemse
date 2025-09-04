@@ -15,8 +15,8 @@ interface UseCourseFileUploadReturn {
   uploadProgress: number;
 }
 
-// Chunk size for large file uploads (1MB chunks to work around infrastructure limits)
-const CHUNK_SIZE = 1 * 1024 * 1024; // 1MB
+// Chunk size for large file uploads (256KB chunks to work around strict infrastructure limits)
+const CHUNK_SIZE = 256 * 1024; // 256KB
 
 export const useCourseFileUpload = (): UseCourseFileUploadReturn => {
   const [isUploading, setIsUploading] = useState(false);
@@ -36,16 +36,34 @@ export const useCourseFileUpload = (): UseCourseFileUploadReturn => {
     return chunks;
   };
 
-  // Function to upload file in chunks
+  // Function to split file into chunks with custom size
+  const splitFileIntoChunksWithSize = (
+    file: File,
+    chunkSize: number
+  ): Blob[] => {
+    const chunks: Blob[] = [];
+    let start = 0;
+
+    while (start < file.size) {
+      const end = Math.min(start + chunkSize, file.size);
+      chunks.push(file.slice(start, end));
+      start = end;
+    }
+
+    return chunks;
+  };
+
+  // Function to upload file in chunks with fallback for smaller chunks
   const uploadFileInChunks = async (
     file: File,
-    fileType: "thumbnail" | "videoPreview"
+    fileType: "thumbnail" | "videoPreview",
+    chunkSize: number = CHUNK_SIZE
   ): Promise<string> => {
-    const chunks = splitFileIntoChunks(file);
+    const chunks = splitFileIntoChunksWithSize(file, chunkSize);
     const totalChunks = chunks.length;
 
     console.log(
-      `📁 Hook: Uploading ${file.name} in ${totalChunks} chunks of ${(CHUNK_SIZE / (1024 * 1024)).toFixed(1)}MB each`
+      `📁 Hook: Uploading ${file.name} in ${totalChunks} chunks of ${(chunkSize / 1024).toFixed(0)}KB each`
     );
 
     // Create a unique session ID for this upload
@@ -88,6 +106,27 @@ export const useCourseFileUpload = (): UseCourseFileUploadReturn => {
         );
       } catch (error) {
         console.error(`📁 Hook: Error uploading chunk ${chunkNumber}:`, error);
+
+        // If it's a 413 error, try with progressively smaller chunks
+        if (error instanceof Error && error.message.includes("413")) {
+          if (chunkSize === CHUNK_SIZE) {
+            console.log(
+              "📁 Hook: 413 error detected, retrying with smaller chunks (128KB)"
+            );
+            return uploadFileInChunks(file, fileType, 128 * 1024); // 128KB chunks
+          } else if (chunkSize === 128 * 1024) {
+            console.log(
+              "📁 Hook: 413 error still occurring, retrying with even smaller chunks (64KB)"
+            );
+            return uploadFileInChunks(file, fileType, 64 * 1024); // 64KB chunks
+          } else if (chunkSize === 64 * 1024) {
+            console.log(
+              "📁 Hook: 413 error still occurring, retrying with minimal chunks (32KB)"
+            );
+            return uploadFileInChunks(file, fileType, 32 * 1024); // 32KB chunks
+          }
+        }
+
         throw new Error(
           `Failed to upload chunk ${chunkNumber}: ${error instanceof Error ? error.message : "Unknown error"}`
         );
