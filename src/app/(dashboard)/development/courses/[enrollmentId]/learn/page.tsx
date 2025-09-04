@@ -116,15 +116,43 @@ export default function CourseLearningPage() {
           enrollmentId
         );
 
+        // Validate enrollment ID format
+        if (!enrollmentId || enrollmentId.length < 10) {
+          console.log(
+            "🔍 CourseLearningPage: Invalid enrollment ID format, redirecting"
+          );
+          router.push("/development/my-courses");
+          return;
+        }
+
         // Intentar cargar datos completos para aprendizaje primero
-        let enrollmentData = await getEnrollmentForLearning(enrollmentId);
+        let enrollmentData;
+        try {
+          enrollmentData = await getEnrollmentForLearning(enrollmentId);
+        } catch (error) {
+          // If we get an error here, it's likely a 404
+          console.log(
+            "🔍 CourseLearningPage: Error in getEnrollmentForLearning, likely 404"
+          );
+          console.log("🔍 CourseLearningPage: Redirecting to my courses");
+          router.push("/development/my-courses");
+          return;
+        }
 
         // Si no se obtuvieron datos completos, usar el método normal como fallback
         if (!enrollmentData) {
           console.log(
             "🔍 CourseLearningPage: Fallback to normal enrollment endpoint"
           );
-          enrollmentData = await getEnrollmentById(enrollmentId);
+          try {
+            enrollmentData = await getEnrollmentById(enrollmentId);
+          } catch (error) {
+            // If we get an error here, it's likely a 404
+            console.log("🔍 CourseLearningPage: Error in fallback, likely 404");
+            console.log("🔍 CourseLearningPage: Redirecting to my courses");
+            router.push("/development/my-courses");
+            return;
+          }
         }
 
         console.log(
@@ -133,7 +161,12 @@ export default function CourseLearningPage() {
         );
 
         if (!enrollmentData) {
-          throw new Error("No se encontró la inscripción al curso");
+          // Check if this is a 404 error (enrollment not found)
+          console.log(
+            "🔍 CourseLearningPage: Enrollment not found, redirecting to my courses"
+          );
+          router.push("/development/my-courses");
+          return;
         }
 
         // Verificar si las lecciones tienen resources y quizzes
@@ -269,6 +302,19 @@ export default function CourseLearningPage() {
       } catch (err) {
         const errorMessage =
           err instanceof Error ? err.message : "Error al cargar el curso";
+
+        // Check if this is a 404 error (enrollment not found)
+        if (
+          errorMessage.includes("404") ||
+          errorMessage.includes("No se encontró la inscripción")
+        ) {
+          console.log(
+            "🔍 CourseLearningPage: Enrollment not found, redirecting to my courses"
+          );
+          router.push("/development/my-courses");
+          return;
+        }
+
         setError(errorMessage);
         console.error("Error loading course:", err);
       } finally {
@@ -1377,8 +1423,6 @@ export default function CourseLearningPage() {
         nextLesson={getNextLesson()}
         loading={completingLesson}
       />
-
-
     </div>
   );
 }

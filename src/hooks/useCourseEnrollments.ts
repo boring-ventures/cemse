@@ -203,6 +203,14 @@ export const useCourseEnrollments = () => {
         return data.enrollment || data;
       } catch (err) {
         console.error("Error fetching enrollment by ID:", err);
+
+        // Check if this is a 404 error
+        if (err instanceof Error && err.message.includes("404")) {
+          console.log(
+            "🔍 useCourseEnrollments: 404 error - enrollment not found"
+          );
+        }
+
         return null;
       }
     },
