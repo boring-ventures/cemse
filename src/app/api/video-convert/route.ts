@@ -58,9 +58,13 @@ export async function POST(request: NextRequest) {
       Object.fromEntries(request.headers.entries())
     );
 
+    // Test if we can access the request body
+    console.log("🎬 API: Testing request body access...");
+
     // Get auth token
     const token = request.headers.get("authorization")?.replace("Bearer ", "");
     if (!token) {
+      console.log("🎬 API: No authorization token provided");
       return NextResponse.json(
         { message: "Authorization required" },
         { status: 401 }
@@ -68,12 +72,48 @@ export async function POST(request: NextRequest) {
     }
 
     // Verify token
-    const decoded = jwt.verify(token, JWT_SECRET) as any;
-    console.log("🎬 API: Authenticated user:", decoded.username);
+    console.log("🎬 API: Verifying JWT token...");
+    let decoded;
+    try {
+      decoded = jwt.verify(token, JWT_SECRET) as any;
+      console.log("🎬 API: Authenticated user:", decoded.username);
+    } catch (jwtError) {
+      console.error("🎬 API: JWT verification failed:", jwtError);
+      return NextResponse.json(
+        { message: "Invalid or expired token" },
+        { status: 401 }
+      );
+    }
 
-    const formData = await request.formData();
-    const videoFile = formData.get("video") as File;
-    let requestedFormat = (formData.get("format") as string) || "mp4"; // Default to MP4 for backward compatibility
+    console.log("🎬 API: Parsing form data...");
+    let formData;
+    let videoFile;
+    let requestedFormat;
+
+    try {
+      formData = await request.formData();
+      console.log("🎬 API: Form data parsed successfully");
+
+      videoFile = formData.get("video") as File;
+      requestedFormat = (formData.get("format") as string) || "mp4";
+
+      console.log("🎬 API: Form data contents:", {
+        hasVideo: !!videoFile,
+        videoName: videoFile?.name,
+        videoSize: videoFile?.size,
+        videoType: videoFile?.type,
+        requestedFormat,
+      });
+    } catch (formDataError) {
+      console.error("🎬 API: Error parsing form data:", formDataError);
+      return NextResponse.json(
+        {
+          message: "Failed to parse form data",
+          error: (formDataError as Error).message,
+        },
+        { status: 400 }
+      );
+    }
 
     if (!videoFile) {
       return NextResponse.json(
@@ -95,7 +135,21 @@ export async function POST(request: NextRequest) {
     );
 
     // Check if FFmpeg is available
-    const ffmpegAvailable = await checkFFmpegAvailability();
+    console.log("🎬 API: Checking FFmpeg availability...");
+    let ffmpegAvailable;
+    try {
+      ffmpegAvailable = await checkFFmpegAvailability();
+      console.log(
+        "🎬 API: FFmpeg availability check completed:",
+        ffmpegAvailable
+      );
+    } catch (ffmpegCheckError) {
+      console.error(
+        "🎬 API: FFmpeg availability check failed:",
+        ffmpegCheckError
+      );
+      ffmpegAvailable = false;
+    }
 
     if (!ffmpegAvailable) {
       console.warn(
@@ -161,10 +215,10 @@ export async function POST(request: NextRequest) {
           console.log("🎬 Using stream copy (no re-encoding)");
           command
             .output(outputPath)
-            .on("start", (commandLine) => {
+            .on("start", (commandLine: string) => {
               console.log("🎬 FFmpeg command:", commandLine);
             })
-            .on("progress", (progress) => {
+            .on("progress", (progress: any) => {
               const percent = Math.round(progress.percent || 0);
               const timemark = progress.timemark || "unknown";
               const fps = progress.currentFps || 0;
@@ -176,7 +230,7 @@ export async function POST(request: NextRequest) {
               console.log("🎬 Video conversion to MP4 completed successfully");
               resolve();
             })
-            .on("error", (error) => {
+            .on("error", (error: Error) => {
               console.error("🎬 FFmpeg error:", error);
               reject(error);
             })
@@ -235,10 +289,10 @@ export async function POST(request: NextRequest) {
           console.log("🎬 Using minimal re-encoding");
           command
             .output(outputPath)
-            .on("start", (commandLine) => {
+            .on("start", (commandLine: string) => {
               console.log("🎬 FFmpeg command:", commandLine);
             })
-            .on("progress", (progress) => {
+            .on("progress", (progress: any) => {
               const percent = Math.round(progress.percent || 0);
               const timemark = progress.timemark || "unknown";
               const fps = progress.currentFps || 0;
@@ -250,7 +304,7 @@ export async function POST(request: NextRequest) {
               console.log("🎬 Video conversion to MP4 completed successfully");
               resolve();
             })
-            .on("error", (error) => {
+            .on("error", (error: Error) => {
               console.error("🎬 FFmpeg error:", error);
               reject(error);
             })
@@ -273,6 +327,13 @@ export async function POST(request: NextRequest) {
         ((videoFile.size - convertedSize) / videoFile.size) *
         100
       ).toFixed(1);
+
+      // Determine actual conversion status
+      let conversionStatus = "converted-to-mp4"; // default
+      if (requestedFormat === "webm") {
+        conversionStatus = "converted-to-webm";
+      }
+
       console.log(`✅ CONVERSION SUCCESSFUL:`, {
         originalSize: videoFile.size,
         convertedSize: convertedSize,
@@ -294,11 +355,6 @@ export async function POST(request: NextRequest) {
       // Return converted video as blob
       const mimeType = requestedFormat === "webm" ? "video/webm" : "video/mp4";
       const fileExtension = requestedFormat === "webm" ? "webm" : "mp4";
-      // Determine actual conversion status
-      let conversionStatus = "converted-to-mp4"; // default
-      if (requestedFormat === "webm") {
-        conversionStatus = "converted-to-webm";
-      }
 
       console.log(`🎬 Final conversion status: ${conversionStatus}`);
 
