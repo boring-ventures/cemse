@@ -24,14 +24,6 @@ export const config = {
 const MAX_THUMBNAIL_SIZE = 5 * 1024 * 1024; // 5MB
 const MAX_VIDEO_SIZE = 2 * 1024 * 1024 * 1024; // 2GB (increased for better file handling)
 
-// Configure runtime for large file uploads
-export const runtime = "nodejs";
-export const maxDuration = 300; // 5 minutes timeout for large uploads
-
-// Configure body size limit for this route
-export const dynamic = "force-dynamic";
-export const revalidate = 0;
-
 // For Next.js 15, try to handle large files by streaming
 export const preferredRegion = "auto";
 
