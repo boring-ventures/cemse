@@ -64,7 +64,12 @@ import {
   AlertCircle,
   Search,
 } from "lucide-react";
-import { useCourseModules, useCreateModule, useUpdateModule, useDeleteModule } from "@/hooks/useCourseModuleApi";
+import {
+  useCourseModules,
+  useCreateModule,
+  useUpdateModule,
+  useDeleteModule,
+} from "@/hooks/useCourseModuleApi";
 // import { useModuleLessons } from "@/hooks/useLessonApi";
 // import { useLessonResources } from "@/hooks/useLessonResourceApi";
 // import { useModuleCertificates } from "@/hooks/useModuleCertificateApi";
@@ -92,15 +97,19 @@ export default function CourseModulesPage() {
   });
 
   // Hooks
-  const { data: modulesData, isLoading: modulesLoading, error } = useCourseModules(courseId);
+  const {
+    data: modulesData,
+    isLoading: modulesLoading,
+    error,
+  } = useCourseModules(courseId);
   const modules = (modulesData as any)?.modules || [];
-  
+
   // Debug logs
-  console.log('Course ID:', courseId);
-  console.log('Modules Data:', modulesData);
-  console.log('Modules:', modules);
-  console.log('Loading:', modulesLoading);
-  console.log('Error:', error);
+  console.log("Course ID:", courseId);
+  console.log("Modules Data:", modulesData);
+  console.log("Modules:", modules);
+  console.log("Loading:", modulesLoading);
+  console.log("Error:", error);
   const createModule = useCreateModule();
   const updateModule = useUpdateModule();
   const deleteModule = useDeleteModule();
@@ -116,13 +125,13 @@ export default function CourseModulesPage() {
       toast.error("El título del módulo es requerido");
       return;
     }
-    
+
     try {
       await createModule.mutateAsync({
         courseId,
         ...formData,
       });
-      
+
       setIsCreateDialogOpen(false);
       setFormData({
         title: "",
@@ -142,19 +151,19 @@ export default function CourseModulesPage() {
 
   const handleEditModule = async () => {
     if (!editingModule) return;
-    
+
     // Validation
     if (!formData.title.trim()) {
       toast.error("El título del módulo es requerido");
       return;
     }
-    
+
     try {
       await updateModule.mutateAsync({
         id: editingModule.id,
         ...formData,
       });
-      
+
       setIsEditDialogOpen(false);
       setEditingModule(null);
       setFormData({
@@ -230,11 +239,9 @@ export default function CourseModulesPage() {
             Error al cargar los módulos
           </h3>
           <p className="text-muted-foreground mb-4">
-            {error.message || 'Ha ocurrido un error inesperado'}
+            {error.message || "Ha ocurrido un error inesperado"}
           </p>
-          <Button onClick={() => window.location.reload()}>
-            Reintentar
-          </Button>
+          <Button onClick={() => window.location.reload()}>Reintentar</Button>
         </div>
       </div>
     );
@@ -265,7 +272,10 @@ export default function CourseModulesPage() {
               Vista Previa del Curso
             </Link>
           </Button>
-          <Dialog open={isCreateDialogOpen} onOpenChange={setIsCreateDialogOpen}>
+          <Dialog
+            open={isCreateDialogOpen}
+            onOpenChange={setIsCreateDialogOpen}
+          >
             <DialogTrigger asChild>
               <Button>
                 <Plus className="h-4 w-4 mr-2" />
@@ -276,7 +286,8 @@ export default function CourseModulesPage() {
               <DialogHeader>
                 <DialogTitle>Crear Nuevo Módulo</DialogTitle>
                 <DialogDescription>
-                  Agrega un nuevo módulo al curso con su contenido y configuración.
+                  Agrega un nuevo módulo al curso con su contenido y
+                  configuración.
                 </DialogDescription>
               </DialogHeader>
               <div className="grid gap-4 py-4">
@@ -285,7 +296,9 @@ export default function CourseModulesPage() {
                   <Input
                     id="title"
                     value={formData.title}
-                    onChange={(e) => setFormData({ ...formData, title: e.target.value })}
+                    onChange={(e) =>
+                      setFormData({ ...formData, title: e.target.value })
+                    }
                     placeholder="Ej: Fundamentos de HTML"
                   />
                 </div>
@@ -294,7 +307,9 @@ export default function CourseModulesPage() {
                   <Textarea
                     id="description"
                     value={formData.description}
-                    onChange={(e) => setFormData({ ...formData, description: e.target.value })}
+                    onChange={(e) =>
+                      setFormData({ ...formData, description: e.target.value })
+                    }
                     placeholder="Describe el contenido del módulo..."
                   />
                 </div>
@@ -305,7 +320,12 @@ export default function CourseModulesPage() {
                       id="orderIndex"
                       type="number"
                       value={formData.orderIndex}
-                      onChange={(e) => setFormData({ ...formData, orderIndex: parseInt(e.target.value) })}
+                      onChange={(e) =>
+                        setFormData({
+                          ...formData,
+                          orderIndex: parseInt(e.target.value),
+                        })
+                      }
                       min="1"
                     />
                   </div>
@@ -315,7 +335,12 @@ export default function CourseModulesPage() {
                       id="duration"
                       type="number"
                       value={formData.estimatedDuration}
-                      onChange={(e) => setFormData({ ...formData, estimatedDuration: parseInt(e.target.value) })}
+                      onChange={(e) =>
+                        setFormData({
+                          ...formData,
+                          estimatedDuration: parseInt(e.target.value),
+                        })
+                      }
                       min="1"
                     />
                   </div>
@@ -325,16 +350,27 @@ export default function CourseModulesPage() {
                     type="checkbox"
                     id="hasCertificate"
                     checked={formData.hasCertificate}
-                    onChange={(e) => setFormData({ ...formData, hasCertificate: e.target.checked })}
+                    onChange={(e) =>
+                      setFormData({
+                        ...formData,
+                        hasCertificate: e.target.checked,
+                      })
+                    }
                   />
                   <label htmlFor="hasCertificate">Incluir certificado</label>
                 </div>
               </div>
               <DialogFooter>
-                <Button variant="outline" onClick={() => setIsCreateDialogOpen(false)}>
+                <Button
+                  variant="outline"
+                  onClick={() => setIsCreateDialogOpen(false)}
+                >
                   Cancelar
                 </Button>
-                <Button onClick={handleCreateModule} disabled={createModule.isPending}>
+                <Button
+                  onClick={handleCreateModule}
+                  disabled={createModule.isPending}
+                >
                   {createModule.isPending ? "Creando..." : "Crear Módulo"}
                 </Button>
               </DialogFooter>
@@ -372,7 +408,6 @@ export default function CourseModulesPage() {
                   <TableHead>Duración</TableHead>
                   <TableHead>Estado</TableHead>
                   <TableHead>Certificado</TableHead>
-                  <TableHead>Última actualización</TableHead>
                   <TableHead className="text-right">Acciones</TableHead>
                 </TableRow>
               </TableHeader>
@@ -427,7 +462,9 @@ export default function CourseModulesPage() {
                         </div>
                       </TableCell>
                       <TableCell>
-                        <Badge variant={module.isLocked ? "secondary" : "default"}>
+                        <Badge
+                          variant={module.isLocked ? "secondary" : "default"}
+                        >
                           {module.isLocked ? (
                             <>
                               <Lock className="h-3 w-3 mr-1" />
@@ -451,9 +488,6 @@ export default function CourseModulesPage() {
                           <Badge variant="secondary">No disponible</Badge>
                         )}
                       </TableCell>
-                      <TableCell>
-                        {module.updatedAt ? new Date(module.updatedAt).toLocaleDateString() : "N/A"}
-                      </TableCell>
                       <TableCell className="text-right">
                         <DropdownMenu>
                           <DropdownMenuTrigger asChild>
@@ -463,36 +497,24 @@ export default function CourseModulesPage() {
                           </DropdownMenuTrigger>
                           <DropdownMenuContent align="end">
                             <DropdownMenuItem asChild>
-                              <Link href={`/admin/courses/${courseId}/modules/${module.id}/lessons`}>
+                              <Link
+                                href={`/admin/courses/${courseId}/modules/${module.id}/lessons`}
+                              >
                                 <FileText className="h-4 w-4 mr-2" />
                                 Gestionar lecciones
                               </Link>
                             </DropdownMenuItem>
                             <DropdownMenuItem asChild>
-                              <Link href={`/admin/courses/${courseId}/modules/${module.id}/preview`}>
+                              <Link
+                                href={`/admin/courses/${courseId}/modules/${module.id}/preview`}
+                              >
                                 <Eye className="h-4 w-4 mr-2" />
                                 Vista previa
                               </Link>
                             </DropdownMenuItem>
-                            <DropdownMenuItem asChild>
-                              <Link href={`/admin/courses/${courseId}/modules/${module.id}/resources`}>
-                                <Download className="h-4 w-4 mr-2" />
-                                Recursos
-                              </Link>
-                            </DropdownMenuItem>
-                            <DropdownMenuItem asChild>
-                              <Link href={`/admin/courses/${courseId}/modules/${module.id}/certificates`}>
-                                <GraduationCap className="h-4 w-4 mr-2" />
-                                Certificados
-                              </Link>
-                            </DropdownMenuItem>
-                            <DropdownMenuItem asChild>
-                              <Link href={`/admin/courses/${courseId}/modules/${module.id}/progress`}>
-                                <Target className="h-4 w-4 mr-2" />
-                                Progreso
-                              </Link>
-                            </DropdownMenuItem>
-                            <DropdownMenuItem onClick={() => openEditDialog(module)}>
+                            <DropdownMenuItem
+                              onClick={() => openEditDialog(module)}
+                            >
                               <Edit className="h-4 w-4 mr-2" />
                               Editar
                             </DropdownMenuItem>
@@ -548,7 +570,9 @@ export default function CourseModulesPage() {
               <Input
                 id="edit-title"
                 value={formData.title}
-                onChange={(e) => setFormData({ ...formData, title: e.target.value })}
+                onChange={(e) =>
+                  setFormData({ ...formData, title: e.target.value })
+                }
                 placeholder="Ej: Fundamentos de HTML"
               />
             </div>
@@ -557,7 +581,9 @@ export default function CourseModulesPage() {
               <Textarea
                 id="edit-description"
                 value={formData.description}
-                onChange={(e) => setFormData({ ...formData, description: e.target.value })}
+                onChange={(e) =>
+                  setFormData({ ...formData, description: e.target.value })
+                }
                 placeholder="Describe el contenido del módulo..."
               />
             </div>
@@ -568,7 +594,12 @@ export default function CourseModulesPage() {
                   id="edit-orderIndex"
                   type="number"
                   value={formData.orderIndex}
-                  onChange={(e) => setFormData({ ...formData, orderIndex: parseInt(e.target.value) })}
+                  onChange={(e) =>
+                    setFormData({
+                      ...formData,
+                      orderIndex: parseInt(e.target.value),
+                    })
+                  }
                   min="1"
                 />
               </div>
@@ -578,7 +609,12 @@ export default function CourseModulesPage() {
                   id="edit-duration"
                   type="number"
                   value={formData.estimatedDuration}
-                  onChange={(e) => setFormData({ ...formData, estimatedDuration: parseInt(e.target.value) })}
+                  onChange={(e) =>
+                    setFormData({
+                      ...formData,
+                      estimatedDuration: parseInt(e.target.value),
+                    })
+                  }
                   min="1"
                 />
               </div>
@@ -588,16 +624,24 @@ export default function CourseModulesPage() {
                 type="checkbox"
                 id="edit-hasCertificate"
                 checked={formData.hasCertificate}
-                onChange={(e) => setFormData({ ...formData, hasCertificate: e.target.checked })}
+                onChange={(e) =>
+                  setFormData({ ...formData, hasCertificate: e.target.checked })
+                }
               />
               <label htmlFor="edit-hasCertificate">Incluir certificado</label>
             </div>
           </div>
           <DialogFooter>
-            <Button variant="outline" onClick={() => setIsEditDialogOpen(false)}>
+            <Button
+              variant="outline"
+              onClick={() => setIsEditDialogOpen(false)}
+            >
               Cancelar
             </Button>
-            <Button onClick={handleEditModule} disabled={updateModule.isPending}>
+            <Button
+              onClick={handleEditModule}
+              disabled={updateModule.isPending}
+            >
               {updateModule.isPending ? "Actualizando..." : "Actualizar Módulo"}
             </Button>
           </DialogFooter>

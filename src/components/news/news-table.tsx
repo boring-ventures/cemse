@@ -44,11 +44,7 @@ import {
   Eye,
   Edit,
   Trash2,
-  ExternalLink,
   Calendar,
-  TrendingUp,
-  Users,
-  MessageSquare,
   Star,
   Image,
 } from "lucide-react";
@@ -104,10 +100,21 @@ const getAuthorTypeColor = (type: string) => {
   }
 };
 
-export function NewsTable({ news, onEdit, onDelete, onView, isLoading = false }: NewsTableProps) {
+export function NewsTable({
+  news,
+  onEdit,
+  onDelete,
+  onView,
+  isLoading = false,
+}: NewsTableProps) {
   const { toast } = useToast();
   const [deletingId, setDeletingId] = useState<string | null>(null);
-  const [imagePreview, setImagePreview] = useState<{ url: string; title: string } | null>(null);
+  const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
+  const [newsToDelete, setNewsToDelete] = useState<NewsArticle | null>(null);
+  const [imagePreview, setImagePreview] = useState<{
+    url: string;
+    title: string;
+  } | null>(null);
 
   const handleDelete = async (id: string) => {
     try {
@@ -127,6 +134,24 @@ export function NewsTable({ news, onEdit, onDelete, onView, isLoading = false }:
     } finally {
       setDeletingId(null);
     }
+  };
+
+  const handleDeleteClick = (news: NewsArticle) => {
+    setNewsToDelete(news);
+    setDeleteDialogOpen(true);
+  };
+
+  const handleDeleteConfirm = async () => {
+    if (newsToDelete) {
+      await handleDelete(newsToDelete.id);
+      setDeleteDialogOpen(false);
+      setNewsToDelete(null);
+    }
+  };
+
+  const handleDeleteCancel = () => {
+    setDeleteDialogOpen(false);
+    setNewsToDelete(null);
   };
 
   const formatDate = (dateString: string) => {
@@ -171,7 +196,6 @@ export function NewsTable({ news, onEdit, onDelete, onView, isLoading = false }:
               <TableHead>Estado</TableHead>
               <TableHead>Prioridad</TableHead>
               <TableHead>Categoría</TableHead>
-              <TableHead>Estadísticas</TableHead>
               <TableHead>Fecha</TableHead>
               <TableHead className="w-[50px]">Acciones</TableHead>
             </TableRow>
@@ -192,7 +216,12 @@ export function NewsTable({ news, onEdit, onDelete, onView, isLoading = false }:
                           variant="ghost"
                           size="sm"
                           className="absolute -top-1 -right-1 h-6 w-6 p-0 bg-white/80 hover:bg-white shadow-sm"
-                          onClick={() => setImagePreview({ url: item.imageUrl!, title: item.title })}
+                          onClick={() =>
+                            setImagePreview({
+                              url: item.imageUrl!,
+                              title: item.title,
+                            })
+                          }
                         >
                           <Image className="h-3 w-3" />
                         </Button>
@@ -212,7 +241,11 @@ export function NewsTable({ news, onEdit, onDelete, onView, isLoading = false }:
                       </p>
                       <div className="flex items-center space-x-2 mt-2">
                         {item.tags.slice(0, 2).map((tag, index) => (
-                          <Badge key={index} variant="secondary" className="text-xs">
+                          <Badge
+                            key={index}
+                            variant="secondary"
+                            className="text-xs"
+                          >
                             {tag}
                           </Badge>
                         ))}
@@ -229,13 +262,18 @@ export function NewsTable({ news, onEdit, onDelete, onView, isLoading = false }:
                 <TableCell>
                   <div className="flex items-center space-x-2">
                     <Avatar className="h-8 w-8">
-                      <AvatarImage src={item.authorLogo} alt={item.authorName} />
+                      <AvatarImage
+                        src={item.authorLogo}
+                        alt={item.authorName}
+                      />
                       <AvatarFallback>
                         {item.authorName.charAt(0).toUpperCase()}
                       </AvatarFallback>
                     </Avatar>
                     <div>
-                      <div className="text-sm font-medium">{item.authorName}</div>
+                      <div className="text-sm font-medium">
+                        {item.authorName}
+                      </div>
                       <Badge className={getAuthorTypeColor(item.authorType)}>
                         {item.authorType === "COMPANY" && "Empresa"}
                         {item.authorType === "GOVERNMENT" && "Gobierno"}
@@ -267,26 +305,11 @@ export function NewsTable({ news, onEdit, onDelete, onView, isLoading = false }:
                 </TableCell>
 
                 <TableCell>
-                  <div className="flex items-center space-x-4 text-xs text-gray-500">
-                    <div className="flex items-center space-x-1">
-                      <TrendingUp className="h-3 w-3" />
-                      <span>{item.viewCount}</span>
-                    </div>
-                    <div className="flex items-center space-x-1">
-                      <Users className="h-3 w-3" />
-                      <span>{item.likeCount}</span>
-                    </div>
-                    <div className="flex items-center space-x-1">
-                      <MessageSquare className="h-3 w-3" />
-                      <span>{item.commentCount}</span>
-                    </div>
-                  </div>
-                </TableCell>
-
-                <TableCell>
                   <div className="flex items-center space-x-1 text-xs text-gray-500">
                     <Calendar className="h-3 w-3" />
-                    <span>{formatDate(item.publishedAt || item.createdAt)}</span>
+                    <span>
+                      {formatDate(item.publishedAt || item.createdAt)}
+                    </span>
                   </div>
                 </TableCell>
 
@@ -307,42 +330,13 @@ export function NewsTable({ news, onEdit, onDelete, onView, isLoading = false }:
                         <Edit className="mr-2 h-4 w-4" />
                         Editar
                       </DropdownMenuItem>
-                      {item.status === "PUBLISHED" && (
-                        <DropdownMenuItem>
-                          <ExternalLink className="mr-2 h-4 w-4" />
-                          Ver público
-                        </DropdownMenuItem>
-                      )}
                       <DropdownMenuItem
                         className="text-red-600"
                         disabled={deletingId === item.id}
+                        onClick={() => handleDeleteClick(item)}
                       >
-                        <AlertDialog>
-                          <AlertDialogTrigger asChild>
-                            <div className="flex items-center w-full">
-                              <Trash2 className="mr-2 h-4 w-4" />
-                              Eliminar
-                            </div>
-                          </AlertDialogTrigger>
-                          <AlertDialogContent>
-                            <AlertDialogHeader>
-                              <AlertDialogTitle>¿Estás seguro?</AlertDialogTitle>
-                              <AlertDialogDescription>
-                                Esta acción no se puede deshacer. Esto eliminará permanentemente la noticia
-                                "{item.title}".
-                              </AlertDialogDescription>
-                            </AlertDialogHeader>
-                            <AlertDialogFooter>
-                              <AlertDialogCancel>Cancelar</AlertDialogCancel>
-                              <AlertDialogAction
-                                onClick={() => handleDelete(item.id)}
-                                className="bg-red-600 hover:bg-red-700"
-                              >
-                                Eliminar
-                              </AlertDialogAction>
-                            </AlertDialogFooter>
-                          </AlertDialogContent>
-                        </AlertDialog>
+                        <Trash2 className="mr-2 h-4 w-4" />
+                        Eliminar
                       </DropdownMenuItem>
                     </DropdownMenuContent>
                   </DropdownMenu>
@@ -368,6 +362,31 @@ export function NewsTable({ news, onEdit, onDelete, onView, isLoading = false }:
           </div>
         </DialogContent>
       </Dialog>
+
+      {/* Diálogo de confirmación de eliminación */}
+      <AlertDialog open={deleteDialogOpen} onOpenChange={setDeleteDialogOpen}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>¿Estás seguro?</AlertDialogTitle>
+            <AlertDialogDescription>
+              Esta acción no se puede deshacer. Esto eliminará permanentemente
+              la noticia "{newsToDelete?.title}".
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel onClick={handleDeleteCancel}>
+              Cancelar
+            </AlertDialogCancel>
+            <AlertDialogAction
+              onClick={handleDeleteConfirm}
+              className="bg-red-600 hover:bg-red-700"
+              disabled={deletingId === newsToDelete?.id}
+            >
+              {deletingId === newsToDelete?.id ? "Eliminando..." : "Eliminar"}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </>
   );
 }

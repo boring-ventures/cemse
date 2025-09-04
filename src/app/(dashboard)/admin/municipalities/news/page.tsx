@@ -274,51 +274,6 @@ export default function MunicipalityNewsPage() {
           </p>
         </div>
         <div className="flex gap-2">
-          <Button
-            variant="outline"
-            onClick={() => {
-              console.log("🔄 Invalidating queries...");
-              queryClient.invalidateQueries({ queryKey: ["news"] });
-              queryClient.invalidateQueries({
-                queryKey: ["news", "author", userId],
-              });
-              toast({
-                title: "Debug",
-                description: "Cache invalidated, refreshing data...",
-              });
-            }}
-          >
-            🔄 Refresh
-          </Button>
-          <Button
-            variant="outline"
-            onClick={async () => {
-              console.log(
-                "🔍 Manual API call to:",
-                `https://cemse-back-production.up.railway.app/api/newsarticle?authorId=${userId}`
-              );
-              try {
-                const response = await fetch(
-                  `https://cemse-back-production.up.railway.app/api/newsarticle?authorId=${userId}`
-                );
-                const data = await response.json();
-                console.log("✅ Manual API response:", data);
-                toast({
-                  title: "Manual API Call",
-                  description: `Found ${data.length} news articles`,
-                });
-              } catch (error) {
-                console.error("❌ Manual API error:", error);
-                toast({
-                  title: "Error",
-                  description: "Failed to fetch news manually",
-                  variant: "destructive",
-                });
-              }
-            }}
-          >
-            🔍 Manual API
-          </Button>
           <Dialog open={showCreateDialog} onOpenChange={setShowCreateDialog}>
             <DialogTrigger asChild>
               <Button>

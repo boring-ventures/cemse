@@ -67,86 +67,99 @@ import {
 } from "@/components/ui/alert-dialog";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import {
-  useProfilesByRole,
-  useCreateProfile,
-  useUpdateProfile,
-  useDeleteProfile,
-} from "@/hooks/useProfileApi";
-import { Profile } from "@/types/profile";
+import { useUserManagement, UserData, User } from "@/hooks/useUserManagement";
 import { useToast } from "@/components/ui/use-toast";
 
-export default function StudentsManagementPage() {
-  const { data: students, loading, error } = useProfilesByRole("YOUTH");
-  const createProfile = useCreateProfile();
-  const updateProfile = useUpdateProfile();
-  const deleteProfile = useDeleteProfile();
+export default function UsersManagementPage() {
+  const { createUser, updateUser, deleteUser, getUsers, loading, error } =
+    useUserManagement();
   const { toast } = useToast();
 
+  const [users, setUsers] = useState<User[]>([]);
   const [searchTerm, setSearchTerm] = useState("");
-  const [educationFilter, setEducationFilter] = useState("all");
-  const [statusFilter, setStatusFilter] = useState("all");
+  const [roleFilter, setRoleFilter] = useState("YOUTH");
   const [showCreateDialog, setShowCreateDialog] = useState(false);
   const [showEditDialog, setShowEditDialog] = useState(false);
   const [showDeleteDialog, setShowDeleteDialog] = useState(false);
-  const [selectedStudent, setSelectedStudent] = useState<Profile | null>(null);
+  const [selectedUser, setSelectedUser] = useState<User | null>(null);
   const [successDialogOpen, setSuccessDialogOpen] = useState(false);
+
+  // Load users on component mount
+  useEffect(() => {
+    loadUsers();
+  }, []);
+
+  const loadUsers = async () => {
+    try {
+      const filters = {
+        role: roleFilter !== "all" ? roleFilter : undefined,
+        search: searchTerm || undefined,
+      };
+      const fetchedUsers = await getUsers(filters);
+      setUsers(fetchedUsers);
+    } catch (error) {
+      console.error("Error loading users:", error);
+      toast({
+        title: "Error",
+        description: "Error al cargar usuarios",
+        variant: "destructive",
+      });
+    }
+  };
 
   // Calculate real stats from data
   const stats = React.useMemo(() => {
-    if (!students)
+    if (!users)
       return {
         total: 0,
         active: 0,
         inactive: 0,
-        pending: 0,
-        totalStudents: 0,
-        averageCompletion: 0,
+        youth: 0,
+        companies: 0,
+        municipalities: 0,
       };
 
-    const total = students.length;
-    const active = students.filter((s) => s.status === "ACTIVE").length;
-    const inactive = students.filter((s) => s.status === "INACTIVE").length;
-    const pending = students.filter((s) => s.status === "PENDING").length;
-    const totalStudents = total;
-    const averageCompletion =
-      total > 0
-        ? Math.round(
-            students.reduce((sum, s) => sum + (s.profileCompletion || 0), 0) /
-              total
-          )
-        : 0;
+    const total = users.length;
+    const active = users.filter((u) => u.isActive).length;
+    const inactive = users.filter((u) => !u.isActive).length;
+    const youth = users.filter((u) => u.role === "YOUTH").length;
+    const companies = users.filter((u) => u.role === "COMPANIES").length;
+    const municipalities = users.filter(
+      (u) => u.role === "MUNICIPAL_GOVERNMENTS"
+    ).length;
 
     return {
       total,
       active,
       inactive,
-      pending,
-      totalStudents,
-      averageCompletion,
+      youth,
+      companies,
+      municipalities,
     };
-  }, [students]);
+  }, [users]);
 
   // Form state for create/edit
-  const [formData, setFormData] = useState<Partial<Profile>>({
+  const [formData, setFormData] = useState<UserData>({
+    username: "",
+    password: "",
+    role: "YOUTH",
     firstName: "",
     lastName: "",
     email: "",
     phone: "",
     address: "",
     municipality: "",
-    department: "",
+    department: "Cochabamba",
     country: "Bolivia",
-    birthDate: undefined,
-    gender: undefined,
-    educationLevel: undefined,
+    birthDate: "",
+    gender: "",
+    educationLevel: "",
     currentInstitution: "",
     graduationYear: undefined,
     isStudying: false,
     skills: [],
     interests: [],
     status: "ACTIVE",
-    profileCompletion: 0,
   });
 
   const [avatarFile, setAvatarFile] = useState<File | null>(null);
@@ -160,7 +173,6 @@ export default function StudentsManagementPage() {
       reader.onload = () => {
         const result = reader.result as string;
         setAvatarPreview(result);
-        setFormData({ ...formData, avatarUrl: result });
       };
       reader.readAsDataURL(file);
     }
@@ -169,29 +181,30 @@ export default function StudentsManagementPage() {
   const removeAvatar = () => {
     setAvatarFile(null);
     setAvatarPreview("");
-    setFormData({ ...formData, avatarUrl: "" });
   };
 
   const resetForm = () => {
     setFormData({
+      username: "",
+      password: "",
+      role: "YOUTH",
       firstName: "",
       lastName: "",
       email: "",
       phone: "",
       address: "",
       municipality: "",
-      department: "",
+      department: "Cochabamba",
       country: "Bolivia",
-      birthDate: undefined,
-      gender: undefined,
-      educationLevel: undefined,
+      birthDate: "",
+      gender: "",
+      educationLevel: "",
       currentInstitution: "",
       graduationYear: undefined,
       isStudying: false,
       skills: [],
       interests: [],
       status: "ACTIVE",
-      profileCompletion: 0,
     });
     setAvatarFile(null);
     setAvatarPreview("");
@@ -200,15 +213,11 @@ export default function StudentsManagementPage() {
   const handleCreate = async () => {
     try {
       if (
+        !formData.username ||
+        !formData.password ||
+        !formData.role ||
         !formData.firstName ||
-        !formData.lastName ||
-        !formData.email ||
-        !formData.phone ||
-        !formData.address ||
-        !formData.municipality ||
-        !formData.department ||
-        !formData.country ||
-        !formData.status
+        !formData.lastName
       ) {
         toast({
           title: "Error",
@@ -218,61 +227,94 @@ export default function StudentsManagementPage() {
         return;
       }
 
-      const newStudentData = {
-        ...formData,
-        role: "YOUTH" as const,
-        active: true,
-      };
+      // Validate password strength
+      if (!formData.password || formData.password.length < 6) {
+        toast({
+          title: "Error",
+          description: "La contraseña debe tener al menos 6 caracteres",
+          variant: "destructive",
+        });
+        return;
+      }
 
-      await createProfile.create(newStudentData);
+      await createUser(formData);
 
       setShowCreateDialog(false);
       resetForm();
       setSuccessDialogOpen(true);
       toast({
         title: "Éxito",
-        description: "Estudiante creado exitosamente",
+        description: "Usuario creado exitosamente",
       });
+
+      // Reload users
+      loadUsers();
     } catch (error) {
-      console.error("Error creating student:", error);
+      console.error("Error creating user:", error);
       toast({
         title: "Error",
-        description: "Error al crear el estudiante",
+        description: "Error al crear el usuario",
         variant: "destructive",
       });
     }
   };
 
-  const handleEdit = (student: Profile) => {
-    setSelectedStudent(student);
-    setFormData(student);
-    setAvatarPreview(student.avatarUrl || "");
+  const handleEdit = (user: User) => {
+    setSelectedUser(user);
+    setFormData({
+      username: user.username || "",
+      password: "", // Don't show password in edit
+      role: user.role || "YOUTH",
+      firstName: user.profile?.firstName || "",
+      lastName: user.profile?.lastName || "",
+      email: user.profile?.email || "",
+      phone: user.profile?.phone || "",
+      address: user.profile?.address || "",
+      municipality: user.profile?.municipality || "",
+      department: user.profile?.department || "Cochabamba",
+      country: user.profile?.country || "Bolivia",
+      birthDate: user.profile?.birthDate || "",
+      gender: user.profile?.gender || "",
+      educationLevel: user.profile?.educationLevel || "",
+      currentInstitution: user.profile?.currentInstitution || "",
+      graduationYear: user.profile?.graduationYear || undefined,
+      isStudying: user.profile?.isStudying || false,
+      skills: user.profile?.skills || [],
+      interests: user.profile?.interests || [],
+      status: user.profile?.status || "ACTIVE",
+    });
+    setAvatarPreview(user.profile?.avatarUrl || "");
     setShowEditDialog(true);
   };
 
   const handleUpdate = async () => {
     try {
-      if (!selectedStudent?.id) return;
+      if (!selectedUser?.id) return;
 
-      const updatedStudentData = {
-        ...formData,
-        updatedAt: new Date(),
-      };
+      const updateData = { ...formData };
+      // Only include password if it was changed and not empty
+      if (!updateData.password || updateData.password.trim() === "") {
+        delete updateData.password;
+      }
 
-      await updateProfile.update(selectedStudent.id, updatedStudentData);
+      console.log("Updating user with data:", updateData);
+      await updateUser(selectedUser.id, updateData);
 
       setShowEditDialog(false);
-      setSelectedStudent(null);
+      setSelectedUser(null);
       resetForm();
       toast({
         title: "Éxito",
-        description: "Estudiante actualizado exitosamente",
+        description: "Usuario actualizado exitosamente",
       });
+
+      // Reload users
+      loadUsers();
     } catch (error) {
-      console.error("Error updating student:", error);
+      console.error("Error updating user:", error);
       toast({
         title: "Error",
-        description: "Error al actualizar el estudiante",
+        description: `Error al actualizar el usuario: ${error instanceof Error ? error.message : "Error desconocido"}`,
         variant: "destructive",
       });
     }
@@ -280,21 +322,24 @@ export default function StudentsManagementPage() {
 
   const handleDelete = async () => {
     try {
-      if (!selectedStudent?.id) return;
+      if (!selectedUser?.id) return;
 
-      await deleteProfile.remove(selectedStudent.id);
+      await deleteUser(selectedUser.id);
 
       setShowDeleteDialog(false);
-      setSelectedStudent(null);
+      setSelectedUser(null);
       toast({
         title: "Éxito",
-        description: "Estudiante eliminado exitosamente",
+        description: "Usuario eliminado exitosamente",
       });
+
+      // Reload users
+      loadUsers();
     } catch (error) {
-      console.error("Error deleting student:", error);
+      console.error("Error deleting user:", error);
       toast({
         title: "Error",
-        description: "Error al eliminar el estudiante",
+        description: "Error al eliminar el usuario",
         variant: "destructive",
       });
     }
@@ -306,8 +351,10 @@ export default function StudentsManagementPage() {
         return "bg-green-100 text-green-800";
       case "INACTIVE":
         return "bg-red-100 text-red-800";
-      case "PENDING":
+      case "PENDING_VERIFICATION":
         return "bg-yellow-100 text-yellow-800";
+      case "SUSPENDED":
+        return "bg-gray-100 text-gray-800";
       default:
         return "bg-gray-100 text-gray-800";
     }
@@ -316,44 +363,63 @@ export default function StudentsManagementPage() {
   const getStatusText = (status: string) => {
     switch (status) {
       case "ACTIVE":
-        return "Activa";
+        return "Activo";
       case "INACTIVE":
-        return "Inactiva";
-      case "PENDING":
+        return "Inactivo";
+      case "PENDING_VERIFICATION":
         return "Pendiente";
+      case "SUSPENDED":
+        return "Suspendido";
       default:
         return status;
     }
   };
 
-  // Enhanced filtering with real data
-  const filteredStudents = React.useMemo(() => {
-    if (!students) return [];
+  const getRoleText = (role: string) => {
+    switch (role) {
+      case "YOUTH":
+        return "Joven";
+      case "ADOLESCENTS":
+        return "Adolescente";
+      case "COMPANIES":
+        return "Empresa";
+      case "MUNICIPAL_GOVERNMENTS":
+        return "Gobierno Municipal";
+      case "TRAINING_CENTERS":
+        return "Centro de Entrenamiento";
+      case "NGOS_AND_FOUNDATIONS":
+        return "ONG/Fundación";
+      case "INSTRUCTOR":
+        return "Instructor";
+      case "SUPERADMIN":
+        return "Super Admin";
+      default:
+        return role;
+    }
+  };
 
-    return students.filter((student) => {
-      if (!student) return false;
+  // Filter users based on search and role
+  const filteredUsers = React.useMemo(() => {
+    return users.filter((user) => {
+      // Skip users without profiles
+      if (!user.profile) return false;
 
       const searchLower = (searchTerm || "").toLowerCase();
-      const studentName =
-        `${student.firstName || ""} ${student.lastName || ""}`.toLowerCase();
-      const studentEmail = (student.email || "").toLowerCase();
-      const studentMunicipality = (student.municipality || "").toLowerCase();
+      const userName =
+        `${user.profile.firstName || ""} ${user.profile.lastName || ""}`.toLowerCase();
+      const userEmail = (user.profile.email || "").toLowerCase();
+      const userUsername = user.username.toLowerCase();
 
       const matchesSearch =
-        studentName.includes(searchLower) ||
-        studentEmail.includes(searchLower) ||
-        studentMunicipality.includes(searchLower);
+        userName.includes(searchLower) ||
+        userEmail.includes(searchLower) ||
+        userUsername.includes(searchLower);
 
-      const matchesEducation =
-        educationFilter === "all" || student.educationLevel === educationFilter;
+      const matchesRole = user.role === roleFilter;
 
-      const matchesStatus =
-        statusFilter === "all" ||
-        student.status?.toLowerCase() === statusFilter.toLowerCase();
-
-      return matchesSearch && matchesEducation && matchesStatus;
+      return matchesSearch && matchesRole;
     });
-  }, [students, searchTerm, educationFilter, statusFilter]);
+  }, [users, searchTerm, roleFilter]);
 
   // Show error if data loading fails
   if (error) {
@@ -361,19 +427,17 @@ export default function StudentsManagementPage() {
       <div className="space-y-6">
         <div className="flex justify-between items-center">
           <div>
-            <h1 className="text-3xl font-bold">Gestión de Estudiantes</h1>
+            <h1 className="text-3xl font-bold">Gestión de Usuarios</h1>
             <p className="text-muted-foreground">
-              Administra todos los estudiantes registrados en la plataforma
+              Administra todos los usuarios registrados en la plataforma
             </p>
           </div>
         </div>
         <Card>
           <CardContent className="pt-6">
             <div className="text-center py-8">
-              <p className="text-red-600">
-                Error al cargar los datos: {error.message}
-              </p>
-              <Button onClick={() => window.location.reload()} className="mt-4">
+              <p className="text-red-600">Error al cargar los datos: {error}</p>
+              <Button onClick={() => loadUsers()} className="mt-4">
                 Reintentar
               </Button>
             </div>
@@ -388,9 +452,9 @@ export default function StudentsManagementPage() {
       {/* Header */}
       <div className="flex justify-between items-center">
         <div>
-          <h1 className="text-3xl font-bold">Gestión de Estudiantes</h1>
+          <h1 className="text-3xl font-bold">Gestión de Usuarios</h1>
           <p className="text-muted-foreground">
-            Administra todos los estudiantes registrados en la plataforma
+            Administra todos los usuarios registrados en la plataforma
           </p>
         </div>
         <div className="flex gap-2">
@@ -402,23 +466,85 @@ export default function StudentsManagementPage() {
             <DialogTrigger asChild>
               <Button>
                 <Plus className="w-4 h-4 mr-2" />
-                Nuevo Estudiante
+                Nuevo Usuario
               </Button>
             </DialogTrigger>
             <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
               <DialogHeader>
-                <DialogTitle>Crear Nuevo Estudiante</DialogTitle>
+                <DialogTitle>Crear Nuevo Usuario</DialogTitle>
                 <DialogDescription>
-                  Registra un nuevo estudiante en la plataforma
+                  Registra un nuevo usuario en la plataforma con credenciales de
+                  acceso
                 </DialogDescription>
               </DialogHeader>
 
-              <Tabs defaultValue="basic" className="w-full">
-                <TabsList className="grid w-full grid-cols-3">
+              <Tabs defaultValue="credentials" className="w-full">
+                <TabsList className="grid w-full grid-cols-4">
+                  <TabsTrigger value="credentials">Credenciales</TabsTrigger>
                   <TabsTrigger value="basic">Información Básica</TabsTrigger>
                   <TabsTrigger value="education">Educación</TabsTrigger>
                   <TabsTrigger value="skills">Habilidades</TabsTrigger>
                 </TabsList>
+
+                <TabsContent value="credentials" className="space-y-4">
+                  <div className="grid grid-cols-2 gap-4">
+                    <div className="grid gap-2">
+                      <Label htmlFor="username">Nombre de Usuario *</Label>
+                      <Input
+                        id="username"
+                        value={formData.username}
+                        onChange={(e) =>
+                          setFormData({
+                            ...formData,
+                            username: e.target.value,
+                          })
+                        }
+                        placeholder="juan.perez"
+                      />
+                    </div>
+                    <div className="grid gap-2">
+                      <Label htmlFor="password">Contraseña *</Label>
+                      <Input
+                        id="password"
+                        type="password"
+                        value={formData.password}
+                        onChange={(e) =>
+                          setFormData({ ...formData, password: e.target.value })
+                        }
+                        placeholder="••••••••"
+                      />
+                    </div>
+                  </div>
+
+                  <div className="grid gap-2">
+                    <Label htmlFor="role">Rol *</Label>
+                    <Select
+                      value={formData.role}
+                      onValueChange={(value) =>
+                        setFormData({ ...formData, role: value })
+                      }
+                    >
+                      <SelectTrigger>
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="YOUTH">Joven</SelectItem>
+                        <SelectItem value="ADOLESCENTS">Adolescente</SelectItem>
+                        <SelectItem value="COMPANIES">Empresa</SelectItem>
+                        <SelectItem value="MUNICIPAL_GOVERNMENTS">
+                          Gobierno Municipal
+                        </SelectItem>
+                        <SelectItem value="TRAINING_CENTERS">
+                          Centro de Entrenamiento
+                        </SelectItem>
+                        <SelectItem value="NGOS_AND_FOUNDATIONS">
+                          ONG/Fundación
+                        </SelectItem>
+                        <SelectItem value="INSTRUCTOR">Instructor</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+                </TabsContent>
 
                 <TabsContent value="basic" className="space-y-4">
                   {/* Avatar Upload */}
@@ -493,7 +619,7 @@ export default function StudentsManagementPage() {
                   </div>
 
                   <div className="grid gap-2">
-                    <Label htmlFor="email">Email *</Label>
+                    <Label htmlFor="email">Email</Label>
                     <Input
                       id="email"
                       type="email"
@@ -523,7 +649,7 @@ export default function StudentsManagementPage() {
                     <div className="grid gap-2">
                       <Label htmlFor="gender">Género</Label>
                       <Select
-                        value={formData.gender}
+                        value={formData.gender || ""}
                         onValueChange={(value) =>
                           setFormData({ ...formData, gender: value })
                         }
@@ -547,7 +673,7 @@ export default function StudentsManagementPage() {
                       onValueChange={(value) =>
                         setFormData({
                           ...formData,
-                          status: value as Profile["status"],
+                          status: value,
                         })
                       }
                     >
@@ -556,8 +682,11 @@ export default function StudentsManagementPage() {
                       </SelectTrigger>
                       <SelectContent>
                         <SelectItem value="ACTIVE">Activo</SelectItem>
-                        <SelectItem value="PENDING">Pendiente</SelectItem>
+                        <SelectItem value="PENDING_VERIFICATION">
+                          Pendiente
+                        </SelectItem>
                         <SelectItem value="INACTIVE">Inactivo</SelectItem>
+                        <SelectItem value="SUSPENDED">Suspendido</SelectItem>
                       </SelectContent>
                     </Select>
                   </div>
@@ -568,11 +697,11 @@ export default function StudentsManagementPage() {
                     <div className="grid gap-2">
                       <Label htmlFor="educationLevel">Nivel Educativo</Label>
                       <Select
-                        value={formData.educationLevel}
+                        value={formData.educationLevel || ""}
                         onValueChange={(value) =>
                           setFormData({
                             ...formData,
-                            educationLevel: value as any,
+                            educationLevel: value,
                           })
                         }
                       >
@@ -597,7 +726,7 @@ export default function StudentsManagementPage() {
                       <Input
                         id="graduationYear"
                         type="number"
-                        value={formData.graduationYear}
+                        value={formData.graduationYear || ""}
                         onChange={(e) =>
                           setFormData({
                             ...formData,
@@ -643,7 +772,7 @@ export default function StudentsManagementPage() {
                     <div className="grid gap-2">
                       <Label htmlFor="municipality">Municipio</Label>
                       <Select
-                        value={formData.municipality}
+                        value={formData.municipality || ""}
                         onValueChange={(value) =>
                           setFormData({ ...formData, municipality: value })
                         }
@@ -667,7 +796,7 @@ export default function StudentsManagementPage() {
                     <div className="grid gap-2">
                       <Label htmlFor="department">Departamento</Label>
                       <Select
-                        value={formData.department}
+                        value={formData.department || ""}
                         onValueChange={(value) =>
                           setFormData({ ...formData, department: value })
                         }
@@ -767,12 +896,14 @@ export default function StudentsManagementPage() {
                 <Button
                   onClick={handleCreate}
                   disabled={
+                    !formData.username ||
+                    !formData.password ||
                     !formData.firstName ||
                     !formData.lastName ||
-                    createProfile.loading
+                    loading
                   }
                 >
-                  {createProfile.loading ? "Creando..." : "Crear Estudiante"}
+                  {loading ? "Creando..." : "Crear Usuario"}
                 </Button>
               </div>
             </DialogContent>
@@ -785,7 +916,7 @@ export default function StudentsManagementPage() {
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
             <CardTitle className="text-sm font-medium">
-              Total Estudiantes
+              Total Usuarios
             </CardTitle>
             <Users className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
@@ -805,16 +936,6 @@ export default function StudentsManagementPage() {
         </Card>
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Pendientes</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold text-yellow-600">
-              {stats.pending}
-            </div>
-          </CardContent>
-        </Card>
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
             <CardTitle className="text-sm font-medium">Inactivos</CardTitle>
           </CardHeader>
           <CardContent>
@@ -825,26 +946,32 @@ export default function StudentsManagementPage() {
         </Card>
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">
-              Total Estudiantes
-            </CardTitle>
-            <GraduationCap className="h-4 w-4 text-muted-foreground" />
+            <CardTitle className="text-sm font-medium">Jóvenes</CardTitle>
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">
-              {stats.totalStudents.toLocaleString()}
+            <div className="text-2xl font-bold text-blue-600">
+              {stats.youth}
             </div>
           </CardContent>
         </Card>
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">
-              Completitud Promedio
-            </CardTitle>
-            <TrendingUp className="h-4 w-4 text-muted-foreground" />
+            <CardTitle className="text-sm font-medium">Empresas</CardTitle>
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">{stats.averageCompletion}%</div>
+            <div className="text-2xl font-bold text-purple-600">
+              {stats.companies}
+            </div>
+          </CardContent>
+        </Card>
+        <Card>
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+            <CardTitle className="text-sm font-medium">Municipios</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold text-orange-600">
+              {stats.municipalities}
+            </div>
           </CardContent>
         </Card>
       </div>
@@ -858,54 +985,39 @@ export default function StudentsManagementPage() {
           <div className="flex gap-4">
             <div className="flex-1">
               <Input
-                placeholder="Buscar estudiantes..."
+                placeholder="Buscar usuarios..."
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
                 className="max-w-sm"
               />
             </div>
-            <Select value={educationFilter} onValueChange={setEducationFilter}>
+            <Select value={roleFilter} onValueChange={setRoleFilter}>
               <SelectTrigger className="w-[180px]">
-                <SelectValue placeholder="Nivel Educativo" />
+                <SelectValue placeholder="Rol" />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="all">Todos los niveles</SelectItem>
-                <SelectItem value="PRIMARY">Primaria</SelectItem>
-                <SelectItem value="SECONDARY">Secundaria</SelectItem>
-                <SelectItem value="UNIVERSITY">Universidad</SelectItem>
-                <SelectItem value="TECHNICAL">Técnico</SelectItem>
-                <SelectItem value="POSTGRADUATE">Postgrado</SelectItem>
-              </SelectContent>
-            </Select>
-            <Select value={statusFilter} onValueChange={setStatusFilter}>
-              <SelectTrigger className="w-[180px]">
-                <SelectValue placeholder="Estado" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="all">Todos los estados</SelectItem>
-                <SelectItem value="ACTIVE">Activas</SelectItem>
-                <SelectItem value="PENDING">Pendientes</SelectItem>
-                <SelectItem value="INACTIVE">Inactivas</SelectItem>
+                <SelectItem value="YOUTH">Jóvenes</SelectItem>
+                <SelectItem value="ADOLESCENTS">Adolescentes</SelectItem>
               </SelectContent>
             </Select>
           </div>
         </CardContent>
       </Card>
 
-      {/* Students Table */}
+      {/* Users Table */}
       <Card>
         <CardHeader>
-          <CardTitle>Lista de Estudiantes</CardTitle>
+          <CardTitle>Lista de Usuarios</CardTitle>
           <CardDescription>
-            Gestiona todos los estudiantes registrados en la plataforma
+            Gestiona todos los usuarios registrados en la plataforma
           </CardDescription>
         </CardHeader>
         <CardContent>
           <Table>
             <TableHeader>
               <TableRow>
-                <TableHead>Estudiante</TableHead>
-                <TableHead>Educación</TableHead>
+                <TableHead>Usuario</TableHead>
+                <TableHead>Rol</TableHead>
                 <TableHead>Ubicación</TableHead>
                 <TableHead>Estado</TableHead>
                 <TableHead>Completitud</TableHead>
@@ -918,29 +1030,27 @@ export default function StudentsManagementPage() {
                   <TableCell colSpan={6} className="text-center py-8">
                     <div className="flex items-center justify-center gap-2">
                       <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-gray-900"></div>
-                      Cargando estudiantes...
+                      Cargando usuarios...
                     </div>
                   </TableCell>
                 </TableRow>
-              ) : filteredStudents?.length === 0 ? (
+              ) : filteredUsers?.length === 0 ? (
                 <TableRow>
                   <TableCell colSpan={6} className="text-center py-8">
-                    {searchTerm ||
-                    educationFilter !== "all" ||
-                    statusFilter !== "all"
-                      ? "No se encontraron estudiantes con los filtros aplicados"
-                      : "No hay estudiantes registrados"}
+                    {searchTerm
+                      ? "No se encontraron usuarios con los filtros aplicados"
+                      : "No hay usuarios jóvenes registrados"}
                   </TableCell>
                 </TableRow>
               ) : (
-                filteredStudents?.map((student) => (
-                  <TableRow key={student.id}>
+                filteredUsers?.map((user) => (
+                  <TableRow key={user.id}>
                     <TableCell>
                       <div className="flex items-center gap-3">
                         <Avatar className="w-10 h-10">
                           <AvatarImage
-                            src={student.avatarUrl || "/placeholder.svg"}
-                            alt={`${student.firstName} ${student.lastName}`}
+                            src={user.profile?.avatarUrl || "/placeholder.svg"}
+                            alt={`${user.profile?.firstName || ""} ${user.profile?.lastName || ""}`}
                           />
                           <AvatarFallback>
                             <Users className="w-4 h-4" />
@@ -948,33 +1058,39 @@ export default function StudentsManagementPage() {
                         </Avatar>
                         <div>
                           <div className="font-medium">
-                            {student.firstName} {student.lastName}
+                            {user.profile?.firstName || ""}{" "}
+                            {user.profile?.lastName || ""}
                           </div>
                           <div className="text-sm text-muted-foreground">
-                            {student.email}
+                            @{user.username}
                           </div>
                           <div className="text-xs text-muted-foreground">
-                            {student.currentInstitution || "Sin institución"}
+                            {user.profile?.email || "Sin email"}
                           </div>
                         </div>
                       </div>
                     </TableCell>
                     <TableCell>
                       <Badge variant="secondary">
-                        {student.educationLevel || "No especificado"}
+                        {getRoleText(user.role)}
                       </Badge>
                     </TableCell>
                     <TableCell>
                       <div className="flex items-center gap-1">
                         <MapPin className="w-3 h-3" />
                         <span className="text-sm">
-                          {student.municipality}, {student.department}
+                          {user.profile?.municipality || "No especificado"},{" "}
+                          {user.profile?.department || "No especificado"}
                         </span>
                       </div>
                     </TableCell>
                     <TableCell>
-                      <Badge className={getStatusColor(student.status)}>
-                        {getStatusText(student.status)}
+                      <Badge
+                        className={getStatusColor(
+                          user.profile?.status || "ACTIVE"
+                        )}
+                      >
+                        {getStatusText(user.profile?.status || "ACTIVE")}
                       </Badge>
                     </TableCell>
                     <TableCell>
@@ -983,12 +1099,12 @@ export default function StudentsManagementPage() {
                           <div
                             className="bg-blue-600 h-2 rounded-full"
                             style={{
-                              width: `${student.profileCompletion || 0}%`,
+                              width: `${user.profile?.profileCompletion || 0}%`,
                             }}
-                          ></div>
+                          />
                         </div>
                         <span className="text-sm text-muted-foreground">
-                          {student.profileCompletion || 0}%
+                          {user.profile?.profileCompletion || 0}%
                         </span>
                       </div>
                     </TableCell>
@@ -1004,14 +1120,14 @@ export default function StudentsManagementPage() {
                             <Eye className="w-4 h-4 mr-2" />
                             Ver Detalles
                           </DropdownMenuItem>
-                          <DropdownMenuItem onClick={() => handleEdit(student)}>
+                          <DropdownMenuItem onClick={() => handleEdit(user)}>
                             <Edit className="w-4 h-4 mr-2" />
                             Editar
                           </DropdownMenuItem>
                           <DropdownMenuItem
                             className="text-red-600"
                             onClick={() => {
-                              setSelectedStudent(student);
+                              setSelectedUser(user);
                               setShowDeleteDialog(true);
                             }}
                           >
@@ -1033,20 +1149,48 @@ export default function StudentsManagementPage() {
       <Dialog open={showEditDialog} onOpenChange={setShowEditDialog}>
         <DialogContent className="max-w-2xl">
           <DialogHeader>
-            <DialogTitle>Editar Estudiante</DialogTitle>
+            <DialogTitle>Editar Usuario</DialogTitle>
             <DialogDescription>
-              Modifica la información de {selectedStudent?.firstName}{" "}
-              {selectedStudent?.lastName}
+              Modifica la información de{" "}
+              {selectedUser?.profile?.firstName || ""}{" "}
+              {selectedUser?.profile?.lastName || ""}
             </DialogDescription>
           </DialogHeader>
 
           <div className="space-y-4">
             <div className="grid grid-cols-2 gap-4">
               <div className="grid gap-2">
+                <Label htmlFor="edit-username">Nombre de Usuario</Label>
+                <Input
+                  id="edit-username"
+                  value={formData.username}
+                  onChange={(e) =>
+                    setFormData({ ...formData, username: e.target.value })
+                  }
+                />
+              </div>
+              <div className="grid gap-2">
+                <Label htmlFor="edit-password">
+                  Nueva Contraseña (opcional)
+                </Label>
+                <Input
+                  id="edit-password"
+                  type="password"
+                  value={formData.password}
+                  onChange={(e) =>
+                    setFormData({ ...formData, password: e.target.value })
+                  }
+                  placeholder="Dejar vacío para no cambiar"
+                />
+              </div>
+            </div>
+
+            <div className="grid grid-cols-2 gap-4">
+              <div className="grid gap-2">
                 <Label htmlFor="edit-firstName">Nombre *</Label>
                 <Input
                   id="edit-firstName"
-                  value={formData.firstName || ""}
+                  value={formData.firstName}
                   onChange={(e) =>
                     setFormData({ ...formData, firstName: e.target.value })
                   }
@@ -1056,7 +1200,7 @@ export default function StudentsManagementPage() {
                 <Label htmlFor="edit-lastName">Apellido *</Label>
                 <Input
                   id="edit-lastName"
-                  value={formData.lastName || ""}
+                  value={formData.lastName}
                   onChange={(e) =>
                     setFormData({ ...formData, lastName: e.target.value })
                   }
@@ -1065,11 +1209,11 @@ export default function StudentsManagementPage() {
             </div>
 
             <div className="grid gap-2">
-              <Label htmlFor="edit-email">Email *</Label>
+              <Label htmlFor="edit-email">Email</Label>
               <Input
                 id="edit-email"
                 type="email"
-                value={formData.email || ""}
+                value={formData.email}
                 onChange={(e) =>
                   setFormData({ ...formData, email: e.target.value })
                 }
@@ -1077,24 +1221,13 @@ export default function StudentsManagementPage() {
             </div>
 
             <div className="grid gap-2">
-              <Label htmlFor="edit-phone">Teléfono</Label>
-              <Input
-                id="edit-phone"
-                value={formData.phone || ""}
-                onChange={(e) =>
-                  setFormData({ ...formData, phone: e.target.value })
-                }
-              />
-            </div>
-
-            <div className="grid gap-2">
               <Label>Estado</Label>
               <Select
-                value={formData.status || "ACTIVE"}
+                value={formData.status}
                 onValueChange={(value) =>
                   setFormData({
                     ...formData,
-                    status: value as Profile["status"],
+                    status: value,
                   })
                 }
               >
@@ -1103,8 +1236,11 @@ export default function StudentsManagementPage() {
                 </SelectTrigger>
                 <SelectContent>
                   <SelectItem value="ACTIVE">Activo</SelectItem>
-                  <SelectItem value="PENDING">Pendiente</SelectItem>
+                  <SelectItem value="PENDING_VERIFICATION">
+                    Pendiente
+                  </SelectItem>
                   <SelectItem value="INACTIVE">Inactivo</SelectItem>
+                  <SelectItem value="SUSPENDED">Suspendido</SelectItem>
                 </SelectContent>
               </Select>
             </div>
@@ -1115,16 +1251,17 @@ export default function StudentsManagementPage() {
               variant="outline"
               onClick={() => {
                 setShowEditDialog(false);
-                setSelectedStudent(null);
+                setSelectedUser(null);
                 resetForm();
               }}
             >
               Cancelar
             </Button>
-            <Button onClick={handleUpdate} disabled={updateProfile.loading}>
-              {updateProfile.loading
-                ? "Actualizando..."
-                : "Actualizar Estudiante"}
+            <Button
+              onClick={handleUpdate}
+              disabled={loading || !formData.firstName || !formData.lastName}
+            >
+              {loading ? "Actualizando..." : "Actualizar Usuario"}
             </Button>
           </div>
         </DialogContent>
@@ -1137,20 +1274,21 @@ export default function StudentsManagementPage() {
             <AlertDialogTitle>¿Estás seguro?</AlertDialogTitle>
             <AlertDialogDescription>
               Esta acción no se puede deshacer. Se eliminará permanentemente el
-              estudiante &quot;{selectedStudent?.firstName}{" "}
-              {selectedStudent?.lastName}&quot; y todos sus datos asociados.
+              usuario &quot;{selectedUser?.profile?.firstName || ""}{" "}
+              {selectedUser?.profile?.lastName || ""}&quot; y todos sus datos
+              asociados.
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
-            <AlertDialogCancel onClick={() => setSelectedStudent(null)}>
+            <AlertDialogCancel onClick={() => setSelectedUser(null)}>
               Cancelar
             </AlertDialogCancel>
             <AlertDialogAction
               onClick={handleDelete}
               className="bg-red-600 hover:bg-red-700"
-              disabled={deleteProfile.loading}
+              disabled={loading}
             >
-              {deleteProfile.loading ? "Eliminando..." : "Eliminar"}
+              {loading ? "Eliminando..." : "Eliminar"}
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>
@@ -1159,9 +1297,10 @@ export default function StudentsManagementPage() {
       <Dialog open={successDialogOpen} onOpenChange={setSuccessDialogOpen}>
         <DialogContent>
           <DialogHeader>
-            <DialogTitle>¡Estudiante creado!</DialogTitle>
+            <DialogTitle>¡Usuario creado!</DialogTitle>
             <DialogDescription>
-              El estudiante fue registrado exitosamente en el sistema.
+              El usuario fue registrado exitosamente en el sistema con
+              credenciales de acceso.
             </DialogDescription>
           </DialogHeader>
           <div className="flex justify-end">

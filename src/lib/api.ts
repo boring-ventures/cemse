@@ -21,12 +21,12 @@ export const backendCall = async (
   console.log("🔍 backendCall - Making request to:", url);
 
   const headers: Record<string, string> = {};
-  
+
   // Only add Content-Type for non-FormData requests
   if (!(options.body instanceof FormData)) {
     headers["Content-Type"] = "application/json";
   }
-  
+
   // Add other headers from options
   if (options.headers) {
     Object.assign(headers, options.headers);
@@ -297,13 +297,21 @@ export const apiCall = async (
             console.error(`🔐 apiCall - Debug info:`, errorData.debug);
           }
 
-          throw new Error(errorMessage);
+          // Create a more descriptive error with the original message
+          const error = new Error(errorMessage);
+          error.name = "APIError";
+          (error as any).status = response.status;
+          (error as any).data = errorData;
+          throw error;
         } catch (parseError) {
           console.error(
             `🔐 apiCall - Could not parse ${response.status} error response:`,
             parseError
           );
-          throw new Error(`HTTP error! status: ${response.status}`);
+          const error = new Error(`HTTP error! status: ${response.status}`);
+          error.name = "APIError";
+          (error as any).status = response.status;
+          throw error;
         }
       }
 

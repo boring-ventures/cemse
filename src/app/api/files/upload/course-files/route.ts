@@ -39,12 +39,22 @@ export async function POST(request: NextRequest) {
     const contentLength = request.headers.get("content-length");
     if (contentLength) {
       const sizeInMB = parseInt(contentLength) / (1024 * 1024);
-      console.log(`📚 API: Request size: ${sizeInMB.toFixed(2)} MB`);
+      const sizeInGB = sizeInMB / 1024;
+      console.log(
+        `📚 API: Request size: ${sizeInMB.toFixed(2)} MB (${sizeInGB.toFixed(2)} GB)`
+      );
 
-      if (sizeInMB > 2048) {
+      if (sizeInGB > 2) {
         // 2GB limit
+        console.log(
+          `📚 API: File too large, rejecting: ${sizeInGB.toFixed(2)} GB`
+        );
         return NextResponse.json(
-          { error: "El archivo es demasiado grande. Máximo 2GB por archivo" },
+          {
+            error: "El archivo es demasiado grande. Máximo 2GB por archivo",
+            suggestion:
+              "Para archivos grandes, el sistema automáticamente usa carga por fragmentos.",
+          },
           { status: 413 }
         );
       }
@@ -101,12 +111,18 @@ export async function POST(request: NextRequest) {
 
     let formData;
     try {
+      // Use streaming for large file uploads
       formData = await request.formData();
+      console.log("📚 API: Form data parsed successfully");
     } catch (error) {
       console.error("📚 API: Error parsing form data:", error);
       if (error instanceof Error && error.message.includes("too large")) {
         return NextResponse.json(
-          { error: "El archivo es demasiado grande. Máximo 1GB por archivo" },
+          {
+            error: "El archivo es demasiado grande. Máximo 2GB por archivo",
+            suggestion:
+              "Para archivos grandes, el sistema automáticamente usa carga por fragmentos.",
+          },
           { status: 413 }
         );
       }
@@ -115,6 +131,7 @@ export async function POST(request: NextRequest) {
         { status: 400 }
       );
     }
+
     const thumbnail = formData.get("thumbnail") as File;
     const videoPreview = formData.get("videoPreview") as File;
 
@@ -122,6 +139,10 @@ export async function POST(request: NextRequest) {
 
     // Handle thumbnail upload
     if (thumbnail) {
+      console.log(
+        `📚 API: Processing thumbnail: ${thumbnail.name} (${(thumbnail.size / (1024 * 1024)).toFixed(2)} MB)`
+      );
+
       // Validate file type
       if (!thumbnail.type.startsWith("image/")) {
         return NextResponse.json(
@@ -167,6 +188,10 @@ export async function POST(request: NextRequest) {
 
     // Handle video preview upload
     if (videoPreview) {
+      console.log(
+        `📚 API: Processing video: ${videoPreview.name} (${(videoPreview.size / (1024 * 1024)).toFixed(2)} MB)`
+      );
+
       // Validate file type
       if (!videoPreview.type.startsWith("video/")) {
         return NextResponse.json(
@@ -233,7 +258,11 @@ export async function POST(request: NextRequest) {
         error.message.includes("413")
       ) {
         return NextResponse.json(
-          { error: "El archivo es demasiado grande. Máximo 1GB por archivo" },
+          {
+            error: "El archivo es demasiado grande. Máximo 2GB por archivo",
+            suggestion:
+              "Para archivos grandes, el sistema automáticamente usa carga por fragmentos.",
+          },
           { status: 413 }
         );
       }

@@ -284,10 +284,10 @@ export default function JobOffersPage() {
 
   const getStatusBadge = (status: string) => {
     const statusConfig = {
-      ACTIVE: { variant: "default" as const, label: "Active" },
-      PAUSED: { variant: "secondary" as const, label: "Paused" },
-      CLOSED: { variant: "destructive" as const, label: "Closed" },
-      DRAFT: { variant: "outline" as const, label: "Draft" },
+      ACTIVE: { variant: "default" as const, label: "Activo" },
+      PAUSED: { variant: "secondary" as const, label: "Pausado" },
+      CLOSED: { variant: "destructive" as const, label: "Cerrado" },
+      DRAFT: { variant: "outline" as const, label: "Borrador" },
     };
 
     const config =
@@ -372,7 +372,7 @@ export default function JobOffersPage() {
             </div>
             <Select value={statusFilter} onValueChange={setStatusFilter}>
               <SelectTrigger className="w-[180px]">
-                <SelectValue placeholder="All Status" />
+                <SelectValue placeholder="Todos los Estados" />
               </SelectTrigger>
               <SelectContent>
                 <SelectItem value="all">Todos los Estados</SelectItem>
@@ -401,15 +401,15 @@ export default function JobOffersPage() {
               <Table>
                 <TableHeader>
                   <TableRow>
-                    <TableHead>Title</TableHead>
-                    <TableHead>Company</TableHead>
-                    <TableHead>Location</TableHead>
-                    <TableHead>Type</TableHead>
-                    <TableHead>Salary</TableHead>
-                    <TableHead>Status</TableHead>
-                    <TableHead>Applications</TableHead>
-                    <TableHead>Views</TableHead>
-                    <TableHead>Actions</TableHead>
+                    <TableHead>Título</TableHead>
+                    <TableHead>Empresa</TableHead>
+                    <TableHead>Ubicación</TableHead>
+                    <TableHead>Tipo</TableHead>
+                    <TableHead>Salario</TableHead>
+                    <TableHead>Estado</TableHead>
+                    <TableHead>Solicitudes</TableHead>
+                    <TableHead>Vistas</TableHead>
+                    <TableHead>Acciones</TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
@@ -534,13 +534,13 @@ export default function JobOffersPage() {
               {data?.pagination && data.pagination.totalPages > 1 ? (
                 <div className="flex items-center justify-between mt-4">
                   <div className="text-sm text-muted-foreground">
-                    Showing{" "}
-                    {(data.pagination.page - 1) * data.pagination.limit + 1} to{" "}
+                    Mostrando{" "}
+                    {(data.pagination.page - 1) * data.pagination.limit + 1} a{" "}
                     {Math.min(
                       data.pagination.page * data.pagination.limit,
                       data.pagination.total
                     )}{" "}
-                    of {data.pagination.total} results
+                    de {data.pagination.total} resultados
                   </div>
                   <div className="flex gap-2">
                     <Button
@@ -549,7 +549,7 @@ export default function JobOffersPage() {
                       onClick={() => setPage(page - 1)}
                       disabled={page === 1}
                     >
-                      Previous
+                      Anterior
                     </Button>
                     <Button
                       variant="outline"
@@ -557,7 +557,7 @@ export default function JobOffersPage() {
                       onClick={() => setPage(page + 1)}
                       disabled={page === data.pagination.totalPages}
                     >
-                      Next
+                      Siguiente
                     </Button>
                   </div>
                 </div>

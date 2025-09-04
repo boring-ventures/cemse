@@ -16,6 +16,7 @@ import {
   Edit,
   FileText,
   RefreshCw,
+  Plus,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -305,6 +306,13 @@ export default function MyYouthApplicationsPage() {
             encuentren
           </p>
         </div>
+        <Button
+          onClick={() => router.push("/youth-applications/new")}
+          className="flex items-center gap-2"
+        >
+          <Plus className="w-4 h-4" />
+          Crear Nueva Postulación
+        </Button>
       </div>
 
       {/* Stats Cards */}
@@ -460,22 +468,14 @@ export default function MyYouthApplicationsPage() {
                         </div>
                       </div>
 
-                      <div className="grid grid-cols-1 md:grid-cols-4 gap-4 text-sm text-gray-600 mb-4">
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm text-gray-600 mb-4">
                         <div>
                           <span className="font-medium">Creada:</span>{" "}
                           {formatDate(application.createdAt)}
                         </div>
                         <div>
-                          <span className="font-medium">Vistas:</span>{" "}
-                          {application.viewsCount || 0}
-                        </div>
-                        <div>
                           <span className="font-medium">Intereses:</span>{" "}
                           {application.applicationsCount || 0}
-                        </div>
-                        <div>
-                          <span className="font-medium">ID:</span>{" "}
-                          {application.id}
                         </div>
                       </div>
 

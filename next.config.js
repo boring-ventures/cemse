@@ -14,6 +14,21 @@ const nextConfig = {
   // For Next.js 15, body size limits are handled by the server configuration
   // and individual route handlers
   // Remove deprecated experimental options
+
+  // Configure for large file uploads
+  experimental: {
+    // Enable streaming for large files
+    serverComponentsExternalPackages: ["sharp"],
+    // Increase memory limit for large uploads
+    memoryBasedWorkers: true,
+  },
+
+  // Configure server options for large files
+  serverRuntimeConfig: {
+    // Increase body size limit to 2GB
+    bodySizeLimit: "2gb",
+  },
+
   env: {
     NEXT_PUBLIC_USE_BACKEND: "true",
     NEXT_PUBLIC_BACKEND_URL: "https://cemse-back-production.up.railway.app",

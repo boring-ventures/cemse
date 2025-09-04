@@ -1,8 +1,8 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { Plus, Search, Filter, Edit, Trash2, Eye, MoreHorizontal, User, Calendar } from "lucide-react";
+import { useQuery } from "@tanstack/react-query";
+import { Search, Filter, Eye, User, Calendar } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
@@ -16,12 +16,6 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu";
-import {
   Select,
   SelectContent,
   SelectItem,
@@ -34,21 +28,7 @@ import {
   DialogDescription,
   DialogHeader,
   DialogTitle,
-  DialogTrigger,
 } from "@/components/ui/dialog";
-import {
-  AlertDialog,
-  AlertDialogAction,
-  AlertDialogCancel,
-  AlertDialogContent,
-  AlertDialogDescription,
-  AlertDialogFooter,
-  AlertDialogHeader,
-  AlertDialogTitle,
-  AlertDialogTrigger,
-} from "@/components/ui/alert-dialog";
-import { toast } from "sonner";
-import { JobApplicationForm } from "./components/JobApplicationForm";
 import { JobApplicationDetails } from "./components/JobApplicationDetails";
 import { getAuthHeaders, API_BASE } from "@/lib/api";
 
@@ -91,13 +71,9 @@ export default function JobApplicationsPage() {
   const [search, setSearch] = useState("");
   const [statusFilter, setStatusFilter] = useState("all");
   const [page, setPage] = useState(1);
-  const [isCreateDialogOpen, setIsCreateDialogOpen] = useState(false);
-  const [selectedApplication, setSelectedApplication] = useState<JobApplication | null>(null);
+  const [selectedApplication, setSelectedApplication] =
+    useState<JobApplication | null>(null);
   const [isDetailsDialogOpen, setIsDetailsDialogOpen] = useState(false);
-  const [editingApplication, setEditingApplication] = useState<JobApplication | null>(null);
-  const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
-
-  const queryClient = useQueryClient();
 
   // Fetch job applications
   const { data, isLoading, error } = useQuery<JobApplicationsResponse>({
@@ -111,13 +87,13 @@ export default function JobApplicationsPage() {
       });
 
       const response = await fetch(`${API_BASE}/jobapplication?${params}`, {
-        headers: getAuthHeaders(),
+        headers: await getAuthHeaders(),
       });
       if (!response.ok) {
         throw new Error("Failed to fetch job applications");
       }
       const applications = await response.json();
-      
+
       // Transform the response to match our expected structure
       return {
         jobApplications: Array.isArray(applications) ? applications : [],
@@ -125,101 +101,11 @@ export default function JobApplicationsPage() {
           page: page,
           limit: 10,
           total: Array.isArray(applications) ? applications.length : 0,
-          totalPages: 1
-        }
+          totalPages: 1,
+        },
       };
     },
   });
-
-  // Delete job application mutation
-  const deleteMutation = useMutation({
-    mutationFn: async (id: string) => {
-      const response = await fetch(`${API_BASE}/jobapplication/${id}`, {
-        method: "DELETE",
-        headers: getAuthHeaders(),
-      });
-      if (!response.ok) {
-        throw new Error("Failed to delete job application");
-      }
-      return response.json();
-    },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["admin-job-applications"] });
-      toast.success("Job application deleted successfully");
-    },
-    onError: (error) => {
-      toast.error("Failed to delete job application");
-      console.error("Delete error:", error);
-    },
-  });
-
-  // Create job application mutation
-  const createMutation = useMutation({
-    mutationFn: async (applicationData: any) => {
-      const response = await fetch(`${API_BASE}/jobapplication`, {
-        method: "POST",
-        headers: getAuthHeaders(),
-        body: JSON.stringify(applicationData),
-      });
-      if (!response.ok) {
-        const error = await response.json();
-        throw new Error(error.error || "Failed to create job application");
-      }
-      return response.json();
-    },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["admin-job-applications"] });
-      toast.success("Job application created successfully");
-      setIsCreateDialogOpen(false);
-    },
-    onError: (error: any) => {
-      toast.error(error.message || "Failed to create job application");
-    },
-  });
-
-  // Update job application mutation
-  const updateMutation = useMutation({
-    mutationFn: async ({ id, data }: { id: string; data: any }) => {
-      const response = await fetch(`${API_BASE}/jobapplication/${id}`, {
-        method: "PUT",
-        headers: getAuthHeaders(),
-        body: JSON.stringify(data),
-      });
-      if (!response.ok) {
-        const error = await response.json();
-        throw new Error(error.error || "Failed to update job application");
-      }
-      return response.json();
-    },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["admin-job-applications"] });
-      toast.success("Job application updated successfully");
-      setIsEditDialogOpen(false);
-      setEditingApplication(null);
-    },
-    onError: (error: any) => {
-      toast.error(error.message || "Failed to update job application");
-    },
-  });
-
-  const handleDelete = (application: JobApplication) => {
-    deleteMutation.mutate(application.id);
-  };
-
-  const handleCreate = (applicationData: any) => {
-    createMutation.mutate(applicationData);
-  };
-
-  const handleUpdate = (applicationData: any) => {
-    if (editingApplication) {
-      updateMutation.mutate({ id: editingApplication.id, data: applicationData });
-    }
-  };
-
-  const handleEdit = (application: JobApplication) => {
-    setEditingApplication(application);
-    setIsEditDialogOpen(true);
-  };
 
   const handleViewDetails = (application: JobApplication) => {
     setSelectedApplication(application);
@@ -228,25 +114,26 @@ export default function JobApplicationsPage() {
 
   const getStatusBadge = (status: string) => {
     const statusConfig = {
-      PENDING: { variant: "outline" as const, label: "Pending" },
-      REVIEWING: { variant: "secondary" as const, label: "Reviewing" },
-      INTERVIEWED: { variant: "default" as const, label: "Interviewed" },
-      ACCEPTED: { variant: "default" as const, label: "Accepted" },
-      REJECTED: { variant: "destructive" as const, label: "Rejected" },
-      WITHDRAWN: { variant: "outline" as const, label: "Withdrawn" },
+      PENDING: { variant: "outline" as const, label: "Pendiente" },
+      REVIEWING: { variant: "secondary" as const, label: "Revisando" },
+      INTERVIEWED: { variant: "default" as const, label: "Entrevistado" },
+      ACCEPTED: { variant: "default" as const, label: "Aceptado" },
+      REJECTED: { variant: "destructive" as const, label: "Rechazado" },
+      WITHDRAWN: { variant: "outline" as const, label: "Retirado" },
     };
 
-    const config = statusConfig[status as keyof typeof statusConfig] || statusConfig.PENDING;
+    const config =
+      statusConfig[status as keyof typeof statusConfig] || statusConfig.PENDING;
     return <Badge variant={config.variant}>{config.label}</Badge>;
   };
 
   const formatDate = (dateString: string) => {
-    return new Date(dateString).toLocaleDateString('es-ES', {
-      year: 'numeric',
-      month: 'short',
-      day: 'numeric',
-      hour: '2-digit',
-      minute: '2-digit'
+    return new Date(dateString).toLocaleDateString("es-ES", {
+      year: "numeric",
+      month: "short",
+      day: "numeric",
+      hour: "2-digit",
+      minute: "2-digit",
     });
   };
 
@@ -263,7 +150,8 @@ export default function JobApplicationsPage() {
         <Card>
           <CardContent className="pt-6">
             <div className="text-center text-red-600">
-              Error loading job applications. Please try again.
+              Error al cargar las solicitudes de empleo. Por favor, inténtalo de
+              nuevo.
             </div>
           </CardContent>
         </Card>
@@ -275,28 +163,14 @@ export default function JobApplicationsPage() {
     <div className="p-6 space-y-6">
       <div className="flex justify-between items-center">
         <div>
-          <h1 className="text-3xl font-bold tracking-tight">Candidates Management</h1>
+          <h1 className="text-3xl font-bold tracking-tight">
+            Visualización de Candidatos
+          </h1>
           <p className="text-muted-foreground">
-            Manage all job applications and candidates in the platform
+            Visualiza todas las solicitudes de empleo y candidatos en la
+            plataforma
           </p>
         </div>
-        <Dialog open={isCreateDialogOpen} onOpenChange={setIsCreateDialogOpen}>
-          <DialogTrigger asChild>
-            <Button>
-              <Plus className="mr-2 h-4 w-4" />
-              Create Application
-            </Button>
-          </DialogTrigger>
-          <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
-            <DialogHeader>
-              <DialogTitle>Create New Job Application</DialogTitle>
-              <DialogDescription>
-                Fill in the details to create a new job application.
-              </DialogDescription>
-            </DialogHeader>
-            <JobApplicationForm onSubmit={handleCreate} />
-          </DialogContent>
-        </Dialog>
       </div>
 
       {/* Filters */}
@@ -304,7 +178,7 @@ export default function JobApplicationsPage() {
         <CardHeader>
           <CardTitle className="flex items-center gap-2">
             <Filter className="h-5 w-5" />
-            Filters
+            Filtros
           </CardTitle>
         </CardHeader>
         <CardContent>
@@ -313,7 +187,7 @@ export default function JobApplicationsPage() {
               <div className="relative">
                 <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground h-4 w-4" />
                 <Input
-                  placeholder="Search candidates or job titles..."
+                  placeholder="Buscar candidatos o títulos de trabajo..."
                   value={search}
                   onChange={(e) => setSearch(e.target.value)}
                   className="pl-10"
@@ -322,16 +196,16 @@ export default function JobApplicationsPage() {
             </div>
             <Select value={statusFilter} onValueChange={setStatusFilter}>
               <SelectTrigger className="w-[180px]">
-                <SelectValue placeholder="All Status" />
+                <SelectValue placeholder="Todos los Estados" />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="all">All Status</SelectItem>
-                <SelectItem value="PENDING">Pending</SelectItem>
-                <SelectItem value="REVIEWING">Reviewing</SelectItem>
-                <SelectItem value="INTERVIEWED">Interviewed</SelectItem>
-                <SelectItem value="ACCEPTED">Accepted</SelectItem>
-                <SelectItem value="REJECTED">Rejected</SelectItem>
-                <SelectItem value="WITHDRAWN">Withdrawn</SelectItem>
+                <SelectItem value="all">Todos los Estados</SelectItem>
+                <SelectItem value="PENDING">Pendiente</SelectItem>
+                <SelectItem value="REVIEWING">Revisando</SelectItem>
+                <SelectItem value="INTERVIEWED">Entrevistado</SelectItem>
+                <SelectItem value="ACCEPTED">Aceptado</SelectItem>
+                <SelectItem value="REJECTED">Rechazado</SelectItem>
+                <SelectItem value="WITHDRAWN">Retirado</SelectItem>
               </SelectContent>
             </Select>
           </div>
@@ -341,30 +215,32 @@ export default function JobApplicationsPage() {
       {/* Job Applications Table */}
       <Card>
         <CardHeader>
-          <CardTitle>Job Applications</CardTitle>
+          <CardTitle>Solicitudes de Empleo</CardTitle>
         </CardHeader>
         <CardContent>
           {isLoading ? (
-            <div className="text-center py-8">Loading job applications...</div>
+            <div className="text-center py-8">
+              Cargando solicitudes de empleo...
+            </div>
           ) : (
             <>
               <Table>
                 <TableHeader>
                   <TableRow>
-                    <TableHead>Candidate</TableHead>
-                    <TableHead>Job Position</TableHead>
-                    <TableHead>Company</TableHead>
-                    <TableHead>Status</TableHead>
-                    <TableHead>Applied Date</TableHead>
-                    <TableHead>Last Updated</TableHead>
-                    <TableHead>Actions</TableHead>
+                    <TableHead>Candidato</TableHead>
+                    <TableHead>Posición</TableHead>
+                    <TableHead>Empresa</TableHead>
+                    <TableHead>Estado</TableHead>
+                    <TableHead>Fecha de Aplicación</TableHead>
+                    <TableHead>Última Actualización</TableHead>
+                    <TableHead>Acciones</TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
                   {data?.jobApplications?.length === 0 ? (
                     <TableRow>
                       <TableCell colSpan={7} className="text-center py-8">
-                        No job applications found
+                        No se encontraron solicitudes de empleo
                       </TableCell>
                     </TableRow>
                   ) : (
@@ -374,7 +250,9 @@ export default function JobApplicationsPage() {
                           <div className="flex items-center gap-2">
                             <User className="h-4 w-4 text-muted-foreground" />
                             <div>
-                              <div className="font-semibold">{getApplicantName(application)}</div>
+                              <div className="font-semibold">
+                                {getApplicantName(application)}
+                              </div>
                               <div className="text-sm text-muted-foreground">
                                 {application.applicant?.email || "N/A"}
                               </div>
@@ -391,11 +269,15 @@ export default function JobApplicationsPage() {
                             {application.jobOffer?.company?.name || "N/A"}
                           </div>
                         </TableCell>
-                        <TableCell>{getStatusBadge(application.status)}</TableCell>
+                        <TableCell>
+                          {getStatusBadge(application.status)}
+                        </TableCell>
                         <TableCell>
                           <div className="flex items-center gap-1">
                             <Calendar className="h-3 w-3 text-muted-foreground" />
-                            <span className="text-sm">{formatDate(application.appliedAt)}</span>
+                            <span className="text-sm">
+                              {formatDate(application.appliedAt)}
+                            </span>
                           </div>
                         </TableCell>
                         <TableCell>
@@ -404,48 +286,14 @@ export default function JobApplicationsPage() {
                           </div>
                         </TableCell>
                         <TableCell>
-                          <DropdownMenu>
-                            <DropdownMenuTrigger asChild>
-                              <Button variant="ghost" className="h-8 w-8 p-0">
-                                <MoreHorizontal className="h-4 w-4" />
-                              </Button>
-                            </DropdownMenuTrigger>
-                            <DropdownMenuContent align="end">
-                              <DropdownMenuItem onClick={() => handleViewDetails(application)}>
-                                <Eye className="mr-2 h-4 w-4" />
-                                View Details
-                              </DropdownMenuItem>
-                              <DropdownMenuItem onClick={() => handleEdit(application)}>
-                                <Edit className="mr-2 h-4 w-4" />
-                                Edit
-                              </DropdownMenuItem>
-                              <AlertDialog>
-                                <AlertDialogTrigger asChild>
-                                  <DropdownMenuItem onSelect={(e) => e.preventDefault()}>
-                                    <Trash2 className="mr-2 h-4 w-4" />
-                                    Delete
-                                  </DropdownMenuItem>
-                                </AlertDialogTrigger>
-                                <AlertDialogContent>
-                                  <AlertDialogHeader>
-                                    <AlertDialogTitle>Delete Job Application</AlertDialogTitle>
-                                    <AlertDialogDescription>
-                                      Are you sure you want to delete this application? This action cannot be undone.
-                                    </AlertDialogDescription>
-                                  </AlertDialogHeader>
-                                  <AlertDialogFooter>
-                                    <AlertDialogCancel>Cancel</AlertDialogCancel>
-                                    <AlertDialogAction
-                                      onClick={() => handleDelete(application)}
-                                      className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
-                                    >
-                                      Delete
-                                    </AlertDialogAction>
-                                  </AlertDialogFooter>
-                                </AlertDialogContent>
-                              </AlertDialog>
-                            </DropdownMenuContent>
-                          </DropdownMenu>
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            onClick={() => handleViewDetails(application)}
+                          >
+                            <Eye className="mr-2 h-4 w-4" />
+                            Ver
+                          </Button>
                         </TableCell>
                       </TableRow>
                     ))
@@ -457,9 +305,13 @@ export default function JobApplicationsPage() {
               {data?.pagination && data.pagination.totalPages > 1 ? (
                 <div className="flex items-center justify-between mt-4">
                   <div className="text-sm text-muted-foreground">
-                    Showing {((data.pagination.page - 1) * data.pagination.limit) + 1} to{" "}
-                    {Math.min(data.pagination.page * data.pagination.limit, data.pagination.total)} of{" "}
-                    {data.pagination.total} results
+                    Mostrando{" "}
+                    {(data.pagination.page - 1) * data.pagination.limit + 1} a{" "}
+                    {Math.min(
+                      data.pagination.page * data.pagination.limit,
+                      data.pagination.total
+                    )}{" "}
+                    de {data.pagination.total} resultados
                   </div>
                   <div className="flex gap-2">
                     <Button
@@ -468,7 +320,7 @@ export default function JobApplicationsPage() {
                       onClick={() => setPage(page - 1)}
                       disabled={page === 1}
                     >
-                      Previous
+                      Anterior
                     </Button>
                     <Button
                       variant="outline"
@@ -476,7 +328,7 @@ export default function JobApplicationsPage() {
                       onClick={() => setPage(page + 1)}
                       disabled={page === data.pagination.totalPages}
                     >
-                      Next
+                      Siguiente
                     </Button>
                   </div>
                 </div>
@@ -490,29 +342,10 @@ export default function JobApplicationsPage() {
       <Dialog open={isDetailsDialogOpen} onOpenChange={setIsDetailsDialogOpen}>
         <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
           <DialogHeader>
-            <DialogTitle>Job Application Details</DialogTitle>
+            <DialogTitle>Detalles de la Solicitud de Empleo</DialogTitle>
           </DialogHeader>
           {selectedApplication && (
             <JobApplicationDetails application={selectedApplication} />
-          )}
-        </DialogContent>
-      </Dialog>
-
-      {/* Edit Job Application Dialog */}
-      <Dialog open={isEditDialogOpen} onOpenChange={setIsEditDialogOpen}>
-        <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
-          <DialogHeader>
-            <DialogTitle>Edit Job Application</DialogTitle>
-            <DialogDescription>
-              Update the job application details.
-            </DialogDescription>
-          </DialogHeader>
-          {editingApplication && (
-            <JobApplicationForm 
-              application={editingApplication} 
-              onSubmit={handleUpdate}
-              isEditing={true}
-            />
           )}
         </DialogContent>
       </Dialog>

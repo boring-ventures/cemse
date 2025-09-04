@@ -100,6 +100,7 @@ model Profile {
   studentNotes           StudentNote[]
   moduleCertificates     ModuleCertificate[] @relation("ModuleCertificateStudent")
   youthApplications      YouthApplication[] @relation("YouthApplications")
+  user                  User               @relation(fields: [userId], references: [id], onDelete: Cascade)
 
 
   @@index([userId])
@@ -721,6 +722,7 @@ model Resource {
   downloads     Int      @default(0)
   rating        Float    @default(0)
   tags          String[]
+  isPublic      Boolean  @default(true) @map("is_public")
   createdAt     DateTime @default(now()) @map("created_at")
   updatedAt     DateTime @updatedAt @map("updated_at")
 }
@@ -737,6 +739,7 @@ model User {
   createdInstitutions   Institution[]  @relation("InstitutionCreator")
   createdMunicipalities Municipality[] @relation("MunicipalityCreator")
   refreshTokens         RefreshToken[]
+  profile               Profile?
 
   @@map("users")
 }

@@ -30,6 +30,17 @@ import {
   DialogTrigger,
 } from "@/components/ui/dialog";
 import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger,
+} from "@/components/ui/alert-dialog";
+import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
@@ -48,11 +59,8 @@ import {
   Edit,
   Eye,
   Trash2,
-  Download,
-  Star,
   TrendingUp,
   Award,
-  Upload,
 } from "lucide-react";
 
 interface Resource {
@@ -88,8 +96,6 @@ interface Stats {
     draft: number;
     archived: number;
   };
-  totalDownloads: number;
-  averageRating: number;
   featured: number;
 }
 
@@ -99,8 +105,6 @@ export default function AdminResourcesPage() {
     total: 0,
     byType: { template: 0, guide: 0, video: 0, podcast: 0, tool: 0 },
     byStatus: { published: 0, draft: 0, archived: 0 },
-    totalDownloads: 0,
-    averageRating: 0,
     featured: 0,
   });
   const [loading, setLoading] = useState(true);
@@ -109,6 +113,12 @@ export default function AdminResourcesPage() {
   const [selectedCategory, setSelectedCategory] = useState("all");
   const [selectedStatus, setSelectedStatus] = useState("all");
   const [showCreateDialog, setShowCreateDialog] = useState(false);
+  const [selectedResource, setSelectedResource] = useState<Resource | null>(
+    null
+  );
+  const [showViewDialog, setShowViewDialog] = useState(false);
+  const [showEditDialog, setShowEditDialog] = useState(false);
+  const [showDeleteDialog, setShowDeleteDialog] = useState(false);
 
   // Form state for creating/editing resources
   const [formData, setFormData] = useState<{
@@ -134,6 +144,151 @@ export default function AdminResourcesPage() {
     featured: false,
     status: "draft",
   });
+
+  // Helper function to render file preview
+  const renderFilePreview = (resource: {
+    type: string;
+    fileUrl: string;
+    title: string;
+  }) => {
+    const fileUrl = resource.fileUrl;
+    const fileType = resource.type;
+    const fileName = resource.title;
+
+    // Check if it's an image
+    if (
+      fileUrl.match(/\.(jpg|jpeg|png|gif|webp|svg)$/i) ||
+      fileType === "image"
+    ) {
+      return (
+        <div className="text-center">
+          <img
+            src={fileUrl}
+            alt={fileName}
+            className="max-w-full max-h-64 mx-auto rounded-lg shadow-sm"
+            onError={(e) => {
+              e.currentTarget.style.display = "none";
+              e.currentTarget.nextElementSibling?.classList.remove("hidden");
+            }}
+          />
+          <div className="hidden text-center p-4">
+            <p className="text-muted-foreground mb-2">
+              No se pudo cargar la imagen
+            </p>
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => window.open(fileUrl, "_blank")}
+            >
+              <FileText className="w-4 h-4 mr-2" />
+              Abrir en nueva pestaña
+            </Button>
+          </div>
+        </div>
+      );
+    }
+
+    // Check if it's a video
+    if (fileUrl.match(/\.(mp4|webm|ogg|avi|mov)$/i) || fileType === "video") {
+      return (
+        <div className="text-center">
+          <video
+            controls
+            className="max-w-full max-h-64 mx-auto rounded-lg shadow-sm"
+            onError={(e) => {
+              e.currentTarget.style.display = "none";
+              e.currentTarget.nextElementSibling?.classList.remove("hidden");
+            }}
+          >
+            <source src={fileUrl} type="video/mp4" />
+            <source src={fileUrl} type="video/webm" />
+            <source src={fileUrl} type="video/ogg" />
+            Tu navegador no soporta el elemento de video.
+          </video>
+          <div className="hidden text-center p-4">
+            <p className="text-muted-foreground mb-2">
+              No se pudo cargar el video
+            </p>
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => window.open(fileUrl, "_blank")}
+            >
+              <Play className="w-4 h-4 mr-2" />
+              Abrir en nueva pestaña
+            </Button>
+          </div>
+        </div>
+      );
+    }
+
+    // Check if it's an audio file
+    if (fileUrl.match(/\.(mp3|wav|ogg|m4a)$/i) || fileType === "podcast") {
+      return (
+        <div className="text-center">
+          <audio
+            controls
+            className="w-full max-w-md mx-auto"
+            onError={(e) => {
+              e.currentTarget.style.display = "none";
+              e.currentTarget.nextElementSibling?.classList.remove("hidden");
+            }}
+          >
+            <source src={fileUrl} type="audio/mpeg" />
+            <source src={fileUrl} type="audio/wav" />
+            <source src={fileUrl} type="audio/ogg" />
+            Tu navegador no soporta el elemento de audio.
+          </audio>
+          <div className="hidden text-center p-4">
+            <p className="text-muted-foreground mb-2">
+              No se pudo cargar el audio
+            </p>
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => window.open(fileUrl, "_blank")}
+            >
+              <Headphones className="w-4 h-4 mr-2" />
+              Abrir en nueva pestaña
+            </Button>
+          </div>
+        </div>
+      );
+    }
+
+    // For other file types (PDFs, documents, etc.)
+    return (
+      <div className="text-center p-4">
+        <div className="flex flex-col items-center space-y-3">
+          <div className="w-16 h-16 bg-gray-100 rounded-lg flex items-center justify-center">
+            {fileType === "template" && (
+              <FileText className="w-8 h-8 text-gray-600" />
+            )}
+            {fileType === "guide" && (
+              <BookOpen className="w-8 h-8 text-gray-600" />
+            )}
+            {fileType === "tool" && (
+              <Calculator className="w-8 h-8 text-gray-600" />
+            )}
+            {!["template", "guide", "tool"].includes(fileType) && (
+              <FileText className="w-8 h-8 text-gray-600" />
+            )}
+          </div>
+          <div>
+            <p className="text-sm text-muted-foreground mb-2">{fileName}</p>
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => window.open(fileUrl, "_blank")}
+            >
+              <FileText className="w-4 h-4 mr-2" />
+              Abrir archivo
+            </Button>
+          </div>
+        </div>
+      </div>
+    );
+  };
 
   const fetchResources = useCallback(async () => {
     try {
@@ -240,6 +395,81 @@ export default function AdminResourcesPage() {
         return "bg-red-100 text-red-800";
       default:
         return "bg-gray-100 text-gray-800";
+    }
+  };
+
+  // Handler functions for CRUD operations
+  const handleViewDetails = (resource: Resource) => {
+    setSelectedResource(resource);
+    setShowViewDialog(true);
+  };
+
+  const handleEdit = (resource: Resource) => {
+    setSelectedResource(resource);
+    setFormData({
+      title: resource.title,
+      description: resource.description,
+      type: resource.type,
+      category: resource.category,
+      thumbnail: resource.thumbnail,
+      fileUrl: resource.fileUrl,
+      fileSize: resource.fileSize,
+      tags: resource.tags.join(", "),
+      featured: resource.featured,
+      status: resource.status,
+    });
+    setShowEditDialog(true);
+  };
+
+  const handleDelete = (resource: Resource) => {
+    setSelectedResource(resource);
+    setShowDeleteDialog(true);
+  };
+
+  const confirmDelete = async () => {
+    if (!selectedResource) return;
+
+    try {
+      const response = await fetch(
+        `/api/admin/entrepreneurship/resources/${selectedResource.id}`,
+        {
+          method: "DELETE",
+        }
+      );
+
+      if (response.ok) {
+        setShowDeleteDialog(false);
+        setSelectedResource(null);
+        fetchResources();
+      }
+    } catch (error) {
+      console.error("Error deleting resource:", error);
+    }
+  };
+
+  const handleUpdateResource = async () => {
+    if (!selectedResource) return;
+
+    try {
+      const response = await fetch(
+        `/api/admin/entrepreneurship/resources/${selectedResource.id}`,
+        {
+          method: "PUT",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            ...formData,
+            tags: formData.tags.split(",").map((tag) => tag.trim()),
+          }),
+        }
+      );
+
+      if (response.ok) {
+        setShowEditDialog(false);
+        setSelectedResource(null);
+        fetchResources();
+      }
+    } catch (error) {
+      console.error("Error updating resource:", error);
     }
   };
 
@@ -490,38 +720,6 @@ export default function AdminResourcesPage() {
             <div className="flex items-center justify-between">
               <div>
                 <p className="text-sm font-medium text-muted-foreground">
-                  Descargas Totales
-                </p>
-                <p className="text-2xl font-bold">
-                  {stats.totalDownloads.toLocaleString()}
-                </p>
-              </div>
-              <Download className="h-8 w-8 text-green-600" />
-            </div>
-          </CardContent>
-        </Card>
-
-        <Card>
-          <CardContent className="p-4">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-sm font-medium text-muted-foreground">
-                  Calificación Promedio
-                </p>
-                <p className="text-2xl font-bold">
-                  {stats.averageRating.toFixed(1)}
-                </p>
-              </div>
-              <Star className="h-8 w-8 text-yellow-600" />
-            </div>
-          </CardContent>
-        </Card>
-
-        <Card>
-          <CardContent className="p-4">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-sm font-medium text-muted-foreground">
                   Publicados
                 </p>
                 <p className="text-2xl font-bold">{stats.byStatus.published}</p>
@@ -620,8 +818,6 @@ export default function AdminResourcesPage() {
                 <TableHead>Tipo</TableHead>
                 <TableHead>Categoría</TableHead>
                 <TableHead>Estado</TableHead>
-                <TableHead>Descargas</TableHead>
-                <TableHead>Calificación</TableHead>
                 <TableHead>Destacado</TableHead>
                 <TableHead>Acciones</TableHead>
               </TableRow>
@@ -653,13 +849,6 @@ export default function AdminResourcesPage() {
                       {resource.status}
                     </Badge>
                   </TableCell>
-                  <TableCell>{resource.downloads.toLocaleString()}</TableCell>
-                  <TableCell>
-                    <div className="flex items-center gap-1">
-                      <Star className="h-3 w-3 fill-yellow-400 text-yellow-400" />
-                      {resource.rating.toFixed(1)}
-                    </div>
-                  </TableCell>
                   <TableCell>
                     {resource.featured && (
                       <Award className="h-4 w-4 text-orange-600" />
@@ -673,19 +862,20 @@ export default function AdminResourcesPage() {
                         </Button>
                       </DropdownMenuTrigger>
                       <DropdownMenuContent align="end">
-                        <DropdownMenuItem>
+                        <DropdownMenuItem
+                          onClick={() => handleViewDetails(resource)}
+                        >
                           <Eye className="h-4 w-4 mr-2" />
                           Ver Detalles
                         </DropdownMenuItem>
-                        <DropdownMenuItem>
+                        <DropdownMenuItem onClick={() => handleEdit(resource)}>
                           <Edit className="h-4 w-4 mr-2" />
                           Editar
                         </DropdownMenuItem>
-                        <DropdownMenuItem>
-                          <Upload className="h-4 w-4 mr-2" />
-                          Subir Archivo
-                        </DropdownMenuItem>
-                        <DropdownMenuItem className="text-red-600">
+                        <DropdownMenuItem
+                          className="text-red-600"
+                          onClick={() => handleDelete(resource)}
+                        >
                           <Trash2 className="h-4 w-4 mr-2" />
                           Eliminar
                         </DropdownMenuItem>
@@ -710,6 +900,266 @@ export default function AdminResourcesPage() {
           )}
         </CardContent>
       </Card>
+
+      {/* View Details Dialog */}
+      <Dialog open={showViewDialog} onOpenChange={setShowViewDialog}>
+        <DialogContent className="max-w-2xl">
+          <DialogHeader>
+            <DialogTitle>Detalles del Recurso</DialogTitle>
+          </DialogHeader>
+          {selectedResource && (
+            <div className="space-y-4">
+              <div className="flex items-center gap-4">
+                <div className="w-16 h-16 bg-gray-100 rounded flex items-center justify-center">
+                  {getResourceIcon(selectedResource.type)}
+                </div>
+                <div>
+                  <h3 className="text-xl font-semibold">
+                    {selectedResource.title}
+                  </h3>
+                  <p className="text-muted-foreground">
+                    {selectedResource.category}
+                  </p>
+                </div>
+              </div>
+              <div>
+                <h4 className="font-medium mb-2">Descripción</h4>
+                <p className="text-muted-foreground">
+                  {selectedResource.description}
+                </p>
+              </div>
+
+              {/* File Preview Section */}
+              {selectedResource.fileUrl && (
+                <div>
+                  <h4 className="font-medium mb-2">Vista Previa del Archivo</h4>
+                  <div className="border rounded-lg p-4 bg-gray-50">
+                    {renderFilePreview(selectedResource)}
+                  </div>
+                </div>
+              )}
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <h4 className="font-medium mb-2">Tipo</h4>
+                  <Badge className={getTypeColor(selectedResource.type)}>
+                    {selectedResource.type}
+                  </Badge>
+                </div>
+                <div>
+                  <h4 className="font-medium mb-2">Estado</h4>
+                  <Badge className={getStatusColor(selectedResource.status)}>
+                    {selectedResource.status}
+                  </Badge>
+                </div>
+                <div>
+                  <h4 className="font-medium mb-2">Autor</h4>
+                  <p className="text-muted-foreground">
+                    {selectedResource.author}
+                  </p>
+                </div>
+                <div>
+                  <h4 className="font-medium mb-2">Tamaño del Archivo</h4>
+                  <p className="text-muted-foreground">
+                    {selectedResource.fileSize}
+                  </p>
+                </div>
+              </div>
+              <div>
+                <h4 className="font-medium mb-2">Etiquetas</h4>
+                <div className="flex flex-wrap gap-2">
+                  {selectedResource.tags.map((tag, index) => (
+                    <Badge key={index} variant="outline">
+                      {tag}
+                    </Badge>
+                  ))}
+                </div>
+              </div>
+            </div>
+          )}
+        </DialogContent>
+      </Dialog>
+
+      {/* Edit Dialog */}
+      <Dialog open={showEditDialog} onOpenChange={setShowEditDialog}>
+        <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle>Editar Recurso</DialogTitle>
+          </DialogHeader>
+          <div className="space-y-4">
+            <div>
+              <Label htmlFor="edit-title">Título</Label>
+              <Input
+                id="edit-title"
+                value={formData.title}
+                onChange={(e) =>
+                  setFormData({ ...formData, title: e.target.value })
+                }
+              />
+            </div>
+            <div>
+              <Label htmlFor="edit-description">Descripción</Label>
+              <Textarea
+                id="edit-description"
+                value={formData.description}
+                onChange={(e) =>
+                  setFormData({ ...formData, description: e.target.value })
+                }
+                rows={3}
+              />
+            </div>
+            <div className="grid grid-cols-2 gap-4">
+              <div>
+                <Label htmlFor="edit-type">Tipo</Label>
+                <Select
+                  value={formData.type}
+                  onValueChange={(value: any) =>
+                    setFormData({ ...formData, type: value })
+                  }
+                >
+                  <SelectTrigger>
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="template">Plantilla</SelectItem>
+                    <SelectItem value="guide">Guía</SelectItem>
+                    <SelectItem value="video">Video</SelectItem>
+                    <SelectItem value="podcast">Podcast</SelectItem>
+                    <SelectItem value="tool">Herramienta</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+              <div>
+                <Label htmlFor="edit-category">Categoría</Label>
+                <Select
+                  value={formData.category}
+                  onValueChange={(value) =>
+                    setFormData({ ...formData, category: value })
+                  }
+                >
+                  <SelectTrigger>
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {categories.map((category) => (
+                      <SelectItem key={category} value={category}>
+                        {category}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+            </div>
+            <div className="grid grid-cols-2 gap-4">
+              <div>
+                <Label htmlFor="edit-fileUrl">URL del Archivo</Label>
+                <Input
+                  id="edit-fileUrl"
+                  value={formData.fileUrl}
+                  onChange={(e) =>
+                    setFormData({ ...formData, fileUrl: e.target.value })
+                  }
+                />
+              </div>
+              <div>
+                <Label htmlFor="edit-fileSize">Tamaño del Archivo</Label>
+                <Input
+                  id="edit-fileSize"
+                  value={formData.fileSize}
+                  onChange={(e) =>
+                    setFormData({ ...formData, fileSize: e.target.value })
+                  }
+                />
+              </div>
+            </div>
+
+            {/* File Preview Section in Edit Dialog */}
+            {formData.fileUrl && (
+              <div>
+                <h4 className="font-medium mb-2">Vista Previa del Archivo</h4>
+                <div className="border rounded-lg p-4 bg-gray-50">
+                  {renderFilePreview({
+                    ...formData,
+                    type: formData.type,
+                    fileUrl: formData.fileUrl,
+                  })}
+                </div>
+              </div>
+            )}
+            <div>
+              <Label htmlFor="edit-tags">Etiquetas (separadas por comas)</Label>
+              <Input
+                id="edit-tags"
+                value={formData.tags}
+                onChange={(e) =>
+                  setFormData({ ...formData, tags: e.target.value })
+                }
+                placeholder="etiqueta1, etiqueta2, etiqueta3"
+              />
+            </div>
+            <div className="grid grid-cols-2 gap-4">
+              <div>
+                <Label htmlFor="edit-status">Estado</Label>
+                <Select
+                  value={formData.status}
+                  onValueChange={(value: any) =>
+                    setFormData({ ...formData, status: value })
+                  }
+                >
+                  <SelectTrigger>
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="draft">Borrador</SelectItem>
+                    <SelectItem value="published">Publicado</SelectItem>
+                    <SelectItem value="archived">Archivado</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+              <div className="flex items-center space-x-2">
+                <Checkbox
+                  id="edit-featured"
+                  checked={formData.featured}
+                  onCheckedChange={(checked) =>
+                    setFormData({ ...formData, featured: !!checked })
+                  }
+                />
+                <Label htmlFor="edit-featured">Destacado</Label>
+              </div>
+            </div>
+            <div className="flex justify-end gap-2">
+              <Button
+                variant="outline"
+                onClick={() => setShowEditDialog(false)}
+              >
+                Cancelar
+              </Button>
+              <Button onClick={handleUpdateResource}>Actualizar Recurso</Button>
+            </div>
+          </div>
+        </DialogContent>
+      </Dialog>
+
+      {/* Delete Confirmation Dialog */}
+      <AlertDialog open={showDeleteDialog} onOpenChange={setShowDeleteDialog}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>¿Eliminar Recurso?</AlertDialogTitle>
+            <AlertDialogDescription>
+              ¿Estás seguro de que quieres eliminar "{selectedResource?.title}"?
+              Esta acción no se puede deshacer.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancelar</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={confirmDelete}
+              className="bg-red-600 hover:bg-red-700"
+            >
+              Eliminar
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 }
