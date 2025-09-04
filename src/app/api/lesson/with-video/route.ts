@@ -4,6 +4,11 @@ import jwt from "jsonwebtoken";
 import { Client } from "minio";
 import { LessonType } from "@prisma/client";
 
+// Configure route for large uploads
+export const maxDuration = 300; // 5 minutes
+export const dynamic = 'force-dynamic';
+export const runtime = 'nodejs';
+
 const JWT_SECRET = process.env.JWT_SECRET || "dev-secret-key";
 
 // MinIO configuration
