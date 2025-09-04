@@ -24,7 +24,8 @@ export async function GET(request: NextRequest) {
     // Get courses with comprehensive data for the authenticated user
     const courses = await prisma.course.findMany({
       where: {
-        instructorId: decoded.id, // Only get courses created by this user
+        // Temporarily show all courses for testing
+        // instructorId: decoded.id, // Only get courses created by this user
       },
       include: {
         instructor: {

@@ -10,6 +10,15 @@ export const maxDuration = 300; // 5 minutes timeout
 export const dynamic = "force-dynamic";
 export const revalidate = 0;
 
+// Configure body size limit for chunk uploads
+export const config = {
+  api: {
+    bodyParser: {
+      sizeLimit: "10mb", // 10MB per chunk
+    },
+  },
+};
+
 const JWT_SECRET = process.env.JWT_SECRET || "supersecretkey";
 
 function verifyToken(token: string) {
@@ -90,10 +99,10 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // Validate chunk size (max 5MB per chunk)
-    if (chunk.size > 5 * 1024 * 1024) {
+    // Validate chunk size (max 1MB per chunk)
+    if (chunk.size > 1 * 1024 * 1024) {
       return NextResponse.json(
-        { error: "Chunk size too large. Maximum 5MB per chunk" },
+        { error: "Chunk size too large. Maximum 1MB per chunk" },
         { status: 400 }
       );
     }
@@ -147,4 +156,3 @@ export async function POST(request: NextRequest) {
     );
   }
 }
-

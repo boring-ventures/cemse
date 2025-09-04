@@ -29,6 +29,16 @@ const nextConfig = {
     bodySizeLimit: "2gb",
   },
 
+  // Add API route configuration for larger uploads
+  async rewrites() {
+    return [
+      {
+        source: "/api/files/upload/:path*",
+        destination: "/api/files/upload/:path*",
+      },
+    ];
+  },
+
   env: {
     NEXT_PUBLIC_USE_BACKEND: "true",
     NEXT_PUBLIC_BACKEND_URL: "https://cemse-back-production.up.railway.app",
