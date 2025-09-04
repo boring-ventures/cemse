@@ -1,17 +1,17 @@
-import { NextRequest, NextResponse } from 'next/server';
-import { prisma } from '@/lib/prisma';
-import jwt from 'jsonwebtoken';
+import { NextRequest, NextResponse } from "next/server";
+import { prisma } from "@/lib/prisma";
+import jwt from "jsonwebtoken";
 
-const JWT_SECRET = process.env.JWT_SECRET || 'dev-secret-key';
+const JWT_SECRET = process.env.JWT_SECRET || "dev-secret-key";
 
 export async function GET(request: NextRequest) {
   try {
-    console.log('📚 API: Received request for lesson resources');
-    
+    console.log("📚 API: Received request for lesson resources");
+
     const { searchParams } = new URL(request.url);
-    const lessonId = searchParams.get('lessonId');
-    const resourceId = searchParams.get('id');
-    
+    const lessonId = searchParams.get("lessonId");
+    const resourceId = searchParams.get("id");
+
     if (resourceId) {
       // Get single resource
       const resource = await prisma.lessonResource.findUnique({
@@ -22,29 +22,29 @@ export async function GET(request: NextRequest) {
               id: true,
               title: true,
               moduleId: true,
-            }
-          }
-        }
+            },
+          },
+        },
       });
-      
+
       if (!resource) {
         return NextResponse.json(
-          { message: 'Resource not found' },
+          { message: "Resource not found" },
           { status: 404 }
         );
       }
-      
+
       return NextResponse.json({ resource }, { status: 200 });
     }
-    
+
     if (lessonId) {
       // Get resources for a lesson
       const resources = await prisma.lessonResource.findMany({
         where: { lessonId },
-        orderBy: { orderIndex: 'asc' }
+        orderBy: { orderIndex: "asc" },
       });
-      
-      const transformedResources = resources.map(resource => ({
+
+      const transformedResources = resources.map((resource) => ({
         id: resource.id,
         lessonId: resource.lessonId,
         title: resource.title,
@@ -57,21 +57,24 @@ export async function GET(request: NextRequest) {
         isDownloadable: resource.isDownloadable,
         createdAt: resource.createdAt,
       }));
-      
-      return NextResponse.json({ resources: transformedResources }, { status: 200 });
+
+      return NextResponse.json(
+        { resources: transformedResources },
+        { status: 200 }
+      );
     }
-    
+
     // Get all resources (admin only)
-    const token = request.headers.get('authorization')?.replace('Bearer ', '');
+    const token = request.headers.get("authorization")?.replace("Bearer ", "");
     if (!token) {
       return NextResponse.json(
-        { message: 'Authorization required' },
+        { message: "Authorization required" },
         { status: 401 }
       );
     }
 
     const decoded = jwt.verify(token, JWT_SECRET) as any;
-    
+
     const resources = await prisma.lessonResource.findMany({
       include: {
         lesson: {
@@ -79,31 +82,34 @@ export async function GET(request: NextRequest) {
             id: true,
             title: true,
             moduleId: true,
-          }
-        }
+          },
+        },
       },
-      orderBy: [
-        { lessonId: 'asc' },
-        { orderIndex: 'asc' }
-      ]
+      orderBy: [{ lessonId: "asc" }, { orderIndex: "asc" }],
     });
-    
+
     return NextResponse.json({ resources }, { status: 200 });
   } catch (error) {
-    console.error('❌ Error in lesson resources route:', error);
-    
-    const errorDetails = error instanceof Error ? {
-      message: error.message,
-      code: (error as any).code,
-      meta: (error as any).meta
-    } : { message: 'Unknown error' };
-    
-    console.error('❌ Error details:', errorDetails);
-    
+    console.error("❌ Error in lesson resources route:", error);
+
+    const errorDetails =
+      error instanceof Error
+        ? {
+            message: error.message,
+            code: (error as any).code,
+            meta: (error as any).meta,
+          }
+        : { message: "Unknown error" };
+
+    console.error("❌ Error details:", errorDetails);
+
     return NextResponse.json(
-      { 
-        message: 'Internal server error',
-        error: process.env.NODE_ENV === 'development' ? errorDetails.message : 'Internal server error'
+      {
+        message: "Internal server error",
+        error:
+          process.env.NODE_ENV === "development"
+            ? errorDetails.message
+            : "Internal server error",
       },
       { status: 500 }
     );
@@ -112,35 +118,66 @@ export async function GET(request: NextRequest) {
 
 export async function POST(request: NextRequest) {
   try {
-    console.log('📚 API: Received POST request for resource creation');
-    
-    // Get auth token
-    const token = request.headers.get('authorization')?.replace('Bearer ', '');
+    console.log("📚 API: Received POST request for resource creation");
+
+    // Get auth token from Authorization header or cookies
+    let token = request.headers.get("authorization")?.replace("Bearer ", "");
+
+    // If no Bearer token, try to get from cookies
+    if (!token) {
+      const cookieStore = await import("next/headers").then((m) => m.cookies());
+      token = cookieStore.get("cemse-auth-token")?.value;
+      console.log("📚 API: Using cookie-based authentication");
+    }
+
     if (!token) {
       return NextResponse.json(
-        { message: 'Authorization required' },
+        { message: "Authorization required" },
         { status: 401 }
       );
     }
 
     // Verify token
     const decoded = jwt.verify(token, JWT_SECRET) as any;
-    console.log('📚 API: Authenticated user:', decoded.username);
+    console.log("📚 API: Authenticated user:", decoded.username);
 
-    const body = await request.json();
-    
+    // Handle both JSON and FormData requests
+    const contentType = request.headers.get("content-type") || "";
+    let body: any;
+
+    if (contentType.includes("multipart/form-data")) {
+      // Handle FormData
+      const formData = await request.formData();
+      body = {
+        lessonId: formData.get("lessonId"),
+        title: formData.get("title"),
+        description: formData.get("description"),
+        type: formData.get("type"),
+        url: formData.get("url"),
+        orderIndex: formData.get("orderIndex")
+          ? parseInt(formData.get("orderIndex") as string)
+          : 0,
+        isDownloadable: formData.get("isDownloadable") === "true",
+        file: formData.get("file"),
+      };
+    } else {
+      // Handle JSON
+      body = await request.json();
+    }
+
     // Create resource in database
     const resource = await prisma.lessonResource.create({
       data: {
         lessonId: body.lessonId,
         title: body.title,
         description: body.description,
-        type: body.type || 'OTHER',
-        url: body.url || '',
+        type: body.type || "OTHER",
+        url: body.url || "",
         filePath: body.filePath,
         fileSize: body.fileSize || 0,
         orderIndex: body.orderIndex || 0,
-        isDownloadable: body.isDownloadable !== undefined ? body.isDownloadable : true,
+        isDownloadable:
+          body.isDownloadable !== undefined ? body.isDownloadable : true,
       },
       include: {
         lesson: {
@@ -148,19 +185,22 @@ export async function POST(request: NextRequest) {
             id: true,
             title: true,
             moduleId: true,
-          }
-        }
-      }
+          },
+        },
+      },
     });
 
-    console.log('✅ Resource created successfully:', resource.id);
+    console.log("✅ Resource created successfully:", resource.id);
     return NextResponse.json({ resource }, { status: 201 });
   } catch (error) {
-    console.error('❌ Error creating resource:', error);
+    console.error("❌ Error creating resource:", error);
     return NextResponse.json(
-      { 
-        message: 'Internal server error',
-        error: process.env.NODE_ENV === 'development' ? (error as Error).message : 'Internal server error'
+      {
+        message: "Internal server error",
+        error:
+          process.env.NODE_ENV === "development"
+            ? (error as Error).message
+            : "Internal server error",
       },
       { status: 500 }
     );
@@ -169,31 +209,31 @@ export async function POST(request: NextRequest) {
 
 export async function PUT(request: NextRequest) {
   try {
-    console.log('📚 API: Received PUT request for resource update');
-    
+    console.log("📚 API: Received PUT request for resource update");
+
     // Get auth token
-    const token = request.headers.get('authorization')?.replace('Bearer ', '');
+    const token = request.headers.get("authorization")?.replace("Bearer ", "");
     if (!token) {
       return NextResponse.json(
-        { message: 'Authorization required' },
+        { message: "Authorization required" },
         { status: 401 }
       );
     }
 
     // Verify token
     const decoded = jwt.verify(token, JWT_SECRET) as any;
-    console.log('📚 API: Authenticated user:', decoded.username);
+    console.log("📚 API: Authenticated user:", decoded.username);
 
     const body = await request.json();
     const { id, ...updateData } = body;
-    
+
     if (!id) {
       return NextResponse.json(
-        { message: 'Resource ID is required' },
+        { message: "Resource ID is required" },
         { status: 400 }
       );
     }
-    
+
     // Update resource in database
     const resource = await prisma.lessonResource.update({
       where: { id },
@@ -204,19 +244,22 @@ export async function PUT(request: NextRequest) {
             id: true,
             title: true,
             moduleId: true,
-          }
-        }
-      }
+          },
+        },
+      },
     });
 
-    console.log('✅ Resource updated successfully:', resource.id);
+    console.log("✅ Resource updated successfully:", resource.id);
     return NextResponse.json({ resource }, { status: 200 });
   } catch (error) {
-    console.error('❌ Error updating resource:', error);
+    console.error("❌ Error updating resource:", error);
     return NextResponse.json(
-      { 
-        message: 'Internal server error',
-        error: process.env.NODE_ENV === 'development' ? (error as Error).message : 'Internal server error'
+      {
+        message: "Internal server error",
+        error:
+          process.env.NODE_ENV === "development"
+            ? (error as Error).message
+            : "Internal server error",
       },
       { status: 500 }
     );
@@ -225,44 +268,50 @@ export async function PUT(request: NextRequest) {
 
 export async function DELETE(request: NextRequest) {
   try {
-    console.log('📚 API: Received DELETE request for resource');
-    
+    console.log("📚 API: Received DELETE request for resource");
+
     // Get auth token
-    const token = request.headers.get('authorization')?.replace('Bearer ', '');
+    const token = request.headers.get("authorization")?.replace("Bearer ", "");
     if (!token) {
       return NextResponse.json(
-        { message: 'Authorization required' },
+        { message: "Authorization required" },
         { status: 401 }
       );
     }
 
     // Verify token
     const decoded = jwt.verify(token, JWT_SECRET) as any;
-    console.log('📚 API: Authenticated user:', decoded.username);
+    console.log("📚 API: Authenticated user:", decoded.username);
 
     const { searchParams } = new URL(request.url);
-    const resourceId = searchParams.get('id');
-    
+    const resourceId = searchParams.get("id");
+
     if (!resourceId) {
       return NextResponse.json(
-        { message: 'Resource ID is required' },
+        { message: "Resource ID is required" },
         { status: 400 }
       );
     }
-    
+
     // Delete resource from database
     await prisma.lessonResource.delete({
-      where: { id: resourceId }
+      where: { id: resourceId },
     });
 
-    console.log('✅ Resource deleted successfully:', resourceId);
-    return NextResponse.json({ message: 'Resource deleted successfully' }, { status: 200 });
-  } catch (error) {
-    console.error('❌ Error deleting resource:', error);
+    console.log("✅ Resource deleted successfully:", resourceId);
     return NextResponse.json(
-      { 
-        message: 'Internal server error',
-        error: process.env.NODE_ENV === 'development' ? (error as Error).message : 'Internal server error'
+      { message: "Resource deleted successfully" },
+      { status: 200 }
+    );
+  } catch (error) {
+    console.error("❌ Error deleting resource:", error);
+    return NextResponse.json(
+      {
+        message: "Internal server error",
+        error:
+          process.env.NODE_ENV === "development"
+            ? (error as Error).message
+            : "Internal server error",
       },
       { status: 500 }
     );

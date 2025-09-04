@@ -71,7 +71,10 @@ export default function MunicipalityResourcesPage() {
   const [selectedType, setSelectedType] = useState<string>("all");
   const [selectedCategory, setSelectedCategory] = useState<string>("all");
   const [showCreateDialog, setShowCreateDialog] = useState(false);
+  const [showEditDialog, setShowEditDialog] = useState(false);
+  const [showViewDialog, setShowViewDialog] = useState(false);
   const [editingResource, setEditingResource] = useState<Resource | null>(null);
+  const [viewingResource, setViewingResource] = useState<Resource | null>(null);
 
   // Form state
   const [formData, setFormData] = useState({
@@ -292,7 +295,10 @@ export default function MunicipalityResourcesPage() {
         }
 
         if (formData.publishedDate) {
-          formDataToSend.append("publishedDate", formData.publishedDate);
+          formDataToSend.append(
+            "publishedDate",
+            new Date(formData.publishedDate).toISOString()
+          );
         }
 
         if (formData.tags.length > 0) {
@@ -311,7 +317,9 @@ export default function MunicipalityResourcesPage() {
           format: formData.format,
           author: formData.author,
           externalUrl: formData.externalUrl || undefined,
-          publishedDate: formData.publishedDate || undefined,
+          publishedDate: formData.publishedDate
+            ? new Date(formData.publishedDate).toISOString()
+            : undefined,
           tags: formData.tags,
           isPublic: formData.isPublic,
         };
@@ -327,6 +335,102 @@ export default function MunicipalityResourcesPage() {
       console.error("Error creating resource:", error);
       toast.error(
         error instanceof Error ? error.message : "Error al crear el recurso"
+      );
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
+
+  const handleView = (resource: Resource) => {
+    setViewingResource(resource);
+    setShowViewDialog(true);
+  };
+
+  const handleEdit = (resource: Resource) => {
+    setEditingResource(resource);
+    setFormData({
+      title: resource.title,
+      description: resource.description,
+      type: resource.type as "DOCUMENT" | "VIDEO" | "AUDIO" | "IMAGE" | "TEXT",
+      category: resource.category,
+      format: resource.format,
+      author: resource.author,
+      externalUrl: resource.externalUrl || "",
+      publishedDate: resource.publishedDate
+        ? new Date(resource.publishedDate).toISOString().slice(0, 16)
+        : "",
+      tags: resource.tags,
+      isPublic: resource.isPublic,
+      isFeatured: false, // Add this property if needed
+    });
+    setShowEditDialog(true);
+  };
+
+  const handleUpdate = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!editingResource) return;
+
+    setIsSubmitting(true);
+
+    try {
+      if (!formData.title.trim()) {
+        toast.error("El título es requerido");
+        return;
+      }
+
+      if (!formData.description.trim()) {
+        toast.error("La descripción es requerida");
+        return;
+      }
+
+      if (!formData.type) {
+        toast.error("El tipo de recurso es requerido");
+        return;
+      }
+
+      if (!formData.category) {
+        toast.error("La categoría es requerida");
+        return;
+      }
+
+      if (!formData.format) {
+        toast.error("El formato es requerido");
+        return;
+      }
+
+      if (!formData.author.trim()) {
+        toast.error("El autor es requerido");
+        return;
+      }
+
+      const resourceData = {
+        title: formData.title,
+        description: formData.description,
+        type: formData.type,
+        category: formData.category,
+        format: formData.format,
+        author: formData.author,
+        externalUrl: formData.externalUrl || undefined,
+        publishedDate: formData.publishedDate
+          ? new Date(formData.publishedDate).toISOString()
+          : undefined,
+        tags: formData.tags,
+        isPublic: formData.isPublic,
+      };
+
+      await ResourceService.updateResource(editingResource.id, resourceData);
+
+      toast.success("Recurso actualizado exitosamente");
+      setShowEditDialog(false);
+      setEditingResource(null);
+      resetForm();
+      fetchResources();
+    } catch (error) {
+      console.error("Error updating resource:", error);
+      toast.error(
+        error instanceof Error
+          ? error.message
+          : "Error al actualizar el recurso"
       );
     } finally {
       setIsSubmitting(false);
@@ -849,15 +953,15 @@ export default function MunicipalityResourcesPage() {
                           </Button>
                         </DropdownMenuTrigger>
                         <DropdownMenuContent align="end">
-                          <DropdownMenuItem>
+                          <DropdownMenuItem
+                            onClick={() => handleView(resource)}
+                          >
                             <Eye className="h-4 w-4 mr-2" />
                             Ver
                           </DropdownMenuItem>
-                          <DropdownMenuItem>
-                            <Download className="h-4 w-4 mr-2" />
-                            Descargar
-                          </DropdownMenuItem>
-                          <DropdownMenuItem>
+                          <DropdownMenuItem
+                            onClick={() => handleEdit(resource)}
+                          >
                             <Edit className="h-4 w-4 mr-2" />
                             Editar
                           </DropdownMenuItem>
@@ -878,6 +982,560 @@ export default function MunicipalityResourcesPage() {
           )}
         </CardContent>
       </Card>
+
+      {/* Edit Dialog */}
+      <Dialog open={showEditDialog} onOpenChange={setShowEditDialog}>
+        <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle>Editar Recurso</DialogTitle>
+            <DialogDescription>
+              Modifica la información del recurso seleccionado
+            </DialogDescription>
+          </DialogHeader>
+          <form onSubmit={handleUpdate} className="space-y-6">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div>
+                <Label htmlFor="edit-title">Título *</Label>
+                <Input
+                  id="edit-title"
+                  value={formData.title}
+                  onChange={(e) => handleChange("title", e.target.value)}
+                  placeholder="Título del recurso"
+                  required
+                />
+              </div>
+
+              <div>
+                <Label htmlFor="edit-type">Tipo de Recurso *</Label>
+                <Select
+                  value={formData.type}
+                  onValueChange={(value) => handleChange("type", value)}
+                >
+                  <SelectTrigger>
+                    <SelectValue placeholder="Seleccionar tipo" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {resourceTypes.map((type) => (
+                      <SelectItem key={type.value} value={type.value}>
+                        {type.label}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+            </div>
+
+            <div>
+              <Label htmlFor="edit-description">Descripción *</Label>
+              <Textarea
+                id="edit-description"
+                value={formData.description}
+                onChange={(e) => handleChange("description", e.target.value)}
+                placeholder="Describe el contenido y propósito del recurso"
+                rows={4}
+                required
+              />
+            </div>
+
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div>
+                <Label htmlFor="edit-category">Categoría *</Label>
+                <Select
+                  value={formData.category}
+                  onValueChange={(value) => handleChange("category", value)}
+                >
+                  <SelectTrigger>
+                    <SelectValue placeholder="Seleccionar categoría" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {categories.map((category) => (
+                      <SelectItem key={category.value} value={category.value}>
+                        {category.label}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+
+              <div>
+                <Label htmlFor="edit-format">Formato *</Label>
+                <Select
+                  value={formData.format}
+                  onValueChange={(value) => handleChange("format", value)}
+                >
+                  <SelectTrigger>
+                    <SelectValue placeholder="Seleccionar formato" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {formats.map((format) => (
+                      <SelectItem key={format.value} value={format.value}>
+                        {format.label}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+            </div>
+
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div>
+                <Label htmlFor="edit-author">Autor *</Label>
+                <Input
+                  id="edit-author"
+                  value={formData.author}
+                  onChange={(e) => handleChange("author", e.target.value)}
+                  placeholder="Nombre del autor"
+                  required
+                />
+              </div>
+
+              <div>
+                <Label htmlFor="edit-publishedDate">Fecha de Publicación</Label>
+                <Input
+                  id="edit-publishedDate"
+                  type="datetime-local"
+                  value={formData.publishedDate}
+                  onChange={(e) =>
+                    handleChange("publishedDate", e.target.value)
+                  }
+                />
+              </div>
+            </div>
+
+            <div>
+              <Label htmlFor="edit-externalUrl">URL Externa (Opcional)</Label>
+              <Input
+                id="edit-externalUrl"
+                type="url"
+                value={formData.externalUrl}
+                onChange={(e) => handleChange("externalUrl", e.target.value)}
+                placeholder="https://ejemplo.com/recurso"
+              />
+            </div>
+
+            <div>
+              <Label>Etiquetas</Label>
+              <div className="space-y-2">
+                <div className="flex gap-2">
+                  <Input
+                    value={newTag}
+                    onChange={(e) => setNewTag(e.target.value)}
+                    placeholder="Nueva etiqueta"
+                    onKeyPress={(e) =>
+                      e.key === "Enter" && (e.preventDefault(), addTag())
+                    }
+                  />
+                  <Button type="button" onClick={addTag} variant="outline">
+                    Agregar
+                  </Button>
+                </div>
+                <div className="flex flex-wrap gap-2">
+                  {formData.tags.map((tag) => (
+                    <Badge
+                      key={tag}
+                      variant="secondary"
+                      className="flex items-center gap-1"
+                    >
+                      {tag}
+                      <button
+                        type="button"
+                        onClick={() => removeTag(tag)}
+                        className="ml-1 hover:text-red-500"
+                      >
+                        ×
+                      </button>
+                    </Badge>
+                  ))}
+                </div>
+              </div>
+            </div>
+
+            <div className="flex items-center space-x-2">
+              <Checkbox
+                id="edit-isPublic"
+                checked={formData.isPublic}
+                onCheckedChange={(checked) => handleChange("isPublic", checked)}
+              />
+              <Label htmlFor="edit-isPublic">Recurso público</Label>
+            </div>
+
+            {/* Resource Preview */}
+            {editingResource && (
+              <div>
+                <Label className="text-sm font-medium text-gray-500">
+                  Vista Previa del Recurso
+                </Label>
+                <div className="mt-2 p-4 border rounded-lg bg-gray-50">
+                  {editingResource.type === "IMAGE" &&
+                  editingResource.downloadUrl ? (
+                    <div className="space-y-2">
+                      <img
+                        src={editingResource.downloadUrl}
+                        alt={editingResource.title}
+                        className="max-w-full h-48 object-contain rounded border"
+                        onError={(e) => {
+                          const target = e.target as HTMLImageElement;
+                          target.style.display = "none";
+                          target.nextElementSibling?.classList.remove("hidden");
+                        }}
+                      />
+                      <div className="hidden text-center text-gray-500">
+                        <FileText className="h-12 w-12 mx-auto mb-2" />
+                        <p>No se pudo cargar la imagen</p>
+                      </div>
+                      <Button
+                        type="button"
+                        variant="outline"
+                        size="sm"
+                        onClick={() =>
+                          editingResource.downloadUrl &&
+                          window.open(editingResource.downloadUrl, "_blank")
+                        }
+                        className="w-full"
+                      >
+                        <ExternalLink className="h-4 w-4 mr-2" />
+                        Abrir Imagen
+                      </Button>
+                    </div>
+                  ) : editingResource.type === "VIDEO" &&
+                    editingResource.downloadUrl ? (
+                    <div className="space-y-2">
+                      <video
+                        src={editingResource.downloadUrl}
+                        controls
+                        className="max-w-full h-48 rounded border"
+                        onError={(e) => {
+                          const target = e.target as HTMLVideoElement;
+                          target.style.display = "none";
+                          target.nextElementSibling?.classList.remove("hidden");
+                        }}
+                      />
+                      <div className="hidden text-center text-gray-500">
+                        <Video className="h-12 w-12 mx-auto mb-2" />
+                        <p>No se pudo cargar el video</p>
+                      </div>
+                      <Button
+                        type="button"
+                        variant="outline"
+                        size="sm"
+                        onClick={() =>
+                          editingResource.downloadUrl &&
+                          window.open(editingResource.downloadUrl, "_blank")
+                        }
+                        className="w-full"
+                      >
+                        <ExternalLink className="h-4 w-4 mr-2" />
+                        Abrir Video
+                      </Button>
+                    </div>
+                  ) : editingResource.downloadUrl ? (
+                    <div className="text-center space-y-2">
+                      <div className="flex items-center justify-center">
+                        {getTypeIcon(editingResource.type)}
+                      </div>
+                      <p className="text-sm text-gray-600">
+                        {editingResource.title}
+                      </p>
+                      <Button
+                        type="button"
+                        variant="outline"
+                        size="sm"
+                        onClick={() =>
+                          editingResource.downloadUrl &&
+                          window.open(editingResource.downloadUrl, "_blank")
+                        }
+                        className="w-full"
+                      >
+                        <ExternalLink className="h-4 w-4 mr-2" />
+                        Abrir Recurso
+                      </Button>
+                    </div>
+                  ) : (
+                    <div className="text-center text-gray-500">
+                      <FileText className="h-12 w-12 mx-auto mb-2" />
+                      <p>No hay archivo disponible</p>
+                    </div>
+                  )}
+                </div>
+              </div>
+            )}
+
+            <DialogFooter>
+              <Button
+                type="button"
+                variant="outline"
+                onClick={() => setShowEditDialog(false)}
+              >
+                Cancelar
+              </Button>
+              <Button type="submit" disabled={isSubmitting}>
+                {isSubmitting ? "Actualizando..." : "Actualizar Recurso"}
+              </Button>
+            </DialogFooter>
+          </form>
+        </DialogContent>
+      </Dialog>
+
+      {/* View Dialog */}
+      <Dialog open={showViewDialog} onOpenChange={setShowViewDialog}>
+        <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle>Detalles del Recurso</DialogTitle>
+            <DialogDescription>
+              Información completa del recurso seleccionado
+            </DialogDescription>
+          </DialogHeader>
+          {viewingResource && (
+            <div className="space-y-6">
+              <div>
+                <Label className="text-sm font-medium text-gray-500">
+                  Título
+                </Label>
+                <p className="text-lg font-semibold">{viewingResource.title}</p>
+              </div>
+
+              <div>
+                <Label className="text-sm font-medium text-gray-500">
+                  Descripción
+                </Label>
+                <p className="text-gray-700">{viewingResource.description}</p>
+              </div>
+
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <Label className="text-sm font-medium text-gray-500">
+                    Tipo
+                  </Label>
+                  <div className="flex items-center gap-2 mt-1">
+                    {getTypeIcon(viewingResource.type)}
+                    <Badge className={getTypeColor(viewingResource.type)}>
+                      {viewingResource.type}
+                    </Badge>
+                  </div>
+                </div>
+
+                <div>
+                  <Label className="text-sm font-medium text-gray-500">
+                    Categoría
+                  </Label>
+                  <Badge variant="outline" className="mt-1">
+                    {viewingResource.category}
+                  </Badge>
+                </div>
+              </div>
+
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <Label className="text-sm font-medium text-gray-500">
+                    Formato
+                  </Label>
+                  <p className="text-gray-700">{viewingResource.format}</p>
+                </div>
+
+                <div>
+                  <Label className="text-sm font-medium text-gray-500">
+                    Autor
+                  </Label>
+                  <div className="flex items-center gap-2 mt-1">
+                    <User className="h-4 w-4 text-gray-400" />
+                    <span>{viewingResource.author}</span>
+                  </div>
+                </div>
+              </div>
+
+              {viewingResource.externalUrl && (
+                <div>
+                  <Label className="text-sm font-medium text-gray-500">
+                    URL Externa
+                  </Label>
+                  <div className="flex items-center gap-2 mt-1">
+                    <ExternalLink className="h-4 w-4 text-gray-400" />
+                    <a
+                      href={viewingResource.externalUrl}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="text-blue-600 hover:underline"
+                    >
+                      {viewingResource.externalUrl}
+                    </a>
+                  </div>
+                </div>
+              )}
+
+              <div>
+                <Label className="text-sm font-medium text-gray-500">
+                  Etiquetas
+                </Label>
+                <div className="flex flex-wrap gap-2 mt-1">
+                  {viewingResource.tags.map((tag) => (
+                    <Badge key={tag} variant="outline" className="text-xs">
+                      {tag}
+                    </Badge>
+                  ))}
+                </div>
+              </div>
+
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <Label className="text-sm font-medium text-gray-500">
+                    Estado
+                  </Label>
+                  <Badge
+                    variant={viewingResource.isPublic ? "default" : "secondary"}
+                    className="mt-1"
+                  >
+                    {viewingResource.isPublic ? "Público" : "Privado"}
+                  </Badge>
+                </div>
+
+                <div>
+                  <Label className="text-sm font-medium text-gray-500">
+                    Descargas
+                  </Label>
+                  <div className="flex items-center gap-2 mt-1">
+                    <Download className="h-4 w-4 text-gray-400" />
+                    <span>{viewingResource.downloads}</span>
+                  </div>
+                </div>
+              </div>
+
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <Label className="text-sm font-medium text-gray-500">
+                    Fecha de Creación
+                  </Label>
+                  <div className="flex items-center gap-2 mt-1">
+                    <Calendar className="h-4 w-4 text-gray-400" />
+                    <span>
+                      {new Date(viewingResource.createdAt).toLocaleDateString()}
+                    </span>
+                  </div>
+                </div>
+
+                <div>
+                  <Label className="text-sm font-medium text-gray-500">
+                    Última Actualización
+                  </Label>
+                  <div className="flex items-center gap-2 mt-1">
+                    <Calendar className="h-4 w-4 text-gray-400" />
+                    <span>
+                      {new Date(viewingResource.updatedAt).toLocaleDateString()}
+                    </span>
+                  </div>
+                </div>
+              </div>
+
+              {/* Resource Preview */}
+              <div>
+                <Label className="text-sm font-medium text-gray-500">
+                  Vista Previa del Recurso
+                </Label>
+                <div className="mt-2 p-4 border rounded-lg bg-gray-50">
+                  {viewingResource.type === "IMAGE" &&
+                  viewingResource.downloadUrl ? (
+                    <div className="space-y-2">
+                      <img
+                        src={viewingResource.downloadUrl}
+                        alt={viewingResource.title}
+                        className="max-w-full h-48 object-contain rounded border"
+                        onError={(e) => {
+                          const target = e.target as HTMLImageElement;
+                          target.style.display = "none";
+                          target.nextElementSibling?.classList.remove("hidden");
+                        }}
+                      />
+                      <div className="hidden text-center text-gray-500">
+                        <FileText className="h-12 w-12 mx-auto mb-2" />
+                        <p>No se pudo cargar la imagen</p>
+                      </div>
+                      <Button
+                        type="button"
+                        variant="outline"
+                        size="sm"
+                        onClick={() =>
+                          viewingResource.downloadUrl &&
+                          window.open(viewingResource.downloadUrl, "_blank")
+                        }
+                        className="w-full"
+                      >
+                        <ExternalLink className="h-4 w-4 mr-2" />
+                        Abrir Imagen
+                      </Button>
+                    </div>
+                  ) : viewingResource.type === "VIDEO" &&
+                    viewingResource.downloadUrl ? (
+                    <div className="space-y-2">
+                      <video
+                        src={viewingResource.downloadUrl}
+                        controls
+                        className="max-w-full h-48 rounded border"
+                        onError={(e) => {
+                          const target = e.target as HTMLVideoElement;
+                          target.style.display = "none";
+                          target.nextElementSibling?.classList.remove("hidden");
+                        }}
+                      />
+                      <div className="hidden text-center text-gray-500">
+                        <Video className="h-12 w-12 mx-auto mb-2" />
+                        <p>No se pudo cargar el video</p>
+                      </div>
+                      <Button
+                        type="button"
+                        variant="outline"
+                        size="sm"
+                        onClick={() =>
+                          viewingResource.downloadUrl &&
+                          window.open(viewingResource.downloadUrl, "_blank")
+                        }
+                        className="w-full"
+                      >
+                        <ExternalLink className="h-4 w-4 mr-2" />
+                        Abrir Video
+                      </Button>
+                    </div>
+                  ) : viewingResource.downloadUrl ? (
+                    <div className="text-center space-y-2">
+                      <div className="flex items-center justify-center">
+                        {getTypeIcon(viewingResource.type)}
+                      </div>
+                      <p className="text-sm text-gray-600">
+                        {viewingResource.title}
+                      </p>
+                      <Button
+                        type="button"
+                        variant="outline"
+                        size="sm"
+                        onClick={() =>
+                          viewingResource.downloadUrl &&
+                          window.open(viewingResource.downloadUrl, "_blank")
+                        }
+                        className="w-full"
+                      >
+                        <ExternalLink className="h-4 w-4 mr-2" />
+                        Abrir Recurso
+                      </Button>
+                    </div>
+                  ) : (
+                    <div className="text-center text-gray-500">
+                      <FileText className="h-12 w-12 mx-auto mb-2" />
+                      <p>No hay archivo disponible</p>
+                    </div>
+                  )}
+                </div>
+              </div>
+            </div>
+          )}
+          <DialogFooter>
+            <Button
+              type="button"
+              variant="outline"
+              onClick={() => setShowViewDialog(false)}
+            >
+              Cerrar
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }

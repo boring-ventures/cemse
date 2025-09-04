@@ -414,6 +414,7 @@ export interface Resource {
   downloads: number;
   rating: number;
   tags: string[];
+  isPublic: boolean;
   createdAt: Date | string;
   updatedAt: Date | string;
 }

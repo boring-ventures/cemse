@@ -20,7 +20,7 @@ export async function getSession() {
     const session = await getServerSession(authOptions);
     return session;
   } catch (error) {
-    console.error('Error getting session:', error);
+    console.error("Error getting session:", error);
     return null;
   }
 }
@@ -30,16 +30,16 @@ export async function getCurrentUserId(): Promise<string | null> {
   try {
     const session = await getSession();
     const userId = (session?.user as any)?.id || null;
-    
+
     // Si no hay sesión, usar un ID fijo para testing
     if (!userId) {
-      console.log('No session found, using default user ID for testing');
+      console.log("No session found, using default user ID for testing");
       return "user_123";
     }
-    
+
     return userId;
   } catch (error) {
-    console.error('Error getting current user ID:', error);
+    console.error("Error getting current user ID:", error);
     // En caso de error, usar un ID fijo para testing
     return "user_123";
   }
@@ -77,11 +77,14 @@ export const authOptions: NextAuthOptions = {
       name: "credentials",
       credentials: {
         email: { label: "Email", type: "email" },
-        password: { label: "Password", type: "password" }
+        password: { label: "Password", type: "password" },
       },
       async authorize(credentials) {
         // Mock authentication - in a real app, you would validate against your database
-        if (credentials?.email === "admin@cemse.com" && credentials?.password === "admin") {
+        if (
+          credentials?.email === "admin@cemse.com" &&
+          credentials?.password === "admin"
+        ) {
           return {
             id: "user_123",
             email: "admin@cemse.com",
@@ -90,8 +93,8 @@ export const authOptions: NextAuthOptions = {
           };
         }
         return null;
-      }
-    })
+      },
+    }),
   ],
   session: {
     strategy: "jwt",

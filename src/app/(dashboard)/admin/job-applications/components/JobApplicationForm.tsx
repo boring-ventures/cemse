@@ -23,7 +23,16 @@ import { getAuthHeaders } from "@/lib/api";
 const jobApplicationSchema = z.object({
   jobOfferId: z.string().min(1, "Job offer is required"),
   applicantId: z.string().min(1, "Applicant is required"),
-  status: z.enum(["PENDING", "REVIEWING", "INTERVIEWED", "ACCEPTED", "REJECTED", "WITHDRAWN"]).default("PENDING"),
+  status: z
+    .enum([
+      "PENDING",
+      "REVIEWING",
+      "INTERVIEWED",
+      "ACCEPTED",
+      "REJECTED",
+      "WITHDRAWN",
+    ])
+    .default("PENDING"),
   coverLetter: z.string().optional(),
   resumeUrl: z.string().url().optional().or(z.literal("")),
 });
@@ -52,7 +61,11 @@ interface JobApplicationFormProps {
   isEditing?: boolean;
 }
 
-export function JobApplicationForm({ application, onSubmit, isEditing = false }: JobApplicationFormProps) {
+export function JobApplicationForm({
+  application,
+  onSubmit,
+  isEditing = false,
+}: JobApplicationFormProps) {
   const {
     register,
     handleSubmit,
@@ -107,18 +120,18 @@ export function JobApplicationForm({ application, onSubmit, isEditing = false }:
       {/* Basic Information */}
       <Card>
         <CardHeader>
-          <CardTitle>Application Information</CardTitle>
+          <CardTitle>Información de la Solicitud</CardTitle>
         </CardHeader>
         <CardContent className="space-y-4">
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div className="space-y-2">
-              <Label htmlFor="jobOfferId">Job Position *</Label>
+              <Label htmlFor="jobOfferId">Posición de Trabajo *</Label>
               <Select
                 value={watch("jobOfferId")}
                 onValueChange={(value) => setValue("jobOfferId", value)}
               >
                 <SelectTrigger>
-                  <SelectValue placeholder="Select a job position" />
+                  <SelectValue placeholder="Selecciona una posición de trabajo" />
                 </SelectTrigger>
                 <SelectContent>
                   {jobOffers?.map((jobOffer) => (
@@ -136,18 +149,20 @@ export function JobApplicationForm({ application, onSubmit, isEditing = false }:
                 </SelectContent>
               </Select>
               {errors.jobOfferId && (
-                <p className="text-sm text-red-600">{errors.jobOfferId.message}</p>
+                <p className="text-sm text-red-600">
+                  {errors.jobOfferId.message}
+                </p>
               )}
             </div>
 
             <div className="space-y-2">
-              <Label htmlFor="applicantId">Applicant *</Label>
+              <Label htmlFor="applicantId">Candidato *</Label>
               <Select
                 value={watch("applicantId")}
                 onValueChange={(value) => setValue("applicantId", value)}
               >
                 <SelectTrigger>
-                  <SelectValue placeholder="Select an applicant" />
+                  <SelectValue placeholder="Selecciona un candidato" />
                 </SelectTrigger>
                 <SelectContent>
                   {applicants?.map((applicant) => (
@@ -163,13 +178,15 @@ export function JobApplicationForm({ application, onSubmit, isEditing = false }:
                 </SelectContent>
               </Select>
               {errors.applicantId && (
-                <p className="text-sm text-red-600">{errors.applicantId.message}</p>
+                <p className="text-sm text-red-600">
+                  {errors.applicantId.message}
+                </p>
               )}
             </div>
           </div>
 
           <div className="space-y-2">
-            <Label htmlFor="status">Application Status</Label>
+            <Label htmlFor="status">Estado de la Solicitud</Label>
             <Select
               value={watch("status")}
               onValueChange={(value) => setValue("status", value as any)}
@@ -178,12 +195,12 @@ export function JobApplicationForm({ application, onSubmit, isEditing = false }:
                 <SelectValue />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="PENDING">Pending</SelectItem>
-                <SelectItem value="REVIEWING">Reviewing</SelectItem>
-                <SelectItem value="INTERVIEWED">Interviewed</SelectItem>
-                <SelectItem value="ACCEPTED">Accepted</SelectItem>
-                <SelectItem value="REJECTED">Rejected</SelectItem>
-                <SelectItem value="WITHDRAWN">Withdrawn</SelectItem>
+                <SelectItem value="PENDING">Pendiente</SelectItem>
+                <SelectItem value="REVIEWING">Revisando</SelectItem>
+                <SelectItem value="INTERVIEWED">Entrevistado</SelectItem>
+                <SelectItem value="ACCEPTED">Aceptado</SelectItem>
+                <SelectItem value="REJECTED">Rechazado</SelectItem>
+                <SelectItem value="WITHDRAWN">Retirado</SelectItem>
               </SelectContent>
             </Select>
             {errors.status && (
@@ -196,19 +213,23 @@ export function JobApplicationForm({ application, onSubmit, isEditing = false }:
       {/* Cover Letter */}
       <Card>
         <CardHeader>
-          <CardTitle>Cover Letter</CardTitle>
+          <CardTitle>Carta de Presentación</CardTitle>
         </CardHeader>
         <CardContent className="space-y-4">
           <div className="space-y-2">
-            <Label htmlFor="coverLetter">Cover Letter (Optional)</Label>
+            <Label htmlFor="coverLetter">
+              Carta de Presentación (Opcional)
+            </Label>
             <Textarea
               id="coverLetter"
               {...register("coverLetter")}
-              placeholder="Enter the cover letter content..."
+              placeholder="Ingresa el contenido de la carta de presentación..."
               rows={6}
             />
             {errors.coverLetter && (
-              <p className="text-sm text-red-600">{errors.coverLetter.message}</p>
+              <p className="text-sm text-red-600">
+                {errors.coverLetter.message}
+              </p>
             )}
           </div>
         </CardContent>
@@ -217,11 +238,11 @@ export function JobApplicationForm({ application, onSubmit, isEditing = false }:
       {/* Resume */}
       <Card>
         <CardHeader>
-          <CardTitle>Resume</CardTitle>
+          <CardTitle>Currículum</CardTitle>
         </CardHeader>
         <CardContent className="space-y-4">
           <div className="space-y-2">
-            <Label htmlFor="resumeUrl">Resume URL (Optional)</Label>
+            <Label htmlFor="resumeUrl">URL del Currículum (Opcional)</Label>
             <Input
               id="resumeUrl"
               type="url"
@@ -238,7 +259,11 @@ export function JobApplicationForm({ application, onSubmit, isEditing = false }:
       {/* Submit Button */}
       <div className="flex justify-end gap-4">
         <Button type="submit" disabled={isSubmitting}>
-          {isSubmitting ? "Saving..." : isEditing ? "Update Application" : "Create Application"}
+          {isSubmitting
+            ? "Guardando..."
+            : isEditing
+              ? "Actualizar Solicitud"
+              : "Crear Solicitud"}
         </Button>
       </div>
     </form>

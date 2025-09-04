@@ -79,15 +79,15 @@ export class ResourceService {
 
   // Update resource
   static async updateResource(id: string, data: any) {
-    return await apiCall(`/resource/${id}`, {
+    return await apiCall(`/resource`, {
       method: "PUT",
-      body: JSON.stringify(data),
+      body: JSON.stringify({ id, ...data }),
     });
   }
 
   // Delete resource
   static async deleteResource(id: string) {
-    return await apiCall(`/resource/${id}`, {
+    return await apiCall(`/resource?id=${id}`, {
       method: "DELETE",
     });
   }

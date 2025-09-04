@@ -1,30 +1,30 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
-import { getServerSession } from "next-auth";
-import { authOptions } from "@/lib/auth";
+import { authenticateUser } from "@/lib/auth-utils";
 
 // GET: List all job offers (for Super Admin)
 export async function GET(request: NextRequest) {
   try {
-    const session = await getServerSession(authOptions);
+    // Authenticate user using JWT token from cookies
+    const user = await authenticateUser(request);
 
-    console.log("🔍 Session in GET:", session);
-    console.log("🔍 User role:", (session?.user as any)?.role);
+    console.log("🔍 Authenticated user:", user);
+    console.log("🔍 User role:", user.role);
 
-    if (!session?.user) {
+    // Check if user has admin privileges
+    if (
+      !["SUPERADMIN", "ADMIN", "TRAINING_CENTERS", "COMPANIES"].includes(
+        user.role
+      )
+    ) {
+      console.log("⚠️ Insufficient privileges for user role:", user.role);
       return NextResponse.json(
-        { error: "No session found. Please log in." },
+        {
+          error:
+            "Unauthorized. Admin access required. Current role: " + user.role,
+        },
         { status: 401 }
       );
-    }
-
-    // Temporary bypass for testing - remove this in production
-    if ((session.user as any).role !== "SUPERADMIN") {
-      console.log("⚠️ Role mismatch, but allowing access for testing");
-      // return NextResponse.json(
-      //   { error: "Unauthorized. Super Admin access required. Current role: " + (session.user as any).role },
-      //   { status: 401 }
-      // );
     }
 
     const { searchParams } = new URL(request.url);
@@ -106,25 +106,26 @@ export async function GET(request: NextRequest) {
 // POST: Create new job offer (for Super Admin)
 export async function POST(request: NextRequest) {
   try {
-    const session = await getServerSession(authOptions);
+    // Authenticate user using JWT token from cookies
+    const user = await authenticateUser(request);
 
-    console.log("🔍 Session in POST:", session);
-    console.log("🔍 User role:", (session?.user as any)?.role);
+    console.log("🔍 Authenticated user:", user);
+    console.log("🔍 User role:", user.role);
 
-    if (!session?.user) {
+    // Check if user has admin privileges
+    if (
+      !["SUPERADMIN", "ADMIN", "TRAINING_CENTERS", "COMPANIES"].includes(
+        user.role
+      )
+    ) {
+      console.log("⚠️ Insufficient privileges for user role:", user.role);
       return NextResponse.json(
-        { error: "No session found. Please log in." },
+        {
+          error:
+            "Unauthorized. Admin access required. Current role: " + user.role,
+        },
         { status: 401 }
       );
-    }
-
-    // Temporary bypass for testing - remove this in production
-    if ((session.user as any).role !== "SUPERADMIN") {
-      console.log("⚠️ Role mismatch, but allowing access for testing");
-      // return NextResponse.json(
-      //   { error: "Unauthorized. Super Admin access required." },
-      //   { status: 401 }
-      // );
     }
 
     const jobData = await request.json();
@@ -245,25 +246,26 @@ export async function POST(request: NextRequest) {
 // PUT: Update job offer (for Super Admin)
 export async function PUT(request: NextRequest) {
   try {
-    const session = await getServerSession(authOptions);
+    // Authenticate user using JWT token from cookies
+    const user = await authenticateUser(request);
 
-    console.log("🔍 Session in PUT:", session);
-    console.log("🔍 User role:", (session?.user as any)?.role);
+    console.log("🔍 Authenticated user:", user);
+    console.log("🔍 User role:", user.role);
 
-    if (!session?.user) {
+    // Check if user has admin privileges
+    if (
+      !["SUPERADMIN", "ADMIN", "TRAINING_CENTERS", "COMPANIES"].includes(
+        user.role
+      )
+    ) {
+      console.log("⚠️ Insufficient privileges for user role:", user.role);
       return NextResponse.json(
-        { error: "No session found. Please log in." },
+        {
+          error:
+            "Unauthorized. Admin access required. Current role: " + user.role,
+        },
         { status: 401 }
       );
-    }
-
-    // Temporary bypass for testing - remove this in production
-    if ((session.user as any).role !== "SUPERADMIN") {
-      console.log("⚠️ Role mismatch, but allowing access for testing");
-      // return NextResponse.json(
-      //   { error: "Unauthorized. Super Admin access required. Current role: " + (session.user as any).role },
-      //   { status: 401 }
-      // );
     }
 
     // Extract ID from the URL path since this is a PUT request
@@ -335,25 +337,26 @@ export async function PUT(request: NextRequest) {
 // DELETE: Delete job offer (for Super Admin)
 export async function DELETE(request: NextRequest) {
   try {
-    const session = await getServerSession(authOptions);
+    // Authenticate user using JWT token from cookies
+    const user = await authenticateUser(request);
 
-    console.log("🔍 Session in DELETE:", session);
-    console.log("🔍 User role:", (session?.user as any)?.role);
+    console.log("🔍 Authenticated user:", user);
+    console.log("🔍 User role:", user.role);
 
-    if (!session?.user) {
+    // Check if user has admin privileges
+    if (
+      !["SUPERADMIN", "ADMIN", "TRAINING_CENTERS", "COMPANIES"].includes(
+        user.role
+      )
+    ) {
+      console.log("⚠️ Insufficient privileges for user role:", user.role);
       return NextResponse.json(
-        { error: "No session found. Please log in." },
+        {
+          error:
+            "Unauthorized. Admin access required. Current role: " + user.role,
+        },
         { status: 401 }
       );
-    }
-
-    // Temporary bypass for testing - remove this in production
-    if ((session.user as any).role !== "SUPERADMIN") {
-      console.log("⚠️ Role mismatch, but allowing access for testing");
-      // return NextResponse.json(
-      //   { error: "Unauthorized. Super Admin access required." },
-      //   { status: 401 }
-      // );
     }
 
     // Extract ID from the URL path since this is a DELETE request

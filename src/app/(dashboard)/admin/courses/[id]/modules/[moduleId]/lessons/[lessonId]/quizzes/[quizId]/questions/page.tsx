@@ -62,7 +62,7 @@ import {
   List,
   Target,
 } from "lucide-react";
-import { 
+import {
   useQuiz,
   useQuizQuestions,
   useCreateQuestion,
@@ -70,7 +70,7 @@ import {
   useDeleteQuestion,
   type QuizQuestion,
   type CreateQuestionData,
-  type UpdateQuestionData
+  type UpdateQuestionData,
 } from "@/hooks/useQuizApi";
 import { toast } from "sonner";
 
@@ -84,7 +84,9 @@ export default function QuizQuestionsPage() {
 
   const [isCreateDialogOpen, setIsCreateDialogOpen] = useState(false);
   const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
-  const [editingQuestion, setEditingQuestion] = useState<QuizQuestion | null>(null);
+  const [editingQuestion, setEditingQuestion] = useState<QuizQuestion | null>(
+    null
+  );
   const [searchQuery, setSearchQuery] = useState("");
 
   // Form state
@@ -101,30 +103,35 @@ export default function QuizQuestionsPage() {
 
   // Hooks
   const { data: quiz, isLoading: quizLoading } = useQuiz(quizId);
-  const { data: questionsData, isLoading: questionsLoading } = useQuizQuestions(quizId);
-  const questions = questionsData?.questions || [];
+  const quizData = quiz as any;
+  const { data: questionsData, isLoading: questionsLoading } =
+    useQuizQuestions(quizId);
+  const questions = (questionsData as any)?.questions || [];
   const createQuestion = useCreateQuestion();
   const updateQuestion = useUpdateQuestion();
   const deleteQuestion = useDeleteQuestion();
 
   // Filter questions
-  const filteredQuestions = questions.filter((question) =>
+  const filteredQuestions = questions.filter((question: any) =>
     question.question.toLowerCase().includes(searchQuery.toLowerCase())
   );
 
   // Efecto para manejar automáticamente las opciones según el tipo de pregunta
   useEffect(() => {
     if (formData.type === "TRUE_FALSE") {
-      setFormData(prev => ({
+      setFormData((prev) => ({
         ...prev,
         options: ["Verdadero", "Falso"],
-        correctAnswer: prev.correctAnswer || "Verdadero"
+        correctAnswer: prev.correctAnswer || "Verdadero",
       }));
-    } else if (formData.type === "MULTIPLE_CHOICE" && formData.options.length === 0) {
-      setFormData(prev => ({
+    } else if (
+      formData.type === "MULTIPLE_CHOICE" &&
+      formData.options.length === 0
+    ) {
+      setFormData((prev) => ({
         ...prev,
         options: ["", "", "", ""],
-        correctAnswer: ""
+        correctAnswer: "",
       }));
     }
   }, [formData.type]);
@@ -161,7 +168,9 @@ export default function QuizQuestionsPage() {
 
       // Validar que al menos haya una opción válida para preguntas de opción múltiple
       if (formData.type === "MULTIPLE_CHOICE") {
-        const validOptions = formData.options.filter(option => option.trim() !== "");
+        const validOptions = formData.options.filter(
+          (option) => option.trim() !== ""
+        );
         if (validOptions.length < 2) {
           toast.error("Debes agregar al menos 2 opciones");
           return;
@@ -169,7 +178,9 @@ export default function QuizQuestionsPage() {
 
         // Validar que la respuesta correcta esté en las opciones
         if (!validOptions.includes(formData.correctAnswer)) {
-          toast.error("La respuesta correcta debe estar entre las opciones disponibles");
+          toast.error(
+            "La respuesta correcta debe estar entre las opciones disponibles"
+          );
           return;
         }
 
@@ -186,7 +197,7 @@ export default function QuizQuestionsPage() {
           orderIndex: questions.length + 1,
         });
       }
-      
+
       setIsCreateDialogOpen(false);
       setFormData({
         quizId,
@@ -206,7 +217,7 @@ export default function QuizQuestionsPage() {
 
   const handleEditQuestion = async () => {
     if (!editingQuestion) return;
-    
+
     try {
       // Validar que la pregunta no esté vacía
       if (!formData.question.trim()) {
@@ -222,7 +233,9 @@ export default function QuizQuestionsPage() {
 
       // Validar que al menos haya una opción válida para preguntas de opción múltiple
       if (formData.type === "MULTIPLE_CHOICE") {
-        const validOptions = formData.options.filter(option => option.trim() !== "");
+        const validOptions = formData.options.filter(
+          (option) => option.trim() !== ""
+        );
         if (validOptions.length < 2) {
           toast.error("Debes agregar al menos 2 opciones");
           return;
@@ -230,7 +243,9 @@ export default function QuizQuestionsPage() {
 
         // Validar que la respuesta correcta esté en las opciones
         if (!validOptions.includes(formData.correctAnswer)) {
-          toast.error("La respuesta correcta debe estar entre las opciones disponibles");
+          toast.error(
+            "La respuesta correcta debe estar entre las opciones disponibles"
+          );
           return;
         }
 
@@ -247,7 +262,7 @@ export default function QuizQuestionsPage() {
           options: [],
         });
       }
-      
+
       setIsEditDialogOpen(false);
       setEditingQuestion(null);
       setFormData({
@@ -267,7 +282,9 @@ export default function QuizQuestionsPage() {
   };
 
   const handleDeleteQuestion = async (questionId: string) => {
-    if (window.confirm("¿Estás seguro de que quieres eliminar esta pregunta?")) {
+    if (
+      window.confirm("¿Estás seguro de que quieres eliminar esta pregunta?")
+    ) {
       try {
         await deleteQuestion.mutateAsync(questionId);
         toast.success("Pregunta eliminada exitosamente");
@@ -305,7 +322,10 @@ export default function QuizQuestionsPage() {
       ...formData,
       options: newOptions,
       // Si la respuesta correcta era la opción eliminada, limpiarla
-      correctAnswer: formData.correctAnswer === formData.options[index] ? "" : formData.correctAnswer,
+      correctAnswer:
+        formData.correctAnswer === formData.options[index]
+          ? ""
+          : formData.correctAnswer,
     });
   };
 
@@ -320,28 +340,28 @@ export default function QuizQuestionsPage() {
 
   const getQuestionTypeLabel = (type: string) => {
     switch (type) {
-      case 'MULTIPLE_CHOICE':
-        return 'Opción Múltiple';
-      case 'TRUE_FALSE':
-        return 'Verdadero/Falso';
-      case 'FILL_BLANK':
-        return 'Completar Espacios';
-      case 'ESSAY':
-        return 'Ensayo';
+      case "MULTIPLE_CHOICE":
+        return "Opción Múltiple";
+      case "TRUE_FALSE":
+        return "Verdadero/Falso";
+      case "FILL_BLANK":
+        return "Completar Espacios";
+      case "ESSAY":
+        return "Ensayo";
       default:
-        return 'Otro';
+        return "Otro";
     }
   };
 
   const getQuestionTypeIcon = (type: string) => {
     switch (type) {
-      case 'MULTIPLE_CHOICE':
+      case "MULTIPLE_CHOICE":
         return <List className="h-4 w-4" />;
-      case 'TRUE_FALSE':
+      case "TRUE_FALSE":
         return <CheckCircle className="h-4 w-4" />;
-      case 'FILL_BLANK':
+      case "FILL_BLANK":
         return <Type className="h-4 w-4" />;
-      case 'ESSAY':
+      case "ESSAY":
         return <FileText className="h-4 w-4" />;
       default:
         return <HelpCircle className="h-4 w-4" />;
@@ -365,7 +385,9 @@ export default function QuizQuestionsPage() {
       <div className="flex justify-between items-center">
         <div className="flex items-center gap-4">
           <Button variant="ghost" asChild>
-            <Link href={`/admin/courses/${courseId}/modules/${moduleId}/lessons/${lessonId}/quizzes`}>
+            <Link
+              href={`/admin/courses/${courseId}/modules/${moduleId}/lessons/${lessonId}/quizzes`}
+            >
               <ArrowLeft className="h-4 w-4 mr-2" />
               Volver a Quizzes
             </Link>
@@ -373,7 +395,7 @@ export default function QuizQuestionsPage() {
           <div>
             <h1 className="text-3xl font-bold">❓ Gestión de Preguntas</h1>
             <p className="text-muted-foreground">
-              {quiz?.title} - Administra las preguntas del quiz
+              {quizData?.title} - Administra las preguntas del quiz
             </p>
           </div>
         </div>
@@ -397,38 +419,46 @@ export default function QuizQuestionsPage() {
                 <Textarea
                   id="question"
                   value={formData.question}
-                  onChange={(e) => setFormData({ ...formData, question: e.target.value })}
+                  onChange={(e) =>
+                    setFormData({ ...formData, question: e.target.value })
+                  }
                   placeholder="Escribe la pregunta aquí..."
                   rows={3}
                 />
               </div>
-                             <div className="grid gap-2">
-                 <label htmlFor="type">Tipo de Pregunta</label>
-                 <Select
-                   value={formData.type}
-                   onValueChange={(value: any) => {
-                     setFormData({ 
-                       ...formData, 
-                       type: value
-                     });
-                   }}
-                 >
-                   <SelectTrigger>
-                     <SelectValue />
-                   </SelectTrigger>
-                   <SelectContent>
-                     <SelectItem value="MULTIPLE_CHOICE">Opción Múltiple</SelectItem>
-                     <SelectItem value="TRUE_FALSE">Verdadero/Falso</SelectItem>
-                     <SelectItem value="FILL_BLANK">Completar Espacios</SelectItem>
-                     </SelectContent>
-                 </Select>
-               </div>
+              <div className="grid gap-2">
+                <label htmlFor="type">Tipo de Pregunta</label>
+                <Select
+                  value={formData.type}
+                  onValueChange={(value: any) => {
+                    setFormData({
+                      ...formData,
+                      type: value,
+                    });
+                  }}
+                >
+                  <SelectTrigger>
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="MULTIPLE_CHOICE">
+                      Opción Múltiple
+                    </SelectItem>
+                    <SelectItem value="TRUE_FALSE">Verdadero/Falso</SelectItem>
+                    <SelectItem value="FILL_BLANK">
+                      Completar Espacios
+                    </SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
 
               {/* Opciones para preguntas de opción múltiple */}
               {formData.type === "MULTIPLE_CHOICE" && (
                 <div className="grid gap-4">
                   <div className="flex items-center justify-between">
-                    <label className="text-sm font-medium">Opciones de Respuesta</label>
+                    <label className="text-sm font-medium">
+                      Opciones de Respuesta
+                    </label>
                     <Button
                       type="button"
                       variant="outline"
@@ -467,10 +497,13 @@ export default function QuizQuestionsPage() {
                 <div className="p-4 bg-blue-50 border border-blue-200 rounded-lg">
                   <div className="flex items-center gap-2 mb-2">
                     <CheckCircle className="h-4 w-4 text-blue-600" />
-                    <span className="text-sm font-medium text-blue-800">Pregunta de Verdadero/Falso</span>
+                    <span className="text-sm font-medium text-blue-800">
+                      Pregunta de Verdadero/Falso
+                    </span>
                   </div>
                   <p className="text-xs text-blue-700">
-                    Las opciones "Verdadero" y "Falso" se configuran automáticamente.
+                    Las opciones "Verdadero" y "Falso" se configuran
+                    automáticamente.
                   </p>
                 </div>
               )}
@@ -480,14 +513,16 @@ export default function QuizQuestionsPage() {
                 {formData.type === "MULTIPLE_CHOICE" ? (
                   <Select
                     value={formData.correctAnswer}
-                    onValueChange={(value) => setFormData({ ...formData, correctAnswer: value })}
+                    onValueChange={(value) =>
+                      setFormData({ ...formData, correctAnswer: value })
+                    }
                   >
                     <SelectTrigger>
                       <SelectValue placeholder="Selecciona la respuesta correcta" />
                     </SelectTrigger>
                     <SelectContent>
                       {formData.options
-                        .filter(option => option.trim() !== "")
+                        .filter((option) => option.trim() !== "")
                         .map((option, index) => (
                           <SelectItem key={index} value={option}>
                             {option}
@@ -498,7 +533,9 @@ export default function QuizQuestionsPage() {
                 ) : formData.type === "TRUE_FALSE" ? (
                   <Select
                     value={formData.correctAnswer}
-                    onValueChange={(value) => setFormData({ ...formData, correctAnswer: value })}
+                    onValueChange={(value) =>
+                      setFormData({ ...formData, correctAnswer: value })
+                    }
                   >
                     <SelectTrigger>
                       <SelectValue placeholder="Selecciona la respuesta correcta" />
@@ -512,20 +549,31 @@ export default function QuizQuestionsPage() {
                   <Input
                     id="correctAnswer"
                     value={formData.correctAnswer}
-                    onChange={(e) => setFormData({ ...formData, correctAnswer: e.target.value })}
+                    onChange={(e) =>
+                      setFormData({
+                        ...formData,
+                        correctAnswer: e.target.value,
+                      })
+                    }
                     placeholder="Escribe la respuesta correcta..."
                   />
                 )}
-                              {formData.type === "MULTIPLE_CHOICE" && formData.correctAnswer && (
-                <p className="text-xs text-muted-foreground">
-                  Respuesta seleccionada: <span className="font-medium text-green-600">{formData.correctAnswer}</span>
-                </p>
-              )}
-              {formData.type === "MULTIPLE_CHOICE" && !formData.correctAnswer && (
-                <p className="text-xs text-amber-600">
-                  ⚠️ Debes seleccionar una respuesta correcta de las opciones disponibles
-                </p>
-              )}
+                {formData.type === "MULTIPLE_CHOICE" &&
+                  formData.correctAnswer && (
+                    <p className="text-xs text-muted-foreground">
+                      Respuesta seleccionada:{" "}
+                      <span className="font-medium text-green-600">
+                        {formData.correctAnswer}
+                      </span>
+                    </p>
+                  )}
+                {formData.type === "MULTIPLE_CHOICE" &&
+                  !formData.correctAnswer && (
+                    <p className="text-xs text-amber-600">
+                      ⚠️ Debes seleccionar una respuesta correcta de las
+                      opciones disponibles
+                    </p>
+                  )}
               </div>
 
               <div className="grid gap-2">
@@ -533,7 +581,9 @@ export default function QuizQuestionsPage() {
                 <Textarea
                   id="explanation"
                   value={formData.explanation}
-                  onChange={(e) => setFormData({ ...formData, explanation: e.target.value })}
+                  onChange={(e) =>
+                    setFormData({ ...formData, explanation: e.target.value })
+                  }
                   placeholder="Explica por qué esta es la respuesta correcta..."
                   rows={2}
                 />
@@ -545,19 +595,31 @@ export default function QuizQuestionsPage() {
                   id="points"
                   type="number"
                   value={formData.points}
-                  onChange={(e) => setFormData({ ...formData, points: parseInt(e.target.value) })}
+                  onChange={(e) =>
+                    setFormData({
+                      ...formData,
+                      points: parseInt(e.target.value),
+                    })
+                  }
                   min="1"
                   max="10"
                 />
               </div>
             </div>
             <DialogFooter>
-              <Button variant="outline" onClick={() => setIsCreateDialogOpen(false)}>
+              <Button
+                variant="outline"
+                onClick={() => setIsCreateDialogOpen(false)}
+              >
                 Cancelar
               </Button>
-              <Button 
-                onClick={handleCreateQuestion} 
-                disabled={createQuestion.isPending || !formData.question.trim() || !formData.correctAnswer.trim()}
+              <Button
+                onClick={handleCreateQuestion}
+                disabled={
+                  createQuestion.isPending ||
+                  !formData.question.trim() ||
+                  !formData.correctAnswer.trim()
+                }
               >
                 {createQuestion.isPending ? "Creando..." : "Crear Pregunta"}
               </Button>
@@ -567,7 +629,7 @@ export default function QuizQuestionsPage() {
       </div>
 
       {/* Quiz Info */}
-      {quiz && (
+      {quizData && (
         <Card>
           <CardHeader>
             <CardTitle className="flex items-center gap-2">
@@ -585,16 +647,16 @@ export default function QuizQuestionsPage() {
               <div className="flex items-center gap-2">
                 <Timer className="h-4 w-4 text-muted-foreground" />
                 <span className="text-sm font-medium">Tiempo Límite:</span>
-                <span className="text-sm">{quiz.timeLimit || 0} min</span>
+                <span className="text-sm">{quizData.timeLimit || 0} min</span>
               </div>
               <div className="flex items-center gap-2">
                 <Target className="h-4 w-4 text-muted-foreground" />
                 <span className="text-sm font-medium">Puntaje Mínimo:</span>
-                <span className="text-sm">{quiz.passingScore}%</span>
+                <span className="text-sm">{quizData.passingScore}%</span>
               </div>
               <div className="flex items-center gap-2">
-                <Badge variant={quiz.isActive ? "default" : "secondary"}>
-                  {quiz.isActive ? "Activo" : "Inactivo"}
+                <Badge variant={quizData.isActive ? "default" : "secondary"}>
+                  {quizData.isActive ? "Activo" : "Inactivo"}
                 </Badge>
               </div>
             </div>
@@ -635,7 +697,7 @@ export default function QuizQuestionsPage() {
                 </TableRow>
               </TableHeader>
               <TableBody>
-                {filteredQuestions.map((question) => (
+                {filteredQuestions.map((question: any) => (
                   <TableRow key={question.id}>
                     <TableCell>
                       <div className="flex items-center justify-center">
@@ -644,7 +706,9 @@ export default function QuizQuestionsPage() {
                     </TableCell>
                     <TableCell>
                       <div className="max-w-md">
-                        <div className="font-medium line-clamp-2">{question.question}</div>
+                        <div className="font-medium line-clamp-2">
+                          {question.question}
+                        </div>
                         {question.explanation && (
                           <div className="text-xs text-muted-foreground mt-1 line-clamp-1">
                             {question.explanation}
@@ -653,7 +717,10 @@ export default function QuizQuestionsPage() {
                       </div>
                     </TableCell>
                     <TableCell>
-                      <Badge variant="outline" className="flex items-center gap-1 w-fit">
+                      <Badge
+                        variant="outline"
+                        className="flex items-center gap-1 w-fit"
+                      >
                         {getQuestionTypeIcon(question.type)}
                         <span>{getQuestionTypeLabel(question.type)}</span>
                       </Badge>
@@ -672,7 +739,8 @@ export default function QuizQuestionsPage() {
                     </TableCell>
                     <TableCell>
                       <Badge variant="secondary">
-                        {question.points} {question.points === 1 ? 'punto' : 'puntos'}
+                        {question.points}{" "}
+                        {question.points === 1 ? "punto" : "puntos"}
                       </Badge>
                     </TableCell>
                     <TableCell>
@@ -688,7 +756,9 @@ export default function QuizQuestionsPage() {
                           </Button>
                         </DropdownMenuTrigger>
                         <DropdownMenuContent align="end">
-                          <DropdownMenuItem onClick={() => openEditDialog(question)}>
+                          <DropdownMenuItem
+                            onClick={() => openEditDialog(question)}
+                          >
                             <Edit className="h-4 w-4 mr-2" />
                             Editar
                           </DropdownMenuItem>
@@ -743,7 +813,9 @@ export default function QuizQuestionsPage() {
               <Textarea
                 id="edit-question"
                 value={formData.question}
-                onChange={(e) => setFormData({ ...formData, question: e.target.value })}
+                onChange={(e) =>
+                  setFormData({ ...formData, question: e.target.value })
+                }
                 placeholder="Escribe la pregunta aquí..."
                 rows={3}
               />
@@ -753,9 +825,9 @@ export default function QuizQuestionsPage() {
               <Select
                 value={formData.type}
                 onValueChange={(value: any) => {
-                  setFormData({ 
-                    ...formData, 
-                    type: value
+                  setFormData({
+                    ...formData,
+                    type: value,
                   });
                 }}
               >
@@ -763,7 +835,9 @@ export default function QuizQuestionsPage() {
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="MULTIPLE_CHOICE">Opción Múltiple</SelectItem>
+                  <SelectItem value="MULTIPLE_CHOICE">
+                    Opción Múltiple
+                  </SelectItem>
                   <SelectItem value="TRUE_FALSE">Verdadero/Falso</SelectItem>
                   <SelectItem value="FILL_BLANK">Completar Espacios</SelectItem>
                   <SelectItem value="ESSAY">Ensayo</SelectItem>
@@ -775,7 +849,9 @@ export default function QuizQuestionsPage() {
             {formData.type === "MULTIPLE_CHOICE" && (
               <div className="grid gap-4">
                 <div className="flex items-center justify-between">
-                  <label className="text-sm font-medium">Opciones de Respuesta</label>
+                  <label className="text-sm font-medium">
+                    Opciones de Respuesta
+                  </label>
                   <Button
                     type="button"
                     variant="outline"
@@ -814,10 +890,13 @@ export default function QuizQuestionsPage() {
               <div className="p-4 bg-blue-50 border border-blue-200 rounded-lg">
                 <div className="flex items-center gap-2 mb-2">
                   <CheckCircle className="h-4 w-4 text-blue-600" />
-                  <span className="text-sm font-medium text-blue-800">Pregunta de Verdadero/Falso</span>
+                  <span className="text-sm font-medium text-blue-800">
+                    Pregunta de Verdadero/Falso
+                  </span>
                 </div>
                 <p className="text-xs text-blue-700">
-                  Las opciones "Verdadero" y "Falso" se configuran automáticamente.
+                  Las opciones "Verdadero" y "Falso" se configuran
+                  automáticamente.
                 </p>
               </div>
             )}
@@ -827,14 +906,16 @@ export default function QuizQuestionsPage() {
               {formData.type === "MULTIPLE_CHOICE" ? (
                 <Select
                   value={formData.correctAnswer}
-                  onValueChange={(value) => setFormData({ ...formData, correctAnswer: value })}
+                  onValueChange={(value) =>
+                    setFormData({ ...formData, correctAnswer: value })
+                  }
                 >
                   <SelectTrigger>
                     <SelectValue placeholder="Selecciona la respuesta correcta" />
                   </SelectTrigger>
                   <SelectContent>
                     {formData.options
-                      .filter(option => option.trim() !== "")
+                      .filter((option) => option.trim() !== "")
                       .map((option, index) => (
                         <SelectItem key={index} value={option}>
                           {option}
@@ -845,7 +926,9 @@ export default function QuizQuestionsPage() {
               ) : formData.type === "TRUE_FALSE" ? (
                 <Select
                   value={formData.correctAnswer}
-                  onValueChange={(value) => setFormData({ ...formData, correctAnswer: value })}
+                  onValueChange={(value) =>
+                    setFormData({ ...formData, correctAnswer: value })
+                  }
                 >
                   <SelectTrigger>
                     <SelectValue placeholder="Selecciona la respuesta correcta" />
@@ -859,15 +942,21 @@ export default function QuizQuestionsPage() {
                 <Input
                   id="edit-correctAnswer"
                   value={formData.correctAnswer}
-                  onChange={(e) => setFormData({ ...formData, correctAnswer: e.target.value })}
+                  onChange={(e) =>
+                    setFormData({ ...formData, correctAnswer: e.target.value })
+                  }
                   placeholder="Escribe la respuesta correcta..."
                 />
               )}
-              {formData.type === "MULTIPLE_CHOICE" && formData.correctAnswer && (
-                <p className="text-xs text-muted-foreground">
-                  Respuesta seleccionada: <span className="font-medium text-green-600">{formData.correctAnswer}</span>
-                </p>
-              )}
+              {formData.type === "MULTIPLE_CHOICE" &&
+                formData.correctAnswer && (
+                  <p className="text-xs text-muted-foreground">
+                    Respuesta seleccionada:{" "}
+                    <span className="font-medium text-green-600">
+                      {formData.correctAnswer}
+                    </span>
+                  </p>
+                )}
             </div>
 
             <div className="grid gap-2">
@@ -875,7 +964,9 @@ export default function QuizQuestionsPage() {
               <Textarea
                 id="edit-explanation"
                 value={formData.explanation}
-                onChange={(e) => setFormData({ ...formData, explanation: e.target.value })}
+                onChange={(e) =>
+                  setFormData({ ...formData, explanation: e.target.value })
+                }
                 placeholder="Explica por qué esta es la respuesta correcta..."
                 rows={2}
               />
@@ -887,21 +978,32 @@ export default function QuizQuestionsPage() {
                 id="edit-points"
                 type="number"
                 value={formData.points}
-                onChange={(e) => setFormData({ ...formData, points: parseInt(e.target.value) })}
+                onChange={(e) =>
+                  setFormData({ ...formData, points: parseInt(e.target.value) })
+                }
                 min="1"
                 max="10"
               />
             </div>
           </div>
           <DialogFooter>
-            <Button variant="outline" onClick={() => setIsEditDialogOpen(false)}>
+            <Button
+              variant="outline"
+              onClick={() => setIsEditDialogOpen(false)}
+            >
               Cancelar
             </Button>
-            <Button 
-              onClick={handleEditQuestion} 
-              disabled={updateQuestion.isPending || !formData.question.trim() || !formData.correctAnswer.trim()}
+            <Button
+              onClick={handleEditQuestion}
+              disabled={
+                updateQuestion.isPending ||
+                !formData.question.trim() ||
+                !formData.correctAnswer.trim()
+              }
             >
-              {updateQuestion.isPending ? "Actualizando..." : "Actualizar Pregunta"}
+              {updateQuestion.isPending
+                ? "Actualizando..."
+                : "Actualizar Pregunta"}
             </Button>
           </DialogFooter>
         </DialogContent>

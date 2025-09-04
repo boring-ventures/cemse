@@ -111,14 +111,14 @@ export default function LessonResourcesPage() {
 
   // Hooks
   const { data: resourcesData, isLoading: resourcesLoading } =
-    useLessonResources(lessonId);
-  const resources = resourcesData?.resources || [];
+    useLessonResources({ lessonId });
+  const resources = (resourcesData as any)?.resources || [];
   const createResource = useCreateResource();
   const updateResource = useUpdateResource();
   const deleteResource = useDeleteResource();
 
   // Filter resources
-  const filteredResources = resources.filter((resource) =>
+  const filteredResources = resources.filter((resource: any) =>
     resource.title.toLowerCase().includes(searchQuery.toLowerCase())
   );
 
@@ -302,7 +302,7 @@ export default function LessonResourcesPage() {
               Agregar Recurso
             </Button>
           </DialogTrigger>
-          <DialogContent className="sm:max-w-[600px]">
+          <DialogContent className="sm:max-w-[600px] max-h-[90vh] overflow-y-auto">
             <DialogHeader>
               <DialogTitle>Agregar Nuevo Recurso</DialogTitle>
               <DialogDescription>
@@ -399,37 +399,20 @@ export default function LessonResourcesPage() {
                   maxSize={50 * 1024 * 1024} // 50MB
                 />
               </div>
-              <div className="grid grid-cols-2 gap-4">
-                <div className="grid gap-2">
-                  <label htmlFor="orderIndex">Orden</label>
-                  <Input
-                    id="orderIndex"
-                    type="number"
-                    value={formData.orderIndex}
-                    onChange={(e) =>
-                      setFormData({
-                        ...formData,
-                        orderIndex: parseInt(e.target.value),
-                      })
-                    }
-                    min="1"
-                  />
-                </div>
-                <div className="grid gap-2">
-                  <label htmlFor="fileSize">Tamaño (bytes)</label>
-                  <Input
-                    id="fileSize"
-                    type="number"
-                    value={formData.fileSize}
-                    onChange={(e) =>
-                      setFormData({
-                        ...formData,
-                        fileSize: parseInt(e.target.value),
-                      })
-                    }
-                    min="0"
-                  />
-                </div>
+              <div className="grid gap-2">
+                <label htmlFor="orderIndex">Orden</label>
+                <Input
+                  id="orderIndex"
+                  type="number"
+                  value={formData.orderIndex}
+                  onChange={(e) =>
+                    setFormData({
+                      ...formData,
+                      orderIndex: parseInt(e.target.value),
+                    })
+                  }
+                  min="1"
+                />
               </div>
               <div className="flex items-center space-x-2">
                 <input
@@ -466,9 +449,6 @@ export default function LessonResourcesPage() {
         </Dialog>
       </div>
 
-      {/* Resource Statistics */}
-      <ResourceStats resources={resources} />
-
       {/* Search and Filters */}
       <Card>
         <CardHeader>
@@ -495,7 +475,6 @@ export default function LessonResourcesPage() {
                   <TableHead className="w-12"></TableHead>
                   <TableHead>Recurso</TableHead>
                   <TableHead>Tipo</TableHead>
-                  <TableHead>Tamaño</TableHead>
                   <TableHead>Estadísticas</TableHead>
                   <TableHead>Descarga</TableHead>
                   <TableHead>Última actualización</TableHead>
@@ -503,7 +482,7 @@ export default function LessonResourcesPage() {
                 </TableRow>
               </TableHeader>
               <TableBody>
-                {filteredResources.map((resource) => {
+                {filteredResources.map((resource: any) => {
                   const stats = getResourceStats(resource.id);
                   return (
                     <TableRow key={resource.id}>
@@ -537,11 +516,6 @@ export default function LessonResourcesPage() {
                             {getResourceTypeLabel(resource.type)}
                           </span>
                         </Badge>
-                      </TableCell>
-                      <TableCell>
-                        {resource.fileSize
-                          ? formatFileSize(resource.fileSize)
-                          : "N/A"}
                       </TableCell>
                       <TableCell>
                         <div className="space-y-1">
@@ -673,7 +647,7 @@ export default function LessonResourcesPage() {
 
       {/* Edit Resource Dialog */}
       <Dialog open={isEditDialogOpen} onOpenChange={setIsEditDialogOpen}>
-        <DialogContent className="sm:max-w-[600px]">
+        <DialogContent className="sm:max-w-[600px] max-h-[90vh] overflow-y-auto">
           <DialogHeader>
             <DialogTitle>Editar Recurso</DialogTitle>
             <DialogDescription>
@@ -737,37 +711,20 @@ export default function LessonResourcesPage() {
                 placeholder="https://example.com/resource.pdf"
               />
             </div>
-            <div className="grid grid-cols-2 gap-4">
-              <div className="grid gap-2">
-                <label htmlFor="edit-orderIndex">Orden</label>
-                <Input
-                  id="edit-orderIndex"
-                  type="number"
-                  value={formData.orderIndex}
-                  onChange={(e) =>
-                    setFormData({
-                      ...formData,
-                      orderIndex: parseInt(e.target.value),
-                    })
-                  }
-                  min="1"
-                />
-              </div>
-              <div className="grid gap-2">
-                <label htmlFor="edit-fileSize">Tamaño (bytes)</label>
-                <Input
-                  id="edit-fileSize"
-                  type="number"
-                  value={formData.fileSize}
-                  onChange={(e) =>
-                    setFormData({
-                      ...formData,
-                      fileSize: parseInt(e.target.value),
-                    })
-                  }
-                  min="0"
-                />
-              </div>
+            <div className="grid gap-2">
+              <label htmlFor="edit-orderIndex">Orden</label>
+              <Input
+                id="edit-orderIndex"
+                type="number"
+                value={formData.orderIndex}
+                onChange={(e) =>
+                  setFormData({
+                    ...formData,
+                    orderIndex: parseInt(e.target.value),
+                  })
+                }
+                min="1"
+              />
             </div>
             <div className="flex items-center space-x-2">
               <input

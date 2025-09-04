@@ -4,7 +4,10 @@ import { useState } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
-import { useCreateMunicipality } from "@/hooks/useMunicipalityApi";
+import {
+  useCreateMunicipality,
+  useMunicipalities,
+} from "@/hooks/useMunicipalityApi";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -67,7 +70,9 @@ export function CreateMunicipalityForm({
   const [createdCredentials, setCreatedCredentials] =
     useState<Credentials | null>(null);
   const createMunicipality = useCreateMunicipality();
+  const { data: existingMunicipalities } = useMunicipalities();
   const { toast } = useToast();
+  const [emailError, setEmailError] = useState<string | null>(null);
 
   const {
     register,
@@ -88,6 +93,24 @@ export function CreateMunicipalityForm({
 
   const watchedName = watch("name");
   const watchedInstitutionType = watch("institutionType");
+  const watchedEmail = watch("email");
+  const watchedUsername = watch("username");
+
+  // Helper function to check if email is already in use
+  const isEmailInUse = (email: string) => {
+    if (!existingMunicipalities || !email) return false;
+    return existingMunicipalities.some(
+      (m) => m.email?.toLowerCase() === email.toLowerCase()
+    );
+  };
+
+  // Helper function to check if username is already in use
+  const isUsernameInUse = (username: string) => {
+    if (!existingMunicipalities || !username) return false;
+    return existingMunicipalities.some(
+      (m) => m.username?.toLowerCase() === username.toLowerCase()
+    );
+  };
 
   const handleGenerateCredentials = () => {
     if (watchedName && watchedName.length > 2) {
@@ -110,6 +133,8 @@ export function CreateMunicipalityForm({
 
   const onSubmit = async (data: CreateMunicipalityFormData) => {
     setIsLoading(true);
+    setEmailError(null); // Clear any previous email errors
+
     try {
       await createMunicipality.mutateAsync(data);
 
@@ -127,9 +152,32 @@ export function CreateMunicipalityForm({
       reset();
     } catch (error: any) {
       console.error("Error creating municipality:", error);
+
+      // Extract meaningful error message
+      let errorMessage =
+        "No se pudo crear la institución. Verifica los datos ingresados.";
+
+      if (error?.message) {
+        // Use the specific error message from the API
+        errorMessage = error.message;
+
+        // Check if it's an email-related error and set specific state
+        if (errorMessage.includes("email") || errorMessage.includes("Email")) {
+          setEmailError(errorMessage);
+        }
+      } else if (error?.data?.error) {
+        // Fallback to data.error if available
+        errorMessage = error.data.error;
+
+        // Check if it's an email-related error and set specific state
+        if (errorMessage.includes("email") || errorMessage.includes("Email")) {
+          setEmailError(errorMessage);
+        }
+      }
+
       toast({
         title: "Error al crear institución",
-        description: error?.message || "No se pudo crear la institución. Verifica que el nombre, usuario y email no existan.",
+        description: errorMessage,
         variant: "destructive",
       });
     } finally {
@@ -277,9 +325,29 @@ export function CreateMunicipalityForm({
                 type="email"
                 {...register("email")}
                 placeholder="Ej: info@cochabamba.gob.bo"
+                className={
+                  emailError || (watchedEmail && isEmailInUse(watchedEmail))
+                    ? "border-red-500 focus:border-red-500"
+                    : ""
+                }
+                onChange={(e) => {
+                  // Clear email error when user starts typing
+                  if (emailError) {
+                    setEmailError(null);
+                  }
+                  register("email").onChange(e);
+                }}
               />
               {errors.email && (
                 <p className="text-sm text-red-600">{errors.email.message}</p>
+              )}
+              {watchedEmail && isEmailInUse(watchedEmail) && !emailError && (
+                <p className="text-sm text-amber-600">
+                  ⚠️ Este email ya está registrado por otra institución
+                </p>
+              )}
+              {emailError && (
+                <p className="text-sm text-red-600">{emailError}</p>
               )}
             </div>
 
@@ -320,10 +388,20 @@ export function CreateMunicipalityForm({
                 id="username"
                 {...register("username")}
                 placeholder="Ej: cochabamba_muni"
+                className={
+                  watchedUsername && isUsernameInUse(watchedUsername)
+                    ? "border-red-500 focus:border-red-500"
+                    : ""
+                }
               />
               {errors.username && (
                 <p className="text-sm text-red-600">
                   {errors.username.message}
+                </p>
+              )}
+              {watchedUsername && isUsernameInUse(watchedUsername) && (
+                <p className="text-sm text-amber-600">
+                  ⚠️ Este nombre de usuario ya está en uso
                 </p>
               )}
             </div>

@@ -205,19 +205,165 @@ export async function PUT(request: NextRequest) {
     }
 
     const body = await request.json();
+    console.log("👤 /api/profile PUT - Request body:", body);
 
-    const updatedProfile = await prisma.profile.update({
-      where: { userId: decoded.id },
-      data: body,
-    });
+    // Validate and filter the data to only include valid profile fields that exist in the database
+    const validFields = [
+      // Basic information
+      "firstName", // maps to first_name
+      "lastName", // maps to last_name
+      "email",
+      "phone",
+      "address",
+      "municipality",
+      "department",
+      "country",
+      "birthDate", // maps to birth_date
+      "gender",
 
-    console.log("👤 /api/profile PUT - Profile updated:", updatedProfile.id);
-    return NextResponse.json({
-      message: "Profile updated successfully",
-      profile: updatedProfile,
-    });
+      // Document information
+      "documentType", // maps to document_type
+      "documentNumber", // maps to document_number
+
+      // Education information
+      "educationLevel", // maps to education_level
+      "currentInstitution", // maps to current_institution
+      "graduationYear", // maps to graduation_year
+      "isStudying", // maps to is_studying
+      "currentDegree", // maps to current_degree
+      "universityName", // maps to university_name
+      "universityStartDate", // maps to university_start_date
+      "universityEndDate", // maps to university_end_date
+      "universityStatus", // maps to university_status
+      "gpa",
+
+      // Skills and interests
+      "skills",
+      "interests",
+
+      // Work experience
+      "workExperience", // maps to work_experience
+      "jobTitle", // maps to job_title
+      "addressLine", // maps to address_line
+      "cityState", // maps to city_state
+
+      // Company/Institution information (for different user types)
+      "companyName", // maps to company_name
+      "businessSector", // maps to business_sector
+      "companySize", // maps to company_size
+      "companyDescription", // maps to company_description
+      "website",
+      "foundedYear", // maps to founded_year
+      "institutionName", // maps to institution_name
+      "institutionType", // maps to institution_type
+      "serviceArea", // maps to service_area
+      "specialization",
+      "institutionDescription", // maps to institution_description
+
+      // Additional fields
+      "languages",
+      "websites",
+      "skillsWithLevel", // maps to skills_with_level
+      "extracurricularActivities", // maps to extracurricular_activities
+      "projects",
+      "achievements",
+    ];
+
+    const filteredData = Object.keys(body)
+      .filter((key) => validFields.includes(key))
+      .reduce((obj, key) => {
+        obj[key] = body[key];
+        return obj;
+      }, {} as any);
+
+    console.log("👤 /api/profile PUT - Filtered data:", filteredData);
+
+    // Check if we have any data to update
+    if (Object.keys(filteredData).length === 0) {
+      console.log("👤 /api/profile PUT - No valid data to update");
+      return NextResponse.json({
+        message: "No valid data to update",
+        profile: null,
+      });
+    }
+
+    // First, check if the profile exists
+    try {
+      const existingProfile = await prisma.profile.findUnique({
+        where: { userId: decoded.id },
+      });
+
+      if (!existingProfile) {
+        console.log(
+          "👤 /api/profile PUT - Profile not found for user:",
+          decoded.id
+        );
+        return NextResponse.json(
+          { error: "Profile not found" },
+          { status: 404 }
+        );
+      }
+
+      console.log(
+        "👤 /api/profile PUT - Found existing profile:",
+        existingProfile.id
+      );
+    } catch (findError) {
+      console.error("👤 /api/profile PUT - Error finding profile:", findError);
+      throw findError;
+    }
+
+    try {
+      // Try a simple update first with just one field to test
+      console.log(
+        "👤 /api/profile PUT - Attempting update with data:",
+        filteredData
+      );
+
+      const updatedProfile = await prisma.profile.update({
+        where: { userId: decoded.id },
+        data: filteredData,
+      });
+
+      console.log(
+        "👤 /api/profile PUT - Profile updated successfully:",
+        updatedProfile.id
+      );
+      return NextResponse.json({
+        message: "Profile updated successfully",
+        profile: updatedProfile,
+      });
+    } catch (dbError) {
+      console.error("👤 /api/profile PUT - Database error:", dbError);
+      console.error("👤 /api/profile PUT - Database error details:", {
+        message:
+          dbError instanceof Error ? dbError.message : "Unknown database error",
+        stack: dbError instanceof Error ? dbError.stack : undefined,
+        code: (dbError as any)?.code,
+        meta: (dbError as any)?.meta,
+      });
+
+      // Try to provide more specific error information
+      if ((dbError as any)?.code === "P2002") {
+        return NextResponse.json(
+          { error: "A record with this data already exists" },
+          { status: 400 }
+        );
+      } else if ((dbError as any)?.code === "P2025") {
+        return NextResponse.json(
+          { error: "Record not found" },
+          { status: 404 }
+        );
+      }
+
+      throw dbError;
+    }
   } catch (error) {
     console.error("Error updating profile:", error);
+    console.error("Error details:", {
+      message: error instanceof Error ? error.message : "Unknown error",
+      stack: error instanceof Error ? error.stack : undefined,
+    });
     return NextResponse.json(
       { error: "Internal server error" },
       { status: 500 }

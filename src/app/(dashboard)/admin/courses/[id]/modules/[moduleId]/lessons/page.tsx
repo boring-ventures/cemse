@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useParams, useRouter } from "next/navigation";
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
@@ -61,6 +61,8 @@ import {
   Settings,
   Eye as Preview,
   Upload,
+  Target,
+  Download,
 } from "lucide-react";
 import {
   useLessons,
@@ -89,6 +91,20 @@ export default function ModuleLessonsPage() {
   const [selectedVideoFile, setSelectedVideoFile] = useState<File | null>(null);
   const [videoPreviewUrl, setVideoPreviewUrl] = useState<string | null>(null);
 
+  // Hooks
+  const queryClient = useQueryClient();
+  const { data: lessonsData, isLoading: lessonsLoading } = useLessons(moduleId);
+  const lessons = (lessonsData as any)?.lessons || [];
+
+  // Calculate next order index
+  const getNextOrderIndex = () => {
+    if (lessons.length === 0) return 1;
+    const maxOrder = Math.max(
+      ...lessons.map((lesson: any) => lesson.orderIndex || 0)
+    );
+    return maxOrder + 1;
+  };
+
   // Form state for regular lesson creation
   const [formData, setFormData] = useState({
     title: "",
@@ -99,17 +115,22 @@ export default function ModuleLessonsPage() {
     videoType: "youtube" as "youtube" | "upload",
     videoFile: null as File | null,
     duration: 15,
-    orderIndex: 1,
+    orderIndex: 1, // Will be updated when lessons load
     isRequired: true,
     isPreview: false,
   });
-
-  // Hooks
-  const queryClient = useQueryClient();
-  const { data: lessonsData, isLoading: lessonsLoading } = useLessons(moduleId);
-  const lessons = (lessonsData as any)?.lessons || [];
   const updateLesson = useUpdateLesson();
   const deleteLesson = useDeleteLesson();
+
+  // Update orderIndex when lessons are loaded
+  useEffect(() => {
+    if (lessons.length > 0) {
+      setFormData((prev) => ({
+        ...prev,
+        orderIndex: getNextOrderIndex(),
+      }));
+    }
+  }, [lessons]);
 
   // Filter lessons
   const filteredLessons = lessons.filter((lesson: Lesson) =>
@@ -145,7 +166,7 @@ export default function ModuleLessonsPage() {
         videoType: "youtube",
         videoFile: null,
         duration: 15,
-        orderIndex: 1,
+        orderIndex: getNextOrderIndex(),
         isRequired: true,
         isPreview: false,
       });
@@ -400,7 +421,7 @@ export default function ModuleLessonsPage() {
         videoType: "youtube",
         videoFile: null,
         duration: 15,
-        orderIndex: 1,
+        orderIndex: getNextOrderIndex(),
         isRequired: true,
         isPreview: false,
       });
@@ -624,6 +645,22 @@ export default function ModuleLessonsPage() {
                             >
                               <Edit className="h-4 w-4 mr-2" />
                               Editar
+                            </DropdownMenuItem>
+                            <DropdownMenuItem asChild>
+                              <Link
+                                href={`/admin/courses/${courseId}/modules/${moduleId}/lessons/${lesson.id}/quizzes`}
+                              >
+                                <Target className="h-4 w-4 mr-2" />
+                                Crear Quiz
+                              </Link>
+                            </DropdownMenuItem>
+                            <DropdownMenuItem asChild>
+                              <Link
+                                href={`/admin/courses/${courseId}/modules/${moduleId}/lessons/${lesson.id}/resources`}
+                              >
+                                <Download className="h-4 w-4 mr-2" />
+                                Recursos
+                              </Link>
                             </DropdownMenuItem>
                             <DropdownMenuItem
                               className="text-red-600"

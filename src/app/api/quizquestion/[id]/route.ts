@@ -4,9 +4,12 @@ import jwt from "jsonwebtoken";
 
 const JWT_SECRET = process.env.JWT_SECRET || "dev-secret-key";
 
-export async function GET(request: NextRequest) {
+export async function GET(
+  request: NextRequest,
+  { params }: { params: { id: string } }
+) {
   try {
-    console.log("❓ API: Received request for quiz questions");
+    console.log("❓ API: Received request for single quiz question");
 
     // Get auth token from Authorization header or cookies
     let token = request.headers.get("authorization")?.replace("Bearer ", "");
@@ -29,17 +32,8 @@ export async function GET(request: NextRequest) {
     const decoded = jwt.verify(token, JWT_SECRET) as any;
     console.log("❓ API: Authenticated user:", decoded.username);
 
-    const { searchParams } = new URL(request.url);
-    const quizId = searchParams.get("quizId");
-
-    let whereClause: any = {};
-
-    if (quizId) {
-      whereClause.quizId = quizId;
-    }
-
-    const questions = await prisma.quizQuestion.findMany({
-      where: whereClause,
+    const question = await prisma.quizQuestion.findUnique({
+      where: { id: params.id },
       include: {
         quiz: {
           select: {
@@ -48,13 +42,19 @@ export async function GET(request: NextRequest) {
           },
         },
       },
-      orderBy: { orderIndex: "asc" },
     });
 
-    console.log("❓ API: Found quiz questions:", questions.length);
-    return NextResponse.json({ questions }, { status: 200 });
+    if (!question) {
+      return NextResponse.json(
+        { error: "Question not found" },
+        { status: 404 }
+      );
+    }
+
+    console.log("❓ API: Found quiz question:", question.id);
+    return NextResponse.json({ question }, { status: 200 });
   } catch (error) {
-    console.error("❌ Error in quiz questions route:", error);
+    console.error("❌ Error in single quiz question route:", error);
     return NextResponse.json(
       {
         error: "Internal server error",
@@ -68,90 +68,10 @@ export async function GET(request: NextRequest) {
   }
 }
 
-export async function POST(request: NextRequest) {
-  try {
-    console.log("❓ API: Received request to create quiz question");
-
-    // Get auth token from Authorization header or cookies
-    let token = request.headers.get("authorization")?.replace("Bearer ", "");
-
-    // If no Bearer token, try to get from cookies
-    if (!token) {
-      const cookieStore = await import("next/headers").then((m) => m.cookies());
-      token = cookieStore.get("cemse-auth-token")?.value;
-      console.log("❓ API: Using cookie-based authentication");
-    }
-
-    if (!token) {
-      return NextResponse.json(
-        { error: "Authorization required" },
-        { status: 401 }
-      );
-    }
-
-    // Verify token
-    const decoded = jwt.verify(token, JWT_SECRET) as any;
-    console.log("❓ API: Authenticated user:", decoded.username);
-
-    const body = await request.json();
-    const {
-      quizId,
-      question,
-      type,
-      options,
-      correctAnswer,
-      explanation,
-      points,
-      orderIndex,
-    } = body;
-
-    if (!quizId || !question || !type || !correctAnswer) {
-      return NextResponse.json(
-        { error: "quizId, question, type, and correctAnswer are required" },
-        { status: 400 }
-      );
-    }
-
-    // Create quiz question
-    const quizQuestion = await prisma.quizQuestion.create({
-      data: {
-        quizId,
-        question,
-        type,
-        options: options || [],
-        correctAnswer,
-        explanation: explanation || null,
-        points: points || 1,
-        orderIndex: orderIndex || 0,
-      },
-      include: {
-        quiz: {
-          select: {
-            id: true,
-            title: true,
-          },
-        },
-      },
-    });
-
-    console.log("❓ API: Quiz question created:", quizQuestion.id);
-    return NextResponse.json({ question: quizQuestion }, { status: 201 });
-  } catch (error) {
-    console.error("❌ Error creating quiz question:", error);
-    return NextResponse.json(
-      {
-        error: "Internal server error",
-        details:
-          process.env.NODE_ENV === "development"
-            ? (error as Error).message
-            : undefined,
-      },
-      { status: 500 }
-    );
-  }
-}
-
-export async function PUT(request: NextRequest) {
+export async function PUT(
+  request: NextRequest,
+  { params }: { params: { id: string } }
+) {
   try {
     console.log("❓ API: Received request to update quiz question");
 
@@ -178,7 +98,6 @@ export async function PUT(request: NextRequest) {
 
     const body = await request.json();
     const {
-      id,
       quizId,
       question,
       type,
@@ -189,16 +108,9 @@ export async function PUT(request: NextRequest) {
       orderIndex,
     } = body;
 
-    if (!id) {
-      return NextResponse.json(
-        { error: "Question ID is required" },
-        { status: 400 }
-      );
-    }
-
     // Update quiz question
     const quizQuestion = await prisma.quizQuestion.update({
-      where: { id },
+      where: { id: params.id },
       data: {
         quizId,
         question,
@@ -236,7 +148,10 @@ export async function PUT(request: NextRequest) {
   }
 }
 
-export async function DELETE(request: NextRequest) {
+export async function DELETE(
+  request: NextRequest,
+  { params }: { params: { id: string } }
+) {
   try {
     console.log("❓ API: Received request to delete quiz question");
 
@@ -261,22 +176,12 @@ export async function DELETE(request: NextRequest) {
     const decoded = jwt.verify(token, JWT_SECRET) as any;
     console.log("❓ API: Authenticated user:", decoded.username);
 
-    const { searchParams } = new URL(request.url);
-    const questionId = searchParams.get("id");
-
-    if (!questionId) {
-      return NextResponse.json(
-        { error: "Question ID is required" },
-        { status: 400 }
-      );
-    }
-
     // Delete quiz question
     await prisma.quizQuestion.delete({
-      where: { id: questionId },
+      where: { id: params.id },
     });
 
-    console.log("❓ API: Quiz question deleted:", questionId);
+    console.log("❓ API: Quiz question deleted:", params.id);
     return NextResponse.json(
       { message: "Quiz question deleted successfully" },
       { status: 200 }

@@ -54,7 +54,7 @@ export const youthSidebarData: SidebarData = {
       title: "Principal",
       items: [
         {
-          title: "Dashboard",
+          title: "Panel Principal",
           url: "/dashboard",
           icon: LayoutDashboard,
         },
@@ -157,7 +157,7 @@ export const adolescentSidebarData: SidebarData = {
       title: "Principal",
       items: [
         {
-          title: "Dashboard",
+          title: "Panel Principal",
           url: "/dashboard",
           icon: LayoutDashboard,
         },
@@ -244,7 +244,7 @@ export const companySidebarData: SidebarData = {
       title: "Principal",
       items: [
         {
-          title: "Dashboard",
+          title: "Panel Principal",
           url: "/dashboard",
           icon: LayoutDashboard,
         },
@@ -316,7 +316,7 @@ export const municipalGovernmentSidebarData: SidebarData = {
       title: "Principal",
       items: [
         {
-          title: "Dashboard",
+          title: "Panel Principal",
           url: "/dashboard",
           icon: LayoutDashboard,
         },
@@ -378,14 +378,14 @@ export const trainingCenterSidebarData: SidebarData = {
       title: "Principal",
       items: [
         {
-          title: "Dashboard",
+          title: "Panel Principal",
           url: "/dashboard",
           icon: LayoutDashboard,
         },
         {
-          title: "Gestión de Usuarios",
-          url: "/admin/users",
-          icon: UserCog,
+          title: "Gestión de Empresas",
+          url: "/admin/companies",
+          icon: Building2,
         },
       ],
     },
@@ -398,8 +398,8 @@ export const trainingCenterSidebarData: SidebarData = {
           icon: GraduationCap,
         },
         {
-          title: "Ver Recursos",
-          url: "/resources",
+          title: "Gestión de Recursos",
+          url: "/municipalities/resources",
           icon: FileText,
         },
       ],
@@ -409,7 +409,7 @@ export const trainingCenterSidebarData: SidebarData = {
       items: [
         {
           title: "Gestión de Noticias",
-          url: "/admin/news",
+          url: "/admin/municipalities/news",
           icon: FileText,
         },
       ],
@@ -418,7 +418,7 @@ export const trainingCenterSidebarData: SidebarData = {
       title: "Personal",
       items: [
         {
-          title: "Configuración",
+          title: "Mi Perfil",
           url: "/admin/settings",
           icon: Settings,
         },
@@ -440,14 +440,14 @@ export const ngoFoundationSidebarData: SidebarData = {
       title: "Principal",
       items: [
         {
-          title: "Dashboard",
+          title: "Panel Principal",
           url: "/dashboard",
           icon: LayoutDashboard,
         },
         {
-          title: "Gestión de Usuarios",
-          url: "/admin/users",
-          icon: UserCog,
+          title: "Gestión de Empresas",
+          url: "/admin/companies",
+          icon: Building2,
         },
       ],
     },
@@ -459,6 +459,11 @@ export const ngoFoundationSidebarData: SidebarData = {
           url: "/admin/courses",
           icon: GraduationCap,
         },
+        {
+          title: "Gestión de Recursos",
+          url: "/municipalities/resources",
+          icon: FileText,
+        },
       ],
     },
     {
@@ -466,12 +471,7 @@ export const ngoFoundationSidebarData: SidebarData = {
       items: [
         {
           title: "Gestión de Noticias",
-          url: "/admin/news",
-          icon: FileText,
-        },
-        {
-          title: "Ver Recursos",
-          url: "/resources",
+          url: "/admin/municipalities/news",
           icon: FileText,
         },
       ],
@@ -480,7 +480,7 @@ export const ngoFoundationSidebarData: SidebarData = {
       title: "Personal",
       items: [
         {
-          title: "Configuración",
+          title: "Mi Perfil",
           url: "/admin/settings",
           icon: Settings,
         },
@@ -502,7 +502,7 @@ export const superAdminSidebarData: SidebarData = {
       title: "Principal",
       items: [
         {
-          title: "Dashboard",
+          title: "Panel Principal",
           url: "/dashboard",
           icon: LayoutDashboard,
         },
@@ -552,22 +552,13 @@ export const superAdminSidebarData: SidebarData = {
       title: "Emprendimiento",
       items: [
         {
-          title: "Gestión de Contenido",
+          title: "Gestión de Recursos",
           url: "/admin/entrepreneurship/resources",
           icon: Lightbulb,
         },
       ],
     },
-    {
-      title: "Recursos",
-      items: [
-        {
-          title: "Gestión de Recursos",
-          url: "/resources",
-          icon: FileText,
-        },
-      ],
-    },
+
     {
       title: "Comunicación",
       items: [
@@ -639,7 +630,7 @@ export const youthSidebarItems: SidebarItem[] = [
     title: "Principal",
     items: [
       {
-        title: "Dashboard",
+        title: "Panel Principal",
         icon: LayoutDashboard,
         href: "/dashboard",
       },

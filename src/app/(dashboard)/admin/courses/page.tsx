@@ -55,7 +55,11 @@ import {
   Target,
   TrendingUp,
 } from "lucide-react";
-import { useCourses, useDeleteCourse } from "@/hooks/useCourseApi";
+import { useDeleteCourse } from "@/hooks/useCourseApi";
+import {
+  useComprehensiveCourses,
+  ComprehensiveCourse,
+} from "@/hooks/useComprehensiveCourses";
 import { useCurrentUser } from "@/hooks/use-current-user";
 
 interface CourseStats {
@@ -72,137 +76,108 @@ interface CourseStats {
 
 export default function CourseManagementPage() {
   const { profile: currentUser } = useCurrentUser();
-  const { data: courses, isLoading: loading, error } = useCourses();
+  const {
+    data: comprehensiveData,
+    isLoading: loading,
+    error,
+  } = useComprehensiveCourses();
   const deleteCourseMutation = useDeleteCourse();
   const [searchQuery, setSearchQuery] = useState("");
   const [statusFilter, setStatusFilter] = useState<string>("all");
   const [categoryFilter, setCategoryFilter] = useState<string>("all");
 
-  // Filter courses to only show those created by the current user
-  const userCourses =
-    courses?.filter((course) => course.instructorId === currentUser?.id) || [];
+  // Get courses from comprehensive data (already filtered by instructor)
+  const userCourses: ComprehensiveCourse[] =
+    (comprehensiveData as any)?.courses || [];
 
   // Debug logging
   console.log("🔍 Course filtering:", {
-    totalCourses: courses?.length || 0,
+    totalCourses: userCourses?.length || 0,
     currentUserId: currentUser?.id,
     userCoursesCount: userCourses.length,
-    userCourses: userCourses.map((c) => ({
+    userCourses: userCourses.map((c: ComprehensiveCourse) => ({
       id: c.id,
       title: c.title,
       instructorId: c.instructorId,
     })),
   });
 
-  // Fetch modules for all user courses
-  const [allModules, setAllModules] = useState<any[]>([]);
-  const [allLessons, setAllLessons] = useState<any[]>([]);
-  const [allResources, setAllResources] = useState<any[]>([]);
+  // Extract comprehensive data from the response
+  const allModules = userCourses.flatMap(
+    (course: ComprehensiveCourse) =>
+      course.modules?.map((module) => ({
+        ...module,
+        courseId: course.id,
+      })) || []
+  );
 
-  // Fetch data for all user courses
-  useEffect(() => {
-    const fetchCourseData = async () => {
-      if (userCourses.length === 0) return;
+  const allLessons = userCourses.flatMap(
+    (course: ComprehensiveCourse) =>
+      course.modules?.flatMap(
+        (module) =>
+          module.lessons?.map((lesson) => ({
+            ...lesson,
+            moduleId: module.id,
+            courseId: course.id,
+          })) || []
+      ) || []
+  );
 
-      try {
-        // Fetch modules for all courses
-        const modulesPromises = userCourses.map((course) =>
-          fetch(`/api/courses/${course.id}/modules`)
-            .then((res) => res.json())
-            .then((data) => {
-              // Add courseId to each module for proper filtering
-              const modules = data.modules || [];
-              return modules.map((module: any) => ({
-                ...module,
+  const allResources = userCourses.flatMap(
+    (course: ComprehensiveCourse) =>
+      course.modules?.flatMap(
+        (module) =>
+          module.lessons?.flatMap(
+            (lesson) =>
+              lesson.resources?.map((resource) => ({
+                ...resource,
+                lessonId: lesson.id,
+                moduleId: module.id,
                 courseId: course.id,
-              }));
-            })
-            .catch(() => [])
-        );
-
-        const allModulesData = await Promise.all(modulesPromises);
-        const flatModules = allModulesData.flat();
-
-        // Debug logging
-        console.log("🔍 Modules data:", {
-          userCourses: userCourses.map((c) => ({ id: c.id, title: c.title })),
-          allModulesData,
-          flatModules: flatModules.map((m) => ({
-            id: m.id,
-            title: m.title,
-            courseId: m.courseId,
-          })),
-        });
-
-        setAllModules(flatModules);
-
-        // Fetch lessons for all modules
-        if (flatModules.length > 0) {
-          const lessonsPromises = flatModules.map((module) =>
-            fetch(`/api/modules/${module.id}/lessons`)
-              .then((res) => res.json())
-              .then((data) => data.lessons || [])
-              .catch(() => [])
-          );
-
-          const allLessonsData = await Promise.all(lessonsPromises);
-          const flatLessons = allLessonsData.flat();
-          setAllLessons(flatLessons);
-
-          // Fetch resources for all lessons
-          if (flatLessons.length > 0) {
-            const resourcesPromises = flatLessons.map((lesson) =>
-              fetch(`/api/lessons/${lesson.id}/resources`)
-                .then((res) => res.json())
-                .then((data) => data.resources || [])
-                .catch(() => [])
-            );
-
-            const allResourcesData = await Promise.all(resourcesPromises);
-            const flatResources = allResourcesData.flat();
-            setAllResources(flatResources);
-          }
-        }
-      } catch (error) {
-        console.error("Error fetching course data:", error);
-      }
-    };
-
-    fetchCourseData();
-  }, [userCourses]);
+              })) || []
+          ) || []
+      ) || []
+  );
 
   // Calculate comprehensive stats based on user's courses only
   const stats: CourseStats = {
     totalCourses: userCourses.length,
     totalStudents:
       userCourses.reduce(
-        (sum, course) => sum + (course.studentsCount || 0),
+        (sum: number, course: ComprehensiveCourse) =>
+          sum + (course.studentsCount || 0),
         0
       ) || 0,
     totalHours:
-      userCourses.reduce((sum, course) => sum + (course.duration || 0), 0) || 0,
+      userCourses.reduce(
+        (sum: number, course: ComprehensiveCourse) =>
+          sum + (course.duration || 0),
+        0
+      ) || 0,
     averageRating:
       userCourses && userCourses.length > 0
         ? userCourses.reduce(
-            (sum, course) => sum + (Number(course.rating) || 0),
+            (sum: number, course: ComprehensiveCourse) =>
+              sum + (Number(course.rating) || 0),
             0
           ) / userCourses.length
         : 0,
     completionRate:
       userCourses && userCourses.length > 0
         ? userCourses.reduce(
-            (sum, course) => sum + (Number(course.completionRate) || 0),
+            (sum: number, course: ComprehensiveCourse) =>
+              sum + (Number(course.completionRate) || 0),
             0
           ) / userCourses.length
         : 0,
-    activeCourses: userCourses.filter((c) => c.isActive).length || 0,
+    activeCourses:
+      userCourses.filter((c: ComprehensiveCourse) => c.isActive).length || 0,
     totalModules: allModules.length,
     totalLessons: allLessons.length,
     totalResources: allResources.length,
-    totalCertificates: 0, // Removed certificates
   };
 
-  const filteredCourses = userCourses.filter((course) => {
+  const filteredCourses = userCourses.filter((course: ComprehensiveCourse) => {
     if (!course) return false;
 
     const searchLower = (searchQuery || "").toLowerCase();
@@ -240,7 +215,9 @@ export default function CourseManagementPage() {
   };
 
   const handleDuplicateCourse = async (courseId: string) => {
-    const course = courses?.find((c) => c.id === courseId);
+    const course = userCourses?.find(
+      (c: ComprehensiveCourse) => c.id === courseId
+    );
     if (course) {
       console.log("Duplicating course:", courseId);
     }
@@ -452,7 +429,7 @@ export default function CourseManagementPage() {
                 </TableRow>
               </TableHeader>
               <TableBody>
-                {filteredCourses?.map((course) => (
+                {filteredCourses?.map((course: ComprehensiveCourse) => (
                   <TableRow key={course.id}>
                     <TableCell>
                       <div className="flex items-center gap-3">

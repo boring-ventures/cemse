@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -23,8 +23,8 @@ import {
   Trash2,
 } from "lucide-react";
 import { useAuthContext } from "@/hooks/use-auth";
+import { useProfile } from "@/hooks/useProfile";
 import { useRouter } from "next/navigation";
-import { useEffect, useRef } from "react";
 import { cn } from "@/lib/utils";
 
 export default function ProfilePage() {
@@ -32,19 +32,47 @@ export default function ProfilePage() {
   const router = useRouter();
   const fileInputRef = useRef<HTMLInputElement>(null);
 
-  // Form state
+  // Use the profile hook
+  const {
+    profile,
+    loading: profileLoading,
+    error: profileError,
+    updating,
+    updateProfile,
+    uploadProfileImage,
+    deleteProfileImage,
+    profileCompletion,
+  } = useProfile();
+
+  // Form state - only fields that exist in the database
   const [formData, setFormData] = useState({
-    firstName: user?.firstName || "",
-    lastName: user?.lastName || "",
-    bio: "",
-    location: "",
+    firstName: "",
+    lastName: "",
     phone: "",
+    address: "",
+    municipality: "",
+    department: "",
+    country: "",
     dateOfBirth: "",
     gender: "",
+    documentType: "",
+    documentNumber: "",
+    educationLevel: "",
+    currentInstitution: "",
+    graduationYear: "",
+    isStudying: false,
+    currentDegree: "",
+    universityName: "",
+    universityStartDate: "",
+    universityEndDate: "",
+    universityStatus: "",
+    gpa: "",
     interests: "",
     skills: "",
-    education: "",
-    experience: "",
+    workExperience: "",
+    jobTitle: "",
+    addressLine: "",
+    cityState: "",
   });
 
   const [avatarUrl, setAvatarUrl] = useState<string | null>(null);
@@ -59,6 +87,71 @@ export default function ProfilePage() {
       router.push("/login");
     }
   }, [isAuthenticated, router]);
+
+  // Populate form with profile data when it loads
+  useEffect(() => {
+    if (profile) {
+      setFormData({
+        firstName: profile.firstName || "",
+        lastName: profile.lastName || "",
+        phone: profile.phone || "",
+        address: profile.address || "",
+        municipality: profile.municipality || "",
+        department: profile.department || "",
+        country: profile.country || "",
+        dateOfBirth: profile.birthDate ? profile.birthDate.split("T")[0] : "",
+        gender: profile.gender || "",
+        documentType: profile.documentType || "",
+        documentNumber: profile.documentNumber || "",
+        educationLevel: profile.educationLevel || "",
+        currentInstitution: profile.currentInstitution || "",
+        graduationYear: profile.graduationYear?.toString() || "",
+        isStudying: profile.isStudying || false,
+        currentDegree: profile.currentDegree || "",
+        universityName: profile.universityName || "",
+        universityStartDate: profile.universityStartDate
+          ? profile.universityStartDate.split("T")[0]
+          : "",
+        universityEndDate: profile.universityEndDate
+          ? profile.universityEndDate.split("T")[0]
+          : "",
+        universityStatus: profile.universityStatus || "",
+        gpa: profile.gpa?.toString() || "",
+        interests: profile.interests?.join(", ") || "",
+        skills: profile.skills?.join(", ") || "",
+        workExperience: profile.workExperience
+          ? (() => {
+              try {
+                // If it's already an object, check if it has a description field
+                if (
+                  typeof profile.workExperience === "object" &&
+                  profile.workExperience !== null
+                ) {
+                  // If it's a simple object with description, return just the description
+                  if (
+                    profile.workExperience.description &&
+                    typeof profile.workExperience.description === "string"
+                  ) {
+                    return profile.workExperience.description;
+                  }
+                  // If it's a complex object, stringify it for editing
+                  return JSON.stringify(profile.workExperience, null, 2);
+                }
+                // If it's a string, return as is
+                return String(profile.workExperience);
+              } catch (error) {
+                console.warn("Failed to process work experience:", error);
+                return String(profile.workExperience);
+              }
+            })()
+          : "",
+        jobTitle: profile.jobTitle || "",
+        addressLine: profile.addressLine || "",
+        cityState: profile.cityState || "",
+      });
+      setAvatarUrl(profile.avatarUrl);
+    }
+  }, [profile]);
 
   const handleInputChange = (field: string, value: string) => {
     setFormData((prev) => ({
@@ -89,13 +182,17 @@ export default function ProfilePage() {
     };
     reader.readAsDataURL(file);
 
-    // Simulate upload
+    // Upload to server
     setIsUploading(true);
     try {
-      await new Promise((resolve) => setTimeout(resolve, 1000));
-      console.log("Avatar uploaded successfully");
+      const uploadedUrl = await uploadProfileImage(file);
+      setAvatarUrl(uploadedUrl);
+      setSaveSuccess(true);
+      setTimeout(() => setSaveSuccess(false), 3000);
     } catch (err) {
-      setError("Error al subir la imagen");
+      setError(err instanceof Error ? err.message : "Error al subir la imagen");
+      // Reset preview on error
+      setAvatarUrl(profile?.avatarUrl || null);
     } finally {
       setIsUploading(false);
     }
@@ -108,9 +205,17 @@ export default function ProfilePage() {
     }
   };
 
-  const handleRemoveAvatar = () => {
-    setAvatarUrl(null);
-    setError(null);
+  const handleRemoveAvatar = async () => {
+    try {
+      await deleteProfileImage();
+      setAvatarUrl(null);
+      setSaveSuccess(true);
+      setTimeout(() => setSaveSuccess(false), 3000);
+    } catch (err) {
+      setError(
+        err instanceof Error ? err.message : "Error al eliminar la imagen"
+      );
+    }
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -121,16 +226,112 @@ export default function ProfilePage() {
     setError(null);
 
     try {
-      // Simulate API call
-      await new Promise((resolve) => setTimeout(resolve, 1000));
+      // Prepare data for API - clean empty strings and convert to appropriate types
+      const updateData: any = {};
 
-      console.log("Profile updated:", formData);
+      // Basic information
+      if (formData.firstName.trim())
+        updateData.firstName = formData.firstName.trim();
+      if (formData.lastName.trim())
+        updateData.lastName = formData.lastName.trim();
+      if (formData.phone.trim()) updateData.phone = formData.phone.trim();
+      if (formData.address.trim()) updateData.address = formData.address.trim();
+      if (formData.municipality.trim())
+        updateData.municipality = formData.municipality.trim();
+      if (formData.department.trim())
+        updateData.department = formData.department.trim();
+      if (formData.country.trim()) updateData.country = formData.country.trim();
+      if (formData.dateOfBirth)
+        updateData.birthDate = new Date(formData.dateOfBirth);
+      if (formData.gender.trim()) updateData.gender = formData.gender.trim();
+
+      // Document information
+      if (formData.documentType.trim())
+        updateData.documentType = formData.documentType.trim();
+      if (formData.documentNumber.trim())
+        updateData.documentNumber = formData.documentNumber.trim();
+
+      // Education information
+      if (formData.educationLevel.trim())
+        updateData.educationLevel = formData.educationLevel.trim();
+      if (formData.currentInstitution.trim())
+        updateData.currentInstitution = formData.currentInstitution.trim();
+      if (formData.graduationYear.trim())
+        updateData.graduationYear = parseInt(formData.graduationYear);
+      updateData.isStudying = formData.isStudying;
+      if (formData.currentDegree.trim())
+        updateData.currentDegree = formData.currentDegree.trim();
+      if (formData.universityName.trim())
+        updateData.universityName = formData.universityName.trim();
+      if (formData.universityStartDate)
+        updateData.universityStartDate = new Date(formData.universityStartDate);
+      if (formData.universityEndDate)
+        updateData.universityEndDate = new Date(formData.universityEndDate);
+      if (formData.universityStatus.trim())
+        updateData.universityStatus = formData.universityStatus.trim();
+      if (formData.gpa.trim()) updateData.gpa = parseFloat(formData.gpa);
+
+      // Job information
+      if (formData.jobTitle.trim())
+        updateData.jobTitle = formData.jobTitle.trim();
+      if (formData.addressLine.trim())
+        updateData.addressLine = formData.addressLine.trim();
+      if (formData.cityState.trim())
+        updateData.cityState = formData.cityState.trim();
+
+      // Handle arrays - only include if they have values
+      const interests = formData.interests
+        ? formData.interests
+            .split(",")
+            .map((s) => s.trim())
+            .filter((s) => s)
+        : [];
+      if (interests.length > 0) updateData.interests = interests;
+
+      const skills = formData.skills
+        ? formData.skills
+            .split(",")
+            .map((s) => s.trim())
+            .filter((s) => s)
+        : [];
+      if (skills.length > 0) updateData.skills = skills;
+
+      // Handle work experience
+      if (formData.workExperience.trim()) {
+        try {
+          // If it's already valid JSON, parse it
+          if (
+            formData.workExperience.trim().startsWith("{") ||
+            formData.workExperience.trim().startsWith("[")
+          ) {
+            updateData.workExperience = JSON.parse(formData.workExperience);
+          } else {
+            // If it's plain text, wrap it in an object
+            updateData.workExperience = {
+              description: formData.workExperience.trim(),
+            };
+          }
+        } catch (error) {
+          console.warn(
+            "Failed to parse work experience as JSON, treating as plain text:",
+            error
+          );
+          // If JSON parsing fails, treat it as plain text
+          updateData.workExperience = {
+            description: formData.workExperience.trim(),
+          };
+        }
+      }
+
+      await updateProfile(updateData);
       setSaveSuccess(true);
 
       // Hide success message after 3 seconds
       setTimeout(() => setSaveSuccess(false), 3000);
     } catch (err) {
-      setError("Error al actualizar perfil");
+      setError(
+        err instanceof Error ? err.message : "Error al actualizar perfil"
+      );
     } finally {
       setIsSaving(false);
     }
@@ -149,11 +350,27 @@ export default function ProfilePage() {
     );
   }
 
+  if (profileLoading) {
+    return (
+      <div className="flex items-center justify-center min-h-screen">
+        <div className="text-center">
+          <Loader2 className="h-8 w-8 animate-spin mx-auto mb-4" />
+          <h2 className="text-2xl font-semibold mb-2">Cargando perfil...</h2>
+          <p className="text-muted-foreground">
+            Por favor espera mientras cargamos tu información.
+          </p>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className="container mx-auto py-4 sm:py-6 lg:py-8 px-4">
       <div className="max-w-4xl mx-auto">
         <div className="mb-6 sm:mb-8">
-          <h1 className="text-2xl sm:text-3xl font-bold text-gray-900 mb-2">Mi Perfil</h1>
+          <h1 className="text-2xl sm:text-3xl font-bold text-gray-900 mb-2">
+            Mi Perfil
+          </h1>
           <p className="text-sm sm:text-base text-gray-600">
             Actualiza tu información personal y foto de perfil
           </p>
@@ -270,12 +487,17 @@ export default function ProfilePage() {
               </CardHeader>
 
               <CardContent>
-                <form onSubmit={handleSubmit} className="space-y-4 sm:space-y-6">
+                <form
+                  onSubmit={handleSubmit}
+                  className="space-y-4 sm:space-y-6"
+                >
                   {/* Error Message */}
-                  {error && (
+                  {(error || profileError) && (
                     <Alert variant="destructive">
                       <AlertCircle className="h-4 w-4" />
-                      <AlertDescription className="text-sm">{error}</AlertDescription>
+                      <AlertDescription className="text-sm">
+                        {error || profileError}
+                      </AlertDescription>
                     </Alert>
                   )}
 
@@ -292,7 +514,9 @@ export default function ProfilePage() {
                   {/* Basic Information */}
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4">
                     <div className="space-y-1 sm:space-y-2">
-                      <Label htmlFor="firstName" className="text-sm">Nombre</Label>
+                      <Label htmlFor="firstName" className="text-sm">
+                        Nombre
+                      </Label>
                       <Input
                         id="firstName"
                         value={formData.firstName}
@@ -305,7 +529,9 @@ export default function ProfilePage() {
                     </div>
 
                     <div className="space-y-1 sm:space-y-2">
-                      <Label htmlFor="lastName" className="text-sm">Apellido</Label>
+                      <Label htmlFor="lastName" className="text-sm">
+                        Apellido
+                      </Label>
                       <Input
                         id="lastName"
                         value={formData.lastName}
@@ -321,7 +547,9 @@ export default function ProfilePage() {
                   {/* Contact Information */}
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4">
                     <div className="space-y-1 sm:space-y-2">
-                      <Label htmlFor="phone" className="text-sm">Teléfono</Label>
+                      <Label htmlFor="phone" className="text-sm">
+                        Teléfono
+                      </Label>
                       <div className="relative">
                         <Phone className="absolute left-3 top-2.5 sm:top-3 h-3 sm:h-4 w-3 sm:w-4 text-muted-foreground" />
                         <Input
@@ -337,16 +565,18 @@ export default function ProfilePage() {
                     </div>
 
                     <div className="space-y-1 sm:space-y-2">
-                      <Label htmlFor="location" className="text-sm">Ubicación</Label>
+                      <Label htmlFor="address" className="text-sm">
+                        Dirección
+                      </Label>
                       <div className="relative">
                         <MapPin className="absolute left-3 top-2.5 sm:top-3 h-3 sm:h-4 w-3 sm:w-4 text-muted-foreground" />
                         <Input
-                          id="location"
-                          value={formData.location}
+                          id="address"
+                          value={formData.address}
                           onChange={(e) =>
-                            handleInputChange("location", e.target.value)
+                            handleInputChange("address", e.target.value)
                           }
-                          placeholder="Ciudad, Departamento"
+                          placeholder="Dirección completa"
                           className="pl-8 sm:pl-10 text-sm"
                         />
                       </div>
@@ -356,7 +586,9 @@ export default function ProfilePage() {
                   {/* Personal Information */}
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4">
                     <div className="space-y-1 sm:space-y-2">
-                      <Label htmlFor="dateOfBirth" className="text-sm">Fecha de Nacimiento</Label>
+                      <Label htmlFor="dateOfBirth" className="text-sm">
+                        Fecha de Nacimiento
+                      </Label>
                       <div className="relative">
                         <Calendar className="absolute left-3 top-2.5 sm:top-3 h-3 sm:h-4 w-3 sm:w-4 text-muted-foreground" />
                         <Input
@@ -372,7 +604,9 @@ export default function ProfilePage() {
                     </div>
 
                     <div className="space-y-1 sm:space-y-2">
-                      <Label htmlFor="gender" className="text-sm">Género</Label>
+                      <Label htmlFor="gender" className="text-sm">
+                        Género
+                      </Label>
                       <select
                         id="gender"
                         value={formData.gender}
@@ -392,23 +626,45 @@ export default function ProfilePage() {
                     </div>
                   </div>
 
-                  {/* Bio */}
-                  <div className="space-y-1 sm:space-y-2">
-                    <Label htmlFor="bio" className="text-sm">Biografía</Label>
-                    <Textarea
-                      id="bio"
-                      value={formData.bio}
-                      onChange={(e) => handleInputChange("bio", e.target.value)}
-                      placeholder="Cuéntanos sobre ti..."
-                      rows={4}
-                      className="text-sm"
-                    />
+                  {/* Municipality and Department */}
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4">
+                    <div className="space-y-1 sm:space-y-2">
+                      <Label htmlFor="municipality" className="text-sm">
+                        Municipio
+                      </Label>
+                      <Input
+                        id="municipality"
+                        value={formData.municipality}
+                        onChange={(e) =>
+                          handleInputChange("municipality", e.target.value)
+                        }
+                        placeholder="Tu municipio"
+                        className="text-sm"
+                      />
+                    </div>
+
+                    <div className="space-y-1 sm:space-y-2">
+                      <Label htmlFor="department" className="text-sm">
+                        Departamento
+                      </Label>
+                      <Input
+                        id="department"
+                        value={formData.department}
+                        onChange={(e) =>
+                          handleInputChange("department", e.target.value)
+                        }
+                        placeholder="Tu departamento"
+                        className="text-sm"
+                      />
+                    </div>
                   </div>
 
                   {/* Skills and Interests */}
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4">
                     <div className="space-y-1 sm:space-y-2">
-                      <Label htmlFor="skills" className="text-sm">Habilidades</Label>
+                      <Label htmlFor="skills" className="text-sm">
+                        Habilidades
+                      </Label>
                       <Input
                         id="skills"
                         value={formData.skills}
@@ -424,7 +680,9 @@ export default function ProfilePage() {
                     </div>
 
                     <div className="space-y-1 sm:space-y-2">
-                      <Label htmlFor="interests" className="text-sm">Intereses</Label>
+                      <Label htmlFor="interests" className="text-sm">
+                        Intereses
+                      </Label>
                       <Input
                         id="interests"
                         value={formData.interests}
@@ -443,12 +701,12 @@ export default function ProfilePage() {
                   {/* Education and Experience */}
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                     <div className="space-y-2">
-                      <Label htmlFor="education">Educación</Label>
+                      <Label htmlFor="currentDegree">Educación</Label>
                       <Textarea
-                        id="education"
-                        value={formData.education}
+                        id="currentDegree"
+                        value={formData.currentDegree}
                         onChange={(e) =>
-                          handleInputChange("education", e.target.value)
+                          handleInputChange("currentDegree", e.target.value)
                         }
                         placeholder="Tu formación académica..."
                         rows={3}
@@ -456,23 +714,29 @@ export default function ProfilePage() {
                     </div>
 
                     <div className="space-y-2">
-                      <Label htmlFor="experience">Experiencia</Label>
+                      <Label htmlFor="workExperience">
+                        Experiencia Laboral
+                      </Label>
                       <Textarea
-                        id="experience"
-                        value={formData.experience}
+                        id="workExperience"
+                        value={formData.workExperience}
                         onChange={(e) =>
-                          handleInputChange("experience", e.target.value)
+                          handleInputChange("workExperience", e.target.value)
                         }
-                        placeholder="Tu experiencia laboral..."
-                        rows={3}
+                        placeholder="Describe tu experiencia laboral, trabajos anteriores, responsabilidades..."
+                        rows={4}
                       />
                     </div>
                   </div>
 
                   {/* Submit Button */}
                   <div className="flex justify-end">
-                    <Button type="submit" disabled={isSaving} className="gap-2">
-                      {isSaving ? (
+                    <Button
+                      type="submit"
+                      disabled={isSaving || updating}
+                      className="gap-2"
+                    >
+                      {isSaving || updating ? (
                         <>
                           <Loader2 className="h-4 w-4 animate-spin" />
                           Guardando...

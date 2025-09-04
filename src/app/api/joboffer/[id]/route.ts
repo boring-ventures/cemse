@@ -109,6 +109,237 @@ export async function GET(
   }
 }
 
+export async function PUT(
+  request: NextRequest,
+  { params }: { params: { id: string } }
+) {
+  try {
+    const { id: jobOfferId } = params;
+    console.log("✏️ /api/joboffer/[id] PUT - Updating job offer:", jobOfferId);
+
+    // Get token from cookies
+    const cookieStore = await cookies();
+    const token = cookieStore.get("cemse-auth-token")?.value;
+
+    console.log(
+      "✏️ /api/joboffer/[id] PUT - Auth token found:",
+      token ? "YES" : "NO"
+    );
+
+    if (!token) {
+      console.log("❌ No auth token found in cookies");
+      return NextResponse.json({ error: "No token provided" }, { status: 401 });
+    }
+
+    let decoded: any = null;
+
+    // Handle different token types
+    if (token.includes(".") && token.split(".").length === 3) {
+      // JWT token
+      console.log("✏️ /api/joboffer/[id] PUT - JWT token found in cookies");
+      decoded = verifyToken(token);
+    } else if (token.startsWith("auth-token-")) {
+      // Database token format: auth-token-{role}-{userId}-{timestamp}
+      console.log(
+        "✏️ /api/joboffer/[id] PUT - Database token found in cookies"
+      );
+      const tokenParts = token.split("-");
+
+      if (tokenParts.length >= 4) {
+        const tokenUserId = tokenParts[3];
+
+        // Verify the user exists and is active
+        const tokenUser = await prisma.user.findUnique({
+          where: { id: tokenUserId, isActive: true },
+        });
+
+        if (tokenUser) {
+          decoded = {
+            id: tokenUser.id,
+            username: tokenUser.username,
+            role: tokenUser.role,
+          };
+          console.log(
+            "✏️ /api/joboffer/[id] PUT - Database token validated for user:",
+            tokenUser.username
+          );
+        }
+      }
+    } else {
+      // Try to verify as JWT token anyway
+      decoded = verifyToken(token);
+    }
+
+    if (!decoded) {
+      console.log("❌ Invalid or expired token");
+      return NextResponse.json(
+        { error: "Invalid or expired token" },
+        { status: 401 }
+      );
+    }
+
+    // Check if user is a company
+    if (decoded.role !== "COMPANIES") {
+      console.log("❌ User is not a company:", decoded.role);
+      return NextResponse.json(
+        { error: "Solo las empresas pueden editar ofertas de trabajo" },
+        { status: 403 }
+      );
+    }
+
+    if (!jobOfferId) {
+      console.log("❌ No job offer ID provided");
+      return NextResponse.json(
+        { error: "ID de oferta de trabajo no proporcionado" },
+        { status: 400 }
+      );
+    }
+
+    // Parse request body
+    const updateData = await request.json();
+    console.log(
+      "✏️ /api/joboffer/[id] PUT - Update data received:",
+      updateData
+    );
+
+    // Check if job offer exists and belongs to the company
+    const existingJobOffer = await prisma.jobOffer.findUnique({
+      where: { id: jobOfferId },
+      include: {
+        company: {
+          select: {
+            id: true,
+            name: true,
+          },
+        },
+      },
+    });
+
+    if (!existingJobOffer) {
+      console.log("❌ Job offer not found:", jobOfferId);
+      return NextResponse.json(
+        { error: "Oferta de trabajo no encontrada" },
+        { status: 404 }
+      );
+    }
+
+    // Check if the job offer belongs to the company user
+    if (existingJobOffer.companyId !== decoded.id) {
+      console.log("❌ Job offer does not belong to company:", {
+        jobOfferCompanyId: existingJobOffer.companyId,
+        userCompanyId: decoded.id,
+      });
+      return NextResponse.json(
+        { error: "No tienes permisos para editar esta oferta de trabajo" },
+        { status: 403 }
+      );
+    }
+
+    console.log("✏️ /api/joboffer/[id] PUT - Job offer found:", {
+      id: existingJobOffer.id,
+      title: existingJobOffer.title,
+      companyId: existingJobOffer.companyId,
+    });
+
+    // Prepare update data with proper field mapping
+    const prismaUpdateData: any = {};
+
+    // Map frontend fields to database fields
+    if (updateData.title !== undefined)
+      prismaUpdateData.title = updateData.title;
+    if (updateData.description !== undefined)
+      prismaUpdateData.description = updateData.description;
+    if (updateData.requirements !== undefined)
+      prismaUpdateData.requirements = updateData.requirements;
+    if (updateData.benefits !== undefined)
+      prismaUpdateData.benefits = updateData.benefits;
+    if (updateData.salaryMin !== undefined)
+      prismaUpdateData.salaryMin = updateData.salaryMin;
+    if (updateData.salaryMax !== undefined)
+      prismaUpdateData.salaryMax = updateData.salaryMax;
+    if (updateData.salaryCurrency !== undefined)
+      prismaUpdateData.salaryCurrency = updateData.salaryCurrency;
+    if (updateData.contractType !== undefined)
+      prismaUpdateData.contractType = updateData.contractType;
+    if (updateData.workSchedule !== undefined)
+      prismaUpdateData.workSchedule = updateData.workSchedule;
+    if (updateData.workModality !== undefined)
+      prismaUpdateData.workModality = updateData.workModality;
+    if (updateData.location !== undefined)
+      prismaUpdateData.location = updateData.location;
+    if (updateData.latitude !== undefined)
+      prismaUpdateData.latitude = updateData.latitude;
+    if (updateData.longitude !== undefined)
+      prismaUpdateData.longitude = updateData.longitude;
+    if (updateData.images !== undefined)
+      prismaUpdateData.images = updateData.images;
+    if (updateData.logo !== undefined) prismaUpdateData.logo = updateData.logo;
+    if (updateData.municipality !== undefined)
+      prismaUpdateData.municipality = updateData.municipality;
+    if (updateData.department !== undefined)
+      prismaUpdateData.department = updateData.department;
+    if (updateData.experienceLevel !== undefined)
+      prismaUpdateData.experienceLevel = updateData.experienceLevel;
+    if (updateData.educationRequired !== undefined)
+      prismaUpdateData.educationRequired = updateData.educationRequired;
+    if (updateData.skillsRequired !== undefined)
+      prismaUpdateData.skillsRequired = updateData.skillsRequired;
+    if (updateData.desiredSkills !== undefined)
+      prismaUpdateData.desiredSkills = updateData.desiredSkills;
+    if (updateData.applicationDeadline !== undefined)
+      prismaUpdateData.applicationDeadline = updateData.applicationDeadline;
+    if (updateData.isActive !== undefined)
+      prismaUpdateData.isActive = updateData.isActive;
+    if (updateData.status !== undefined)
+      prismaUpdateData.status = updateData.status;
+    if (updateData.featured !== undefined)
+      prismaUpdateData.featured = updateData.featured;
+    if (updateData.expiresAt !== undefined)
+      prismaUpdateData.expiresAt = updateData.expiresAt;
+
+    console.log(
+      "✏️ /api/joboffer/[id] PUT - Prisma update data:",
+      prismaUpdateData
+    );
+
+    // Update the job offer
+    const updatedJobOffer = await prisma.jobOffer.update({
+      where: { id: jobOfferId },
+      data: prismaUpdateData,
+      include: {
+        company: {
+          select: {
+            id: true,
+            name: true,
+            email: true,
+          },
+        },
+      },
+    });
+
+    console.log("✅ Job offer updated successfully:", updatedJobOffer.id);
+
+    return NextResponse.json(updatedJobOffer, { status: 200 });
+  } catch (error) {
+    console.error("❌ Error updating job offer:", error);
+    console.error("❌ Error details:", {
+      message: error instanceof Error ? error.message : "Unknown error",
+      stack: error instanceof Error ? error.stack : "No stack trace",
+    });
+
+    return NextResponse.json(
+      {
+        error: "Error interno del servidor al actualizar la oferta de trabajo",
+        debug: {
+          errorMessage:
+            error instanceof Error ? error.message : "Unknown error",
+        },
+      },
+      { status: 500 }
+    );
+  }
+}
+
 export async function DELETE(
   request: NextRequest,
   { params }: { params: { id: string } }
