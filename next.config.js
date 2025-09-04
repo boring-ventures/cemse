@@ -21,12 +21,10 @@ const nextConfig = {
     serverComponentsExternalPackages: ["sharp"],
     // Increase memory limit for large uploads
     memoryBasedWorkers: true,
-  },
-
-  // Configure server options for large files
-  serverRuntimeConfig: {
-    // Increase body size limit to 2GB
-    bodySizeLimit: "2gb",
+    // Set body size limit for API routes
+    serverActions: {
+      bodySizeLimit: '500mb'
+    }
   },
 
   // Add API route configuration for larger uploads
