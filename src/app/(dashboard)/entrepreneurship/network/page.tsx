@@ -5,7 +5,6 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import {
   Dialog,
@@ -16,7 +15,7 @@ import {
 import {
   Search,
   Filter,
-  UserPlus,
+  Eye,
   MessageCircle,
   Check,
   X,
@@ -47,6 +46,45 @@ interface ContactUser {
   contactId?: string | null;
 }
 
+interface EntrepreneurshipOwner {
+  id: string;
+  ownerId: string;
+  name: string;
+  description: string;
+  category: string;
+  subcategory?: string;
+  businessStage: string;
+  logo?: string;
+  images: string[];
+  website?: string;
+  email?: string;
+  phone?: string;
+  address?: string;
+  municipality: string;
+  department: string;
+  founded?: string;
+  employees?: number;
+  annualRevenue?: number;
+  businessModel?: string;
+  targetMarket?: string;
+  isPublic: boolean;
+  isActive: boolean;
+  viewsCount: number;
+  rating?: number;
+  reviewsCount: number;
+  owner: {
+    userId: string;
+    firstName: string;
+    lastName: string;
+    email: string;
+    municipality: string;
+    phone?: string;
+    avatarUrl?: string;
+  };
+  createdAt: string;
+  updatedAt: string;
+}
+
 interface ContactRequest {
   id: string;
   status: string;
@@ -66,6 +104,9 @@ interface ContactStats {
 
 export default function NetworkingPage() {
   const [users, setUsers] = useState<ContactUser[]>([]);
+  const [entrepreneurshipOwners, setEntrepreneurshipOwners] = useState<
+    EntrepreneurshipOwner[]
+  >([]);
   const [requests, setRequests] = useState<ContactRequest[]>([]);
   const [contacts, setContacts] = useState<ContactUser[]>([]);
   const [stats, setStats] = useState<ContactStats | null>(null);
@@ -76,6 +117,13 @@ export default function NetworkingPage() {
   const [selectedContact, setSelectedContact] = useState<ContactUser | null>(
     null
   );
+  const [isEntrepreneurshipsModalOpen, setIsEntrepreneurshipsModalOpen] =
+    useState(false);
+  const [selectedUserEntrepreneurships, setSelectedUserEntrepreneurships] =
+    useState<{
+      ownerName: string;
+      entrepreneurships: any[];
+    } | null>(null);
 
   // Función para calcular la edad
   const calculateAge = (birthDate: string): number => {
@@ -130,10 +178,10 @@ export default function NetworkingPage() {
   // Función para obtener el perfil del usuario actual
   const fetchCurrentUserProfile = async () => {
     try {
-      const backendUrl =
-        process.env.NEXT_PUBLIC_BACKEND_URL ||
-        "https://cemse-back-production.up.railway.app";
-      const response = await fetch(`${backendUrl}/profile/me`, {
+      const url = `/api/profile`;
+      console.log("🔍 fetchCurrentUserProfile - Calling local API URL:", url);
+
+      const response = await fetch(url, {
         headers: {
           Authorization: `Bearer ${localStorage.getItem("token")}`,
           "Content-Type": "application/json",
@@ -148,6 +196,12 @@ export default function NetworkingPage() {
           const age = calculateAge(profile.birthDate);
           console.log("🔍 Current user age fetched:", age);
         }
+      } else {
+        console.error(
+          "Error fetching user profile:",
+          response.status,
+          response.statusText
+        );
       }
     } catch (error) {
       console.error("Error fetching user profile:", error);
@@ -157,11 +211,25 @@ export default function NetworkingPage() {
   // Cargar perfil del usuario al montar el componente
   useEffect(() => {
     const initializeData = async () => {
-      await fetchCurrentUserProfile();
-      await searchUsers();
-      await getContacts();
-      await getStats();
-      setLoading(false);
+      try {
+        await fetchCurrentUserProfile();
+        await searchEntrepreneurshipOwners();
+        // Initialize with empty data for contacts and requests to avoid 404 errors
+        setContacts([]);
+        setRequests([]);
+        setStats({
+          totalContacts: 0,
+          pendingSent: 0,
+          pendingReceived: 0,
+          totalSent: 0,
+          totalReceived: 0,
+          totalRequests: 0,
+        });
+      } catch (error) {
+        console.error("Error initializing data:", error);
+      } finally {
+        setLoading(false);
+      }
     };
 
     initializeData();
@@ -170,24 +238,18 @@ export default function NetworkingPage() {
   // Cargar datos cuando se cambie de pestaña
   const handleTabChange = (tab: string) => {
     setActiveTab(tab);
-    if (tab === "requests") {
-      getReceivedRequests();
-    } else if (tab === "contacts") {
-      getContacts();
-    }
+    // Por ahora, no cargar datos adicionales para evitar errores 404
+    // Los datos se cargan solo una vez al inicializar
   };
 
   // Buscar usuarios jóvenes
   const searchUsers = async (query?: string) => {
     try {
-      const backendUrl =
-        process.env.NEXT_PUBLIC_BACKEND_URL ||
-        "https://cemse-back-production.up.railway.app";
       const params = new URLSearchParams();
       if (query) params.append("query", query);
 
-      const url = `${backendUrl}/api/contacts/search${params.toString() ? `?${params.toString()}` : ""}`;
-      console.log("🔍 searchUsers - Calling backend URL:", url);
+      const url = `/api/contacts/search${params.toString() ? `?${params.toString()}` : ""}`;
+      console.log("🔍 searchUsers - Calling local API URL:", url);
 
       const response = await fetch(url, {
         headers: {
@@ -214,14 +276,62 @@ export default function NetworkingPage() {
     }
   };
 
+  // Buscar propietarios de emprendimientos
+  const searchEntrepreneurshipOwners = async (query?: string) => {
+    try {
+      const params = new URLSearchParams();
+      if (query) params.append("category", query);
+      params.append("isPublic", "true"); // Solo emprendimientos públicos
+
+      const url = `/api/entrepreneurship${params.toString() ? `?${params.toString()}` : ""}`;
+      console.log(
+        "🔍 searchEntrepreneurshipOwners - Calling local API URL:",
+        url
+      );
+
+      const response = await fetch(url, {
+        headers: {
+          Authorization: `Bearer ${localStorage.getItem("token")}`,
+          "Content-Type": "application/json",
+        },
+      });
+
+      if (!response.ok)
+        throw new Error("Error searching entrepreneurship owners");
+
+      const data = await response.json();
+      console.log("Entrepreneurship owners response:", data); // Debug
+
+      // Ensure we get unique users by deduplicating based on ownerId
+      const uniqueOwners = new Map();
+
+      (data || []).forEach((entrepreneurship: EntrepreneurshipOwner) => {
+        if (
+          entrepreneurship.ownerId &&
+          !uniqueOwners.has(entrepreneurship.ownerId)
+        ) {
+          uniqueOwners.set(entrepreneurship.ownerId, entrepreneurship);
+        }
+      });
+
+      const uniqueEntrepreneurshipOwners = Array.from(uniqueOwners.values());
+      console.log(
+        "Unique entrepreneurship owners:",
+        uniqueEntrepreneurshipOwners.length
+      ); // Debug
+
+      setEntrepreneurshipOwners(uniqueEntrepreneurshipOwners);
+      return uniqueEntrepreneurshipOwners;
+    } catch (err) {
+      console.error("Error searching entrepreneurship owners:", err);
+    }
+  };
+
   // Enviar solicitud de contacto
   const sendRequest = async (contactId: string, message?: string) => {
     try {
-      const backendUrl =
-        process.env.NEXT_PUBLIC_BACKEND_URL ||
-        "https://cemse-back-production.up.railway.app";
-      const url = `${backendUrl}/api/contacts/request`;
-      console.log("🔍 sendRequest - Calling backend URL:", url);
+      const url = `/api/contacts/request`;
+      console.log("🔍 sendRequest - Calling local API URL:", url);
 
       const response = await fetch(url, {
         method: "POST",
@@ -229,14 +339,14 @@ export default function NetworkingPage() {
           "Content-Type": "application/json",
           Authorization: `Bearer ${localStorage.getItem("token")}`,
         },
-        body: JSON.stringify({ contactId, message }),
+        body: JSON.stringify({ contactId, requestMessage: message }),
       });
 
       if (!response.ok) throw new Error("Error sending request");
 
       const data = await response.json();
-      // Actualizar la lista de usuarios para mostrar el estado
-      await searchUsers(searchQuery);
+      // Actualizar la lista de emprendedores para mostrar el estado
+      await searchEntrepreneurshipOwners(searchQuery);
       return data;
     } catch (err) {
       console.error("Error sending request:", err);
@@ -247,11 +357,8 @@ export default function NetworkingPage() {
   // Obtener solicitudes recibidas
   const getReceivedRequests = async () => {
     try {
-      const backendUrl =
-        process.env.NEXT_PUBLIC_BACKEND_URL ||
-        "https://cemse-back-production.up.railway.app";
-      const url = `${backendUrl}/api/contacts/requests/received`;
-      console.log("🔍 getReceivedRequests - Calling backend URL:", url);
+      const url = `/api/contacts/requests/received`;
+      console.log("🔍 getReceivedRequests - Calling local API URL:", url);
 
       const response = await fetch(url, {
         headers: {
@@ -273,11 +380,8 @@ export default function NetworkingPage() {
   // Aceptar solicitud
   const acceptRequest = async (requestId: string) => {
     try {
-      const backendUrl =
-        process.env.NEXT_PUBLIC_BACKEND_URL ||
-        "https://cemse-back-production.up.railway.app";
-      const url = `${backendUrl}/api/contacts/requests/${requestId}/accept`;
-      console.log("🔍 acceptRequest - Calling backend URL:", url);
+      const url = `/api/contacts/requests/${requestId}/accept`;
+      console.log("🔍 acceptRequest - Calling local API URL:", url);
 
       const response = await fetch(url, {
         method: "PUT",
@@ -291,7 +395,8 @@ export default function NetworkingPage() {
 
       const data = await response.json();
       // Actualizar listas
-      await Promise.all([getReceivedRequests(), getContacts(), getStats()]);
+      await Promise.all([getReceivedRequests(), getContacts()]);
+      await getStats(); // Llamar después para usar los datos actualizados
       return data;
     } catch (err) {
       console.error("Error accepting request:", err);
@@ -302,11 +407,8 @@ export default function NetworkingPage() {
   // Rechazar solicitud
   const rejectRequest = async (requestId: string) => {
     try {
-      const backendUrl =
-        process.env.NEXT_PUBLIC_BACKEND_URL ||
-        "https://cemse-back-production.up.railway.app";
-      const url = `${backendUrl}/api/contacts/requests/${requestId}/reject`;
-      console.log("🔍 rejectRequest - Calling backend URL:", url);
+      const url = `/api/contacts/requests/${requestId}/reject`;
+      console.log("🔍 rejectRequest - Calling local API URL:", url);
 
       const response = await fetch(url, {
         method: "PUT",
@@ -320,7 +422,8 @@ export default function NetworkingPage() {
 
       const data = await response.json();
       // Actualizar listas
-      await Promise.all([getReceivedRequests(), getContacts(), getStats()]);
+      await Promise.all([getReceivedRequests(), getContacts()]);
+      await getStats(); // Llamar después para usar los datos actualizados
       return data;
     } catch (err) {
       console.error("Error rejecting request:", err);
@@ -331,11 +434,8 @@ export default function NetworkingPage() {
   // Obtener contactos
   const getContacts = async () => {
     try {
-      const backendUrl =
-        process.env.NEXT_PUBLIC_BACKEND_URL ||
-        "https://cemse-back-production.up.railway.app";
-      const url = `${backendUrl}/api/contacts`;
-      console.log("🔍 getContacts - Calling backend URL:", url);
+      const url = `/api/contacts`;
+      console.log("🔍 getContacts - Calling local API URL:", url);
 
       const response = await fetch(url, {
         headers: {
@@ -415,30 +515,34 @@ export default function NetworkingPage() {
     }
   };
 
-  // Obtener estadísticas
+  // Obtener estadísticas (simplificado para emprendedores)
   const getStats = async () => {
     try {
-      const backendUrl =
-        process.env.NEXT_PUBLIC_BACKEND_URL ||
-        "https://cemse-back-production.up.railway.app";
-      const url = `${backendUrl}/api/contacts/stats`;
-      console.log("🔍 getStats - Calling backend URL:", url);
+      // Para la red de emprendedores, creamos estadísticas básicas
+      const mockStats: ContactStats = {
+        totalContacts: contacts.length,
+        pendingSent: 0,
+        pendingReceived: requests.length,
+        totalSent: 0,
+        totalReceived: requests.length,
+        totalRequests: requests.length,
+      };
 
-      const response = await fetch(url, {
-        headers: {
-          Authorization: `Bearer ${localStorage.getItem("token")}`,
-          "Content-Type": "application/json",
-        },
-      });
-
-      if (!response.ok) throw new Error("Error getting stats");
-
-      const data = await response.json();
-      console.log("Stats response:", data); // Debug
-      setStats(data.stats);
-      return data;
+      console.log("Stats (mock for entrepreneurs):", mockStats);
+      setStats(mockStats);
+      return mockStats;
     } catch (err) {
       console.error("Error getting stats:", err);
+      // Set default stats if error
+      const defaultStats: ContactStats = {
+        totalContacts: 0,
+        pendingSent: 0,
+        pendingReceived: 0,
+        totalSent: 0,
+        totalReceived: 0,
+        totalRequests: 0,
+      };
+      setStats(defaultStats);
     }
   };
 
@@ -446,12 +550,19 @@ export default function NetworkingPage() {
   const fetchNetworkingData = async () => {
     try {
       setLoading(true);
-      await Promise.all([
-        searchUsers(),
-        getReceivedRequests(),
-        getContacts(),
-        getStats(),
-      ]);
+      // Solo cargar datos de emprendedores para evitar errores 404
+      await searchEntrepreneurshipOwners();
+      // Inicializar con datos vacíos para evitar errores
+      setContacts([]);
+      setRequests([]);
+      setStats({
+        totalContacts: 0,
+        pendingSent: 0,
+        pendingReceived: 0,
+        totalSent: 0,
+        totalReceived: 0,
+        totalRequests: 0,
+      });
     } catch (error) {
       console.error("Error fetching networking data:", error);
     } finally {
@@ -465,7 +576,7 @@ export default function NetworkingPage() {
 
   // Manejar búsqueda
   const handleSearch = () => {
-    searchUsers(searchQuery);
+    searchEntrepreneurshipOwners(searchQuery);
   };
 
   // Manejar envío de solicitud
@@ -477,6 +588,68 @@ export default function NetworkingPage() {
       );
     } catch (error) {
       console.error("Error sending request:", error);
+    }
+  };
+
+  // Manejar visualización de emprendimientos de un usuario
+  const handleViewEntrepreneurships = async (userId: string) => {
+    try {
+      setLoading(true);
+
+      // Buscar emprendimientos del usuario específico
+      const response = await fetch(`/api/entrepreneurship?ownerId=${userId}`, {
+        headers: {
+          Authorization: `Bearer ${localStorage.getItem("token")}`,
+          "Content-Type": "application/json",
+        },
+      });
+
+      if (!response.ok)
+        throw new Error("Error fetching user entrepreneurships");
+
+      const entrepreneurships = await response.json();
+
+      // Obtener el nombre del usuario
+      const ownerName =
+        entrepreneurships[0]?.owner?.firstName &&
+        entrepreneurships[0]?.owner?.lastName
+          ? `${entrepreneurships[0].owner.firstName} ${entrepreneurships[0].owner.lastName}`
+          : "Usuario";
+
+      setSelectedUserEntrepreneurships({
+        ownerName,
+        entrepreneurships,
+      });
+
+      setIsEntrepreneurshipsModalOpen(true);
+    } catch (error) {
+      console.error("Error fetching user entrepreneurships:", error);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  // Manejar apertura de mensajería
+  const handleOpenMessaging = (contact: ContactUser | null) => {
+    setSelectedContact(contact);
+    setIsMessagingModalOpen(true);
+  };
+
+  // Manejar aceptar solicitud
+  const handleAcceptRequest = async (requestId: string) => {
+    try {
+      await acceptRequest(requestId);
+    } catch (error) {
+      console.error("Error accepting request:", error);
+    }
+  };
+
+  // Manejar rechazar solicitud
+  const handleRejectRequest = async (requestId: string) => {
+    try {
+      await rejectRequest(requestId);
+    } catch (error) {
+      console.error("Error rejecting request:", error);
     }
   };
 
@@ -547,442 +720,209 @@ export default function NetworkingPage() {
         </div>
       )}
 
-      <Tabs
-        value={activeTab}
-        onValueChange={handleTabChange}
-        className="space-y-6"
-      >
-        <TabsList className="grid w-full grid-cols-3">
-          <TabsTrigger value="entrepreneurs">Emprendedores</TabsTrigger>
-          <TabsTrigger value="requests" className="relative">
-            Solicitudes
-            {(requests || []).length > 0 && (
-              <Badge
-                variant="destructive"
-                className="absolute -top-2 -right-2 h-5 w-5 rounded-full p-0 flex items-center justify-center text-xs"
-              >
-                {(requests || []).length > 9 ? "9+" : (requests || []).length}
-              </Badge>
-            )}
-          </TabsTrigger>
-          <TabsTrigger value="contacts">Mis Contactos</TabsTrigger>
-        </TabsList>
-
-        {/* Emprendedores Tab */}
-        <TabsContent value="entrepreneurs" className="space-y-6">
-          <div className="flex items-center justify-between">
-            <div className="relative flex-1 max-w-md">
-              <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-              <Input
-                placeholder="Buscar emprendedores por nombre, email o habilidades..."
-                value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
-                onKeyPress={(e) => e.key === "Enter" && handleSearch()}
-                className="pl-10"
-              />
-            </div>
-            <div className="flex items-center gap-2">
-              <Button variant="outline" size="sm">
-                <Filter className="h-4 w-4 mr-2" />
-                Filtros
-              </Button>
-              <Button onClick={handleSearch}>
-                <Search className="h-4 w-4 mr-2" />
-                Buscar
-              </Button>
-            </div>
+      {/* Emprendedores Section */}
+      <div className="space-y-6">
+        <div className="flex items-center justify-between">
+          <div className="relative flex-1 max-w-md">
+            <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+            <Input
+              placeholder="Buscar emprendedores por categoría de negocio..."
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              onKeyPress={(e) => e.key === "Enter" && handleSearch()}
+              className="pl-10"
+            />
           </div>
+          <div className="flex items-center gap-2">
+            <Button variant="outline" size="sm">
+              <Filter className="h-4 w-4 mr-2" />
+              Filtros
+            </Button>
+            <Button onClick={handleSearch}>
+              <Search className="h-4 w-4 mr-2" />
+              Buscar
+            </Button>
+          </div>
+        </div>
+
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+          {(entrepreneurshipOwners || [])
+            .filter(
+              (entrepreneurship) => entrepreneurship && entrepreneurship.ownerId
+            )
+            .map((entrepreneurship) => (
+              <Card
+                key={entrepreneurship?.id || Math.random().toString()}
+                className="overflow-hidden hover:shadow-lg transition-shadow"
+              >
+                <CardContent className="p-6">
+                  <div className="flex items-center gap-3 mb-4">
+                    <Avatar className="h-12 w-12">
+                      <AvatarImage
+                        src={entrepreneurship?.owner?.avatarUrl}
+                        alt={`${entrepreneurship?.owner?.firstName || ""} ${entrepreneurship?.owner?.lastName || ""}`}
+                      />
+                      <AvatarFallback>
+                        {entrepreneurship?.owner?.firstName?.[0] || ""}
+                        {entrepreneurship?.owner?.lastName?.[0] || ""}
+                      </AvatarFallback>
+                    </Avatar>
+                    <div className="flex-1">
+                      <h3 className="font-semibold">
+                        {entrepreneurship?.owner?.firstName || "Sin nombre"}{" "}
+                        {entrepreneurship?.owner?.lastName || ""}
+                      </h3>
+                      <p className="text-sm text-muted-foreground">
+                        {entrepreneurship?.owner?.email || "Sin email"}
+                      </p>
+                      <div className="flex items-center gap-1 text-xs text-muted-foreground">
+                        <MapPin className="h-3 w-3" />
+                        {entrepreneurship?.municipality ||
+                          "Sin ubicación"}, {entrepreneurship?.department || ""}
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Entrepreneurship Information */}
+                  <div className="mb-4 p-3 bg-gray-50 rounded-lg">
+                    <h4 className="font-medium text-sm mb-1">
+                      {entrepreneurship?.name}
+                    </h4>
+                    <p className="text-xs text-muted-foreground mb-2 line-clamp-2">
+                      {entrepreneurship?.description}
+                    </p>
+                    <div className="flex flex-wrap gap-1">
+                      <Badge variant="secondary" className="text-xs">
+                        {entrepreneurship?.category}
+                      </Badge>
+                      <Badge variant="outline" className="text-xs">
+                        {entrepreneurship?.businessStage}
+                      </Badge>
+                    </div>
+                  </div>
+
+                  <Button
+                    size="sm"
+                    onClick={() =>
+                      handleViewEntrepreneurships(
+                        entrepreneurship?.ownerId || ""
+                      )
+                    }
+                    className="w-full"
+                    variant="outline"
+                  >
+                    <Eye className="w-4 h-4 mr-2" />
+                    Ver Emprendimientos
+                  </Button>
+                </CardContent>
+              </Card>
+            ))}
+        </div>
+
+        {(entrepreneurshipOwners || []).filter(
+          (entrepreneurship) => entrepreneurship && entrepreneurship.ownerId
+        ).length === 0 && (
+          <div className="text-center py-12">
+            <Users className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
+            <h3 className="text-lg font-medium mb-2">
+              No se encontraron emprendedores
+            </h3>
+            <p className="text-muted-foreground">
+              Intenta con otros términos de búsqueda o publica tu emprendimiento
+              para aparecer en la red.
+            </p>
+          </div>
+        )}
+      </div>
+
+      {/* Modal para ver emprendimientos de un usuario */}
+      <Dialog
+        open={isEntrepreneurshipsModalOpen}
+        onOpenChange={setIsEntrepreneurshipsModalOpen}
+      >
+        <DialogContent className="max-w-4xl max-h-[80vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle>
+              Emprendimientos de{" "}
+              {selectedUserEntrepreneurships?.ownerName || "Usuario"}
+            </DialogTitle>
+          </DialogHeader>
 
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-            {(users || [])
-              .filter((user) => user && user.userId)
-              .map((user) => (
+            {(selectedUserEntrepreneurships?.entrepreneurships || []).map(
+              (entrepreneurship: any) => (
                 <Card
-                  key={user?.userId || Math.random().toString()}
+                  key={entrepreneurship.id}
                   className="overflow-hidden hover:shadow-lg transition-shadow"
                 >
                   <CardContent className="p-6">
-                    <div className="flex items-center gap-3 mb-4">
-                      <Avatar className="h-12 w-12">
-                        <AvatarImage
-                          src={user?.avatarUrl}
-                          alt={`${user?.firstName || ""} ${user?.lastName || ""}`}
-                        />
-                        <AvatarFallback>
-                          {user?.firstName?.[0] || ""}
-                          {user?.lastName?.[0] || ""}
-                        </AvatarFallback>
-                      </Avatar>
-                      <div className="flex-1">
-                        <h3 className="font-semibold">
-                          {user?.firstName || "Sin nombre"}{" "}
-                          {user?.lastName || ""}
-                        </h3>
-                        <p className="text-sm text-muted-foreground">
-                          {user?.email || "Sin email"}
-                        </p>
-                        {user?.currentInstitution && (
-                          <p className="text-sm text-muted-foreground">
-                            {user.currentInstitution}
-                          </p>
-                        )}
-                        <div className="flex items-center gap-1 text-xs text-muted-foreground">
-                          <MapPin className="h-3 w-3" />
-                          {user?.municipality || "Sin ubicación"},{" "}
-                          {user?.department || ""}
+                    <div className="space-y-4">
+                      <div className="flex items-start gap-3">
+                        <div className="w-12 h-12 bg-gradient-to-br from-blue-500 to-purple-600 rounded-lg flex items-center justify-center text-white font-bold text-lg">
+                          {entrepreneurship.name?.[0]?.toUpperCase() || "E"}
                         </div>
-                      </div>
-                    </div>
-
-                    {user?.skills && user.skills.length > 0 && (
-                      <div className="mb-4">
-                        <p className="text-sm font-medium mb-2">Habilidades:</p>
-                        <div className="flex flex-wrap gap-1">
-                          {user.skills.slice(0, 3).map((skill) => (
-                            <Badge
-                              key={skill}
-                              variant="secondary"
-                              className="text-xs"
-                            >
-                              {skill}
-                            </Badge>
-                          ))}
-                          {user.skills.length > 3 && (
-                            <Badge variant="outline" className="text-xs">
-                              +{user.skills.length - 3} más
-                            </Badge>
-                          )}
-                        </div>
-                      </div>
-                    )}
-
-                    {user?.contactStatus === "PENDING" ? (
-                      <div className="flex items-center gap-2">
-                        <Badge variant="outline">Solicitud enviada</Badge>
-                      </div>
-                    ) : (
-                      <Button
-                        size="sm"
-                        onClick={() => handleSendRequest(user?.userId || "")}
-                        className="w-full"
-                      >
-                        <UserPlus className="w-4 h-4 mr-2" />
-                        Conectar
-                      </Button>
-                    )}
-                  </CardContent>
-                </Card>
-              ))}
-          </div>
-
-          {(users || []).filter((user) => user && user.userId).length === 0 && (
-            <div className="text-center py-12">
-              <Users className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
-              <h3 className="text-lg font-medium mb-2">
-                No se encontraron emprendedores
-              </h3>
-              <p className="text-muted-foreground">
-                Intenta con otros términos de búsqueda o completa tu perfil para
-                aparecer en la red.
-              </p>
-            </div>
-          )}
-        </TabsContent>
-
-        {/* Solicitudes Tab */}
-        <TabsContent value="requests" className="space-y-6">
-          <div className="flex items-center justify-between">
-            <div>
-              <h2 className="text-xl font-semibold">Solicitudes de Conexión</h2>
-              <p className="text-sm text-muted-foreground">
-                Gestiona las solicitudes que otros jóvenes te han enviado
-              </p>
-            </div>
-            <Button variant="outline" onClick={getReceivedRequests}>
-              <RefreshCw className="h-4 w-4 mr-2" />
-              Actualizar
-            </Button>
-          </div>
-
-          {/* Contador de solicitudes */}
-          {requests.length > 0 && (
-            <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
-              <div className="flex items-center gap-2">
-                <MessageCircle className="h-5 w-5 text-blue-600" />
-                <span className="font-medium text-blue-900">
-                  Tienes {(requests || []).length} solicitud
-                  {(requests || []).length !== 1 ? "es" : ""} pendiente
-                  {(requests || []).length !== 1 ? "s" : ""}
-                </span>
-              </div>
-            </div>
-          )}
-
-          <div className="space-y-4">
-            {(requests || [])
-              .filter((request) => request && request.id)
-              .map((request) => (
-                <Card
-                  key={request?.id || Math.random().toString()}
-                  className="border-l-4 border-l-orange-500"
-                >
-                  <CardContent className="p-6">
-                    <div className="flex items-start gap-4">
-                      <Avatar className="h-16 w-16">
-                        <AvatarImage
-                          src={request.user?.avatarUrl}
-                          alt={`${request.user?.firstName || ""} ${request.user?.lastName || ""}`}
-                        />
-                        <AvatarFallback className="text-lg">
-                          {request.user?.firstName?.[0] || ""}
-                          {request.user?.lastName?.[0] || ""}
-                        </AvatarFallback>
-                      </Avatar>
-
-                      <div className="flex-1 space-y-3">
-                        {/* Información del usuario */}
-                        <div>
-                          <h3 className="font-semibold text-lg">
-                            {request.user?.firstName || "Sin nombre"}{" "}
-                            {request.user?.lastName || ""}
+                        <div className="flex-1">
+                          <h3 className="font-semibold text-lg mb-1">
+                            {entrepreneurship.name}
                           </h3>
-                          <p className="text-sm text-muted-foreground">
-                            {request.user?.email || "Sin email"}
+                          <p className="text-sm text-muted-foreground line-clamp-2">
+                            {entrepreneurship.description}
                           </p>
-                          {request.user?.currentInstitution && (
-                            <p className="text-sm text-muted-foreground">
-                              <MapPin className="h-3 w-3 inline mr-1" />
-                              {request.user.currentInstitution} •{" "}
-                              {request.user?.municipality || ""},{" "}
-                              {request.user?.department || ""}
-                            </p>
-                          )}
+                        </div>
+                      </div>
+
+                      <div className="space-y-2">
+                        <div className="flex items-center gap-2">
+                          <MapPin className="w-4 h-4 text-muted-foreground" />
+                          <span className="text-sm">
+                            {entrepreneurship.municipality}
+                          </span>
                         </div>
 
-                        {/* Habilidades */}
-                        {request.user?.skills &&
-                          request.user.skills.length > 0 && (
-                            <div>
-                              <p className="text-sm font-medium mb-1">
-                                Habilidades:
-                              </p>
-                              <div className="flex flex-wrap gap-1">
-                                {request.user.skills
-                                  .slice(0, 4)
-                                  .map((skill) => (
-                                    <Badge
-                                      key={skill}
-                                      variant="secondary"
-                                      className="text-xs"
-                                    >
-                                      {skill}
-                                    </Badge>
-                                  ))}
-                                {request.user.skills.length > 4 && (
-                                  <Badge variant="outline" className="text-xs">
-                                    +{request.user.skills.length - 4} más
-                                  </Badge>
-                                )}
-                              </div>
-                            </div>
-                          )}
+                        <div className="flex flex-wrap gap-2">
+                          <Badge variant="secondary" className="text-xs">
+                            {entrepreneurship.category}
+                          </Badge>
+                          <Badge variant="outline" className="text-xs">
+                            {entrepreneurship.businessStage}
+                          </Badge>
+                        </div>
 
-                        {/* Mensaje personalizado */}
-                        {request.message && (
-                          <div className="bg-gray-50 rounded-lg p-3">
-                            <p className="text-sm italic text-gray-700">
-                              "{request.message}"
-                            </p>
+                        {entrepreneurship.website && (
+                          <div className="flex items-center gap-2">
+                            <TrendingUp className="w-4 h-4 text-muted-foreground" />
+                            <a
+                              href={entrepreneurship.website}
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              className="text-sm text-blue-600 hover:underline"
+                            >
+                              Sitio web
+                            </a>
                           </div>
                         )}
-
-                        {/* Fecha */}
-                        <p className="text-xs text-muted-foreground">
-                          <Clock className="h-3 w-3 inline mr-1" />
-                          Solicitud enviada el{" "}
-                          {new Date(request.createdAt).toLocaleDateString(
-                            "es-ES",
-                            {
-                              year: "numeric",
-                              month: "long",
-                              day: "numeric",
-                              hour: "2-digit",
-                              minute: "2-digit",
-                            }
-                          )}
-                        </p>
-                      </div>
-
-                      {/* Botones de acción */}
-                      <div className="flex flex-col gap-2 min-w-[120px]">
-                        <Button
-                          size="sm"
-                          onClick={() => acceptRequest(request.id)}
-                          className="bg-green-600 hover:bg-green-700 text-white"
-                        >
-                          <Check className="h-4 w-4 mr-1" />
-                          Aceptar
-                        </Button>
-                        <Button
-                          size="sm"
-                          variant="outline"
-                          onClick={() => rejectRequest(request.id)}
-                          className="border-red-200 text-red-600 hover:bg-red-50"
-                        >
-                          <X className="h-4 w-4 mr-1" />
-                          Rechazar
-                        </Button>
                       </div>
                     </div>
                   </CardContent>
                 </Card>
-              ))}
-
-            {(requests || []).length === 0 && (
-              <div className="text-center py-12">
-                <div className="w-16 h-16 bg-gray-100 rounded-full flex items-center justify-center mx-auto mb-4">
-                  <MessageCircle className="h-8 w-8 text-gray-400" />
-                </div>
-                <h3 className="text-lg font-medium mb-2">
-                  No tienes solicitudes pendientes
-                </h3>
-                <p className="text-muted-foreground mb-4">
-                  Cuando otros jóvenes te envíen solicitudes de conexión,
-                  aparecerán aquí para que puedas revisarlas y decidir si las
-                  aceptas.
-                </p>
-                <Button
-                  variant="outline"
-                  onClick={() => setActiveTab("entrepreneurs")}
-                >
-                  <Search className="h-4 w-4 mr-2" />
-                  Buscar Emprendedores
-                </Button>
-              </div>
+              )
             )}
           </div>
-        </TabsContent>
 
-        {/* Contactos Tab */}
-        <TabsContent value="contacts" className="space-y-6">
-          <div className="flex items-center justify-between">
-            <h2 className="text-xl font-semibold">Mis Contactos</h2>
-            <Button variant="outline" onClick={getContacts}>
-              <RefreshCw className="h-4 w-4 mr-2" />
-              Actualizar
-            </Button>
-          </div>
-
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-            {(contacts || [])
-              .filter((contact) => contact && contact.userId)
-              .map((contact) => (
-                <Card
-                  key={contact?.userId || Math.random().toString()}
-                  className="overflow-hidden hover:shadow-lg transition-shadow"
-                >
-                  <CardContent className="p-6">
-                    <div className="flex items-center gap-3 mb-4">
-                      <Avatar className="h-12 w-12">
-                        <AvatarImage
-                          src={contact?.avatarUrl}
-                          alt={`${contact?.firstName || ""} ${contact?.lastName || ""}`}
-                        />
-                        <AvatarFallback>
-                          {contact?.firstName?.[0] || ""}
-                          {contact?.lastName?.[0] || ""}
-                        </AvatarFallback>
-                      </Avatar>
-                      <div className="flex-1">
-                        <h3 className="font-semibold">
-                          {contact?.firstName || "Sin nombre"}{" "}
-                          {contact?.lastName || ""}
-                        </h3>
-                        <p className="text-sm text-muted-foreground">
-                          {contact?.email || "Sin email"}
-                        </p>
-                        {contact?.currentInstitution && (
-                          <p className="text-sm text-muted-foreground">
-                            {contact.currentInstitution}
-                          </p>
-                        )}
-                        <div className="flex items-center gap-1 text-xs text-muted-foreground">
-                          <MapPin className="h-3 w-3" />
-                          {contact?.municipality || "Sin ubicación"},{" "}
-                          {contact?.department || ""}
-                        </div>
-                      </div>
-                    </div>
-
-                    {contact?.skills && contact.skills.length > 0 && (
-                      <div className="mb-4">
-                        <p className="text-sm font-medium mb-2">Habilidades:</p>
-                        <div className="flex flex-wrap gap-1">
-                          {contact.skills.slice(0, 3).map((skill) => (
-                            <Badge
-                              key={skill}
-                              variant="secondary"
-                              className="text-xs"
-                            >
-                              {skill}
-                            </Badge>
-                          ))}
-                          {contact.skills.length > 3 && (
-                            <Badge variant="outline" className="text-xs">
-                              +{contact.skills.length - 3} más
-                            </Badge>
-                          )}
-                        </div>
-                      </div>
-                    )}
-
-                    <div className="flex gap-2">
-                      <Button
-                        size="sm"
-                        variant="outline"
-                        className="flex-1"
-                        disabled={!isCurrentUserOver18()}
-                        onClick={() => {
-                          setSelectedContact(contact);
-                          setIsMessagingModalOpen(true);
-                        }}
-                        title={
-                          !isCurrentUserOver18()
-                            ? "Debes ser mayor de 18 años para enviar mensajes"
-                            : "Enviar mensaje"
-                        }
-                      >
-                        <MessageCircle className="h-4 w-4 mr-2" />
-                        Mensaje
-                      </Button>
-                      <Button size="sm" variant="outline">
-                        <Share2 className="h-4 w-4" />
-                      </Button>
-                    </div>
-                    {!isCurrentUserOver18() && (
-                      <p className="text-xs text-muted-foreground mt-2 text-center">
-                        Debes ser mayor de 18 años para enviar mensajes
-                      </p>
-                    )}
-                  </CardContent>
-                </Card>
-              ))}
-          </div>
-
-          {(contacts || []).length === 0 && (
+          {(!selectedUserEntrepreneurships?.entrepreneurships ||
+            selectedUserEntrepreneurships?.entrepreneurships.length === 0) && (
             <div className="text-center py-12">
-              <Users className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
+              <TrendingUp className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
               <h3 className="text-lg font-medium mb-2">
-                No tienes contactos aún
+                No hay emprendimientos
               </h3>
               <p className="text-muted-foreground">
-                Busca emprendedores y envíales solicitudes para empezar a
-                construir tu red.
+                Este usuario no tiene emprendimientos registrados.
               </p>
             </div>
           )}
-        </TabsContent>
-      </Tabs>
+        </DialogContent>
+      </Dialog>
 
       {/* Modal de Mensajería */}
       <Dialog

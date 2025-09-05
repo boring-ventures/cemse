@@ -96,16 +96,16 @@ export const youthSidebarData: SidebarData = {
         },
       ],
     },
-    {
-      title: "Recursos de Emprendimiento",
-      items: [
-        {
-          title: "Directorio de Instituciones",
-          url: "/entrepreneurship/directory",
-          icon: Building2,
-        },
-      ],
-    },
+    //{
+    //title: "Recursos de Emprendimiento",
+    //items: [
+    //{
+    //title: "Directorio de Instituciones",
+    //url: "/entrepreneurship/directory",
+    //icon: Building2,
+    //},
+    //],
+    //},
     {
       title: "Conectar con Emprendedores",
       items: [

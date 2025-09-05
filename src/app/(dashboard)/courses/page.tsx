@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { useRouter } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card, CardContent } from "@/components/ui/card";
@@ -19,6 +20,7 @@ import {
   Play,
   Award,
   Target,
+  User,
 } from "lucide-react";
 import { CourseCard } from "@/components/courses/course-card";
 import { useCourses } from "@/hooks/useCourses";
@@ -29,6 +31,8 @@ import { useCurrentMunicipality } from "@/hooks/useMunicipalityApi";
 import { isMunicipalityRole } from "@/lib/utils";
 
 export default function CoursesPage() {
+  const router = useRouter();
+
   // Get current user and municipality info for filtering
   const { profile } = useCurrentUser();
   const { data: currentMunicipality } = useCurrentMunicipality();
@@ -47,8 +51,6 @@ export default function CoursesPage() {
   const [categoryFilter, setCategoryFilter] = useState("all");
   const [levelFilter, setLevelFilter] = useState("all");
   const [viewMode, setViewMode] = useState<"grid" | "list">("grid");
-
-
 
   // Estadísticas
   const stats = {
@@ -97,8 +99,6 @@ export default function CoursesPage() {
       return matchesSearch && matchesCategory && matchesLevel;
     }) || [];
 
-
-
   const categories = [
     { value: "all", label: "Todas las categorías" },
     { value: "SOFT_SKILLS", label: "Habilidades Blandas" },
@@ -142,11 +142,21 @@ export default function CoursesPage() {
     <div className="container mx-auto p-6 space-y-6">
       {/* Header */}
       <div className="flex flex-col gap-4">
-        <div>
-          <h1 className="text-3xl font-bold">Explorar Cursos</h1>
-          <p className="text-muted-foreground">
-            Descubre cursos para desarrollar tus habilidades y competencias
-          </p>
+        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+          <div>
+            <h1 className="text-3xl font-bold">Explorar Cursos</h1>
+            <p className="text-muted-foreground">
+              Descubre cursos para desarrollar tus habilidades y competencias
+            </p>
+          </div>
+          <Button
+            onClick={() => router.push("/my-courses")}
+            variant="outline"
+            className="flex items-center gap-2"
+          >
+            <User className="h-4 w-4" />
+            Mis Cursos
+          </Button>
         </div>
 
         {/* Estadísticas */}

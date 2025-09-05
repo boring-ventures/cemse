@@ -126,7 +126,11 @@ export default function CourseDetailPage() {
   };
 
   const handleStartLearning = () => {
-    router.push(`/development/courses/${courseId}/learn`);
+    if (!enrollmentStatus.enrollmentId) {
+      toast.error("Error: No se encontró la información de inscripción");
+      return;
+    }
+    router.push(`/development/courses/${enrollmentStatus.enrollmentId}/learn`);
   };
 
   if (loading || enrollmentsLoading) {

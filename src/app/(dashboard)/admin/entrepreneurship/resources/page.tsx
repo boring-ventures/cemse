@@ -47,6 +47,7 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { Checkbox } from "@/components/ui/checkbox";
+import { FileUpload } from "@/components/resources/FileUpload";
 import {
   FileText,
   BookOpen,
@@ -144,6 +145,10 @@ export default function AdminResourcesPage() {
     featured: false,
     status: "draft",
   });
+
+  // File upload state
+  const [selectedFile, setSelectedFile] = useState<File | null>(null);
+  const [isUploading, setIsUploading] = useState(false);
 
   // Helper function to render file preview
   const renderFilePreview = (resource: {
@@ -318,37 +323,102 @@ export default function AdminResourcesPage() {
     fetchResources();
   }, [fetchResources]);
 
+  // File upload handlers
+  const handleFileSelect = (file: File) => {
+    setSelectedFile(file);
+    setFormData((prev) => ({
+      ...prev,
+      fileSize: formatFileSize(file.size),
+    }));
+  };
+
+  const handleFileRemove = () => {
+    setSelectedFile(null);
+    setFormData((prev) => ({
+      ...prev,
+      fileUrl: "",
+      fileSize: "",
+    }));
+  };
+
+  const formatFileSize = (bytes: number): string => {
+    if (bytes === 0) return "0 Bytes";
+    const k = 1024;
+    const sizes = ["Bytes", "KB", "MB", "GB"];
+    const i = Math.floor(Math.log(bytes) / Math.log(k));
+    return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + " " + sizes[i];
+  };
+
   const handleCreateResource = async () => {
     try {
-      const response = await fetch("/api/admin/entrepreneurship/resources", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          ...formData,
-          tags: formData.tags.split(",").map((tag) => tag.trim()),
-          author: "Administrador", // This would come from user context
-        }),
-      });
+      setIsUploading(true);
 
-      if (response.ok) {
-        setShowCreateDialog(false);
-        setFormData({
-          title: "",
-          description: "",
-          type: "template",
-          category: "Business Planning",
-          thumbnail: "",
-          fileUrl: "",
-          fileSize: "",
-          tags: "",
-          featured: false,
-          status: "draft",
+      // If there's a file, use FormData for file upload
+      if (selectedFile) {
+        const formDataToSend = new FormData();
+        formDataToSend.append("file", selectedFile);
+        formDataToSend.append("title", formData.title);
+        formDataToSend.append("description", formData.description);
+        formDataToSend.append("type", formData.type);
+        formDataToSend.append("category", formData.category);
+        formDataToSend.append("thumbnail", formData.thumbnail);
+        formDataToSend.append("tags", formData.tags);
+        formDataToSend.append("featured", formData.featured.toString());
+        formDataToSend.append("status", formData.status);
+        formDataToSend.append("author", "Administrador");
+
+        const response = await fetch("/api/admin/entrepreneurship/resources", {
+          method: "POST",
+          body: formDataToSend,
         });
-        fetchResources();
+
+        if (response.ok) {
+          setShowCreateDialog(false);
+          resetForm();
+          fetchResources();
+        } else {
+          const errorData = await response.json();
+          console.error("Error creating resource:", errorData);
+        }
+      } else {
+        // If no file, use JSON for external URL
+        const response = await fetch("/api/admin/entrepreneurship/resources", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            ...formData,
+            tags: formData.tags.split(",").map((tag) => tag.trim()),
+            author: "Administrador",
+          }),
+        });
+
+        if (response.ok) {
+          setShowCreateDialog(false);
+          resetForm();
+          fetchResources();
+        }
       }
     } catch (error) {
       console.error("Error creating resource:", error);
+    } finally {
+      setIsUploading(false);
     }
+  };
+
+  const resetForm = () => {
+    setFormData({
+      title: "",
+      description: "",
+      type: "template",
+      category: "Business Planning",
+      thumbnail: "",
+      fileUrl: "",
+      fileSize: "",
+      tags: "",
+      featured: false,
+      status: "draft",
+    });
+    setSelectedFile(null);
   };
 
   const getResourceIcon = (type: string) => {
@@ -418,6 +488,7 @@ export default function AdminResourcesPage() {
       featured: resource.featured,
       status: resource.status,
     });
+    setSelectedFile(null); // Reset file selection for edit
     setShowEditDialog(true);
   };
 
@@ -451,25 +522,64 @@ export default function AdminResourcesPage() {
     if (!selectedResource) return;
 
     try {
-      const response = await fetch(
-        `/api/admin/entrepreneurship/resources/${selectedResource.id}`,
-        {
-          method: "PUT",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({
-            ...formData,
-            tags: formData.tags.split(",").map((tag) => tag.trim()),
-          }),
-        }
-      );
+      setIsUploading(true);
 
-      if (response.ok) {
-        setShowEditDialog(false);
-        setSelectedResource(null);
-        fetchResources();
+      // If there's a new file, use FormData for file upload
+      if (selectedFile) {
+        const formDataToSend = new FormData();
+        formDataToSend.append("file", selectedFile);
+        formDataToSend.append("title", formData.title);
+        formDataToSend.append("description", formData.description);
+        formDataToSend.append("type", formData.type);
+        formDataToSend.append("category", formData.category);
+        formDataToSend.append("thumbnail", formData.thumbnail);
+        formDataToSend.append("tags", formData.tags);
+        formDataToSend.append("featured", formData.featured.toString());
+        formDataToSend.append("status", formData.status);
+        formDataToSend.append("author", "Administrador");
+
+        const response = await fetch(
+          `/api/admin/entrepreneurship/resources/${selectedResource.id}`,
+          {
+            method: "PUT",
+            body: formDataToSend,
+          }
+        );
+
+        if (response.ok) {
+          setShowEditDialog(false);
+          setSelectedResource(null);
+          resetForm();
+          fetchResources();
+        } else {
+          const errorData = await response.json();
+          console.error("Error updating resource:", errorData);
+        }
+      } else {
+        // If no new file, use JSON for external URL
+        const response = await fetch(
+          `/api/admin/entrepreneurship/resources/${selectedResource.id}`,
+          {
+            method: "PUT",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({
+              ...formData,
+              tags: formData.tags.split(",").map((tag) => tag.trim()),
+            }),
+          }
+        );
+
+        if (response.ok) {
+          setShowEditDialog(false);
+          setSelectedResource(null);
+          resetForm();
+          fetchResources();
+        }
       }
     } catch (error) {
       console.error("Error updating resource:", error);
+    } finally {
+      setIsUploading(false);
     }
   };
 
@@ -613,35 +723,46 @@ export default function AdminResourcesPage() {
                 </div>
               </div>
 
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div className="space-y-4">
                 <div className="space-y-2">
-                  <Label htmlFor="fileUrl">URL del Archivo</Label>
-                  <Input
-                    id="fileUrl"
-                    value={formData.fileUrl}
-                    onChange={(e) =>
-                      setFormData((prev) => ({
-                        ...prev,
-                        fileUrl: e.target.value,
-                      }))
-                    }
-                    placeholder="https://... o /downloads/..."
+                  <Label>Archivo del Recurso</Label>
+                  <FileUpload
+                    onFileSelect={handleFileSelect}
+                    onFileRemove={handleFileRemove}
+                    selectedFile={selectedFile}
+                    accept=".pdf,.doc,.docx,.xls,.xlsx,.zip,.mp4,.webm,.ogg,.mp3,.wav,.jpg,.jpeg,.png,.gif,.txt"
+                    maxSize={10 * 1024 * 1024} // 10MB
                   />
                 </div>
-                <div className="space-y-2">
-                  <Label htmlFor="fileSize">Tamaño del Archivo</Label>
-                  <Input
-                    id="fileSize"
-                    value={formData.fileSize}
-                    onChange={(e) =>
-                      setFormData((prev) => ({
-                        ...prev,
-                        fileSize: e.target.value,
-                      }))
-                    }
-                    placeholder="ej: 2.5 MB"
-                  />
-                </div>
+
+                {!selectedFile && (
+                  <div className="space-y-2">
+                    <Label htmlFor="fileUrl">O URL Externa (opcional)</Label>
+                    <Input
+                      id="fileUrl"
+                      value={formData.fileUrl}
+                      onChange={(e) =>
+                        setFormData((prev) => ({
+                          ...prev,
+                          fileUrl: e.target.value,
+                        }))
+                      }
+                      placeholder="https://... o /downloads/..."
+                    />
+                  </div>
+                )}
+
+                {formData.fileSize && (
+                  <div className="space-y-2">
+                    <Label htmlFor="fileSize">Tamaño del Archivo</Label>
+                    <Input
+                      id="fileSize"
+                      value={formData.fileSize}
+                      readOnly
+                      className="bg-gray-50"
+                    />
+                  </div>
+                )}
               </div>
 
               <div className="space-y-2">
@@ -689,10 +810,18 @@ export default function AdminResourcesPage() {
                 <Button
                   variant="outline"
                   onClick={() => setShowCreateDialog(false)}
+                  disabled={isUploading}
                 >
                   Cancelar
                 </Button>
-                <Button onClick={handleCreateResource}>Crear Recurso</Button>
+                <Button
+                  onClick={handleCreateResource}
+                  disabled={
+                    isUploading || !formData.title || !formData.description
+                  }
+                >
+                  {isUploading ? "Subiendo..." : "Crear Recurso"}
+                </Button>
               </div>
             </div>
           </DialogContent>
@@ -1049,27 +1178,43 @@ export default function AdminResourcesPage() {
                 </Select>
               </div>
             </div>
-            <div className="grid grid-cols-2 gap-4">
-              <div>
-                <Label htmlFor="edit-fileUrl">URL del Archivo</Label>
-                <Input
-                  id="edit-fileUrl"
-                  value={formData.fileUrl}
-                  onChange={(e) =>
-                    setFormData({ ...formData, fileUrl: e.target.value })
-                  }
+            <div className="space-y-4">
+              <div className="space-y-2">
+                <Label>Archivo del Recurso</Label>
+                <FileUpload
+                  onFileSelect={handleFileSelect}
+                  onFileRemove={handleFileRemove}
+                  selectedFile={selectedFile}
+                  accept=".pdf,.doc,.docx,.xls,.xlsx,.zip,.mp4,.webm,.ogg,.mp3,.wav,.jpg,.jpeg,.png,.gif,.txt"
+                  maxSize={10 * 1024 * 1024} // 10MB
                 />
               </div>
-              <div>
-                <Label htmlFor="edit-fileSize">Tamaño del Archivo</Label>
-                <Input
-                  id="edit-fileSize"
-                  value={formData.fileSize}
-                  onChange={(e) =>
-                    setFormData({ ...formData, fileSize: e.target.value })
-                  }
-                />
-              </div>
+
+              {!selectedFile && (
+                <div className="space-y-2">
+                  <Label htmlFor="edit-fileUrl">O URL Externa (opcional)</Label>
+                  <Input
+                    id="edit-fileUrl"
+                    value={formData.fileUrl}
+                    onChange={(e) =>
+                      setFormData({ ...formData, fileUrl: e.target.value })
+                    }
+                    placeholder="https://... o /downloads/..."
+                  />
+                </div>
+              )}
+
+              {formData.fileSize && (
+                <div className="space-y-2">
+                  <Label htmlFor="edit-fileSize">Tamaño del Archivo</Label>
+                  <Input
+                    id="edit-fileSize"
+                    value={formData.fileSize}
+                    readOnly
+                    className="bg-gray-50"
+                  />
+                </div>
+              )}
             </div>
 
             {/* File Preview Section in Edit Dialog */}
@@ -1130,10 +1275,18 @@ export default function AdminResourcesPage() {
               <Button
                 variant="outline"
                 onClick={() => setShowEditDialog(false)}
+                disabled={isUploading}
               >
                 Cancelar
               </Button>
-              <Button onClick={handleUpdateResource}>Actualizar Recurso</Button>
+              <Button
+                onClick={handleUpdateResource}
+                disabled={
+                  isUploading || !formData.title || !formData.description
+                }
+              >
+                {isUploading ? "Actualizando..." : "Actualizar Recurso"}
+              </Button>
             </div>
           </div>
         </DialogContent>
