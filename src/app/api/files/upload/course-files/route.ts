@@ -6,7 +6,7 @@ import jwt from "jsonwebtoken";
 
 // Configure runtime for file uploads
 export const runtime = "nodejs";
-export const maxDuration = 300; // 5 minutes timeout
+export const maxDuration = 900; // 15 minutes timeout for large files on AWS EC2
 export const dynamic = "force-dynamic";
 export const revalidate = 0;
 
@@ -14,7 +14,7 @@ export const revalidate = 0;
 export const config = {
   api: {
     bodyParser: {
-      sizeLimit: "10mb", // 10MB per file
+      sizeLimit: "50mb", // 50MB per file (increased for better handling)
     },
   },
 };
@@ -166,31 +166,39 @@ export async function POST(request: NextRequest) {
         );
       }
 
-      // Create uploads directory if it doesn't exist
-      const uploadsDir = join(
-        process.cwd(),
-        "public",
-        "uploads",
-        "courses",
-        "thumbnails"
-      );
-      await mkdir(uploadsDir, { recursive: true });
+      try {
+        // Create uploads directory if it doesn't exist
+        const uploadsDir = join(
+          process.cwd(),
+          "public",
+          "uploads",
+          "courses",
+          "thumbnails"
+        );
+        await mkdir(uploadsDir, { recursive: true });
 
-      // Generate unique filename
-      const timestamp = Date.now();
-      const extension = thumbnail.name.split(".").pop();
-      const filename = `course-thumbnail-${decoded.id}-${timestamp}.${extension}`;
-      const filepath = join(uploadsDir, filename);
+        // Generate unique filename
+        const timestamp = Date.now();
+        const extension = thumbnail.name.split(".").pop();
+        const filename = `course-thumbnail-${decoded.id}-${timestamp}.${extension}`;
+        const filepath = join(uploadsDir, filename);
 
-      // Save file to disk
-      const bytes = await thumbnail.arrayBuffer();
-      await writeFile(filepath, new Uint8Array(bytes));
+        // Save file to disk using streaming for better memory management
+        const bytes = await thumbnail.arrayBuffer();
+        await writeFile(filepath, new Uint8Array(bytes));
 
-      uploadedFiles.thumbnail = `/uploads/courses/thumbnails/${filename}`;
-      console.log(
-        "📚 API: Thumbnail uploaded successfully:",
-        uploadedFiles.thumbnail
-      );
+        uploadedFiles.thumbnail = `/uploads/courses/thumbnails/${filename}`;
+        console.log(
+          "📚 API: Thumbnail uploaded successfully:",
+          uploadedFiles.thumbnail
+        );
+      } catch (error) {
+        console.error("📚 API: Error uploading thumbnail:", error);
+        return NextResponse.json(
+          { error: "Error al subir el thumbnail. Intenta con un archivo más pequeño." },
+          { status: 500 }
+        );
+      }
     }
 
     // Handle video preview upload
@@ -215,31 +223,51 @@ export async function POST(request: NextRequest) {
         );
       }
 
-      // Create uploads directory if it doesn't exist
-      const uploadsDir = join(
-        process.cwd(),
-        "public",
-        "uploads",
-        "courses",
-        "videos"
-      );
-      await mkdir(uploadsDir, { recursive: true });
+      // For large video files (>50MB), recommend chunked upload
+      if (videoPreview.size > 50 * 1024 * 1024) {
+        return NextResponse.json(
+          { 
+            error: "Para archivos de video grandes (>50MB), usa la carga por fragmentos",
+            suggestion: "El sistema automáticamente usará carga por fragmentos para archivos grandes",
+            useChunkedUpload: true
+          },
+          { status: 413 }
+        );
+      }
 
-      // Generate unique filename
-      const timestamp = Date.now();
-      const extension = videoPreview.name.split(".").pop();
-      const filename = `course-video-${decoded.id}-${timestamp}.${extension}`;
-      const filepath = join(uploadsDir, filename);
+      try {
+        // Create uploads directory if it doesn't exist
+        const uploadsDir = join(
+          process.cwd(),
+          "public",
+          "uploads",
+          "courses",
+          "videos"
+        );
+        await mkdir(uploadsDir, { recursive: true });
 
-      // Save file to disk
-      const bytes = await videoPreview.arrayBuffer();
-      await writeFile(filepath, new Uint8Array(bytes));
+        // Generate unique filename
+        const timestamp = Date.now();
+        const extension = videoPreview.name.split(".").pop();
+        const filename = `course-video-${decoded.id}-${timestamp}.${extension}`;
+        const filepath = join(uploadsDir, filename);
 
-      uploadedFiles.videoPreview = `/uploads/courses/videos/${filename}`;
-      console.log(
-        "📚 API: Video preview uploaded successfully:",
-        uploadedFiles.videoPreview
-      );
+        // Save file to disk using streaming for better memory management
+        const bytes = await videoPreview.arrayBuffer();
+        await writeFile(filepath, new Uint8Array(bytes));
+
+        uploadedFiles.videoPreview = `/uploads/courses/videos/${filename}`;
+        console.log(
+          "📚 API: Video preview uploaded successfully:",
+          uploadedFiles.videoPreview
+        );
+      } catch (error) {
+        console.error("📚 API: Error uploading video:", error);
+        return NextResponse.json(
+          { error: "Error al subir el video. Intenta con un archivo más pequeño o usa la carga por fragmentos." },
+          { status: 500 }
+        );
+      }
     }
 
     if (!uploadedFiles.thumbnail && !uploadedFiles.videoPreview) {

@@ -80,24 +80,82 @@ import type {
 import { useToast } from "@/hooks/use-toast";
 import { copyToClipboard } from "@/lib/utils";
 
-// Utility function to generate credentials
-const generateCredentials = (companyName: string, email: string) => {
-  // Generate username: lowercase, no spaces, no special chars, max 20 chars
-  const username = companyName
-    .toLowerCase()
-    .replace(/[^a-z0-9]/g, "")
-    .substring(0, 20);
+// Predefined business sectors
+const BUSINESS_SECTORS = [
+  "Tecnología",
+  "Salud",
+  "Educación",
+  "Construcción",
+  "Comercio",
+  "Manufactura",
+  "Financiero",
+  "Turismo",
+  "Agricultura",
+  "Transporte",
+  "Energía",
+  "Medios",
+  "Consultoría",
+  "Inmobiliario",
+  "Alimentación",
+  "Textil",
+  "Farmacéutico",
+  "Automotriz",
+  "Aerospace",
+  "Otro"
+];
 
-  // Generate password: 12 characters with mix of letters, numbers, and symbols
-  const chars =
-    "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789!@#$%^&*";
-  let password = "";
-  for (let i = 0; i < 12; i++) {
-    password += chars.charAt(Math.floor(Math.random() * chars.length));
+// Utility function to generate credentials
+export const generateCredentials = (companyName: string, email: string) => {
+  const UPPERS = "ABCDEFGHIJKLMNOPQRSTUVWXYZ";
+  const LOWERS = "abcdefghijklmnopqrstuvwxyz";
+  const NUMBERS = "0123456789";
+  const SPECIALS = `!@#$%^&*(),.?":{}|<>`;
+  const ALL = UPPERS + LOWERS + NUMBERS + SPECIALS;
+
+  // Helper: random seguro
+  function randIndex(max: number): number {
+    const g = (globalThis as any).crypto;
+    if (g?.getRandomValues && typeof Uint32Array !== "undefined") {
+      const arr = new Uint32Array(1);
+      g.getRandomValues(arr);
+      return arr[0] % max;
+    }
+    return Math.floor(Math.random() * max);
   }
+
+  function pick(set: string) {
+    return set[randIndex(set.length)];
+  }
+
+  function shuffle<T>(arr: T[]): T[] {
+    for (let i = arr.length - 1; i > 0; i--) {
+      const j = randIndex(i + 1);
+      [arr[i], arr[j]] = [arr[j], arr[i]];
+    }
+    return arr;
+  }
+
+  // Username
+  let username = companyName.toLowerCase().replace(/[^a-z0-9]/g, "").substring(0, 20);
+  if (!username) {
+    const local = email.split("@")[0] || "user";
+    username = local.toLowerCase().replace(/[^a-z0-9]/g, "").substring(0, 20);
+  }
+
+  // Password
+  const PASSWORD_LENGTH = 12;
+  const chars = [
+    pick(UPPERS),
+    pick(LOWERS),
+    pick(NUMBERS),
+    pick(SPECIALS),
+  ];
+  while (chars.length < PASSWORD_LENGTH) chars.push(pick(ALL));
+  const password = shuffle(chars).join("");
 
   return { username, password };
 };
+
 
 // Utility function to validate email format
 const isValidEmail = (email: string) => {
@@ -148,6 +206,8 @@ export default function CompaniesPage() {
     username: string;
     password: string;
   } | null>(null);
+  const [selectedBusinessSector, setSelectedBusinessSector] = useState<string>("");
+  const [customBusinessSector, setCustomBusinessSector] = useState<string>("");
 
   // Form state
   const [formData, setFormData] = useState<CreateCompanyRequest>({
@@ -263,6 +323,23 @@ export default function CompaniesPage() {
     return Object.keys(errors).length === 0;
   };
 
+  // Handle business sector selection
+  const handleBusinessSectorChange = (value: string) => {
+    setSelectedBusinessSector(value);
+    if (value === "Otro") {
+      setFormData((prev) => ({ ...prev, businessSector: "" }));
+    } else {
+      setFormData((prev) => ({ ...prev, businessSector: value }));
+      setCustomBusinessSector("");
+    }
+  };
+
+  // Handle custom business sector input
+  const handleCustomBusinessSectorChange = (value: string) => {
+    setCustomBusinessSector(value);
+    setFormData((prev) => ({ ...prev, businessSector: value }));
+  };
+
   // Auto-generate credentials
   const handleAutoGenerateCredentials = () => {
     if (!formData.name.trim() || !formData.email.trim()) {
@@ -289,22 +366,33 @@ export default function CompaniesPage() {
 
   // Copy credentials to clipboard
   const copyToClipboardHandler = async (text: string, type: string) => {
-    await copyToClipboard(
-      text,
-      () => {
-        toast({
-          title: "Copiado",
-          description: `${type} copiado al portapapeles`,
-        });
-      },
-      (errorMessage) => {
-        toast({
-          title: "Error",
-          description: errorMessage,
-          variant: "destructive",
-        });
-      }
-    );
+    try {
+      const success = await copyToClipboard(
+        text,
+        () => {
+          toast({
+            title: "Copiado",
+            description: `${type} copiado al portapapeles`,
+          });
+        },
+        (errorMessage) => {
+          toast({
+            title: "Error",
+            description: errorMessage,
+            variant: "destructive",
+          });
+        }
+      );
+      return success;
+    } catch (error) {
+      console.error(`Copy ${type} error:`, error);
+      toast({
+        title: "Error",
+        description: `Error al copiar ${type}`,
+        variant: "destructive",
+      });
+      return false;
+    }
   };
 
   // Handlers
@@ -328,6 +416,8 @@ export default function CompaniesPage() {
     setGeneratedCredentials(null);
     setShowGeneratedCredentials(false);
     setShowPassword(false);
+    setSelectedBusinessSector("");
+    setCustomBusinessSector("");
   };
 
   const handleCreateCompany = async () => {
@@ -357,10 +447,12 @@ export default function CompaniesPage() {
       });
 
       // Show credentials modal with the credentials used for creation
-      setGeneratedCredentials({
+      const credentials = {
         username: formData.username,
         password: formData.password,
-      });
+      };
+      console.log("Setting generated credentials:", credentials);
+      setGeneratedCredentials(credentials);
       setShowGeneratedCredentials(true);
 
       // Don't close the create dialog yet, let user see credentials first
@@ -390,10 +482,13 @@ export default function CompaniesPage() {
 
   const handleEditCompany = (company: Company) => {
     setEditingCompany(company);
+    const businessSector = company.businessSector || "";
+    const isCustomSector = businessSector && !BUSINESS_SECTORS.includes(businessSector);
+    
     setFormData({
       name: company.name,
       description: company.description || "",
-      businessSector: company.businessSector || "",
+      businessSector: businessSector,
       companySize: company.companySize || undefined,
       foundedYear: company.foundedYear || new Date().getFullYear(),
       website: company.website || "",
@@ -405,6 +500,16 @@ export default function CompaniesPage() {
       password: "", // Don't pre-fill password
       isActive: company.isActive,
     });
+    
+    // Set the business sector selection state
+    if (isCustomSector) {
+      setSelectedBusinessSector("Otro");
+      setCustomBusinessSector(businessSector);
+    } else {
+      setSelectedBusinessSector(businessSector);
+      setCustomBusinessSector("");
+    }
+    
     setValidationErrors({});
   };
 
@@ -657,17 +762,30 @@ export default function CompaniesPage() {
 
                 <div className="space-y-2">
                   <Label htmlFor="businessSector">Sector de Negocio</Label>
-                  <Input
-                    id="businessSector"
-                    value={formData.businessSector}
-                    onChange={(e) =>
-                      setFormData({
-                        ...formData,
-                        businessSector: e.target.value,
-                      })
-                    }
-                    placeholder="Ej: Tecnología, Salud, Educación"
-                  />
+                  <div className="space-y-2">
+                    <Select
+                      value={selectedBusinessSector}
+                      onValueChange={handleBusinessSectorChange}
+                    >
+                      <SelectTrigger>
+                        <SelectValue placeholder="Selecciona un sector de negocio" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {BUSINESS_SECTORS.map((sector) => (
+                          <SelectItem key={sector} value={sector}>
+                            {sector}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                    {selectedBusinessSector === "Otro" && (
+                      <Input
+                        placeholder="Especifica el sector de negocio"
+                        value={customBusinessSector}
+                        onChange={(e) => handleCustomBusinessSectorChange(e.target.value)}
+                      />
+                    )}
+                  </div>
                 </div>
 
                 <div className="space-y-2">
@@ -1191,14 +1309,30 @@ export default function CompaniesPage() {
 
             <div className="space-y-2">
               <Label htmlFor="edit-businessSector">Sector de Negocio</Label>
-              <Input
-                id="edit-businessSector"
-                value={formData.businessSector}
-                onChange={(e) =>
-                  setFormData({ ...formData, businessSector: e.target.value })
-                }
-                placeholder="Ej: Tecnología, Salud, Educación"
-              />
+              <div className="space-y-2">
+                <Select
+                  value={selectedBusinessSector}
+                  onValueChange={handleBusinessSectorChange}
+                >
+                  <SelectTrigger>
+                    <SelectValue placeholder="Selecciona un sector de negocio" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {BUSINESS_SECTORS.map((sector) => (
+                      <SelectItem key={sector} value={sector}>
+                        {sector}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+                {selectedBusinessSector === "Otro" && (
+                  <Input
+                    placeholder="Especifica el sector de negocio"
+                    value={customBusinessSector}
+                    onChange={(e) => handleCustomBusinessSectorChange(e.target.value)}
+                  />
+                )}
+              </div>
             </div>
 
             <div className="space-y-2">
@@ -1481,48 +1615,59 @@ export default function CompaniesPage() {
               <>
                 <div className="space-y-2">
                   <Label>Usuario</Label>
-                  <div className="flex items-center gap-2">
-                    <Input
-                      value={generatedCredentials.username}
-                      readOnly
-                      className="font-mono"
-                    />
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      onClick={() =>
-                        copyToClipboardHandler(
-                          generatedCredentials.username,
-                          "Usuario"
-                        )
-                      }
-                    >
-                      <Copy className="h-4 w-4" />
-                    </Button>
-                  </div>
+                  <Input
+                    value={generatedCredentials.username}
+                    readOnly
+                    className="font-mono"
+                  />
                 </div>
 
                 <div className="space-y-2">
                   <Label>Contraseña</Label>
-                  <div className="flex items-center gap-2">
-                    <Input
-                      value={generatedCredentials.password}
-                      readOnly
-                      className="font-mono"
-                    />
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      onClick={() =>
-                        copyToClipboardHandler(
-                          generatedCredentials.password,
-                          "Contraseña"
-                        )
+                  <Input
+                    value={generatedCredentials.password}
+                    readOnly
+                    className="font-mono"
+                  />
+                </div>
+
+                <div className="flex justify-center pt-2">
+                  <Button
+                    variant="outline"
+                    onClick={async () => {
+                      if (!generatedCredentials) {
+                        toast({
+                          title: "Error",
+                          description: "No hay credenciales para copiar",
+                          variant: "destructive",
+                        });
+                        return;
                       }
-                    >
-                      <Copy className="h-4 w-4" />
-                    </Button>
-                  </div>
+                      
+                      const credentialsText = `Usuario: ${generatedCredentials.username}\nContraseña: ${generatedCredentials.password}`;
+                      
+                      const success = await copyToClipboard(
+                        credentialsText,
+                        () => {
+                          toast({
+                            title: "Copiado",
+                            description: "Credenciales copiadas al portapapeles",
+                          });
+                        },
+                        (errorMessage) => {
+                          toast({
+                            title: "Error",
+                            description: errorMessage,
+                            variant: "destructive",
+                          });
+                        }
+                      );
+                    }}
+                    className="flex items-center gap-2"
+                  >
+                    <Copy className="h-4 w-4" />
+                    Copiar Credenciales
+                  </Button>
                 </div>
               </>
             )}

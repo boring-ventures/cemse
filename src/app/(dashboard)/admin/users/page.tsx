@@ -215,7 +215,6 @@ export default function UsersManagementPage() {
       if (
         !formData.username ||
         !formData.password ||
-        !formData.role ||
         !formData.firstName ||
         !formData.lastName
       ) {
@@ -517,32 +516,15 @@ export default function UsersManagementPage() {
                   </div>
 
                   <div className="grid gap-2">
-                    <Label htmlFor="role">Rol *</Label>
-                    <Select
-                      value={formData.role}
-                      onValueChange={(value) =>
-                        setFormData({ ...formData, role: value })
-                      }
-                    >
-                      <SelectTrigger>
-                        <SelectValue />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="YOUTH">Joven</SelectItem>
-                        <SelectItem value="ADOLESCENTS">Adolescente</SelectItem>
-                        <SelectItem value="COMPANIES">Empresa</SelectItem>
-                        <SelectItem value="MUNICIPAL_GOVERNMENTS">
-                          Gobierno Municipal
-                        </SelectItem>
-                        <SelectItem value="TRAINING_CENTERS">
-                          Centro de Entrenamiento
-                        </SelectItem>
-                        <SelectItem value="NGOS_AND_FOUNDATIONS">
-                          ONG/Fundación
-                        </SelectItem>
-                        <SelectItem value="INSTRUCTOR">Instructor</SelectItem>
-                      </SelectContent>
-                    </Select>
+                    <Label htmlFor="role">Rol</Label>
+                    <div className="flex items-center gap-2 p-3 bg-gray-50 rounded-md border">
+                      <GraduationCap className="w-4 h-4 text-blue-600" />
+                      <span className="text-sm font-medium text-gray-700">Joven</span>
+                      <Badge variant="secondary" className="ml-auto">Por defecto</Badge>
+                    </div>
+                    <p className="text-xs text-muted-foreground">
+                      Los nuevos usuarios se crean automáticamente como jóvenes
+                    </p>
                   </div>
                 </TabsContent>
 

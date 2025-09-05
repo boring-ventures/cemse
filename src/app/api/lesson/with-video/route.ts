@@ -5,7 +5,7 @@ import { Client } from "minio";
 import { LessonType } from "@prisma/client";
 
 // Configure route for large uploads
-export const maxDuration = 300; // 5 minutes
+export const maxDuration = 900; // 15 minutes for large video uploads on AWS EC2
 export const dynamic = 'force-dynamic';
 export const runtime = 'nodejs';
 
@@ -108,8 +108,8 @@ export async function POST(request: NextRequest) {
         throw new Error("Video file is empty after processing");
       }
       
-      if (buffer.length > 500 * 1024 * 1024) {
-        throw new Error("Video file is too large (>500MB)");
+      if (buffer.length > 2 * 1024 * 1024 * 1024) {
+        throw new Error("Video file is too large (>2GB)");
       }
       
       console.log("🎥 Uploading video to MinIO...", {

@@ -8,24 +8,17 @@ const nextConfig = {
   typescript: {
     ignoreBuildErrors: true,
   },
-  // Increase body size limit for file uploads
+  // Configure for large file uploads
   serverExternalPackages: ["sharp"],
-  // Configure body size limits for file uploads
-  // For Next.js 15, body size limits are handled by the server configuration
-  // and individual route handlers
-  // Remove deprecated experimental options
-
+  
   // Configure for large file uploads
   experimental: {
-    // Enable streaming for large files
-    serverComponentsExternalPackages: ["sharp"],
-    // Increase memory limit for large uploads
-    memoryBasedWorkers: true,
-    // Set body size limit for API routes
+    // Set body size limit for API routes - reduced for better reliability
     serverActions: {
-      bodySizeLimit: '500mb'
+      bodySizeLimit: '10mb'
     }
   },
+
 
   // Add API route configuration for larger uploads
   async rewrites() {

@@ -147,7 +147,7 @@ export class CompaniesService {
     console.log("📞 CompaniesService.delete() - Deleting company:", id);
 
     try {
-      const response = (await apiCall(`/companies/${id}`, {
+      const response = (await apiCall(`/company/${id}`, {
         method: "DELETE",
       })) as { message: string; deletedData: any };
 

@@ -5,6 +5,8 @@ const API_BASE_PROD =
 const API_BASE_LOCAL = "/api"; // Use local Next.js API routes
 
 // Use local API routes for development - all youth application APIs are implemented in Next.js
+// For production, use the production URL
+// Force local API for now to fix the upload issue
 export const API_BASE = API_BASE_LOCAL;
 
 // Backend URL configuration - use local Next.js server

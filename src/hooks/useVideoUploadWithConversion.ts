@@ -167,15 +167,30 @@ export const useVideoUploadWithConversion = () => {
 
       reportProgress("upload", 85, "Uploading to storage...");
 
-      const response = await fetch(`${API_BASE}/lesson/with-video`, {
-        method: "POST",
-        headers: await getAuthHeaders(true),
-        body: formData,
-      });
+      // Create AbortController for timeout handling
+      const controller = new AbortController();
+      const timeoutId = setTimeout(() => controller.abort(), 15 * 60 * 1000); // 15 minutes timeout
 
-      if (!response.ok) {
-        const error = await response.json();
-        throw new Error(error.message || "Upload failed");
+      try {
+        const response = await fetch(`${API_BASE}/lesson/with-video`, {
+          method: "POST",
+          headers: await getAuthHeaders(true),
+          body: formData,
+          signal: controller.signal,
+        });
+
+        clearTimeout(timeoutId);
+
+        if (!response.ok) {
+          const error = await response.json().catch(() => ({ message: "Upload failed" }));
+          throw new Error(error.message || `Upload failed with status ${response.status}`);
+        }
+      } catch (error) {
+        clearTimeout(timeoutId);
+        if (error instanceof Error && error.name === 'AbortError') {
+          throw new Error("Upload timeout. The file might be too large or your connection is slow. Please try again.");
+        }
+        throw error;
       }
 
       const result = await response.json();
