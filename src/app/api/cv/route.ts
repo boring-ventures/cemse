@@ -1,9 +1,9 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
-import { cookies } from 'next/headers';
-import jwt from 'jsonwebtoken';
+import { cookies } from "next/headers";
+import jwt from "jsonwebtoken";
 
-const JWT_SECRET = process.env.JWT_SECRET || 'dev-secret-key';
+const JWT_SECRET = process.env.JWT_SECRET || "dev-secret-key";
 
 function verifyToken(token: string) {
   try {
@@ -16,16 +16,13 @@ function verifyToken(token: string) {
 // GET /api/cv - Obtener CV del usuario actual
 export async function GET(request: NextRequest) {
   try {
-    console.log('🔍 API: Received request for CV data');
-
     // Get token from cookies
     const cookieStore = await cookies();
-    const token = cookieStore.get('cemse-auth-token')?.value;
-    
+    const token = cookieStore.get("cemse-auth-token")?.value;
+
     if (!token) {
-      console.log('🔍 API: No auth token found in cookies');
       return NextResponse.json(
-        { error: 'Authorization required' },
+        { error: "Authorization required" },
         { status: 401 }
       );
     }
@@ -33,36 +30,32 @@ export async function GET(request: NextRequest) {
     let decoded: any = null;
 
     // Handle different token types
-    if (token.includes('.') && token.split('.').length === 3) {
+    if (token.includes(".") && token.split(".").length === 3) {
       // JWT token
       decoded = verifyToken(token);
-    } else if (token.startsWith('auth-token-')) {
+    } else if (token.startsWith("auth-token-")) {
       // Database token format: auth-token-{role}-{userId}-{timestamp}
-      const tokenParts = token.split('-');
-      
+      const tokenParts = token.split("-");
+
       if (tokenParts.length >= 4) {
         const tokenUserId = tokenParts[3];
-        
+
         // For CV API, we'll create a simple decoded object
         decoded = {
           id: tokenUserId,
-          username: `user_${tokenUserId}`
+          username: `user_${tokenUserId}`,
         };
-        console.log('🔍 API: Database token validated for user:', decoded.username);
       }
     } else {
       decoded = verifyToken(token);
     }
-    
+
     if (!decoded) {
-      console.log('🔍 API: Invalid or expired token');
       return NextResponse.json(
-        { error: 'Invalid or expired token' },
+        { error: "Invalid or expired token" },
         { status: 401 }
       );
     }
-
-    console.log('🔍 API: Authenticated user:', decoded.username);
 
     const profile = await prisma.profile.findUnique({
       where: { userId: decoded.id },
@@ -129,10 +122,9 @@ export async function GET(request: NextRequest) {
         profileCompletion: profile.profileCompletion || 0,
         lastUpdated: profile.updatedAt,
         createdAt: profile.createdAt,
-      }
+      },
     };
 
-    console.log('🔍 API: CV data prepared for user:', decoded.username);
     return NextResponse.json(cvData);
   } catch (error) {
     console.error("Error al obtener CV:", error);
@@ -146,16 +138,13 @@ export async function GET(request: NextRequest) {
 // PUT /api/cv - Actualizar datos del CV
 export async function PUT(request: NextRequest) {
   try {
-    console.log('🔍 API: Received request to update CV data');
-
     // Get token from cookies
     const cookieStore = await cookies();
-    const token = cookieStore.get('cemse-auth-token')?.value;
-    
+    const token = cookieStore.get("cemse-auth-token")?.value;
+
     if (!token) {
-      console.log('🔍 API: No auth token found in cookies');
       return NextResponse.json(
-        { error: 'Authorization required' },
+        { error: "Authorization required" },
         { status: 401 }
       );
     }
@@ -163,41 +152,37 @@ export async function PUT(request: NextRequest) {
     let decoded: any = null;
 
     // Handle different token types
-    if (token.includes('.') && token.split('.').length === 3) {
+    if (token.includes(".") && token.split(".").length === 3) {
       // JWT token
       decoded = verifyToken(token);
-    } else if (token.startsWith('auth-token-')) {
+    } else if (token.startsWith("auth-token-")) {
       // Database token format: auth-token-{role}-{userId}-{timestamp}
-      const tokenParts = token.split('-');
-      
+      const tokenParts = token.split("-");
+
       if (tokenParts.length >= 4) {
         const tokenUserId = tokenParts[3];
-        
+
         // For CV API, we'll create a simple decoded object
         decoded = {
           id: tokenUserId,
-          username: `user_${tokenUserId}`
+          username: `user_${tokenUserId}`,
         };
-        console.log('🔍 API: Database token validated for user:', decoded.username);
       }
     } else {
       decoded = verifyToken(token);
     }
-    
+
     if (!decoded) {
-      console.log('🔍 API: Invalid or expired token');
       return NextResponse.json(
-        { error: 'Invalid or expired token' },
+        { error: "Invalid or expired token" },
         { status: 401 }
       );
     }
 
-    console.log('🔍 API: Authenticated user:', decoded.username);
-
     const body = await request.json();
-    console.log('🔍 API: Request body:', body);
 
-    const { personalInfo, education, professional, additional, coverLetter } = body;
+    const { personalInfo, education, professional, additional, coverLetter } =
+      body;
 
     const updateData: any = {};
 
@@ -211,7 +196,9 @@ export async function PUT(request: NextRequest) {
       updateData.municipality = personalInfo.municipality;
       updateData.department = personalInfo.department;
       updateData.country = personalInfo.country;
-      updateData.birthDate = personalInfo.birthDate ? new Date(personalInfo.birthDate) : null;
+      updateData.birthDate = personalInfo.birthDate
+        ? new Date(personalInfo.birthDate)
+        : null;
       updateData.gender = personalInfo.gender;
       updateData.documentType = personalInfo.documentType;
       updateData.documentNumber = personalInfo.documentNumber;
@@ -221,14 +208,27 @@ export async function PUT(request: NextRequest) {
     if (education) {
       updateData.educationLevel = education.level;
       updateData.currentInstitution = education.institution;
-      updateData.graduationYear = education.graduationYear;
+      // Ensure graduationYear is a number or null
+      updateData.graduationYear =
+        education.graduationYear !== null &&
+        education.graduationYear !== undefined
+          ? parseInt(education.graduationYear)
+          : null;
       updateData.isStudying = education.isStudying;
       updateData.currentDegree = education.currentDegree;
       updateData.universityName = education.universityName;
-      updateData.universityStartDate = education.universityStartDate ? new Date(education.universityStartDate) : null;
-      updateData.universityEndDate = education.universityEndDate ? new Date(education.universityEndDate) : null;
+      updateData.universityStartDate = education.universityStartDate
+        ? new Date(education.universityStartDate)
+        : null;
+      updateData.universityEndDate = education.universityEndDate
+        ? new Date(education.universityEndDate)
+        : null;
       updateData.universityStatus = education.universityStatus;
-      updateData.gpa = education.gpa;
+      // Ensure gpa is a number or null
+      updateData.gpa =
+        education.gpa !== null && education.gpa !== undefined
+          ? parseFloat(education.gpa)
+          : null;
       updateData.academicAchievements = education.academicAchievements;
       updateData.educationHistory = education.educationHistory;
     }
@@ -236,9 +236,11 @@ export async function PUT(request: NextRequest) {
     // Actualizar información profesional
     if (professional) {
       if (professional.skills) updateData.skills = professional.skills;
-      if (professional.skillsWithLevel) updateData.skillsWithLevel = professional.skillsWithLevel;
+      if (professional.skillsWithLevel)
+        updateData.skillsWithLevel = professional.skillsWithLevel;
       if (professional.interests) updateData.interests = professional.interests;
-      if (professional.workExperience) updateData.workExperience = professional.workExperience;
+      if (professional.workExperience)
+        updateData.workExperience = professional.workExperience;
       if (professional.jobTitle) updateData.jobTitle = professional.jobTitle;
       if (professional.languages) updateData.languages = professional.languages;
       if (professional.websites) updateData.websites = professional.websites;
@@ -246,8 +248,11 @@ export async function PUT(request: NextRequest) {
 
     // Actualizar información adicional
     if (additional) {
-      if (additional.achievements) updateData.achievements = additional.achievements;
-      if (additional.extracurricularActivities) updateData.extracurricularActivities = additional.extracurricularActivities;
+      if (additional.achievements)
+        updateData.achievements = additional.achievements;
+      if (additional.extracurricularActivities)
+        updateData.extracurricularActivities =
+          additional.extracurricularActivities;
       if (additional.projects) updateData.projects = additional.projects;
     }
 
@@ -261,19 +266,27 @@ export async function PUT(request: NextRequest) {
 
     // Calculate profile completion percentage
     const completionFields = [
-      updateData.firstName, updateData.lastName, updateData.email, updateData.phone,
-      updateData.municipality, updateData.educationLevel, updateData.skills,
-      updateData.interests
+      updateData.firstName,
+      updateData.lastName,
+      updateData.email,
+      updateData.phone,
+      updateData.municipality,
+      updateData.educationLevel,
+      updateData.skills,
+      updateData.interests,
     ];
-    const completedFields = completionFields.filter(field => field && (Array.isArray(field) ? field.length > 0 : true));
-    updateData.profileCompletion = Math.round((completedFields.length / completionFields.length) * 100);
+    const completedFields = completionFields.filter(
+      (field) => field && (Array.isArray(field) ? field.length > 0 : true)
+    );
+    updateData.profileCompletion = Math.round(
+      (completedFields.length / completionFields.length) * 100
+    );
 
     const updatedProfile = await prisma.profile.update({
       where: { userId: decoded.id },
       data: updateData,
     });
 
-    console.log('🔍 API: CV updated for user:', decoded.username);
     return NextResponse.json({
       message: "CV actualizado exitosamente",
       profileCompletion: updateData.profileCompletion,

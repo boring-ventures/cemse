@@ -34,7 +34,7 @@ export function ProfileDropdown() {
     return (
       <div className="flex items-center space-x-2">
         <Loader2 className="h-4 w-4 animate-spin" />
-        <span className="text-sm">Loading...</span>
+        <span className="text-sm">Cargando...</span>
       </div>
     );
   }
@@ -50,51 +50,64 @@ export function ProfileDropdown() {
   return (
     <DropdownMenu>
       <DropdownMenuTrigger asChild>
-        <Button variant="ghost" className="relative h-8 w-8 rounded-full">
-          <Avatar className="h-8 w-8">
+        <Button
+          variant="ghost"
+          className="group relative h-9 w-9 rounded-full border border-sidebar-border/50 bg-sidebar-background/80 backdrop-blur-sm hover:bg-sidebar-accent/80 hover:border-sidebar-border hover:shadow-md transition-all duration-200 focus:ring-2 focus:ring-sidebar-ring focus:ring-offset-2"
+        >
+          <Avatar className="h-8 w-8 ring-2 ring-sidebar-background/50 group-hover:ring-sidebar-accent/30 transition-all duration-200">
             <AvatarImage src={user.profilePicture || ""} alt={user.username} />
-            <AvatarFallback>
+            <AvatarFallback className="bg-sidebar-accent/20 text-sidebar-accent-foreground font-medium">
               {getInitials(user.firstName || "", user.lastName || "")}
             </AvatarFallback>
           </Avatar>
         </Button>
       </DropdownMenuTrigger>
-      <DropdownMenuContent className="w-56" align="end" forceMount>
-        <DropdownMenuLabel className="font-normal">
+      <DropdownMenuContent
+        className="w-64 p-2 bg-white/95 backdrop-blur-md border-sidebar-border/50 shadow-xl"
+        align="end"
+        forceMount
+      >
+        <DropdownMenuLabel className="font-normal p-3">
           <div className="flex flex-col space-y-1">
-            <p className="text-sm font-medium leading-none">
+            <p className="text-sm font-semibold leading-none text-gray-900">
               {user.firstName} {user.lastName}
             </p>
-            <p className="text-xs leading-none text-muted-foreground">
-              {user.email}
-            </p>
+            <p className="text-xs leading-none text-gray-600">{user.email}</p>
           </div>
         </DropdownMenuLabel>
-        <DropdownMenuSeparator />
-        <DropdownMenuItem asChild>
-          <Link href="/profile" className="flex items-center">
-            <User className="mr-2 h-4 w-4" />
-            <span>Profile</span>
+        <DropdownMenuSeparator className="bg-sidebar-border/50" />
+        <DropdownMenuItem asChild className="rounded-md">
+          <Link
+            href="/profile"
+            className="flex items-center p-2 hover:bg-gray-100 transition-colors duration-200"
+          >
+            <User className="mr-3 h-4 w-4 text-gray-600" />
+            <span className="text-sm text-gray-900">Perfil</span>
           </Link>
         </DropdownMenuItem>
-        <DropdownMenuItem asChild>
-          <Link href="/settings" className="flex items-center">
-            <Settings className="mr-2 h-4 w-4" />
-            <span>Settings</span>
+        <DropdownMenuItem asChild className="rounded-md">
+          <Link
+            href="/settings"
+            className="flex items-center p-2 hover:bg-gray-100 transition-colors duration-200"
+          >
+            <Settings className="mr-3 h-4 w-4 text-gray-600" />
+            <span className="text-sm text-gray-900">Configuración</span>
           </Link>
         </DropdownMenuItem>
-        <DropdownMenuSeparator />
+        <DropdownMenuSeparator className="bg-sidebar-border/50" />
         <DropdownMenuItem
           onClick={handleSignOut}
           disabled={isLoggingOut}
-          className="flex items-center"
+          className="flex items-center p-2 rounded-md hover:bg-destructive/10 hover:text-destructive transition-colors duration-200 focus:bg-destructive/10 focus:text-destructive"
         >
           {isLoggingOut ? (
-            <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+            <Loader2 className="mr-3 h-4 w-4 animate-spin text-gray-600" />
           ) : (
-            <LogOut className="mr-2 h-4 w-4" />
+            <LogOut className="mr-3 h-4 w-4 text-gray-600" />
           )}
-          <span>{isLoggingOut ? "Signing out..." : "Sign out"}</span>
+          <span className="text-sm text-gray-900">
+            {isLoggingOut ? "Cerrando sesión..." : "Cerrar sesión"}
+          </span>
         </DropdownMenuItem>
       </DropdownMenuContent>
     </DropdownMenu>

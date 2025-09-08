@@ -8,6 +8,7 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Alert, AlertDescription } from "@/components/ui/alert";
+import { Skeleton } from "@/components/ui/skeleton";
 import {
   User,
   Mail,
@@ -352,26 +353,93 @@ export default function ProfilePage() {
 
   if (profileLoading) {
     return (
-      <div className="flex items-center justify-center min-h-screen">
-        <div className="text-center">
-          <Loader2 className="h-8 w-8 animate-spin mx-auto mb-4" />
-          <h2 className="text-2xl font-semibold mb-2">Cargando perfil...</h2>
-          <p className="text-muted-foreground">
-            Por favor espera mientras cargamos tu información.
-          </p>
+      <div className="min-h-screen bg-gray-50">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6 sm:py-8">
+          {/* Header Skeleton */}
+          <div className="mb-6 sm:mb-8">
+            <Skeleton className="h-8 w-48 mb-2" />
+            <Skeleton className="h-4 w-96" />
+          </div>
+
+          <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 lg:gap-8">
+            {/* Main Content Skeleton */}
+            <div className="lg:col-span-2 space-y-6">
+              {/* Avatar Upload Skeleton */}
+              <Card className="bg-white shadow-sm border-0">
+                <CardHeader className="pb-4">
+                  <Skeleton className="h-6 w-32" />
+                </CardHeader>
+                <CardContent className="space-y-4">
+                  <div className="flex items-center gap-4">
+                    <Skeleton className="h-20 w-20 rounded-full" />
+                    <Skeleton className="h-8 w-24" />
+                  </div>
+                  <Skeleton className="h-32 w-full rounded-lg" />
+                </CardContent>
+              </Card>
+
+              {/* Profile Form Skeleton */}
+              <Card className="bg-white shadow-sm border-0">
+                <CardHeader className="pb-4">
+                  <Skeleton className="h-6 w-40" />
+                </CardHeader>
+                <CardContent className="space-y-6">
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                    <Skeleton className="h-12 w-full" />
+                    <Skeleton className="h-12 w-full" />
+                  </div>
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                    <Skeleton className="h-12 w-full" />
+                    <Skeleton className="h-12 w-full" />
+                  </div>
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                    <Skeleton className="h-12 w-full" />
+                    <Skeleton className="h-12 w-full" />
+                  </div>
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                    <Skeleton className="h-12 w-full" />
+                    <Skeleton className="h-12 w-full" />
+                  </div>
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <Skeleton className="h-20 w-full" />
+                    <Skeleton className="h-20 w-full" />
+                  </div>
+                  <div className="flex justify-end">
+                    <Skeleton className="h-10 w-32" />
+                  </div>
+                </CardContent>
+              </Card>
+            </div>
+
+            {/* Sidebar Skeleton */}
+            <div className="lg:col-span-1">
+              <Card className="bg-white shadow-sm border-0">
+                <CardHeader>
+                  <Skeleton className="h-6 w-40" />
+                </CardHeader>
+                <CardContent className="space-y-4">
+                  <Skeleton className="h-4 w-full" />
+                  <Skeleton className="h-4 w-full" />
+                  <Skeleton className="h-4 w-full" />
+                  <Skeleton className="h-4 w-full" />
+                </CardContent>
+              </Card>
+            </div>
+          </div>
         </div>
       </div>
     );
   }
 
   return (
-    <div className="container mx-auto py-4 sm:py-6 lg:py-8 px-4">
-      <div className="max-w-4xl mx-auto">
+    <div className="min-h-screen bg-gray-50">
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6 sm:py-8">
+        {/* Header */}
         <div className="mb-6 sm:mb-8">
-          <h1 className="text-2xl sm:text-3xl font-bold text-gray-900 mb-2">
+          <h1 className="text-3xl sm:text-4xl font-bold text-gray-900 mb-2">
             Mi Perfil
           </h1>
-          <p className="text-sm sm:text-base text-gray-600">
+          <p className="text-gray-600 text-lg">
             Actualiza tu información personal y foto de perfil
           </p>
         </div>
@@ -380,10 +448,10 @@ export default function ProfilePage() {
           {/* Profile Form */}
           <div className="lg:col-span-2 space-y-4 sm:space-y-6">
             {/* Avatar Upload */}
-            <Card>
-              <CardHeader className="pb-3 sm:pb-6">
-                <CardTitle className="flex items-center gap-2 text-base sm:text-lg">
-                  <Camera className="h-4 sm:h-5 w-4 sm:w-5" />
+            <Card className="bg-white shadow-sm border-0">
+              <CardHeader className="pb-4">
+                <CardTitle className="flex items-center gap-2 text-lg">
+                  <Camera className="h-5 w-5 text-purple-600" />
                   Foto de Perfil
                 </CardTitle>
               </CardHeader>
@@ -478,10 +546,10 @@ export default function ProfilePage() {
             </Card>
 
             {/* Profile Form */}
-            <Card>
-              <CardHeader className="pb-3 sm:pb-6">
-                <CardTitle className="flex items-center gap-2 text-base sm:text-lg">
-                  <User className="h-4 sm:h-5 w-4 sm:w-5" />
+            <Card className="bg-white shadow-sm border-0">
+              <CardHeader className="pb-4">
+                <CardTitle className="flex items-center gap-2 text-lg">
+                  <User className="h-5 w-5 text-green-600" />
                   Información Personal
                 </CardTitle>
               </CardHeader>
@@ -512,9 +580,12 @@ export default function ProfilePage() {
                   )}
 
                   {/* Basic Information */}
-                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4">
-                    <div className="space-y-1 sm:space-y-2">
-                      <Label htmlFor="firstName" className="text-sm">
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                    <div>
+                      <Label
+                        htmlFor="firstName"
+                        className="text-sm font-medium text-gray-700 mb-2 block"
+                      >
                         Nombre
                       </Label>
                       <Input
@@ -524,12 +595,15 @@ export default function ProfilePage() {
                           handleInputChange("firstName", e.target.value)
                         }
                         placeholder="Tu nombre"
-                        className="text-sm"
+                        className="h-12 border-gray-200 focus:border-blue-500"
                       />
                     </div>
 
-                    <div className="space-y-1 sm:space-y-2">
-                      <Label htmlFor="lastName" className="text-sm">
+                    <div>
+                      <Label
+                        htmlFor="lastName"
+                        className="text-sm font-medium text-gray-700 mb-2 block"
+                      >
                         Apellido
                       </Label>
                       <Input
@@ -539,37 +613,53 @@ export default function ProfilePage() {
                           handleInputChange("lastName", e.target.value)
                         }
                         placeholder="Tu apellido"
-                        className="text-sm"
+                        className="h-12 border-gray-200 focus:border-blue-500"
                       />
                     </div>
                   </div>
 
                   {/* Contact Information */}
-                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4">
-                    <div className="space-y-1 sm:space-y-2">
-                      <Label htmlFor="phone" className="text-sm">
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                    <div>
+                      <Label
+                        htmlFor="phone"
+                        className="text-sm font-medium text-gray-700 mb-2 block"
+                      >
                         Teléfono
                       </Label>
                       <div className="relative">
-                        <Phone className="absolute left-3 top-2.5 sm:top-3 h-3 sm:h-4 w-3 sm:w-4 text-muted-foreground" />
+                        <Phone className="absolute left-3 top-3.5 h-4 w-4 text-gray-400" />
                         <Input
                           id="phone"
+                          type="tel"
                           value={formData.phone}
-                          onChange={(e) =>
-                            handleInputChange("phone", e.target.value)
-                          }
-                          placeholder="Tu número de teléfono"
-                          className="pl-8 sm:pl-10 text-sm"
+                          onChange={(e) => {
+                            // Only allow numbers, +, -, spaces, and parentheses
+                            const value = e.target.value.replace(
+                              /[^0-9+\-\s()]/g,
+                              ""
+                            );
+                            handleInputChange("phone", value);
+                          }}
+                          placeholder="+591 70012345"
+                          className="pl-10 h-12 border-gray-200 focus:border-blue-500"
+                          maxLength={20}
                         />
                       </div>
+                      <p className="text-xs text-gray-500 mt-1">
+                        Solo números, +, -, espacios y paréntesis
+                      </p>
                     </div>
 
-                    <div className="space-y-1 sm:space-y-2">
-                      <Label htmlFor="address" className="text-sm">
+                    <div>
+                      <Label
+                        htmlFor="address"
+                        className="text-sm font-medium text-gray-700 mb-2 block"
+                      >
                         Dirección
                       </Label>
                       <div className="relative">
-                        <MapPin className="absolute left-3 top-2.5 sm:top-3 h-3 sm:h-4 w-3 sm:w-4 text-muted-foreground" />
+                        <MapPin className="absolute left-3 top-3.5 h-4 w-4 text-gray-400" />
                         <Input
                           id="address"
                           value={formData.address}
@@ -577,20 +667,23 @@ export default function ProfilePage() {
                             handleInputChange("address", e.target.value)
                           }
                           placeholder="Dirección completa"
-                          className="pl-8 sm:pl-10 text-sm"
+                          className="pl-10 h-12 border-gray-200 focus:border-blue-500"
                         />
                       </div>
                     </div>
                   </div>
 
                   {/* Personal Information */}
-                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4">
-                    <div className="space-y-1 sm:space-y-2">
-                      <Label htmlFor="dateOfBirth" className="text-sm">
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                    <div>
+                      <Label
+                        htmlFor="dateOfBirth"
+                        className="text-sm font-medium text-gray-700 mb-2 block"
+                      >
                         Fecha de Nacimiento
                       </Label>
                       <div className="relative">
-                        <Calendar className="absolute left-3 top-2.5 sm:top-3 h-3 sm:h-4 w-3 sm:w-4 text-muted-foreground" />
+                        <Calendar className="absolute left-3 top-3.5 h-4 w-4 text-gray-400" />
                         <Input
                           id="dateOfBirth"
                           type="date"
@@ -598,13 +691,16 @@ export default function ProfilePage() {
                           onChange={(e) =>
                             handleInputChange("dateOfBirth", e.target.value)
                           }
-                          className="pl-8 sm:pl-10 text-sm"
+                          className="pl-10 h-12 border-gray-200 focus:border-blue-500"
                         />
                       </div>
                     </div>
 
-                    <div className="space-y-1 sm:space-y-2">
-                      <Label htmlFor="gender" className="text-sm">
+                    <div>
+                      <Label
+                        htmlFor="gender"
+                        className="text-sm font-medium text-gray-700 mb-2 block"
+                      >
                         Género
                       </Label>
                       <select
@@ -613,7 +709,7 @@ export default function ProfilePage() {
                         onChange={(e) =>
                           handleInputChange("gender", e.target.value)
                         }
-                        className="w-full px-3 py-2 border border-input rounded-md bg-background text-sm"
+                        className="w-full h-12 px-3 border border-gray-200 rounded-md bg-background text-sm focus:border-blue-500 focus:outline-none"
                       >
                         <option value="">Seleccionar género</option>
                         <option value="masculino">Masculino</option>
@@ -627,9 +723,12 @@ export default function ProfilePage() {
                   </div>
 
                   {/* Municipality and Department */}
-                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4">
-                    <div className="space-y-1 sm:space-y-2">
-                      <Label htmlFor="municipality" className="text-sm">
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                    <div>
+                      <Label
+                        htmlFor="municipality"
+                        className="text-sm font-medium text-gray-700 mb-2 block"
+                      >
                         Municipio
                       </Label>
                       <Input
@@ -639,12 +738,15 @@ export default function ProfilePage() {
                           handleInputChange("municipality", e.target.value)
                         }
                         placeholder="Tu municipio"
-                        className="text-sm"
+                        className="h-12 border-gray-200 focus:border-blue-500"
                       />
                     </div>
 
-                    <div className="space-y-1 sm:space-y-2">
-                      <Label htmlFor="department" className="text-sm">
+                    <div>
+                      <Label
+                        htmlFor="department"
+                        className="text-sm font-medium text-gray-700 mb-2 block"
+                      >
                         Departamento
                       </Label>
                       <Input
@@ -654,15 +756,18 @@ export default function ProfilePage() {
                           handleInputChange("department", e.target.value)
                         }
                         placeholder="Tu departamento"
-                        className="text-sm"
+                        className="h-12 border-gray-200 focus:border-blue-500"
                       />
                     </div>
                   </div>
 
                   {/* Skills and Interests */}
-                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4">
-                    <div className="space-y-1 sm:space-y-2">
-                      <Label htmlFor="skills" className="text-sm">
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                    <div>
+                      <Label
+                        htmlFor="skills"
+                        className="text-sm font-medium text-gray-700 mb-2 block"
+                      >
                         Habilidades
                       </Label>
                       <Input
@@ -672,27 +777,30 @@ export default function ProfilePage() {
                           handleInputChange("skills", e.target.value)
                         }
                         placeholder="Habilidad 1, Habilidad 2, Habilidad 3"
-                        className="text-sm"
+                        className="h-12 border-gray-200 focus:border-blue-500"
                       />
-                      <p className="text-xs text-muted-foreground">
+                      <p className="text-xs text-gray-500 mt-1">
                         Separa las habilidades con comas
                       </p>
                     </div>
 
-                    <div className="space-y-1 sm:space-y-2">
-                      <Label htmlFor="interests" className="text-sm">
+                    <div>
+                      <Label
+                        htmlFor="interests"
+                        className="text-sm font-medium text-gray-700 mb-2 block"
+                      >
                         Intereses
                       </Label>
                       <Input
                         id="interests"
                         value={formData.interests}
-                        className="text-sm"
                         onChange={(e) =>
                           handleInputChange("interests", e.target.value)
                         }
                         placeholder="Interés 1, Interés 2, Interés 3"
+                        className="h-12 border-gray-200 focus:border-blue-500"
                       />
-                      <p className="text-xs text-muted-foreground">
+                      <p className="text-xs text-gray-500 mt-1">
                         Separa los intereses con comas
                       </p>
                     </div>
@@ -700,8 +808,13 @@ export default function ProfilePage() {
 
                   {/* Education and Experience */}
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    <div className="space-y-2">
-                      <Label htmlFor="currentDegree">Educación</Label>
+                    <div>
+                      <Label
+                        htmlFor="currentDegree"
+                        className="text-sm font-medium text-gray-700 mb-2 block"
+                      >
+                        Educación
+                      </Label>
                       <Textarea
                         id="currentDegree"
                         value={formData.currentDegree}
@@ -710,11 +823,15 @@ export default function ProfilePage() {
                         }
                         placeholder="Tu formación académica..."
                         rows={3}
+                        className="border-gray-200 focus:border-blue-500 resize-none"
                       />
                     </div>
 
-                    <div className="space-y-2">
-                      <Label htmlFor="workExperience">
+                    <div>
+                      <Label
+                        htmlFor="workExperience"
+                        className="text-sm font-medium text-gray-700 mb-2 block"
+                      >
                         Experiencia Laboral
                       </Label>
                       <Textarea
@@ -725,16 +842,17 @@ export default function ProfilePage() {
                         }
                         placeholder="Describe tu experiencia laboral, trabajos anteriores, responsabilidades..."
                         rows={4}
+                        className="border-gray-200 focus:border-blue-500 resize-none"
                       />
                     </div>
                   </div>
 
                   {/* Submit Button */}
-                  <div className="flex justify-end">
+                  <div className="flex justify-end pt-4">
                     <Button
                       type="submit"
                       disabled={isSaving || updating}
-                      className="gap-2"
+                      className="gap-2 h-12 px-8 bg-blue-600 hover:bg-blue-700"
                     >
                       {isSaving || updating ? (
                         <>
@@ -756,39 +874,46 @@ export default function ProfilePage() {
 
           {/* Profile Info Card */}
           <div className="lg:col-span-1">
-            <Card>
-              <CardHeader>
-                <CardTitle>Información del Usuario</CardTitle>
+            <Card className="bg-white shadow-sm border-0">
+              <CardHeader className="pb-4">
+                <CardTitle className="flex items-center gap-2 text-lg">
+                  <User className="h-5 w-5 text-blue-600" />
+                  Información del Usuario
+                </CardTitle>
               </CardHeader>
-              <CardContent className="space-y-4">
+              <CardContent className="space-y-6">
                 <div>
-                  <label className="text-sm font-medium text-gray-500">
+                  <label className="text-sm font-medium text-gray-500 block mb-1">
                     Rol
                   </label>
-                  <p className="text-sm text-gray-900 capitalize">
+                  <p className="text-sm text-gray-900 capitalize font-medium">
                     {user?.role?.toLowerCase().replace("_", " ")}
                   </p>
                 </div>
 
                 <div>
-                  <label className="text-sm font-medium text-gray-500">
+                  <label className="text-sm font-medium text-gray-500 block mb-1">
                     Email
                   </label>
-                  <p className="text-sm text-gray-900">{user?.email}</p>
+                  <p className="text-sm text-gray-900 font-medium">
+                    {user?.email}
+                  </p>
                 </div>
 
                 <div>
-                  <label className="text-sm font-medium text-gray-500">
+                  <label className="text-sm font-medium text-gray-500 block mb-1">
                     Usuario
                   </label>
-                  <p className="text-sm text-gray-900">{user?.username}</p>
+                  <p className="text-sm text-gray-900 font-medium">
+                    {user?.username}
+                  </p>
                 </div>
 
                 <div>
-                  <label className="text-sm font-medium text-gray-500">
+                  <label className="text-sm font-medium text-gray-500 block mb-1">
                     Estado
                   </label>
-                  <p className="text-sm text-gray-900">
+                  <p className="text-sm text-gray-900 font-medium">
                     {user?.isActive ? "Activo" : "Inactivo"}
                   </p>
                 </div>

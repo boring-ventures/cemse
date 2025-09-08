@@ -124,6 +124,7 @@ export async function POST(request: NextRequest) {
       const externalUrl = formData.get("externalUrl") as string;
       const publishedDate = formData.get("publishedDate") as string;
       const tags = formData.get("tags") as string;
+      const createdByUserId = formData.get("createdByUserId") as string;
 
       console.log("📚 API: FormData fields received:", {
         title,
@@ -168,6 +169,7 @@ export async function POST(request: NextRequest) {
         tags: tags ? tags.split(",").map((t) => t.trim()) : [],
         downloads: 0,
         rating: 0,
+        createdByUserId: createdByUserId || authResult.user?.id,
       };
     } else {
       // Manejar JSON sin archivo
@@ -190,6 +192,7 @@ export async function POST(request: NextRequest) {
         tags: body.tags || [],
         downloads: 0,
         rating: 0,
+        createdByUserId: body.createdByUserId || authResult.user?.id,
       };
     }
 
@@ -269,6 +272,20 @@ export async function PUT(request: NextRequest) {
       );
     }
 
+    // Check ownership - only the creator or superadmin can update
+    if (
+      existingResource.createdByUserId !== authResult.user?.id &&
+      authResult.user?.role !== "SUPERADMIN"
+    ) {
+      return NextResponse.json(
+        {
+          success: false,
+          message: "You don't have permission to update this resource",
+        },
+        { status: 403 }
+      );
+    }
+
     // Update resource in database
     const resource = await prisma.resource.update({
       where: { id },
@@ -318,6 +335,20 @@ export async function DELETE(request: NextRequest) {
       return NextResponse.json(
         { success: false, message: "Resource not found" },
         { status: 404 }
+      );
+    }
+
+    // Check ownership - only the creator or superadmin can delete
+    if (
+      existingResource.createdByUserId !== authResult.user?.id &&
+      authResult.user?.role !== "SUPERADMIN"
+    ) {
+      return NextResponse.json(
+        {
+          success: false,
+          message: "You don't have permission to delete this resource",
+        },
+        { status: 403 }
       );
     }
 

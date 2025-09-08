@@ -693,9 +693,9 @@ export async function POST(request: NextRequest) {
           latitude: jobData.latitude || null,
           longitude: jobData.longitude || null,
           educationRequired: jobData.educationRequired || null,
-          isActive: true,
-          status: "ACTIVE",
-          publishedAt: new Date(),
+          isActive: jobData.status === "ACTIVE",
+          status: jobData.status || "ACTIVE",
+          publishedAt: jobData.status === "ACTIVE" ? new Date() : null,
         },
         include: {
           company: {

@@ -2,16 +2,42 @@
 
 import { useState, useEffect, useRef } from "react";
 import { useParams, useRouter } from "next/navigation";
-import { ArrowLeft, Save, Eye, ImageIcon, Trash } from "lucide-react";
+import {
+  ArrowLeft,
+  Save,
+  Eye,
+  ImageIcon,
+  Trash,
+  Briefcase,
+  MapPin,
+  Plus,
+  X,
+  AlertCircle,
+  CheckCircle,
+  Loader2,
+} from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Skeleton } from "@/components/ui/skeleton";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Badge } from "@/components/ui/badge";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import { useToast } from "@/components/ui/use-toast";
-import { JobOffer, ContractType, WorkModality, ExperienceLevel, JobStatus } from "@/types/jobs";
+import {
+  JobOffer,
+  ContractType,
+  WorkModality,
+  ExperienceLevel,
+  JobStatus,
+} from "@/types/jobs";
 import { useUpdateJobOffer } from "@/hooks/use-job-offers";
 import { useAuthContext } from "@/hooks/use-auth";
 import { API_BASE } from "@/lib/api";
@@ -50,14 +76,14 @@ export default function EditJobPage() {
   const { user } = useAuthContext();
   const jobId = params.id as string;
   const fileInputRef = useRef<HTMLInputElement>(null);
-  
+
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [job, setJob] = useState<JobOffer | null>(null);
-     const [images, setImages] = useState<File[]>([]);
-   const [imageUrls, setImageUrls] = useState<string[]>([]);
+  const [images, setImages] = useState<File[]>([]);
+  const [imageUrls, setImageUrls] = useState<string[]>([]);
   const [preview, setPreview] = useState(false);
-  
+
   const updateJobOfferMutation = useUpdateJobOffer();
 
   // Form data
@@ -116,70 +142,80 @@ export default function EditJobPage() {
   const fetchJobDetails = async () => {
     try {
       setLoading(true);
-      
-      const token = localStorage.getItem('token');
+
+      const token = localStorage.getItem("token");
       const headers: Record<string, string> = {
-        'Content-Type': 'application/json',
+        "Content-Type": "application/json",
       };
-      
+
       if (token) {
-        headers['Authorization'] = `Bearer ${token}`;
+        headers["Authorization"] = `Bearer ${token}`;
       }
 
       const response = await fetch(`/api/joboffer/${jobId}`, {
         headers,
       });
-      
+
       if (response.ok) {
         const jobData = await response.json();
-                 setJob(jobData);
-         
-         // Load existing images if available
-         if (jobData.images && jobData.images.length > 0) {
-           // Convert backend URLs to full URLs
-           const fullImageUrls = jobData.images.map((img: string) => 
-             img.startsWith('http') ? img : `${API_BASE.replace('/api', '')}${img}`
-           );
-           setImageUrls(fullImageUrls);
-           console.log('🔍 Loaded existing images:', fullImageUrls);
-         } else {
-           console.log('🔍 No existing images found');
-         }
-        
-                           // Populate form with existing data
-          setFormData({
-            title: jobData.title || "",
-            description: jobData.description || "",
-            location: jobData.location || "Cochabamba, Bolivia",
-            contractType: jobData.contractType || "" as ContractType,
-            workSchedule: jobData.workSchedule || "",
-            workModality: jobData.workModality || "" as WorkModality,
-            experienceLevel: jobData.experienceLevel || "" as ExperienceLevel,
-            salaryMin: jobData.salaryMin?.toString() || "",
-            salaryMax: jobData.salaryMax?.toString() || "",
-            salaryCurrency: jobData.salaryCurrency || "BOB",
-            requiredSkills: jobData.skillsRequired || [],
-            desiredSkills: jobData.desiredSkills || [],
-            benefits: jobData.benefits ? jobData.benefits.split(', ') : [],
-            requirements: jobData.requirements ? jobData.requirements.split(', ') : [],
-            responsibilities: [],
-            closingDate: jobData.applicationDeadline || "",
-            coordinates: jobData.latitude && jobData.longitude ? [jobData.latitude, jobData.longitude] : null,
-            department: jobData.department || "Cochabamba",
-            educationRequired: jobData.educationRequired || "",
-          });
-         
-         console.log('🔍 Job data received from backend:', jobData);
-                   console.log('🔍 Backend data check:', {
-            department: jobData.department || "NOT PROVIDED",
-            educationRequired: jobData.educationRequired || "NOT PROVIDED",
-            desiredSkills: jobData.desiredSkills || "NOT PROVIDED",
-            images: jobData.images || "NOT PROVIDED",
-            coordinates: jobData.latitude && jobData.longitude ? [jobData.latitude, jobData.longitude] : "NOT PROVIDED",
-          });
+        setJob(jobData);
+
+        // Load existing images if available
+        if (jobData.images && jobData.images.length > 0) {
+          // Convert backend URLs to full URLs
+          const fullImageUrls = jobData.images.map((img: string) =>
+            img.startsWith("http")
+              ? img
+              : `${API_BASE.replace("/api", "")}${img}`
+          );
+          setImageUrls(fullImageUrls);
+          console.log("🔍 Loaded existing images:", fullImageUrls);
+        } else {
+          console.log("🔍 No existing images found");
+        }
+
+        // Populate form with existing data
+        setFormData({
+          title: jobData.title || "",
+          description: jobData.description || "",
+          location: jobData.location || "Cochabamba, Bolivia",
+          contractType: jobData.contractType || ("" as ContractType),
+          workSchedule: jobData.workSchedule || "",
+          workModality: jobData.workModality || ("" as WorkModality),
+          experienceLevel: jobData.experienceLevel || ("" as ExperienceLevel),
+          salaryMin: jobData.salaryMin?.toString() || "",
+          salaryMax: jobData.salaryMax?.toString() || "",
+          salaryCurrency: jobData.salaryCurrency || "BOB",
+          requiredSkills: jobData.skillsRequired || [],
+          desiredSkills: jobData.desiredSkills || [],
+          benefits: jobData.benefits ? jobData.benefits.split(", ") : [],
+          requirements: jobData.requirements
+            ? jobData.requirements.split(", ")
+            : [],
+          responsibilities: [],
+          closingDate: jobData.applicationDeadline || "",
+          coordinates:
+            jobData.latitude && jobData.longitude
+              ? [jobData.latitude, jobData.longitude]
+              : null,
+          department: jobData.department || "Cochabamba",
+          educationRequired: jobData.educationRequired || "",
+        });
+
+        console.log("🔍 Job data received from backend:", jobData);
+        console.log("🔍 Backend data check:", {
+          department: jobData.department || "NOT PROVIDED",
+          educationRequired: jobData.educationRequired || "NOT PROVIDED",
+          desiredSkills: jobData.desiredSkills || "NOT PROVIDED",
+          images: jobData.images || "NOT PROVIDED",
+          coordinates:
+            jobData.latitude && jobData.longitude
+              ? [jobData.latitude, jobData.longitude]
+              : "NOT PROVIDED",
+        });
       } else {
         const errorText = await response.text();
-        console.error('Error fetching job:', response.status, errorText);
+        console.error("Error fetching job:", response.status, errorText);
         toast({
           title: "Error",
           description: "No se pudo cargar el empleo",
@@ -219,27 +255,27 @@ export default function EditJobPage() {
     }));
   };
 
-     const handleFiles = (files: FileList | null) => {
-     if (!files) return;
-     const newFiles = Array.from(files);
-     setImages((prev) => [...prev, ...newFiles]);
-     
-     // Create preview URLs for display
-     newFiles.forEach((file) => {
-       const reader = new FileReader();
-       reader.onloadend = () => {
-         if (reader.result) {
-           setImageUrls((prev) => [...prev, reader.result as string]);
-         }
-       };
-       reader.readAsDataURL(file);
-     });
-   };
+  const handleFiles = (files: FileList | null) => {
+    if (!files) return;
+    const newFiles = Array.from(files);
+    setImages((prev) => [...prev, ...newFiles]);
 
-     const removeImage = (index: number) => {
-     setImages((prev) => prev.filter((_, i) => i !== index));
-     setImageUrls((prev) => prev.filter((_, i) => i !== index));
-   };
+    // Create preview URLs for display
+    newFiles.forEach((file) => {
+      const reader = new FileReader();
+      reader.onloadend = () => {
+        if (reader.result) {
+          setImageUrls((prev) => [...prev, reader.result as string]);
+        }
+      };
+      reader.readAsDataURL(file);
+    });
+  };
+
+  const removeImage = (index: number) => {
+    setImages((prev) => prev.filter((_, i) => i !== index));
+    setImageUrls((prev) => prev.filter((_, i) => i !== index));
+  };
 
   const validateForm = () => {
     const required = [
@@ -263,7 +299,7 @@ export default function EditJobPage() {
       }
     }
 
-    if (!formData.workSchedule || formData.workSchedule.trim() === '') {
+    if (!formData.workSchedule || formData.workSchedule.trim() === "") {
       toast({
         title: "Horario requerido",
         description: "Por favor especifica el horario de trabajo",
@@ -291,107 +327,154 @@ export default function EditJobPage() {
 
     try {
       setSaving(true);
-      
+
       // Check if we have images to upload
       const hasImages = images.length > 0;
-      
+
       if (hasImages) {
         // Use FormData for image uploads - only send changed fields
         const formDataToSend = new FormData();
-        
+
         // Only add fields that have changed or are required
         if (formData.title !== job?.title) {
-          formDataToSend.append('title', formData.title);
+          formDataToSend.append("title", formData.title);
         }
         if (formData.description !== job?.description) {
-          formDataToSend.append('description', formData.description);
+          formDataToSend.append("description", formData.description);
         }
-        if (formData.requirements.join(', ') !== (job?.requirements || '')) {
-          formDataToSend.append('requirements', formData.requirements.length > 0 ? formData.requirements.join(', ') : "Sin requisitos específicos");
+        if (formData.requirements.join(", ") !== (job?.requirements || "")) {
+          formDataToSend.append(
+            "requirements",
+            formData.requirements.length > 0
+              ? formData.requirements.join(", ")
+              : "Sin requisitos específicos"
+          );
         }
         if (formData.location !== job?.location) {
-          formDataToSend.append('location', formData.location);
+          formDataToSend.append("location", formData.location);
         }
         if (formData.contractType !== job?.contractType) {
-          formDataToSend.append('contractType', formData.contractType);
+          formDataToSend.append("contractType", formData.contractType);
         }
         if (formData.workSchedule !== job?.workSchedule) {
-          formDataToSend.append('workSchedule', formData.workSchedule || "Horario a definir");
+          formDataToSend.append(
+            "workSchedule",
+            formData.workSchedule || "Horario a definir"
+          );
         }
         if (formData.workModality !== job?.workModality) {
-          formDataToSend.append('workModality', formData.workModality);
+          formDataToSend.append("workModality", formData.workModality);
         }
         if (formData.experienceLevel !== job?.experienceLevel) {
-          formDataToSend.append('experienceLevel', formData.experienceLevel);
+          formDataToSend.append("experienceLevel", formData.experienceLevel);
         }
-        
+
         // Add optional data only if changed
-        if (formData.salaryMin !== (job?.salaryMin?.toString() || '')) {
-          formDataToSend.append('salaryMin', formData.salaryMin);
+        if (formData.salaryMin !== (job?.salaryMin?.toString() || "")) {
+          formDataToSend.append("salaryMin", formData.salaryMin);
         }
-        if (formData.salaryMax !== (job?.salaryMax?.toString() || '')) {
-          formDataToSend.append('salaryMax', formData.salaryMax);
+        if (formData.salaryMax !== (job?.salaryMax?.toString() || "")) {
+          formDataToSend.append("salaryMax", formData.salaryMax);
         }
-        if (formData.benefits.join(', ') !== (job?.benefits || '')) {
-          formDataToSend.append('benefits', formData.benefits.join(', '));
+        if (formData.benefits.join(", ") !== (job?.benefits || "")) {
+          formDataToSend.append("benefits", formData.benefits.join(", "));
         }
-        if (formData.closingDate !== (job?.applicationDeadline || '')) {
-          formDataToSend.append('applicationDeadline', formData.closingDate);
+        if (formData.closingDate !== (job?.applicationDeadline || "")) {
+          formDataToSend.append("applicationDeadline", formData.closingDate);
         }
-                 if (formData.department !== (job?.department || '')) {
-           formDataToSend.append('department', formData.department);
-         }
-         if (formData.educationRequired !== (job?.educationRequired || '')) {
-           formDataToSend.append('educationRequired', formData.educationRequired);
-         }
-        
+        if (formData.department !== (job?.department || "")) {
+          formDataToSend.append("department", formData.department);
+        }
+        if (formData.educationRequired !== (job?.educationRequired || "")) {
+          formDataToSend.append(
+            "educationRequired",
+            formData.educationRequired
+          );
+        }
+
         // Check if coordinates changed
-        const currentCoords = job?.latitude && job?.longitude ? [job.latitude, job.longitude] : null;
-        if (JSON.stringify(formData.coordinates) !== JSON.stringify(currentCoords)) {
+        const currentCoords =
+          job?.latitude && job?.longitude
+            ? [job.latitude, job.longitude]
+            : null;
+        if (
+          JSON.stringify(formData.coordinates) !== JSON.stringify(currentCoords)
+        ) {
           if (formData.coordinates) {
-            formDataToSend.append('latitude', formData.coordinates[0].toString());
-            formDataToSend.append('longitude', formData.coordinates[1].toString());
+            formDataToSend.append(
+              "latitude",
+              formData.coordinates[0].toString()
+            );
+            formDataToSend.append(
+              "longitude",
+              formData.coordinates[1].toString()
+            );
           }
         }
-        
-                          // Check if arrays changed
-         const currentSkills = job?.skillsRequired || [];
-         if (JSON.stringify(formData.requiredSkills) !== JSON.stringify(currentSkills)) {
-           formDataToSend.append('skillsRequired', JSON.stringify(formData.requiredSkills.length > 0 ? formData.requiredSkills : ["Sin especificar"]));
-         }
-         
-         const currentDesiredSkills = job?.desiredSkills || [];
-         if (JSON.stringify(formData.desiredSkills) !== JSON.stringify(currentDesiredSkills)) {
-           formDataToSend.append('desiredSkills', JSON.stringify(formData.desiredSkills));
-         }
-        
-                 // Add images directly as files
-         for (let index = 0; index < images.length; index++) {
-           const file = images[index];
-           formDataToSend.append('images', file);
-           console.log(`🔍 Added image ${index + 1}/${images.length}: ${file.name}`);
-         }
-        
-                 console.log('🔍 Using FormData for image upload with partial update');
-         console.log('🔍 Making request to /api/joboffer with FormData');
-         console.log('🔍 FormData entries count:', Array.from(formDataToSend.entries()).length);
-        
-        const token = localStorage.getItem('token') || '';
-        console.log('🔍 Authorization token:', token ? 'Present' : 'Missing');
+
+        // Check if arrays changed
+        const currentSkills = job?.skillsRequired || [];
+        if (
+          JSON.stringify(formData.requiredSkills) !==
+          JSON.stringify(currentSkills)
+        ) {
+          formDataToSend.append(
+            "skillsRequired",
+            JSON.stringify(
+              formData.requiredSkills.length > 0
+                ? formData.requiredSkills
+                : ["Sin especificar"]
+            )
+          );
+        }
+
+        const currentDesiredSkills = job?.desiredSkills || [];
+        if (
+          JSON.stringify(formData.desiredSkills) !==
+          JSON.stringify(currentDesiredSkills)
+        ) {
+          formDataToSend.append(
+            "desiredSkills",
+            JSON.stringify(formData.desiredSkills)
+          );
+        }
+
+        // Add images directly as files
+        for (let index = 0; index < images.length; index++) {
+          const file = images[index];
+          formDataToSend.append("images", file);
+          console.log(
+            `🔍 Added image ${index + 1}/${images.length}: ${file.name}`
+          );
+        }
+
+        console.log("🔍 Using FormData for image upload with partial update");
+        console.log("🔍 Making request to /api/joboffer with FormData");
+        console.log(
+          "🔍 FormData entries count:",
+          Array.from(formDataToSend.entries()).length
+        );
+
+        const token = localStorage.getItem("token") || "";
+        console.log("🔍 Authorization token:", token ? "Present" : "Missing");
 
         const response = await fetch(`/api/joboffer/${jobId}`, {
           method: "PUT",
           headers: {
-            "Authorization": `Bearer ${token}`,
+            Authorization: `Bearer ${token}`,
           },
           body: formDataToSend,
         });
 
-        console.log('🔍 Response received:', response.status, response.statusText);
-        
+        console.log(
+          "🔍 Response received:",
+          response.status,
+          response.statusText
+        );
+
         if (!response.ok) {
           const errorText = await response.text();
-          console.log('❌ Response error text:', errorText);
+          console.log("❌ Response error text:", errorText);
           throw new Error(`HTTP ${response.status}: ${errorText}`);
         }
 
@@ -407,7 +490,7 @@ export default function EditJobPage() {
       } else {
         // Use JSON for requests without images - only send changed fields
         const updateData: any = {};
-        
+
         // Only add fields that have changed
         if (formData.title !== job?.title) {
           updateData.title = formData.title;
@@ -415,8 +498,11 @@ export default function EditJobPage() {
         if (formData.description !== job?.description) {
           updateData.description = formData.description;
         }
-        if (formData.requirements.join(', ') !== (job?.requirements || '')) {
-          updateData.requirements = formData.requirements.length > 0 ? formData.requirements.join(', ') : "Sin requisitos específicos";
+        if (formData.requirements.join(", ") !== (job?.requirements || "")) {
+          updateData.requirements =
+            formData.requirements.length > 0
+              ? formData.requirements.join(", ")
+              : "Sin requisitos específicos";
         }
         if (formData.location !== job?.location) {
           updateData.location = formData.location;
@@ -425,7 +511,8 @@ export default function EditJobPage() {
           updateData.contractType = formData.contractType;
         }
         if (formData.workSchedule !== job?.workSchedule) {
-          updateData.workSchedule = formData.workSchedule || "Horario a definir";
+          updateData.workSchedule =
+            formData.workSchedule || "Horario a definir";
         }
         if (formData.workModality !== job?.workModality) {
           updateData.workModality = formData.workModality;
@@ -433,67 +520,95 @@ export default function EditJobPage() {
         if (formData.experienceLevel !== job?.experienceLevel) {
           updateData.experienceLevel = formData.experienceLevel;
         }
-        
+
         // Optional fields
-        if (formData.salaryMin !== (job?.salaryMin?.toString() || '')) {
-          updateData.salaryMin = formData.salaryMin ? parseInt(formData.salaryMin) : undefined;
+        if (formData.salaryMin !== (job?.salaryMin?.toString() || "")) {
+          updateData.salaryMin = formData.salaryMin
+            ? parseInt(formData.salaryMin)
+            : undefined;
         }
-        if (formData.salaryMax !== (job?.salaryMax?.toString() || '')) {
-          updateData.salaryMax = formData.salaryMax ? parseInt(formData.salaryMax) : undefined;
+        if (formData.salaryMax !== (job?.salaryMax?.toString() || "")) {
+          updateData.salaryMax = formData.salaryMax
+            ? parseInt(formData.salaryMax)
+            : undefined;
         }
-        if (formData.benefits.join(', ') !== (job?.benefits || '')) {
-          updateData.benefits = formData.benefits.length > 0 ? formData.benefits.join(', ') : undefined;
+        if (formData.benefits.join(", ") !== (job?.benefits || "")) {
+          updateData.benefits =
+            formData.benefits.length > 0
+              ? formData.benefits.join(", ")
+              : undefined;
         }
-        if (formData.closingDate !== (job?.applicationDeadline || '')) {
+        if (formData.closingDate !== (job?.applicationDeadline || "")) {
           updateData.applicationDeadline = formData.closingDate || undefined;
         }
-                 if (formData.department !== (job?.department || '')) {
-           updateData.department = formData.department || undefined;
-         }
-         if (formData.educationRequired !== (job?.educationRequired || '')) {
-           updateData.educationRequired = formData.educationRequired || undefined;
-         }
-        
+        if (formData.department !== (job?.department || "")) {
+          updateData.department = formData.department || undefined;
+        }
+        if (formData.educationRequired !== (job?.educationRequired || "")) {
+          updateData.educationRequired =
+            formData.educationRequired || undefined;
+        }
+
         // Check coordinates
-        const currentCoords = job?.latitude && job?.longitude ? [job.latitude, job.longitude] : null;
-        if (JSON.stringify(formData.coordinates) !== JSON.stringify(currentCoords)) {
+        const currentCoords =
+          job?.latitude && job?.longitude
+            ? [job.latitude, job.longitude]
+            : null;
+        if (
+          JSON.stringify(formData.coordinates) !== JSON.stringify(currentCoords)
+        ) {
           if (formData.coordinates) {
             updateData.latitude = formData.coordinates[0];
             updateData.longitude = formData.coordinates[1];
           }
         }
-        
-                          // Check arrays
-         const currentSkills = job?.skillsRequired || [];
-         if (JSON.stringify(formData.requiredSkills) !== JSON.stringify(currentSkills)) {
-           updateData.skillsRequired = formData.requiredSkills.length > 0 ? formData.requiredSkills : ["Sin especificar"];
-         }
-         
-         const currentDesiredSkills = job?.desiredSkills || [];
-         if (JSON.stringify(formData.desiredSkills) !== JSON.stringify(currentDesiredSkills)) {
-           updateData.desiredSkills = formData.desiredSkills;
-         }
 
-        console.log('🔍 Prepared partial update data:', updateData);
-        console.log('🔍 Making request to /api/joboffer with JSON (partial update)');
-        
-        const token = localStorage.getItem('token') || '';
-        console.log('🔍 Authorization token:', token ? 'Present' : 'Missing');
+        // Check arrays
+        const currentSkills = job?.skillsRequired || [];
+        if (
+          JSON.stringify(formData.requiredSkills) !==
+          JSON.stringify(currentSkills)
+        ) {
+          updateData.skillsRequired =
+            formData.requiredSkills.length > 0
+              ? formData.requiredSkills
+              : ["Sin especificar"];
+        }
+
+        const currentDesiredSkills = job?.desiredSkills || [];
+        if (
+          JSON.stringify(formData.desiredSkills) !==
+          JSON.stringify(currentDesiredSkills)
+        ) {
+          updateData.desiredSkills = formData.desiredSkills;
+        }
+
+        console.log("🔍 Prepared partial update data:", updateData);
+        console.log(
+          "🔍 Making request to /api/joboffer with JSON (partial update)"
+        );
+
+        const token = localStorage.getItem("token") || "";
+        console.log("🔍 Authorization token:", token ? "Present" : "Missing");
 
         const response = await fetch(`/api/joboffer/${jobId}`, {
           method: "PUT",
           headers: {
             "Content-Type": "application/json",
-            "Authorization": `Bearer ${token}`,
+            Authorization: `Bearer ${token}`,
           },
           body: JSON.stringify(updateData),
         });
 
-        console.log('🔍 Response received:', response.status, response.statusText);
-        
+        console.log(
+          "🔍 Response received:",
+          response.status,
+          response.statusText
+        );
+
         if (!response.ok) {
           const errorText = await response.text();
-          console.log('❌ Response error text:', errorText);
+          console.log("❌ Response error text:", errorText);
           throw new Error(`HTTP ${response.status}: ${errorText}`);
         }
 
@@ -521,13 +636,41 @@ export default function EditJobPage() {
 
   if (loading) {
     return (
-      <div className="container mx-auto p-6">
-        <div className="animate-pulse space-y-6">
-          <div className="h-8 bg-gray-200 rounded w-1/4" />
-          <div className="space-y-4">
-            <div className="h-4 bg-gray-200 rounded w-full" />
-            <div className="h-4 bg-gray-200 rounded w-3/4" />
-            <div className="h-4 bg-gray-200 rounded w-1/2" />
+      <div className="min-h-screen bg-gray-50">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6 sm:py-8">
+          {/* Header Skeleton */}
+          <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-4 mb-8">
+            <div className="flex items-center gap-4">
+              <Skeleton className="h-10 w-24" />
+              <div className="space-y-2">
+                <Skeleton className="h-8 w-48" />
+                <Skeleton className="h-4 w-64" />
+              </div>
+            </div>
+            <Skeleton className="h-10 w-32" />
+          </div>
+
+          {/* Form Cards Skeleton */}
+          <div className="space-y-6">
+            {[1, 2, 3, 4].map((i) => (
+              <Card key={i} className="bg-white shadow-sm border-0">
+                <CardHeader>
+                  <Skeleton className="h-6 w-40" />
+                </CardHeader>
+                <CardContent className="space-y-4">
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <Skeleton className="h-10 w-full" />
+                    <Skeleton className="h-10 w-full" />
+                  </div>
+                  <Skeleton className="h-24 w-full" />
+                  <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                    <Skeleton className="h-10 w-full" />
+                    <Skeleton className="h-10 w-full" />
+                    <Skeleton className="h-10 w-full" />
+                  </div>
+                </CardContent>
+              </Card>
+            ))}
           </div>
         </div>
       </div>
@@ -536,319 +679,472 @@ export default function EditJobPage() {
 
   if (!job) {
     return (
-      <div className="container mx-auto p-6 text-center">
-        <h1 className="text-2xl font-bold mb-4">Empleo no encontrado</h1>
-        <Button onClick={() => router.push("/jobs")}>
-          Volver a mis empleos
-        </Button>
+      <div className="min-h-screen bg-gray-50">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6 sm:py-8">
+          <div className="flex items-center justify-center min-h-[400px]">
+            <Card className="bg-white shadow-sm border-0 max-w-md w-full">
+              <CardContent className="p-8 text-center">
+                <div className="w-16 h-16 bg-red-100 rounded-full flex items-center justify-center mx-auto mb-6">
+                  <AlertCircle className="w-8 h-8 text-red-500" />
+                </div>
+                <h3 className="text-xl font-semibold text-gray-900 mb-3">
+                  Empleo no encontrado
+                </h3>
+                <p className="text-gray-600 mb-6">
+                  El empleo que buscas no existe o no tienes permisos para
+                  editarlo.
+                </p>
+                <Button
+                  onClick={() => router.push("/company/jobs")}
+                  className="w-full h-11"
+                >
+                  <ArrowLeft className="w-4 h-4 mr-2" />
+                  Volver a mis empleos
+                </Button>
+              </CardContent>
+            </Card>
+          </div>
+        </div>
       </div>
     );
   }
 
   if (preview) {
     return (
-      <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
-        <div className="flex items-center justify-between mb-6">
-          <Button variant="ghost" onClick={() => setPreview(false)}>
-            <ArrowLeft className="w-4 h-4 mr-2" />
-            Volver a editar
-          </Button>
-          <div className="space-x-2">
+      <div className="min-h-screen bg-gray-50">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6 sm:py-8">
+          <div className="flex items-center justify-between mb-8">
             <Button
-              variant="outline"
-              onClick={() => handleSubmit("DRAFT")}
-              disabled={saving}
+              variant="ghost"
+              onClick={() => setPreview(false)}
+              className="h-11 px-6"
             >
-              Guardar borrador
+              <ArrowLeft className="w-4 h-4 mr-2" />
+              Volver a editar
             </Button>
-            <Button onClick={() => handleSubmit("ACTIVE")} disabled={saving}>
-              Actualizar empleo
-            </Button>
+            <div className="flex gap-3">
+              <Button
+                variant="outline"
+                onClick={() => handleSubmit("DRAFT")}
+                disabled={saving}
+                className="h-11 px-6"
+              >
+                {saving ? (
+                  <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                ) : (
+                  <Save className="w-4 h-4 mr-2" />
+                )}
+                Guardar borrador
+              </Button>
+              <Button
+                onClick={() => handleSubmit("ACTIVE")}
+                disabled={saving}
+                className="h-11 px-6"
+              >
+                {saving ? (
+                  <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                ) : (
+                  <CheckCircle className="w-4 h-4 mr-2" />
+                )}
+                Actualizar empleo
+              </Button>
+            </div>
           </div>
-        </div>
 
-        {/* Job Preview */}
-        <Card>
-          <CardHeader>
-            <div className="flex items-center space-x-4">
-              <div className="w-16 h-16 bg-gray-200 rounded-lg flex items-center justify-center">
-                <span className="text-xl font-bold text-gray-600">TC</span>
-              </div>
-              <div>
-                <h1 className="text-2xl font-bold">{formData.title}</h1>
-                <p className="text-gray-600">TechCorp Bolivia</p>
-                <p className="text-sm text-gray-500">{formData.location}</p>
-              </div>
-            </div>
-          </CardHeader>
-          <CardContent>
-            <div className="space-y-6">
-              <div className="flex flex-wrap gap-2">
-                <Badge variant="secondary">
-                  {contractTypeOptions.find((o) => o.value === formData.contractType)?.label}
-                </Badge>
-                <Badge variant="outline">
-                  {workModalityOptions.find((o) => o.value === formData.workModality)?.label}
-                </Badge>
-                <Badge variant="outline">
-                  {experienceLevelOptions.find((o) => o.value === formData.experienceLevel)?.label}
-                </Badge>
-              </div>
-
-              <div>
-                <h3 className="font-semibold mb-2">Descripción</h3>
-                <p className="text-gray-700 whitespace-pre-wrap">{formData.description}</p>
-              </div>
-
-              {formData.responsibilities.length > 0 && (
+          {/* Job Preview */}
+          <Card className="bg-white shadow-sm border-0">
+            <CardHeader className="pb-4">
+              <div className="flex items-center space-x-4">
+                <div className="w-16 h-16 bg-blue-100 rounded-lg flex items-center justify-center">
+                  <Briefcase className="w-8 h-8 text-blue-600" />
+                </div>
                 <div>
-                  <h3 className="font-semibold mb-2">Responsabilidades</h3>
-                  <ul className="space-y-1">
-                    {formData.responsibilities.map((resp, i) => (
-                      <li key={i} className="flex items-start space-x-2">
-                        <span className="w-2 h-2 bg-blue-600 rounded-full mt-2" />
-                        <span>{resp}</span>
-                      </li>
-                    ))}
-                  </ul>
-                </div>
-              )}
-
-              <div>
-                <h3 className="font-semibold mb-2">Habilidades requeridas</h3>
-                <div className="flex flex-wrap gap-2">
-                  {formData.requiredSkills.map((skill, i) => (
-                    <Badge key={i}>{skill}</Badge>
-                  ))}
+                  <h1 className="text-2xl font-bold text-gray-900">
+                    {formData.title}
+                  </h1>
+                  <p className="text-gray-600 font-medium">TechCorp Bolivia</p>
+                  <div className="flex items-center gap-2 mt-1">
+                    <MapPin className="w-4 h-4 text-gray-400" />
+                    <p className="text-sm text-gray-500">{formData.location}</p>
+                  </div>
                 </div>
               </div>
-            </div>
-          </CardContent>
-        </Card>
+            </CardHeader>
+            <CardContent className="pt-0">
+              <div className="space-y-6">
+                <div className="flex flex-wrap gap-2">
+                  <Badge className="bg-blue-100 text-blue-800 border-blue-200">
+                    {
+                      contractTypeOptions.find(
+                        (o) => o.value === formData.contractType
+                      )?.label
+                    }
+                  </Badge>
+                  <Badge
+                    variant="outline"
+                    className="border-green-200 text-green-800"
+                  >
+                    {
+                      workModalityOptions.find(
+                        (o) => o.value === formData.workModality
+                      )?.label
+                    }
+                  </Badge>
+                  <Badge
+                    variant="outline"
+                    className="border-purple-200 text-purple-800"
+                  >
+                    {
+                      experienceLevelOptions.find(
+                        (o) => o.value === formData.experienceLevel
+                      )?.label
+                    }
+                  </Badge>
+                </div>
+
+                <div>
+                  <h3 className="font-semibold mb-2">Descripción</h3>
+                  <p className="text-gray-700 whitespace-pre-wrap">
+                    {formData.description}
+                  </p>
+                </div>
+
+                {formData.responsibilities.length > 0 && (
+                  <div>
+                    <h3 className="font-semibold mb-3 text-gray-900">
+                      Responsabilidades
+                    </h3>
+                    <div className="flex flex-wrap gap-2">
+                      {formData.responsibilities.map((resp, i) => (
+                        <Badge
+                          key={i}
+                          variant="outline"
+                          className="border-indigo-200 text-indigo-800"
+                        >
+                          {resp}
+                        </Badge>
+                      ))}
+                    </div>
+                  </div>
+                )}
+
+                <div>
+                  <h3 className="font-semibold mb-3 text-gray-900">
+                    Habilidades requeridas
+                  </h3>
+                  <div className="flex flex-wrap gap-2">
+                    {formData.requiredSkills.map((skill, i) => (
+                      <Badge
+                        key={i}
+                        className="bg-blue-100 text-blue-800 border-blue-200"
+                      >
+                        {skill}
+                      </Badge>
+                    ))}
+                  </div>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+        </div>
       </div>
     );
   }
 
   return (
-    <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
-      {/* Header */}
-      <div className="flex items-center justify-between mb-6">
-        <div className="flex items-center space-x-4">
-          <Button variant="ghost" onClick={() => router.back()}>
-            <ArrowLeft className="w-4 h-4 mr-2" />
-            Volver
-          </Button>
-          <div>
-            <h1 className="text-2xl font-bold text-gray-900">Editar Empleo</h1>
-            <p className="text-gray-600">
-              Actualiza la información de tu oferta de trabajo
-            </p>
+    <div className="min-h-screen bg-gray-50">
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6 sm:py-8">
+        {/* Header */}
+        <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-4 mb-8">
+          <div className="flex items-center gap-4">
+            <Button
+              variant="ghost"
+              onClick={() => router.back()}
+              className="h-11 px-6"
+            >
+              <ArrowLeft className="w-4 h-4 mr-2" />
+              Volver
+            </Button>
+            <div>
+              <h1 className="text-3xl sm:text-4xl font-bold text-gray-900">
+                Editar Empleo
+              </h1>
+              <p className="text-gray-600 text-lg mt-2">
+                Actualiza la información de tu oferta de trabajo
+              </p>
+            </div>
           </div>
-        </div>
-        <div className="space-x-2">
-          <Button variant="outline" onClick={() => setPreview(true)}>
+          <Button
+            variant="outline"
+            onClick={() => setPreview(true)}
+            className="h-11 px-6"
+          >
             <Eye className="w-4 h-4 mr-2" />
             Vista previa
           </Button>
         </div>
-      </div>
 
-      <div className="space-y-6">
-        {/* Basic Information */}
-        <Card>
-          <CardHeader>
-            <CardTitle>Información Básica</CardTitle>
-          </CardHeader>
-          <CardContent className="space-y-4">
-            <div>
-              <Label htmlFor="title">Título del empleo *</Label>
-              <Input
-                id="title"
-                placeholder="Ej: Desarrollador Frontend Junior"
-                value={formData.title}
-                onChange={(e) =>
-                  setFormData((prev) => ({ ...prev, title: e.target.value }))
-                }
-              />
-            </div>
-
-            <div>
-              <Label htmlFor="description">Descripción del empleo *</Label>
-              <Textarea
-                id="description"
-                placeholder="Describe el puesto, responsabilidades principales y qué buscan en el candidato ideal..."
-                value={formData.description}
-                onChange={(e) =>
-                  setFormData((prev) => ({
-                    ...prev,
-                    description: e.target.value,
-                  }))
-                }
-                className="min-h-[120px]"
-              />
-            </div>
-
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+        <div className="space-y-6">
+          {/* Basic Information */}
+          <Card className="bg-white shadow-sm border-0">
+            <CardHeader className="pb-4">
+              <CardTitle className="flex items-center gap-2 text-xl">
+                <Briefcase className="w-5 h-5 text-blue-600" />
+                Información Básica
+              </CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-6">
               <div>
-                <Label htmlFor="location">Ubicación</Label>
+                <Label
+                  htmlFor="title"
+                  className="text-sm font-medium text-gray-700 mb-2 block"
+                >
+                  Título del empleo *
+                </Label>
                 <Input
-                  id="location"
-                  value={formData.location}
+                  id="title"
+                  placeholder="Ej: Desarrollador Frontend Junior"
+                  value={formData.title}
                   onChange={(e) =>
-                    setFormData((prev) => ({
-                      ...prev,
-                      location: e.target.value,
-                    }))
+                    setFormData((prev) => ({ ...prev, title: e.target.value }))
                   }
-                />
-              </div>
-              <div>
-                <Label htmlFor="contractType">Tipo de contrato *</Label>
-                <Select
-                  value={formData.contractType}
-                  onValueChange={(value) =>
-                    setFormData((prev) => ({
-                      ...prev,
-                      contractType: value as ContractType,
-                    }))
-                  }
-                >
-                  <SelectTrigger>
-                    <SelectValue placeholder="Selecciona tipo" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {contractTypeOptions.map((option) => (
-                      <SelectItem key={option.value} value={option.value}>
-                        {option.label}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </div>
-            </div>
-
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <div>
-                <Label htmlFor="workModality">Modalidad de trabajo *</Label>
-                <Select
-                  value={formData.workModality}
-                  onValueChange={(value) =>
-                    setFormData((prev) => ({
-                      ...prev,
-                      workModality: value as WorkModality,
-                    }))
-                  }
-                >
-                  <SelectTrigger>
-                    <SelectValue placeholder="Selecciona modalidad" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {workModalityOptions.map((option) => (
-                      <SelectItem key={option.value} value={option.value}>
-                        {option.label}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </div>
-              <div>
-                <Label htmlFor="experienceLevel">Nivel de experiencia *</Label>
-                <Select
-                  value={formData.experienceLevel}
-                  onValueChange={(value) =>
-                    setFormData((prev) => ({
-                      ...prev,
-                      experienceLevel: value as ExperienceLevel,
-                    }))
-                  }
-                >
-                  <SelectTrigger>
-                    <SelectValue placeholder="Selecciona nivel" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {experienceLevelOptions.map((option) => (
-                      <SelectItem key={option.value} value={option.value}>
-                        {option.label}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </div>
-            </div>
-
-                         <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-              <div>
-                <Label htmlFor="salaryMin">Salario mínimo (BOB)</Label>
-                <Input
-                  id="salaryMin"
-                  type="number"
-                  placeholder="3000"
-                  value={formData.salaryMin}
-                  onChange={(e) =>
-                    setFormData((prev) => ({
-                      ...prev,
-                      salaryMin: e.target.value,
-                    }))
-                  }
+                  className="h-12 border-gray-200 focus:border-blue-500"
                 />
               </div>
 
               <div>
-                <Label htmlFor="salaryMax">Salario máximo (BOB)</Label>
-                <Input
-                  id="salaryMax"
-                  type="number"
-                  placeholder="5000"
-                  value={formData.salaryMax}
+                <Label
+                  htmlFor="description"
+                  className="text-sm font-medium text-gray-700 mb-2 block"
+                >
+                  Descripción del empleo *
+                </Label>
+                <Textarea
+                  id="description"
+                  placeholder="Describe el puesto, responsabilidades principales y qué buscan en el candidato ideal..."
+                  value={formData.description}
                   onChange={(e) =>
                     setFormData((prev) => ({
                       ...prev,
-                      salaryMax: e.target.value,
+                      description: e.target.value,
                     }))
                   }
+                  className="min-h-[120px] border-gray-200 focus:border-blue-500"
                 />
               </div>
 
-                             <div>
-                 <Label htmlFor="department">Departamento</Label>
-                 <Input
-                   id="department"
-                   value={formData.department}
-                   onChange={(e) =>
-                     setFormData((prev) => ({
-                       ...prev,
-                       department: e.target.value,
-                     }))
-                   }
-                 />
-               </div>
-               <div>
-                 <Label htmlFor="educationRequired">Educación requerida</Label>
-                 <Select
-                   value={formData.educationRequired}
-                   onValueChange={(value) =>
-                     setFormData((prev) => ({
-                       ...prev,
-                       educationRequired: value,
-                     }))
-                   }
-                 >
-                   <SelectTrigger>
-                     <SelectValue placeholder="Selecciona nivel educativo" />
-                   </SelectTrigger>
-                   <SelectContent>
-                     <SelectItem value="PRIMARY">Primaria</SelectItem>
-                     <SelectItem value="SECONDARY">Secundaria</SelectItem>
-                     <SelectItem value="TECHNICAL">Técnico</SelectItem>
-                     <SelectItem value="UNIVERSITY">Universidad</SelectItem>
-                     <SelectItem value="POSTGRADUATE">Postgrado</SelectItem>
-                     <SelectItem value="OTHER">Otro</SelectItem>
-                   </SelectContent>
-                 </Select>
-               </div>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <div>
+                  <Label
+                    htmlFor="location"
+                    className="text-sm font-medium text-gray-700 mb-2 block"
+                  >
+                    Ubicación
+                  </Label>
+                  <Input
+                    id="location"
+                    value={formData.location}
+                    onChange={(e) =>
+                      setFormData((prev) => ({
+                        ...prev,
+                        location: e.target.value,
+                      }))
+                    }
+                    className="h-12 border-gray-200 focus:border-blue-500"
+                  />
+                </div>
+                <div>
+                  <Label
+                    htmlFor="contractType"
+                    className="text-sm font-medium text-gray-700 mb-2 block"
+                  >
+                    Tipo de contrato *
+                  </Label>
+                  <Select
+                    value={formData.contractType}
+                    onValueChange={(value) =>
+                      setFormData((prev) => ({
+                        ...prev,
+                        contractType: value as ContractType,
+                      }))
+                    }
+                  >
+                    <SelectTrigger className="h-12 border-gray-200 focus:border-blue-500">
+                      <SelectValue placeholder="Selecciona tipo" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {contractTypeOptions.map((option) => (
+                        <SelectItem key={option.value} value={option.value}>
+                          {option.label}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+              </div>
 
-                             <div className="md:col-span-4">
-                <Label htmlFor="workSchedule">Horario de trabajo *</Label>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <div>
+                  <Label
+                    htmlFor="workModality"
+                    className="text-sm font-medium text-gray-700 mb-2 block"
+                  >
+                    Modalidad de trabajo *
+                  </Label>
+                  <Select
+                    value={formData.workModality}
+                    onValueChange={(value) =>
+                      setFormData((prev) => ({
+                        ...prev,
+                        workModality: value as WorkModality,
+                      }))
+                    }
+                  >
+                    <SelectTrigger className="h-12 border-gray-200 focus:border-blue-500">
+                      <SelectValue placeholder="Selecciona modalidad" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {workModalityOptions.map((option) => (
+                        <SelectItem key={option.value} value={option.value}>
+                          {option.label}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+                <div>
+                  <Label
+                    htmlFor="experienceLevel"
+                    className="text-sm font-medium text-gray-700 mb-2 block"
+                  >
+                    Nivel de experiencia *
+                  </Label>
+                  <Select
+                    value={formData.experienceLevel}
+                    onValueChange={(value) =>
+                      setFormData((prev) => ({
+                        ...prev,
+                        experienceLevel: value as ExperienceLevel,
+                      }))
+                    }
+                  >
+                    <SelectTrigger className="h-12 border-gray-200 focus:border-blue-500">
+                      <SelectValue placeholder="Selecciona nivel" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {experienceLevelOptions.map((option) => (
+                        <SelectItem key={option.value} value={option.value}>
+                          {option.label}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+              </div>
+
+              <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
+                <div>
+                  <Label
+                    htmlFor="salaryMin"
+                    className="text-sm font-medium text-gray-700 mb-2 block"
+                  >
+                    Salario mínimo (BOB)
+                  </Label>
+                  <Input
+                    id="salaryMin"
+                    type="number"
+                    placeholder="3000"
+                    value={formData.salaryMin}
+                    onChange={(e) =>
+                      setFormData((prev) => ({
+                        ...prev,
+                        salaryMin: e.target.value,
+                      }))
+                    }
+                    className="h-12 border-gray-200 focus:border-blue-500"
+                  />
+                </div>
+
+                <div>
+                  <Label
+                    htmlFor="salaryMax"
+                    className="text-sm font-medium text-gray-700 mb-2 block"
+                  >
+                    Salario máximo (BOB)
+                  </Label>
+                  <Input
+                    id="salaryMax"
+                    type="number"
+                    placeholder="5000"
+                    value={formData.salaryMax}
+                    onChange={(e) =>
+                      setFormData((prev) => ({
+                        ...prev,
+                        salaryMax: e.target.value,
+                      }))
+                    }
+                    className="h-12 border-gray-200 focus:border-blue-500"
+                  />
+                </div>
+
+                <div>
+                  <Label
+                    htmlFor="department"
+                    className="text-sm font-medium text-gray-700 mb-2 block"
+                  >
+                    Departamento
+                  </Label>
+                  <Input
+                    id="department"
+                    value={formData.department}
+                    onChange={(e) =>
+                      setFormData((prev) => ({
+                        ...prev,
+                        department: e.target.value,
+                      }))
+                    }
+                    className="h-12 border-gray-200 focus:border-blue-500"
+                  />
+                </div>
+
+                <div>
+                  <Label
+                    htmlFor="educationRequired"
+                    className="text-sm font-medium text-gray-700 mb-2 block"
+                  >
+                    Educación requerida
+                  </Label>
+                  <Select
+                    value={formData.educationRequired}
+                    onValueChange={(value) =>
+                      setFormData((prev) => ({
+                        ...prev,
+                        educationRequired: value,
+                      }))
+                    }
+                  >
+                    <SelectTrigger className="h-12 border-gray-200 focus:border-blue-500">
+                      <SelectValue placeholder="Selecciona nivel educativo" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="PRIMARY">Primaria</SelectItem>
+                      <SelectItem value="SECONDARY">Secundaria</SelectItem>
+                      <SelectItem value="TECHNICAL">Técnico</SelectItem>
+                      <SelectItem value="UNIVERSITY">Universidad</SelectItem>
+                      <SelectItem value="POSTGRADUATE">Postgrado</SelectItem>
+                      <SelectItem value="OTHER">Otro</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+              </div>
+
+              <div>
+                <Label
+                  htmlFor="workSchedule"
+                  className="text-sm font-medium text-gray-700 mb-2 block"
+                >
+                  Horario de trabajo *
+                </Label>
                 <Input
                   id="workSchedule"
                   placeholder="Ej: Lunes a viernes, 8:00 a 17:00"
@@ -859,315 +1155,375 @@ export default function EditJobPage() {
                       workSchedule: e.target.value,
                     }))
                   }
+                  className="h-12 border-gray-200 focus:border-blue-500"
                 />
               </div>
-            </div>
-          </CardContent>
-        </Card>
+            </CardContent>
+          </Card>
 
-        {/* Skills and Requirements */}
-        <Card>
-          <CardHeader>
-            <CardTitle>Habilidades y Requisitos</CardTitle>
-          </CardHeader>
-          <CardContent className="space-y-6">
-                         {/* Required Skills */}
-             <div>
-               <Label>Habilidades requeridas *</Label>
-               <div className="flex space-x-2 mt-2">
-                 <Input
-                   placeholder="Ej: React, JavaScript, etc."
-                   value={skillInput}
-                   onChange={(e) => setSkillInput(e.target.value)}
-                   onKeyPress={(e) => {
-                     if (e.key === "Enter") {
-                       e.preventDefault();
-                       addToArray("requiredSkills", skillInput, setSkillInput);
-                     }
-                   }}
-                 />
-                 <Button
-                   type="button"
-                   onClick={() =>
-                     addToArray("requiredSkills", skillInput, setSkillInput)
-                   }
-                 >
-                   Agregar
-                 </Button>
-               </div>
-               <div className="flex flex-wrap gap-2 mt-2">
-                 {formData.requiredSkills.map((skill, i) => (
-                   <Badge
-                     key={i}
-                     variant="default"
-                     className="cursor-pointer"
-                     onClick={() => removeFromArray("requiredSkills", i)}
-                   >
-                     {skill} ×
-                   </Badge>
-                 ))}
-               </div>
-             </div>
-
-             {/* Desired Skills */}
-             <div>
-               <Label>Habilidades deseadas</Label>
-               <div className="flex space-x-2 mt-2">
-                 <Input
-                   placeholder="Ej: TypeScript, Docker, etc."
-                   value={skillInput}
-                   onChange={(e) => setSkillInput(e.target.value)}
-                   onKeyPress={(e) => {
-                     if (e.key === "Enter") {
-                       e.preventDefault();
-                       addToArray("desiredSkills", skillInput, setSkillInput);
-                     }
-                   }}
-                 />
-                 <Button
-                   type="button"
-                   onClick={() =>
-                     addToArray("desiredSkills", skillInput, setSkillInput)
-                   }
-                 >
-                   Agregar
-                 </Button>
-               </div>
-               <div className="flex flex-wrap gap-2 mt-2">
-                 {formData.desiredSkills.map((skill, i) => (
-                   <Badge
-                     key={i}
-                     variant="outline"
-                     className="cursor-pointer"
-                     onClick={() => removeFromArray("desiredSkills", i)}
-                   >
-                     {skill} ×
-                   </Badge>
-                 ))}
-               </div>
-             </div>
-
-            {/* Requirements */}
-            <div>
-              <Label>Requisitos</Label>
-              <div className="flex space-x-2 mt-2">
-                <Input
-                  placeholder="Ej: Título universitario en ingeniería"
-                  value={requirementInput}
-                  onChange={(e) => setRequirementInput(e.target.value)}
-                  onKeyPress={(e) => {
-                    if (e.key === "Enter") {
-                      e.preventDefault();
-                      addToArray("requirements", requirementInput, setRequirementInput);
+          {/* Skills and Requirements */}
+          <Card className="bg-white shadow-sm border-0">
+            <CardHeader className="pb-4">
+              <CardTitle className="flex items-center gap-2 text-xl">
+                <Plus className="w-5 h-5 text-green-600" />
+                Habilidades y Requisitos
+              </CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-6">
+              {/* Required Skills */}
+              <div>
+                <Label className="text-sm font-medium text-gray-700 mb-3 block">
+                  Habilidades requeridas *
+                </Label>
+                <div className="flex gap-3">
+                  <Input
+                    placeholder="Ej: React, JavaScript, etc."
+                    value={skillInput}
+                    onChange={(e) => setSkillInput(e.target.value)}
+                    onKeyPress={(e) => {
+                      if (e.key === "Enter") {
+                        e.preventDefault();
+                        addToArray("requiredSkills", skillInput, setSkillInput);
+                      }
+                    }}
+                    className="h-12 border-gray-200 focus:border-blue-500"
+                  />
+                  <Button
+                    type="button"
+                    onClick={() =>
+                      addToArray("requiredSkills", skillInput, setSkillInput)
                     }
-                  }}
-                />
-                <Button
-                  type="button"
-                  onClick={() =>
-                    addToArray("requirements", requirementInput, setRequirementInput)
-                  }
-                >
-                  Agregar
-                </Button>
-              </div>
-              <div className="space-y-1 mt-2">
-                {formData.requirements.map((req, i) => (
-                  <div
-                    key={i}
-                    className="flex items-center justify-between p-2 bg-gray-50 rounded"
+                    className="h-12 px-6"
                   >
-                    <span className="text-sm">{req}</span>
-                    <Button
-                      size="sm"
-                      variant="ghost"
+                    <Plus className="w-4 h-4 mr-2" />
+                    Agregar
+                  </Button>
+                </div>
+                <div className="flex flex-wrap gap-2 mt-3">
+                  {formData.requiredSkills.map((skill, i) => (
+                    <Badge
+                      key={i}
+                      className="cursor-pointer bg-blue-100 text-blue-800 hover:bg-blue-200 transition-colors"
+                      onClick={() => removeFromArray("requiredSkills", i)}
+                    >
+                      {skill} <X className="w-3 h-3 ml-1" />
+                    </Badge>
+                  ))}
+                </div>
+              </div>
+
+              {/* Desired Skills */}
+              <div>
+                <Label className="text-sm font-medium text-gray-700 mb-3 block">
+                  Habilidades deseadas
+                </Label>
+                <div className="flex gap-3">
+                  <Input
+                    placeholder="Ej: TypeScript, Docker, etc."
+                    value={skillInput}
+                    onChange={(e) => setSkillInput(e.target.value)}
+                    onKeyPress={(e) => {
+                      if (e.key === "Enter") {
+                        e.preventDefault();
+                        addToArray("desiredSkills", skillInput, setSkillInput);
+                      }
+                    }}
+                    className="h-12 border-gray-200 focus:border-blue-500"
+                  />
+                  <Button
+                    type="button"
+                    onClick={() =>
+                      addToArray("desiredSkills", skillInput, setSkillInput)
+                    }
+                    className="h-12 px-6"
+                  >
+                    <Plus className="w-4 h-4 mr-2" />
+                    Agregar
+                  </Button>
+                </div>
+                <div className="flex flex-wrap gap-2 mt-3">
+                  {formData.desiredSkills.map((skill, i) => (
+                    <Badge
+                      key={i}
+                      variant="outline"
+                      className="cursor-pointer border-green-200 text-green-800 hover:bg-green-50 transition-colors"
+                      onClick={() => removeFromArray("desiredSkills", i)}
+                    >
+                      {skill} <X className="w-3 h-3 ml-1" />
+                    </Badge>
+                  ))}
+                </div>
+              </div>
+
+              {/* Requirements */}
+              <div>
+                <Label className="text-sm font-medium text-gray-700 mb-3 block">
+                  Requisitos
+                </Label>
+                <div className="flex gap-3">
+                  <Input
+                    placeholder="Ej: Título universitario en ingeniería"
+                    value={requirementInput}
+                    onChange={(e) => setRequirementInput(e.target.value)}
+                    onKeyPress={(e) => {
+                      if (e.key === "Enter") {
+                        e.preventDefault();
+                        addToArray(
+                          "requirements",
+                          requirementInput,
+                          setRequirementInput
+                        );
+                      }
+                    }}
+                    className="h-12 border-gray-200 focus:border-blue-500"
+                  />
+                  <Button
+                    type="button"
+                    onClick={() =>
+                      addToArray(
+                        "requirements",
+                        requirementInput,
+                        setRequirementInput
+                      )
+                    }
+                    className="h-12 px-6"
+                  >
+                    <Plus className="w-4 h-4 mr-2" />
+                    Agregar
+                  </Button>
+                </div>
+                <div className="flex flex-wrap gap-2 mt-3">
+                  {formData.requirements.map((req, i) => (
+                    <Badge
+                      key={i}
+                      variant="outline"
+                      className="cursor-pointer border-orange-200 text-orange-800 hover:bg-orange-50 transition-colors"
                       onClick={() => removeFromArray("requirements", i)}
                     >
-                      ×
-                    </Button>
-                  </div>
-                ))}
+                      {req} <X className="w-3 h-3 ml-1" />
+                    </Badge>
+                  ))}
+                </div>
               </div>
-            </div>
 
-            {/* Responsibilities */}
-            <div>
-              <Label>Responsabilidades</Label>
-              <div className="flex space-x-2 mt-2">
-                <Input
-                  placeholder="Ej: Desarrollar interfaces de usuario"
-                  value={responsibilityInput}
-                  onChange={(e) => setResponsibilityInput(e.target.value)}
-                  onKeyPress={(e) => {
-                    if (e.key === "Enter") {
-                      e.preventDefault();
-                      addToArray("responsibilities", responsibilityInput, setResponsibilityInput);
+              {/* Responsibilities */}
+              <div>
+                <Label className="text-sm font-medium text-gray-700 mb-3 block">
+                  Responsabilidades
+                </Label>
+                <div className="flex gap-3">
+                  <Input
+                    placeholder="Ej: Desarrollar interfaces de usuario"
+                    value={responsibilityInput}
+                    onChange={(e) => setResponsibilityInput(e.target.value)}
+                    onKeyPress={(e) => {
+                      if (e.key === "Enter") {
+                        e.preventDefault();
+                        addToArray(
+                          "responsibilities",
+                          responsibilityInput,
+                          setResponsibilityInput
+                        );
+                      }
+                    }}
+                    className="h-12 border-gray-200 focus:border-blue-500"
+                  />
+                  <Button
+                    type="button"
+                    onClick={() =>
+                      addToArray(
+                        "responsibilities",
+                        responsibilityInput,
+                        setResponsibilityInput
+                      )
                     }
-                  }}
-                />
-                <Button
-                  type="button"
-                  onClick={() =>
-                    addToArray("responsibilities", responsibilityInput, setResponsibilityInput)
-                  }
-                >
-                  Agregar
-                </Button>
-              </div>
-              <div className="space-y-1 mt-2">
-                {formData.responsibilities.map((resp, i) => (
-                  <div
-                    key={i}
-                    className="flex items-center justify-between p-2 bg-gray-50 rounded"
+                    className="h-12 px-6"
                   >
-                    <span className="text-sm">{resp}</span>
-                    <Button
-                      size="sm"
-                      variant="ghost"
+                    <Plus className="w-4 h-4 mr-2" />
+                    Agregar
+                  </Button>
+                </div>
+                <div className="flex flex-wrap gap-2 mt-3">
+                  {formData.responsibilities.map((resp, i) => (
+                    <Badge
+                      key={i}
+                      variant="outline"
+                      className="cursor-pointer border-indigo-200 text-indigo-800 hover:bg-indigo-50 transition-colors"
                       onClick={() => removeFromArray("responsibilities", i)}
                     >
-                      ×
-                    </Button>
-                  </div>
-                ))}
+                      {resp} <X className="w-3 h-3 ml-1" />
+                    </Badge>
+                  ))}
+                </div>
               </div>
-            </div>
 
-            {/* Benefits */}
-            <div>
-              <Label>Beneficios</Label>
-              <div className="flex space-x-2 mt-2">
-                <Input
-                  placeholder="Ej: Seguro médico, capacitaciones"
-                  value={benefitInput}
-                  onChange={(e) => setBenefitInput(e.target.value)}
-                  onKeyPress={(e) => {
-                    if (e.key === "Enter") {
-                      e.preventDefault();
-                      addToArray("benefits", benefitInput, setBenefitInput);
+              {/* Benefits */}
+              <div>
+                <Label className="text-sm font-medium text-gray-700 mb-3 block">
+                  Beneficios
+                </Label>
+                <div className="flex gap-3">
+                  <Input
+                    placeholder="Ej: Seguro médico, capacitaciones"
+                    value={benefitInput}
+                    onChange={(e) => setBenefitInput(e.target.value)}
+                    onKeyPress={(e) => {
+                      if (e.key === "Enter") {
+                        e.preventDefault();
+                        addToArray("benefits", benefitInput, setBenefitInput);
+                      }
+                    }}
+                    className="h-12 border-gray-200 focus:border-blue-500"
+                  />
+                  <Button
+                    type="button"
+                    onClick={() =>
+                      addToArray("benefits", benefitInput, setBenefitInput)
                     }
-                  }}
-                />
-                <Button
-                  type="button"
-                  onClick={() =>
-                    addToArray("benefits", benefitInput, setBenefitInput)
-                  }
-                >
-                  Agregar
-                </Button>
-              </div>
-              <div className="flex flex-wrap gap-2 mt-2">
-                {formData.benefits.map((benefit, i) => (
-                  <Badge
-                    key={i}
-                    variant="outline"
-                    className="cursor-pointer"
-                    onClick={() => removeFromArray("benefits", i)}
+                    className="h-12 px-6"
                   >
-                    {benefit} ×
-                  </Badge>
-                ))}
+                    <Plus className="w-4 h-4 mr-2" />
+                    Agregar
+                  </Button>
+                </div>
+                <div className="flex flex-wrap gap-2 mt-3">
+                  {formData.benefits.map((benefit, i) => (
+                    <Badge
+                      key={i}
+                      variant="outline"
+                      className="cursor-pointer border-purple-200 text-purple-800 hover:bg-purple-50 transition-colors"
+                      onClick={() => removeFromArray("benefits", i)}
+                    >
+                      {benefit} <X className="w-3 h-3 ml-1" />
+                    </Badge>
+                  ))}
+                </div>
               </div>
-            </div>
-          </CardContent>
-        </Card>
+            </CardContent>
+          </Card>
 
-                 
-
-        {/* Geographic Location */}
-        <Card>
-          <CardHeader>
-            <CardTitle>Ubicación Geográfica</CardTitle>
-          </CardHeader>
-          <CardContent className="space-y-2">
-            <Label>Selecciona en el mapa la ubicación del empleo</Label>
-                         <MapPicker
-               initialCoordinates={formData.coordinates}
-               onChange={(coords) =>
-                 setFormData((prev) => ({ ...prev, coordinates: coords }))
-               }
-             />
-            {formData.coordinates && (
-              <p className="text-sm text-muted-foreground mt-2">
-                Latitud: {formData.coordinates[0]}, Longitud: {formData.coordinates[1]}
-              </p>
-            )}
-          </CardContent>
-        </Card>
-
-                 {/* Job Images */}
-         <Card>
-           <CardHeader>
-             <CardTitle>Imágenes del Empleo</CardTitle>
-             <p className="text-sm text-muted-foreground">
-               Nota: Las imágenes no estaban disponibles en empleos creados anteriormente. 
-               Puedes agregar imágenes ahora y se guardarán en futuras actualizaciones.
-             </p>
-           </CardHeader>
-          <CardContent className="space-y-4">
-            <div>
-              <Label>Selecciona una o varias imágenes</Label>
-              <div className="flex items-center space-x-2 mt-2">
-                <Input
-                  ref={fileInputRef}
-                  type="file"
-                  accept="image/*"
-                  multiple
-                  className="hidden"
-                  onChange={(e) => handleFiles(e.target.files)}
+          {/* Geographic Location */}
+          <Card className="bg-white shadow-sm border-0">
+            <CardHeader className="pb-4">
+              <CardTitle className="flex items-center gap-2 text-xl">
+                <MapPin className="w-5 h-5 text-red-600" />
+                Ubicación Geográfica
+              </CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              <Label className="text-sm font-medium text-gray-700">
+                Selecciona en el mapa la ubicación del empleo
+              </Label>
+              <div className="border border-gray-200 rounded-lg overflow-hidden">
+                <MapPicker
+                  initialCoordinates={formData.coordinates}
+                  onChange={(coords) =>
+                    setFormData((prev) => ({ ...prev, coordinates: coords }))
+                  }
                 />
-                <Button
-                  variant="outline"
-                  onClick={() => fileInputRef.current?.click()}
-                >
-                  <ImageIcon className="w-4 h-4 mr-2" />
-                  Subir imágenes
-                </Button>
               </div>
-            </div>
+              {formData.coordinates && (
+                <p className="text-sm text-gray-600 mt-2">
+                  Latitud: {formData.coordinates[0]}, Longitud:{" "}
+                  {formData.coordinates[1]}
+                </p>
+              )}
+            </CardContent>
+          </Card>
 
-                         {imageUrls.length > 0 && (
-               <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
-                 {imageUrls.map((src, index) => (
-                   <div
-                     key={index}
-                     className="relative group rounded-lg overflow-hidden border"
-                   >
-                     <img
-                       src={src}
-                       alt={`imagen-${index}`}
-                       className="object-cover w-full h-32"
-                     />
-                     <Button
-                       size="icon"
-                       variant="destructive"
-                       className="absolute top-2 right-2 opacity-0 group-hover:opacity-100 transition-opacity"
-                       onClick={() => removeImage(index)}
-                     >
-                       <Trash className="w-4 h-4" />
-                     </Button>
-                   </div>
-                 ))}
-               </div>
-             )}
-          </CardContent>
-        </Card>
+          {/* Job Images */}
+          <Card className="bg-white shadow-sm border-0">
+            <CardHeader className="pb-4">
+              <CardTitle className="flex items-center gap-2 text-xl">
+                <ImageIcon className="w-5 h-5 text-purple-600" />
+                Imágenes del Empleo
+              </CardTitle>
+              <p className="text-sm text-gray-600">
+                Nota: Las imágenes no estaban disponibles en empleos creados
+                anteriormente. Puedes agregar imágenes ahora y se guardarán en
+                futuras actualizaciones.
+              </p>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              <div>
+                <Label className="text-sm font-medium text-gray-700 mb-2 block">
+                  Selecciona una o varias imágenes
+                </Label>
+                <div className="flex items-center gap-3">
+                  <Input
+                    ref={fileInputRef}
+                    type="file"
+                    accept="image/*"
+                    multiple
+                    className="hidden"
+                    onChange={(e) => handleFiles(e.target.files)}
+                  />
+                  <Button
+                    variant="outline"
+                    onClick={() => fileInputRef.current?.click()}
+                    className="h-12 px-6"
+                  >
+                    <ImageIcon className="w-4 h-4 mr-2" />
+                    Subir imágenes
+                  </Button>
+                </div>
+              </div>
 
-        {/* Actions */}
-        <div className="flex justify-end space-x-4 pb-8">
-          <Button
-            variant="outline"
-            onClick={() => handleSubmit("DRAFT")}
-            disabled={saving}
-          >
-            <Save className="w-4 h-4 mr-2" />
-            Guardar borrador
-          </Button>
-          <Button onClick={() => handleSubmit("ACTIVE")} disabled={saving}>
-            <Save className="w-4 h-4 mr-2" />
-            {saving ? "Guardando..." : "Actualizar empleo"}
-          </Button>
+              {imageUrls.length > 0 && (
+                <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
+                  {imageUrls.map((src, index) => (
+                    <div
+                      key={index}
+                      className="relative group rounded-lg overflow-hidden border border-gray-200"
+                    >
+                      <img
+                        src={src}
+                        alt={`imagen-${index}`}
+                        className="object-cover w-full h-32"
+                      />
+                      <Button
+                        size="icon"
+                        variant="destructive"
+                        className="absolute top-2 right-2 opacity-0 group-hover:opacity-100 transition-opacity h-8 w-8"
+                        onClick={() => removeImage(index)}
+                      >
+                        <Trash className="w-4 h-4" />
+                      </Button>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </CardContent>
+          </Card>
+
+          {/* Actions */}
+          <div className="flex flex-col sm:flex-row justify-end gap-4 pb-8">
+            <Button
+              variant="outline"
+              onClick={() => handleSubmit("DRAFT")}
+              disabled={saving}
+              className="h-12 px-8"
+            >
+              {saving ? (
+                <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+              ) : (
+                <Save className="w-4 h-4 mr-2" />
+              )}
+              Guardar borrador
+            </Button>
+            <Button
+              onClick={() => handleSubmit("ACTIVE")}
+              disabled={saving}
+              className="h-12 px-8"
+            >
+              {saving ? (
+                <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+              ) : (
+                <CheckCircle className="w-4 h-4 mr-2" />
+              )}
+              {saving ? "Guardando..." : "Actualizar empleo"}
+            </Button>
+          </div>
         </div>
       </div>
     </div>

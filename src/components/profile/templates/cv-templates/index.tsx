@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -27,6 +27,8 @@ import {
   Globe,
   Calendar,
   Code,
+  Eye,
+  Loader2,
 } from "lucide-react";
 import { useCV } from "@/hooks/useCV";
 import { CVData } from "@/hooks/useCV";
@@ -37,6 +39,7 @@ import {
   View,
   StyleSheet,
   pdf,
+  PDFViewer,
 } from "@react-pdf/renderer";
 
 // Estilos para el PDF del CV - Template Modern Professional
@@ -510,22 +513,29 @@ const ModernProfessionalPDF = ({ cvData }: { cvData: CVData }) => (
           {cvData.personalInfo?.firstName} {cvData.personalInfo?.lastName}
         </Text>
         <Text style={modernCVStyles.title}>
-          {cvData.targetPosition || "Desarrollador Frontend"}
+          {cvData.jobTitle || cvData.targetPosition || "Profesional"}
         </Text>
         <View style={modernCVStyles.contactGrid}>
-          <Text style={modernCVStyles.contactItem}>
-            {cvData.personalInfo?.email}
-          </Text>
-          <Text style={modernCVStyles.contactItem}>
-            {cvData.personalInfo?.phone}
-          </Text>
-          <Text style={modernCVStyles.contactItem}>
-            {cvData.personalInfo?.municipality},{" "}
-            {cvData.personalInfo?.department}
-          </Text>
-          <Text style={modernCVStyles.contactItem}>
-            {cvData.personalInfo?.country}
-          </Text>
+          {cvData.personalInfo?.email && (
+            <Text style={modernCVStyles.contactItem}>
+              {cvData.personalInfo.email}
+            </Text>
+          )}
+          {cvData.personalInfo?.phone && (
+            <Text style={modernCVStyles.contactItem}>
+              {cvData.personalInfo.phone}
+            </Text>
+          )}
+          {[cvData.personalInfo?.addressLine, cvData.personalInfo?.city, cvData.personalInfo?.municipality, cvData.personalInfo?.department].filter(Boolean).length > 0 && (
+            <Text style={modernCVStyles.contactItem}>
+              {[cvData.personalInfo?.addressLine, cvData.personalInfo?.city, cvData.personalInfo?.municipality, cvData.personalInfo?.department].filter(Boolean).join(', ')}
+            </Text>
+          )}
+          {cvData.personalInfo?.country && (
+            <Text style={modernCVStyles.contactItem}>
+              {cvData.personalInfo.country}
+            </Text>
+          )}
         </View>
       </View>
 
@@ -539,7 +549,8 @@ const ModernProfessionalPDF = ({ cvData }: { cvData: CVData }) => (
             {/* Current Education */}
             <View style={modernCVStyles.educationItem}>
               <Text style={modernCVStyles.institution}>
-                {cvData.education?.currentInstitution}
+                {cvData.education?.universityName ||
+                  cvData.education?.currentInstitution}
               </Text>
               <Text style={modernCVStyles.degree}>
                 {cvData.education?.currentDegree}
@@ -599,30 +610,34 @@ const ModernProfessionalPDF = ({ cvData }: { cvData: CVData }) => (
           </View>
 
           {/* Skills */}
-          <View style={modernCVStyles.section}>
-            <Text style={modernCVStyles.sectionTitle}>Habilidades</Text>
-            <View style={modernCVStyles.skillsContainer}>
-              {cvData.skills?.map((skill, index) => (
-                <Text key={index} style={modernCVStyles.skill}>
-                  {skill.name}
-                  {skill.experienceLevel && ` (${skill.experienceLevel})`}
-                </Text>
-              ))}
+          {cvData.skills && cvData.skills.length > 0 && (
+            <View style={modernCVStyles.section}>
+              <Text style={modernCVStyles.sectionTitle}>Habilidades</Text>
+              <View style={modernCVStyles.skillsContainer}>
+                {cvData.skills.map((skill, index) => (
+                  <Text key={index} style={modernCVStyles.skill}>
+                    {skill.name}
+                    {skill.experienceLevel && ` (${skill.experienceLevel})`}
+                  </Text>
+                ))}
+              </View>
             </View>
-          </View>
+          )}
 
           {/* Languages */}
-          <View style={modernCVStyles.section}>
-            <Text style={modernCVStyles.sectionTitle}>Idiomas</Text>
-            {cvData.languages?.map((language, index) => (
-              <View key={index} style={modernCVStyles.languagesItem}>
-                <Text style={modernCVStyles.languageName}>{language.name}</Text>
-                <Text style={modernCVStyles.languageLevel}>
-                  {language.proficiency}
-                </Text>
-              </View>
-            ))}
-          </View>
+          {cvData.languages && cvData.languages.length > 0 && (
+            <View style={modernCVStyles.section}>
+              <Text style={modernCVStyles.sectionTitle}>Idiomas</Text>
+              {cvData.languages.map((language, index) => (
+                <View key={index} style={modernCVStyles.languagesItem}>
+                  <Text style={modernCVStyles.languageName}>{language.name}</Text>
+                  <Text style={modernCVStyles.languageLevel}>
+                    {language.proficiency}
+                  </Text>
+                </View>
+              ))}
+            </View>
+          )}
         </View>
 
         {/* Right Column */}
@@ -1071,7 +1086,7 @@ function ModernProfessionalTemplate({
   isEditing?: boolean;
 }) {
   return (
-    <div className="bg-white shadow-lg max-w-4xl mx-auto">
+    <div className="bg-white w-full" style={{ minWidth: '800px', maxWidth: '1000px', margin: '0 auto' }}>
       {/* Header */}
       <div className="bg-gradient-to-r from-blue-600 to-blue-800 text-white p-8">
         <div className="flex items-center gap-6">
@@ -1089,9 +1104,11 @@ function ModernProfessionalTemplate({
               {cvData.personalInfo?.firstName} {cvData.personalInfo?.lastName}
             </h1>
             <p className="text-xl text-blue-100 mb-4">
-              {cvData.targetPosition || "Desarrollador Frontend"}
+              {cvData.jobTitle ||
+                cvData.targetPosition ||
+                "Desarrollador Frontend"}
             </p>
-            <div className="grid grid-cols-2 gap-4 text-sm">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-3 text-sm">
               <div className="flex items-center gap-2">
                 <Mail className="h-4 w-4" />
                 {cvData.personalInfo?.email}
@@ -1102,8 +1119,13 @@ function ModernProfessionalTemplate({
               </div>
               <div className="flex items-center gap-2">
                 <MapPin className="h-4 w-4" />
-                {cvData.personalInfo?.municipality},{" "}
-                {cvData.personalInfo?.department}
+                {cvData.personalInfo?.addressLine ||
+                  cvData.personalInfo?.address}
+                {cvData.personalInfo?.city && `, ${cvData.personalInfo.city}`}
+                {cvData.personalInfo?.municipality &&
+                  `, ${cvData.personalInfo.municipality}`}
+                {cvData.personalInfo?.department &&
+                  `, ${cvData.personalInfo.department}`}
               </div>
               <div className="flex items-center gap-2">
                 <Globe className="h-4 w-4" />
@@ -1114,10 +1136,10 @@ function ModernProfessionalTemplate({
         </div>
       </div>
 
-      <div className="p-8">
-        <div className="grid grid-cols-3 gap-8">
+      <div className="p-6">
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
           {/* Left Column */}
-          <div className="col-span-1 space-y-6">
+          <div className="lg:col-span-1 space-y-4">
             {/* Education */}
             <div>
               <h3 className="text-lg font-semibold text-blue-800 mb-3 flex items-center gap-2">
@@ -1188,7 +1210,7 @@ function ModernProfessionalTemplate({
 
             {/* Skills */}
             <div>
-              <h3 className="text-lg font-semibold text-blue-800 mb-3">
+              <h3 className="text-base font-semibold text-blue-800 mb-2">
                 Habilidades
               </h3>
               <div className="flex flex-wrap gap-2">
@@ -1211,7 +1233,7 @@ function ModernProfessionalTemplate({
 
             {/* Languages */}
             <div>
-              <h3 className="text-lg font-semibold text-blue-800 mb-3">
+              <h3 className="text-base font-semibold text-blue-800 mb-2">
                 Idiomas
               </h3>
               <div className="space-y-2">
@@ -1231,7 +1253,7 @@ function ModernProfessionalTemplate({
 
             {/* Social Links */}
             <div>
-              <h3 className="text-lg font-semibold text-blue-800 mb-3">
+              <h3 className="text-base font-semibold text-blue-800 mb-2">
                 Enlaces
               </h3>
               <div className="space-y-2">
@@ -1253,7 +1275,7 @@ function ModernProfessionalTemplate({
 
             {/* Interests */}
             <div>
-              <h3 className="text-lg font-semibold text-blue-800 mb-3">
+              <h3 className="text-base font-semibold text-blue-800 mb-2">
                 Intereses
               </h3>
               <div className="flex flex-wrap gap-2">
@@ -1267,10 +1289,10 @@ function ModernProfessionalTemplate({
           </div>
 
           {/* Right Column */}
-          <div className="col-span-2 space-y-6">
+          <div className="lg:col-span-2 space-y-4">
             {/* Professional Summary */}
             <div>
-              <h3 className="text-lg font-semibold text-blue-800 mb-3">
+              <h3 className="text-base font-semibold text-blue-800 mb-2">
                 Resumen Profesional
               </h3>
               <p className="text-gray-700 leading-relaxed">
@@ -1386,8 +1408,8 @@ function CreativePortfolioTemplate({
   isEditing?: boolean;
 }) {
   return (
-    <div className="bg-gradient-to-br from-purple-50 to-pink-50 min-h-screen">
-      <div className="max-w-4xl mx-auto p-8">
+    <div className="bg-gradient-to-br from-purple-50 to-pink-50 w-full" style={{ minWidth: '800px', maxWidth: '1000px', margin: '0 auto', minHeight: 'auto' }}>
+      <div className="p-6">
         {/* Header */}
         <div className="bg-white rounded-2xl shadow-xl p-8 mb-8">
           <div className="text-center">
@@ -2606,14 +2628,97 @@ function ExecutivePDF({ cvData }: { cvData: CVData }) {
 }
 
 // Main CV Template Selector
+// PDF Preview Component
+function PDFPreview({ selectedTemplate, cvData }: { selectedTemplate: string; cvData: CVData }) {
+  const [pdfUrl, setPdfUrl] = useState<string | null>(null);
+  const [loading, setLoading] = useState(false);
+
+  useEffect(() => {
+    generatePdfPreview();
+  }, [selectedTemplate, cvData]);
+
+  const generatePdfPreview = async () => {
+    if (!cvData) return;
+    
+    // Ensure minimum required data exists
+    if (!cvData.personalInfo?.firstName || !cvData.personalInfo?.lastName) {
+      return;
+    }
+    
+    setLoading(true);
+    try {
+      let pdfComponent;
+      switch (selectedTemplate) {
+        case "modern":
+          pdfComponent = <ModernProfessionalPDF cvData={cvData} />;
+          break;
+        case "creative":
+          pdfComponent = <CreativePortfolioPDF cvData={cvData} />;
+          break;
+        case "minimalist":
+          pdfComponent = <MinimalistPDF cvData={cvData} />;
+          break;
+        case "modern-tech":
+          pdfComponent = <ModernTechPDF cvData={cvData} />;
+          break;
+        case "executive":
+          pdfComponent = <ExecutivePDF cvData={cvData} />;
+          break;
+        default:
+          pdfComponent = <ModernProfessionalPDF cvData={cvData} />;
+      }
+
+      const blob = await pdf(pdfComponent).toBlob();
+      const url = URL.createObjectURL(blob);
+      setPdfUrl(url);
+    } catch (error) {
+      console.error("Error generating PDF preview:", error);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  if (loading) {
+    return (
+      <div className="flex items-center justify-center h-[600px] bg-gray-50">
+        <div className="text-center">
+          <Loader2 className="h-8 w-8 animate-spin text-blue-600 mx-auto mb-4" />
+          <p className="text-gray-600">Generando vista previa...</p>
+        </div>
+      </div>
+    );
+  }
+
+  if (!pdfUrl) {
+    return (
+      <div className="flex items-center justify-center h-[600px] bg-gray-50">
+        <p className="text-gray-600">Error al generar la vista previa</p>
+      </div>
+    );
+  }
+
+  return (
+    <div className="w-full h-[600px] bg-white border rounded-lg overflow-hidden">
+      <iframe
+        src={pdfUrl}
+        width="100%"
+        height="100%"
+        style={{ border: 'none' }}
+        title="CV Preview"
+      />
+    </div>
+  );
+}
+
 export function CVTemplateSelector() {
   const { cvData, loading, error } = useCV();
   const [selectedTemplate, setSelectedTemplate] = useState("modern");
-  const [isEditing, setIsEditing] = useState(false);
+  const [isGenerating, setIsGenerating] = useState(false);
 
   const handleDownloadPDF = async () => {
     if (!cvData) return;
 
+    setIsGenerating(true);
     try {
       let pdfComponent;
       switch (selectedTemplate) {
@@ -2640,16 +2745,64 @@ export function CVTemplateSelector() {
       const url = URL.createObjectURL(blob);
       const link = document.createElement("a");
       link.href = url;
-      link.download = `CV_${cvData.personalInfo?.firstName}_${cvData.personalInfo?.lastName}_${selectedTemplate}.pdf`;
+      link.download = `CV_${cvData.personalInfo?.firstName || 'Usuario'}_${cvData.personalInfo?.lastName || 'CEMSE'}_${selectedTemplate}.pdf`;
       link.click();
       URL.revokeObjectURL(url);
     } catch (error) {
       console.error("Error generating PDF:", error);
+      alert("Error al generar el PDF. Por favor, intenta de nuevo.");
+    } finally {
+      setIsGenerating(false);
     }
   };
 
-  const handlePrint = () => {
-    window.print();
+  const handlePrint = async () => {
+    if (!cvData) return;
+
+    setIsGenerating(true);
+    try {
+      let pdfComponent;
+      switch (selectedTemplate) {
+        case "modern":
+          pdfComponent = <ModernProfessionalPDF cvData={cvData} />;
+          break;
+        case "creative":
+          pdfComponent = <CreativePortfolioPDF cvData={cvData} />;
+          break;
+        case "minimalist":
+          pdfComponent = <MinimalistPDF cvData={cvData} />;
+          break;
+        case "modern-tech":
+          pdfComponent = <ModernTechPDF cvData={cvData} />;
+          break;
+        case "executive":
+          pdfComponent = <ExecutivePDF cvData={cvData} />;
+          break;
+        default:
+          pdfComponent = <ModernProfessionalPDF cvData={cvData} />;
+      }
+
+      const blob = await pdf(pdfComponent).toBlob();
+      const url = URL.createObjectURL(blob);
+      
+      // Open in new window for printing
+      const printWindow = window.open(url, '_blank');
+      if (printWindow) {
+        printWindow.onload = () => {
+          printWindow.print();
+        };
+      }
+      
+      // Clean up
+      setTimeout(() => {
+        URL.revokeObjectURL(url);
+      }, 1000);
+    } catch (error) {
+      console.error("Error generating PDF for printing:", error);
+      alert("Error al preparar la impresión. Por favor, intenta de nuevo.");
+    } finally {
+      setIsGenerating(false);
+    }
   };
 
   if (loading) {
@@ -2663,36 +2816,20 @@ export function CVTemplateSelector() {
     );
   }
 
-  if (error || !cvData) {
+  if (error || !cvData || !cvData.personalInfo?.firstName || !cvData.personalInfo?.lastName) {
     return (
       <div className="text-center py-8">
-        <p className="text-red-600">Error al cargar el CV</p>
+        <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-6 max-w-md mx-auto">
+          <div className="flex items-center justify-center w-12 h-12 bg-yellow-100 rounded-full mx-auto mb-4">
+            <User className="w-6 h-6 text-yellow-600" />
+          </div>
+          <h3 className="text-lg font-semibold text-yellow-800 mb-2">Completa tu información</h3>
+          <p className="text-yellow-700 mb-3">Para generar tu CV necesitamos al menos tu nombre y apellido.</p>
+          <p className="text-yellow-600 text-sm">Ve a la pestaña "Editar Datos" para completar tu información personal.</p>
+        </div>
       </div>
     );
   }
-
-  const renderTemplate = () => {
-    switch (selectedTemplate) {
-      case "modern":
-        return (
-          <ModernProfessionalTemplate cvData={cvData} isEditing={isEditing} />
-        );
-      case "creative":
-        return (
-          <CreativePortfolioTemplate cvData={cvData} isEditing={isEditing} />
-        );
-      case "minimalist":
-        return <MinimalistTemplate cvData={cvData} isEditing={isEditing} />;
-      case "modern-tech":
-        return <ModernTechTemplate cvData={cvData} isEditing={isEditing} />;
-      case "executive":
-        return <ExecutiveTemplate cvData={cvData} isEditing={isEditing} />;
-      default:
-        return (
-          <ModernProfessionalTemplate cvData={cvData} isEditing={isEditing} />
-        );
-    }
-  };
 
   return (
     <div className="space-y-6">
@@ -2723,30 +2860,146 @@ export function CVTemplateSelector() {
           <div className="flex items-center justify-between">
             <CardTitle>Vista Previa del CV</CardTitle>
             <div className="flex gap-2">
-              <Button
-                variant="outline"
-                onClick={() => setIsEditing(!isEditing)}
+              <Button 
+                variant="outline" 
+                onClick={handlePrint} 
+                data-cv-print
+                disabled={isGenerating}
               >
-                <Edit3 className="h-4 w-4 mr-2" />
-                {isEditing ? "Vista Previa" : "Editar"}
+                {isGenerating ? (
+                  <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                ) : (
+                  <Printer className="h-4 w-4 mr-2" />
+                )}
+                {isGenerating ? "Preparando..." : "Imprimir"}
               </Button>
-              <Button variant="outline" onClick={handlePrint}>
-                <Printer className="h-4 w-4 mr-2" />
-                Imprimir
-              </Button>
-              <Button onClick={handleDownloadPDF} data-cv-download>
-                <Download className="h-4 w-4 mr-2" />
-                Descargar PDF
+              <Button 
+                onClick={handleDownloadPDF} 
+                data-cv-download
+                disabled={isGenerating}
+              >
+                {isGenerating ? (
+                  <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                ) : (
+                  <Download className="h-4 w-4 mr-2" />
+                )}
+                {isGenerating ? "Generando..." : "Descargar PDF"}
               </Button>
             </div>
           </div>
         </CardHeader>
-        <CardContent>
-          <div className="border rounded-lg overflow-hidden">
-            {renderTemplate()}
-          </div>
+        <CardContent className="p-4">
+          <PDFPreview selectedTemplate={selectedTemplate} cvData={cvData} />
         </CardContent>
       </Card>
+      
+      {/* Enhanced Print Styles for CV Templates */}
+      <style jsx global>{`
+        @media print {
+          /* Hide non-essential elements when printing */
+          .no-print,
+          button:not([data-cv-print]),
+          [role="tablist"],
+          .card-header,
+          .print\\:hidden {
+            display: none !important;
+          }
+
+          /* Ensure CV template takes full page */
+          body.cv-printing .cv-template,
+          body.cv-printing .print-content,
+          body.cv-printing [class*="Template"] {
+            display: block !important;
+            width: 100% !important;
+            max-width: none !important;
+            margin: 0 !important;
+            padding: 20pt !important;
+            background: white !important;
+            box-shadow: none !important;
+            border: none !important;
+          }
+
+          /* Page settings */
+          @page {
+            margin: 1.5cm;
+            size: A4;
+          }
+
+          /* Typography for print */
+          body.cv-printing {
+            font-size: 10pt !important;
+            line-height: 1.3 !important;
+            color: #000 !important;
+          }
+
+          /* Headers and sections */
+          body.cv-printing h1 {
+            font-size: 18pt !important;
+            font-weight: bold !important;
+            margin-bottom: 8pt !important;
+            page-break-after: avoid;
+          }
+
+          body.cv-printing h2,
+          body.cv-printing h3 {
+            font-size: 12pt !important;
+            font-weight: bold !important;
+            margin-bottom: 6pt !important;
+            page-break-after: avoid;
+          }
+
+          /* Grid layouts */
+          body.cv-printing .grid {
+            display: grid !important;
+          }
+
+          body.cv-printing .grid-cols-1 {
+            grid-template-columns: 1fr !important;
+          }
+
+          body.cv-printing .grid-cols-3 {
+            grid-template-columns: 1fr 2fr 1fr !important;
+          }
+
+          body.cv-printing .lg\\:grid-cols-3 {
+            grid-template-columns: 1fr 2fr !important;
+          }
+
+          /* Spacing */
+          body.cv-printing .space-y-4 > * + * {
+            margin-top: 8pt !important;
+          }
+
+          body.cv-printing .space-y-6 > * + * {
+            margin-top: 12pt !important;
+          }
+
+          /* Colors and backgrounds */
+          body.cv-printing .bg-gradient-to-r {
+            background: #1e40af !important;
+            color: white !important;
+          }
+
+          body.cv-printing .text-blue-800 {
+            color: #1e40af !important;
+          }
+
+          /* Remove overflow issues */
+          body.cv-printing * {
+            overflow: visible !important;
+          }
+
+          /* Ensure content is visible */
+          body.cv-printing .overflow-x-auto {
+            overflow: visible !important;
+          }
+
+          /* Card content */
+          body.cv-printing .card-content {
+            padding: 0 !important;
+          }
+        }
+      `}</style>
     </div>
   );
 }

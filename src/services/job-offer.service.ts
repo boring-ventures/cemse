@@ -1,5 +1,11 @@
-import { apiCall, getAuthHeaders, API_BASE } from '@/lib/api';
-import { JobOffer, JobStatus, ContractType, WorkModality, ExperienceLevel } from '@/types/jobs';
+import { apiCall, getAuthHeaders, API_BASE } from "@/lib/api";
+import {
+  JobOffer,
+  JobStatus,
+  ContractType,
+  WorkModality,
+  ExperienceLevel,
+} from "@/types/jobs";
 
 export interface CreateJobOfferRequest {
   title: string;
@@ -67,20 +73,28 @@ export class JobOfferService {
   /**
    * Create a new job offer (Companies only)
    */
-  static async createJobOffer(data: CreateJobOfferRequest): Promise<JobOfferResponse> {
+  static async createJobOffer(
+    data: CreateJobOfferRequest
+  ): Promise<JobOfferResponse> {
     try {
-      console.log('🏢 JobOfferService.createJobOffer - Creating job offer:', data);
+      console.log(
+        "🏢 JobOfferService.createJobOffer - Creating job offer:",
+        data
+      );
 
-      const response = await apiCall('/joboffer', {
-        method: 'POST',
+      const response = await apiCall("/joboffer", {
+        method: "POST",
         headers: getAuthHeaders(),
-        body: JSON.stringify(data)
+        body: JSON.stringify(data),
       });
 
-      console.log('✅ JobOfferService.createJobOffer - Job offer created:', response);
+      console.log(
+        "✅ JobOfferService.createJobOffer - Job offer created:",
+        response
+      );
       return response;
     } catch (error) {
-      console.error('❌ JobOfferService.createJobOffer - Error:', error);
+      console.error("❌ JobOfferService.createJobOffer - Error:", error);
       throw error;
     }
   }
@@ -88,9 +102,17 @@ export class JobOfferService {
   /**
    * Get all job offers for the company (Companies only)
    */
-  static async getCompanyJobOffers(companyId: string, status?: string): Promise<JobOfferListResponse[]> {
+  static async getCompanyJobOffers(
+    companyId: string,
+    status?: string
+  ): Promise<JobOfferListResponse[]> {
     try {
-      console.log('🏢 JobOfferService.getCompanyJobOffers - Fetching company job offers for:', companyId, 'status:', status);
+      console.log(
+        "🏢 JobOfferService.getCompanyJobOffers - Fetching company job offers for:",
+        companyId,
+        "status:",
+        status
+      );
 
       let url = `/joboffer?companyId=${companyId}`;
       if (status) {
@@ -98,14 +120,17 @@ export class JobOfferService {
       }
 
       const response = await apiCall(url, {
-        method: 'GET',
-        headers: getAuthHeaders()
+        method: "GET",
+        headers: getAuthHeaders(),
       });
 
-      console.log('✅ JobOfferService.getCompanyJobOffers - Job offers fetched:', response);
+      console.log(
+        "✅ JobOfferService.getCompanyJobOffers - Job offers fetched:",
+        response
+      );
       return response;
     } catch (error) {
-      console.error('❌ JobOfferService.getCompanyJobOffers - Error:', error);
+      console.error("❌ JobOfferService.getCompanyJobOffers - Error:", error);
       throw error;
     }
   }
@@ -115,17 +140,22 @@ export class JobOfferService {
    */
   static async getActiveJobOffers(): Promise<JobOffer[]> {
     try {
-      console.log('👥 JobOfferService.getActiveJobOffers - Fetching active job offers');
+      console.log(
+        "👥 JobOfferService.getActiveJobOffers - Fetching active job offers"
+      );
 
-      const response = await apiCall('/joboffer', {
-        method: 'GET',
-        headers: getAuthHeaders()
+      const response = await apiCall("/joboffer", {
+        method: "GET",
+        headers: getAuthHeaders(),
       });
 
-      console.log('✅ JobOfferService.getActiveJobOffers - Active job offers fetched:', response);
+      console.log(
+        "✅ JobOfferService.getActiveJobOffers - Active job offers fetched:",
+        response
+      );
       return response;
     } catch (error) {
-      console.error('❌ JobOfferService.getActiveJobOffers - Error:', error);
+      console.error("❌ JobOfferService.getActiveJobOffers - Error:", error);
       throw error;
     }
   }
@@ -135,17 +165,20 @@ export class JobOfferService {
    */
   static async getJobOffer(id: string): Promise<JobOffer> {
     try {
-      console.log('🔍 JobOfferService.getJobOffer - Fetching job offer:', id);
+      console.log("🔍 JobOfferService.getJobOffer - Fetching job offer:", id);
 
       const response = await apiCall(`/joboffer/${id}`, {
-        method: 'GET',
-        headers: getAuthHeaders()
+        method: "GET",
+        headers: getAuthHeaders(),
       });
 
-      console.log('✅ JobOfferService.getJobOffer - Job offer fetched:', response);
+      console.log(
+        "✅ JobOfferService.getJobOffer - Job offer fetched:",
+        response
+      );
       return response;
     } catch (error) {
-      console.error('❌ JobOfferService.getJobOffer - Error:', error);
+      console.error("❌ JobOfferService.getJobOffer - Error:", error);
       throw error;
     }
   }
@@ -153,20 +186,30 @@ export class JobOfferService {
   /**
    * Update job offer (Companies only)
    */
-  static async updateJobOffer(id: string, data: UpdateJobOfferRequest): Promise<JobOffer> {
+  static async updateJobOffer(
+    id: string,
+    data: UpdateJobOfferRequest
+  ): Promise<JobOffer> {
     try {
-      console.log('🏢 JobOfferService.updateJobOffer - Updating job offer:', id, data);
+      console.log(
+        "🏢 JobOfferService.updateJobOffer - Updating job offer:",
+        id,
+        data
+      );
 
       const response = await apiCall(`/joboffer/${id}`, {
-        method: 'PUT',
+        method: "PUT",
         headers: getAuthHeaders(),
-        body: JSON.stringify(data)
+        body: JSON.stringify(data),
       });
 
-      console.log('✅ JobOfferService.updateJobOffer - Job offer updated:', response);
+      console.log(
+        "✅ JobOfferService.updateJobOffer - Job offer updated:",
+        response
+      );
       return response;
     } catch (error) {
-      console.error('❌ JobOfferService.updateJobOffer - Error:', error);
+      console.error("❌ JobOfferService.updateJobOffer - Error:", error);
       throw error;
     }
   }
@@ -176,21 +219,24 @@ export class JobOfferService {
    */
   static async closeJobOffer(id: string): Promise<JobOffer> {
     try {
-      console.log('🏢 JobOfferService.closeJobOffer - Closing job offer:', id);
+      console.log("🏢 JobOfferService.closeJobOffer - Closing job offer:", id);
 
       const response = await apiCall(`/joboffer/${id}`, {
-        method: 'PUT',
+        method: "PUT",
         headers: getAuthHeaders(),
         body: JSON.stringify({
-          status: 'CLOSED',
-          isActive: false
-        })
+          status: "CLOSED",
+          isActive: false,
+        }),
       });
 
-      console.log('✅ JobOfferService.closeJobOffer - Job offer closed:', response);
+      console.log(
+        "✅ JobOfferService.closeJobOffer - Job offer closed:",
+        response
+      );
       return response;
     } catch (error) {
-      console.error('❌ JobOfferService.closeJobOffer - Error:', error);
+      console.error("❌ JobOfferService.closeJobOffer - Error:", error);
       throw error;
     }
   }
@@ -200,21 +246,24 @@ export class JobOfferService {
    */
   static async pauseJobOffer(id: string): Promise<JobOffer> {
     try {
-      console.log('🏢 JobOfferService.pauseJobOffer - Pausing job offer:', id);
+      console.log("🏢 JobOfferService.pauseJobOffer - Pausing job offer:", id);
 
       const response = await apiCall(`/joboffer/${id}`, {
-        method: 'PUT',
+        method: "PUT",
         headers: getAuthHeaders(),
         body: JSON.stringify({
-          status: 'PAUSED',
-          isActive: false
-        })
+          status: "PAUSED",
+          isActive: false,
+        }),
       });
 
-      console.log('✅ JobOfferService.pauseJobOffer - Job offer paused:', response);
+      console.log(
+        "✅ JobOfferService.pauseJobOffer - Job offer paused:",
+        response
+      );
       return response;
     } catch (error) {
-      console.error('❌ JobOfferService.pauseJobOffer - Error:', error);
+      console.error("❌ JobOfferService.pauseJobOffer - Error:", error);
       throw error;
     }
   }
@@ -224,21 +273,27 @@ export class JobOfferService {
    */
   static async activateJobOffer(id: string): Promise<JobOffer> {
     try {
-      console.log('🏢 JobOfferService.activateJobOffer - Activating job offer:', id);
+      console.log(
+        "🏢 JobOfferService.activateJobOffer - Activating job offer:",
+        id
+      );
 
       const response = await apiCall(`/joboffer/${id}`, {
-        method: 'PUT',
+        method: "PUT",
         headers: getAuthHeaders(),
         body: JSON.stringify({
-          status: 'ACTIVE',
-          isActive: true
-        })
+          status: "ACTIVE",
+          isActive: true,
+        }),
       });
 
-      console.log('✅ JobOfferService.activateJobOffer - Job offer activated:', response);
+      console.log(
+        "✅ JobOfferService.activateJobOffer - Job offer activated:",
+        response
+      );
       return response;
     } catch (error) {
-      console.error('❌ JobOfferService.activateJobOffer - Error:', error);
+      console.error("❌ JobOfferService.activateJobOffer - Error:", error);
       throw error;
     }
   }
@@ -248,29 +303,32 @@ export class JobOfferService {
    */
   static async getJobOffers(): Promise<JobOffer[]> {
     try {
-      console.log('🔍 JobOfferService.getJobOffers - Fetching job offers');
+      console.log("🔍 JobOfferService.getJobOffers - Fetching job offers");
 
       // Use direct fetch to Next.js API route with cookies for authentication
-      const response = await fetch('/api/joboffer', {
-        method: 'GET',
-        credentials: 'include', // Include cookies for authentication
+      const response = await fetch("/api/joboffer", {
+        method: "GET",
+        credentials: "include", // Include cookies for authentication
         headers: {
-          'Content-Type': 'application/json'
-        }
+          "Content-Type": "application/json",
+        },
       });
 
       if (!response.ok) {
         if (response.status === 401) {
-          throw new Error('Authentication failed');
+          throw new Error("Authentication failed");
         }
         throw new Error(`HTTP error! status: ${response.status}`);
       }
 
       const data = await response.json();
-      console.log('✅ JobOfferService.getJobOffers - Job offers fetched:', data);
+      console.log(
+        "✅ JobOfferService.getJobOffers - Job offers fetched:",
+        data
+      );
 
       // Handle both backend response format and mock data format
-      if (data && typeof data === 'object') {
+      if (data && typeof data === "object") {
         if (Array.isArray(data)) {
           // Backend returns array directly
           return data;
@@ -281,10 +339,13 @@ export class JobOfferService {
       }
 
       // Fallback: return empty array if response is unexpected
-      console.warn('⚠️ JobOfferService.getJobOffers - Unexpected response format:', data);
+      console.warn(
+        "⚠️ JobOfferService.getJobOffers - Unexpected response format:",
+        data
+      );
       return [];
     } catch (error) {
-      console.error('❌ JobOfferService.getJobOffers - Error:', error);
+      console.error("❌ JobOfferService.getJobOffers - Error:", error);
       throw error;
     }
   }
@@ -292,30 +353,96 @@ export class JobOfferService {
   /**
    * Get job offers by company with optional status filter
    */
-  static async getJobOffersByCompany(companyId: string, status?: JobStatus): Promise<JobOffer[]> {
+  static async getJobOffersByCompany(
+    companyId: string,
+    status?: JobStatus
+  ): Promise<JobOffer[]> {
     try {
-      console.log('🏢 JobOfferService.getJobOffersByCompany - Fetching job offers for company:', companyId, 'status:', status);
+      console.log(
+        "🏢 JobOfferService.getJobOffersByCompany - Fetching job offers for company:",
+        companyId,
+        "status:",
+        status
+      );
 
       let url = `/joboffer?companyId=${companyId}`;
       if (status) {
         url += `&status=${status}`;
       }
 
-      console.log('🏢 JobOfferService.getJobOffersByCompany - Final URL:', url);
-      console.log('🏢 JobOfferService.getJobOffersByCompany - Expected full URL:', API_BASE + url);
+      console.log("🏢 JobOfferService.getJobOffersByCompany - Final URL:", url);
+      console.log(
+        "🏢 JobOfferService.getJobOffersByCompany - Expected full URL:",
+        API_BASE + url
+      );
 
       const response = await apiCall(url, {
-        method: 'GET',
-        headers: getAuthHeaders()
+        method: "GET",
+        headers: getAuthHeaders(),
       });
 
-      console.log('✅ JobOfferService.getJobOffersByCompany - Job offers fetched:', response);
-      console.log('✅ JobOfferService.getJobOffersByCompany - Response type:', typeof response);
-      console.log('✅ JobOfferService.getJobOffersByCompany - Response length:', Array.isArray(response) ? response.length : 'Not an array');
+      console.log(
+        "✅ JobOfferService.getJobOffersByCompany - Job offers fetched:",
+        response
+      );
+      console.log(
+        "✅ JobOfferService.getJobOffersByCompany - Response type:",
+        typeof response
+      );
+      console.log(
+        "✅ JobOfferService.getJobOffersByCompany - Response length:",
+        Array.isArray(response) ? response.length : "Not an array"
+      );
 
       return response;
     } catch (error) {
-      console.error('❌ JobOfferService.getJobOffersByCompany - Error:', error);
+      console.error("❌ JobOfferService.getJobOffersByCompany - Error:", error);
+      throw error;
+    }
+  }
+
+  /**
+   * Get job offers by municipality
+   */
+  static async getJobOffersByMunicipality(
+    municipalityId: string
+  ): Promise<JobOffer[]> {
+    try {
+      console.log(
+        "🏛️ JobOfferService.getJobOffersByMunicipality - Fetching job offers for municipality:",
+        municipalityId
+      );
+
+      const response = await fetch(
+        `/api/joboffer?municipality=${municipalityId}`,
+        {
+          method: "GET",
+          credentials: "include",
+          headers: {
+            "Content-Type": "application/json",
+          },
+        }
+      );
+
+      if (!response.ok) {
+        if (response.status === 401) {
+          throw new Error("Authentication failed");
+        }
+        throw new Error(`HTTP error! status: ${response.status}`);
+      }
+
+      const data = await response.json();
+      console.log(
+        "✅ JobOfferService.getJobOffersByMunicipality - Job offers fetched:",
+        data
+      );
+
+      return Array.isArray(data) ? data : [];
+    } catch (error) {
+      console.error(
+        "❌ JobOfferService.getJobOffersByMunicipality - Error:",
+        error
+      );
       throw error;
     }
   }
@@ -325,16 +452,19 @@ export class JobOfferService {
    */
   static async deleteJobOffer(id: string): Promise<void> {
     try {
-      console.log('🏢 JobOfferService.deleteJobOffer - Deleting job offer:', id);
+      console.log(
+        "🏢 JobOfferService.deleteJobOffer - Deleting job offer:",
+        id
+      );
 
       await apiCall(`/joboffer/${id}`, {
-        method: 'DELETE',
-        headers: getAuthHeaders()
+        method: "DELETE",
+        headers: getAuthHeaders(),
       });
 
-      console.log('✅ JobOfferService.deleteJobOffer - Job offer deleted');
+      console.log("✅ JobOfferService.deleteJobOffer - Job offer deleted");
     } catch (error) {
-      console.error('❌ JobOfferService.deleteJobOffer - Error:', error);
+      console.error("❌ JobOfferService.deleteJobOffer - Error:", error);
       throw error;
     }
   }

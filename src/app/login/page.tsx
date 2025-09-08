@@ -33,22 +33,22 @@ export default function LoginPage() {
 
     // Prevent multiple form submissions
     if (loading || isSubmitting) {
-      console.log('🔐 Form submission blocked - login already in progress');
+      console.log("🔐 Form submission blocked - login already in progress");
       return;
     }
 
     setIsSubmitting(true);
     try {
-      console.log('🔐 Form submitted, starting login...');
+      console.log("🔐 Form submitted, starting login...");
       await login({ username: username.trim(), password });
-      console.log('🔐 Login completed, redirecting...');
-      
+      console.log("🔐 Login completed, redirecting...");
+
       // Check if there's a redirect URL from the login URL params
       const urlParams = new URLSearchParams(window.location.search);
-      const redirectTo = urlParams.get('redirect');
-      
-      if (redirectTo && redirectTo !== '/') {
-        console.log('🔐 Redirecting to saved URL:', redirectTo);
+      const redirectTo = urlParams.get("redirect");
+
+      if (redirectTo && redirectTo !== "/") {
+        console.log("🔐 Redirecting to saved URL:", redirectTo);
         router.replace(redirectTo);
       } else {
         // Redirection will be handled by AuthRedirect component based on user role
@@ -56,7 +56,9 @@ export default function LoginPage() {
       }
     } catch (err: any) {
       console.error("Login error:", err);
-      setError(err?.message || "Error al iniciar sesión. Verifica tus credenciales.");
+      setError(
+        err?.message || "Error al iniciar sesión. Verifica tus credenciales."
+      );
     } finally {
       setIsSubmitting(false);
     }
@@ -154,23 +156,13 @@ export default function LoginPage() {
               )}
             </Button>
 
-            <div className="text-center space-y-2">
+            <div className="text-center">
               <Link
                 href="/forgot-password"
                 className="text-sm text-muted-foreground hover:text-primary transition-colors"
               >
                 ¿Olvidaste tu contraseña?
               </Link>
-              
-              <div className="text-sm text-muted-foreground">
-                ¿No tienes cuenta?{" "}
-                <Link
-                  href="/sign-up"
-                  className="text-primary hover:underline font-medium"
-                >
-                  Regístrate aquí
-                </Link>
-              </div>
             </div>
           </form>
 
@@ -178,12 +170,26 @@ export default function LoginPage() {
           <div className="mt-6 p-4 bg-muted rounded-lg">
             <h4 className="text-sm font-medium mb-2">Tipos de Usuario:</h4>
             <div className="text-xs text-muted-foreground space-y-1">
-              <div>• <strong>Jóvenes/Adolescentes:</strong> Acceso a cursos y empleos</div>
-              <div>• <strong>Empresas:</strong> Publicar empleos y crear cursos</div>
-              <div>• <strong>Gobiernos Municipales:</strong> Gestión institucional</div>
-              <div>• <strong>Centros de Formación:</strong> Crear contenido educativo</div>
-              <div>• <strong>ONGs/Fundaciones:</strong> Programas sociales</div>
-              <div>• <strong>Administradores:</strong> Gestión completa del sistema</div>
+              <div>
+                • <strong>Jóvenes/Adolescentes:</strong> Acceso a cursos y
+                empleos
+              </div>
+              <div>
+                • <strong>Empresas:</strong> Publicar empleos y crear cursos
+              </div>
+              <div>
+                • <strong>Gobiernos Municipales:</strong> Gestión institucional
+              </div>
+              <div>
+                • <strong>Centros de Formación:</strong> Crear contenido
+                educativo
+              </div>
+              <div>
+                • <strong>ONGs/Fundaciones:</strong> Programas sociales
+              </div>
+              <div>
+                • <strong>Administradores:</strong> Gestión completa del sistema
+              </div>
             </div>
           </div>
         </CardContent>

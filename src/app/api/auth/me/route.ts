@@ -68,10 +68,113 @@ export async function GET(request: NextRequest) {
         });
 
         let profile = null;
+        let company = null;
         if (user) {
           profile = await prisma.profile.findUnique({
             where: { userId: user.id },
           });
+
+          // For company users, get the actual company data
+          if (user.role === "COMPANIES") {
+            // Try to find company by createdBy first (for self-created companies)
+            company = await prisma.company.findFirst({
+              where: { createdBy: user.id },
+              include: {
+                municipality: {
+                  select: {
+                    id: true,
+                    name: true,
+                    department: true,
+                  },
+                },
+              },
+            });
+
+            // If not found, try to find by username/loginEmail (for admin-created companies)
+            if (!company) {
+              console.log(
+                "🔍 Session API - Company not found by createdBy, trying by username/loginEmail"
+              );
+              company = await prisma.company.findFirst({
+                where: {
+                  OR: [
+                    { username: user.username },
+                    {
+                      loginEmail:
+                        profile?.email || `${user.username}@cemse.dev`,
+                    },
+                  ],
+                },
+                include: {
+                  municipality: {
+                    select: {
+                      id: true,
+                      name: true,
+                      department: true,
+                    },
+                  },
+                },
+              });
+            }
+
+            // If company doesn't exist but we have profile data, create it
+            if (!company && profile) {
+              console.log(
+                "🔍 Session API - Company not found, creating from profile data"
+              );
+
+              // Get a default municipality (Cochabamba)
+              const defaultMunicipality = await prisma.municipality.findFirst({
+                where: { name: "Cochabamba" },
+              });
+
+              if (defaultMunicipality) {
+                try {
+                  company = await prisma.company.create({
+                    data: {
+                      name:
+                        profile.companyName ||
+                        profile.firstName ||
+                        "Mi Empresa",
+                      description: profile.companyDescription || null,
+                      businessSector: profile.businessSector || null,
+                      companySize: profile.companySize || "SMALL",
+                      foundedYear: profile.foundedYear || null,
+                      website: profile.website || null,
+                      email: profile.email || `${user.username}@cemse.dev`,
+                      phone: profile.phone || null,
+                      address: profile.address || null,
+                      taxId: profile.taxId || null,
+                      legalRepresentative: profile.legalRepresentative || null,
+                      municipalityId: defaultMunicipality.id,
+                      createdBy: user.id,
+                      loginEmail: profile.email || `${user.username}@cemse.dev`,
+                      username: user.username,
+                      password: user.password, // This should be hashed, but we'll use what's in the user record
+                    },
+                    include: {
+                      municipality: {
+                        select: {
+                          id: true,
+                          name: true,
+                          department: true,
+                        },
+                      },
+                    },
+                  });
+                  console.log(
+                    "✅ Session API - Company created successfully:",
+                    company.name
+                  );
+                } catch (createError) {
+                  console.error(
+                    "❌ Session API - Failed to create company:",
+                    createError
+                  );
+                }
+              }
+            }
+          }
         }
 
         if (user && user.isActive) {
@@ -86,27 +189,31 @@ export async function GET(request: NextRequest) {
             isActive: user.isActive,
             createdAt: user.createdAt,
             updatedAt: user.updatedAt,
-            companyId: user.role === "COMPANIES" ? user.id : null,
+            companyId:
+              user.role === "COMPANIES" ? company?.id || user.id : null,
             // Add full company object for company users
-            ...(user.role === "COMPANIES" && {
-              company: {
-                id: user.id,
-                name:
-                  profile?.companyName || profile?.firstName || "Mi Empresa",
-                email: profile?.email || `${user.username}@cemse.dev`,
-                phone: profile?.phone || null,
-                description: profile?.companyDescription || "",
-                businessSector: profile?.businessSector || "",
-                companySize: profile?.companySize || "SMALL",
-                foundedYear: profile?.foundedYear?.toString() || "",
-                website: profile?.website || "",
-                address: profile?.address || "",
-                taxId: profile?.taxId || null,
-                createdAt: user.createdAt.toISOString(),
-                updatedAt: user.updatedAt.toISOString(),
-                isActive: user.isActive,
-              },
-            }),
+            ...(user.role === "COMPANIES" &&
+              company && {
+                company: {
+                  id: company.id,
+                  name: company.name,
+                  email: company.email || `${user.username}@cemse.dev`,
+                  phone: company.phone,
+                  description: company.description,
+                  businessSector: company.businessSector,
+                  companySize: company.companySize,
+                  foundedYear: company.foundedYear,
+                  website: company.website,
+                  address: company.address,
+                  taxId: company.taxId,
+                  legalRepresentative: company.legalRepresentative,
+                  municipality: company.municipality,
+                  logoUrl: company.logoUrl,
+                  createdAt: company.createdAt.toISOString(),
+                  updatedAt: company.updatedAt.toISOString(),
+                  isActive: company.isActive,
+                },
+              }),
           };
 
           console.log("🔍 Session API - JWT user validated:", dbUser);
@@ -151,6 +258,7 @@ export async function GET(request: NextRequest) {
 
           // Try to get profile separately
           let profile = null;
+          let company = null;
           if (user) {
             try {
               profile = await prisma.profile.findUnique({
@@ -161,6 +269,118 @@ export async function GET(request: NextRequest) {
                 "🔍 Session API - Profile not found or error:",
                 profileError
               );
+            }
+
+            // For company users, get the actual company data
+            if (user.role === "COMPANIES") {
+              try {
+                // Try to find company by createdBy first (for self-created companies)
+                company = await prisma.company.findFirst({
+                  where: { createdBy: user.id },
+                  include: {
+                    municipality: {
+                      select: {
+                        id: true,
+                        name: true,
+                        department: true,
+                      },
+                    },
+                  },
+                });
+
+                // If not found, try to find by username/loginEmail (for admin-created companies)
+                if (!company) {
+                  console.log(
+                    "🔍 Session API - Company not found by createdBy, trying by username/loginEmail"
+                  );
+                  company = await prisma.company.findFirst({
+                    where: {
+                      OR: [
+                        { username: user.username },
+                        {
+                          loginEmail:
+                            profile?.email || `${user.username}@cemse.dev`,
+                        },
+                      ],
+                    },
+                    include: {
+                      municipality: {
+                        select: {
+                          id: true,
+                          name: true,
+                          department: true,
+                        },
+                      },
+                    },
+                  });
+                }
+
+                // If company doesn't exist but we have profile data, create it
+                if (!company && profile) {
+                  console.log(
+                    "🔍 Session API - Company not found, creating from profile data"
+                  );
+
+                  // Get a default municipality (Cochabamba)
+                  const defaultMunicipality =
+                    await prisma.municipality.findFirst({
+                      where: { name: "Cochabamba" },
+                    });
+
+                  if (defaultMunicipality) {
+                    try {
+                      company = await prisma.company.create({
+                        data: {
+                          name:
+                            profile.companyName ||
+                            profile.firstName ||
+                            "Mi Empresa",
+                          description: profile.companyDescription || null,
+                          businessSector: profile.businessSector || null,
+                          companySize: profile.companySize || "SMALL",
+                          foundedYear: profile.foundedYear || null,
+                          website: profile.website || null,
+                          email: profile.email || `${user.username}@cemse.dev`,
+                          phone: profile.phone || null,
+                          address: profile.address || null,
+                          taxId: profile.taxId || null,
+                          legalRepresentative:
+                            profile.legalRepresentative || null,
+                          municipalityId: defaultMunicipality.id,
+                          createdBy: user.id,
+                          loginEmail:
+                            profile.email || `${user.username}@cemse.dev`,
+                          username: user.username,
+                          password: user.password, // This should be hashed, but we'll use what's in the user record
+                        },
+                        include: {
+                          municipality: {
+                            select: {
+                              id: true,
+                              name: true,
+                              department: true,
+                            },
+                          },
+                        },
+                      });
+                      console.log(
+                        "✅ Session API - Company created successfully:",
+                        company.name
+                      );
+                    } catch (createError) {
+                      console.error(
+                        "❌ Session API - Failed to create company:",
+                        createError
+                      );
+                    }
+                  }
+                }
+              } catch (companyError) {
+                console.log(
+                  "🔍 Session API - Company not found or error:",
+                  companyError
+                );
+              }
             }
           }
 
@@ -184,27 +404,31 @@ export async function GET(request: NextRequest) {
               createdAt: user.createdAt.toISOString(),
               updatedAt: user.updatedAt.toISOString(),
               municipalityId: null,
-              companyId: user.role === "COMPANIES" ? user.id : null,
+              companyId:
+                user.role === "COMPANIES" ? company?.id || user.id : null,
               // Add full company object for company users
-              ...(user.role === "COMPANIES" && {
-                company: {
-                  id: user.id,
-                  name:
-                    profile?.companyName || profile?.firstName || "Mi Empresa",
-                  email: profile?.email || `${user.username}@cemse.dev`,
-                  phone: profile?.phone || null,
-                  description: profile?.companyDescription || "",
-                  businessSector: profile?.businessSector || "",
-                  companySize: profile?.companySize || "SMALL",
-                  foundedYear: profile?.foundedYear?.toString() || "",
-                  website: profile?.website || "",
-                  address: profile?.address || "",
-                  taxId: profile?.taxId || null,
-                  createdAt: user.createdAt.toISOString(),
-                  updatedAt: user.updatedAt.toISOString(),
-                  isActive: user.isActive,
-                },
-              }),
+              ...(user.role === "COMPANIES" &&
+                company && {
+                  company: {
+                    id: company.id,
+                    name: company.name,
+                    email: company.email || `${user.username}@cemse.dev`,
+                    phone: company.phone,
+                    description: company.description,
+                    businessSector: company.businessSector,
+                    companySize: company.companySize,
+                    foundedYear: company.foundedYear,
+                    website: company.website,
+                    address: company.address,
+                    taxId: company.taxId,
+                    legalRepresentative: company.legalRepresentative,
+                    municipality: company.municipality,
+                    logoUrl: company.logoUrl,
+                    createdAt: company.createdAt.toISOString(),
+                    updatedAt: company.updatedAt.toISOString(),
+                    isActive: company.isActive,
+                  },
+                }),
             };
 
             console.log("🔍 Session API - Database user returned:", {

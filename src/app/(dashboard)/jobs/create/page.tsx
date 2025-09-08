@@ -1,8 +1,20 @@
 "use client";
 
-import { useState } from "react";
 import { useRouter, useParams } from "next/navigation";
-import { ArrowLeft, Save, Eye } from "lucide-react";
+import {
+  ArrowLeft,
+  Save,
+  Eye,
+  Briefcase,
+  MapPin,
+  ImageIcon,
+  Trash,
+  Plus,
+  X,
+  AlertCircle,
+  CheckCircle,
+  Loader2,
+} from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -17,6 +29,11 @@ import {
 import dynamic from "next/dynamic";
 const MapPicker = dynamic(() => import("@/components/dashboard/MapPicker"), {
   ssr: false,
+  loading: () => (
+    <div className="h-[300px] w-full bg-gray-100 rounded-lg flex items-center justify-center">
+      <div className="text-gray-500">Cargando mapa...</div>
+    </div>
+  ),
 });
 import {
   Select,
@@ -39,8 +56,7 @@ import {
 import { useAuthContext } from "@/hooks/use-auth";
 import { useJobCreation } from "@/hooks/use-job-creation";
 
-import { ImageIcon, Trash } from "lucide-react";
-import { useRef } from "react";
+import { useRef, useEffect, useState } from "react";
 
 interface JobFormData {
   title: string;
@@ -76,6 +92,11 @@ export default function CreateJobPage() {
   const [imageUrls, setImageUrls] = useState<string[]>([]);
   const [preview, setPreview] = useState(false);
   const [showTermsModal, setShowTermsModal] = useState(false);
+  const [isMounted, setIsMounted] = useState(false);
+
+  useEffect(() => {
+    setIsMounted(true);
+  }, []);
 
   const handlePublishClick = () => {
     setShowTermsModal(true);
@@ -255,18 +276,28 @@ export default function CreateJobPage() {
   if (!user) {
     console.log("❌ No user found - showing authentication error");
     return (
-      <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
-        <div className="text-center">
-          <h1 className="text-2xl font-bold text-gray-900 mb-4">
-            Acceso Denegado
-          </h1>
-          <p className="text-gray-600">
-            Debes estar autenticado para crear empleos.
-          </p>
-          <div className="mt-4">
-            <p className="text-sm text-gray-500">
-              Debug: Usuario no encontrado. Verifica que hayas iniciado sesión.
-            </p>
+      <div className="min-h-screen bg-gray-50">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6 sm:py-8">
+          <div className="flex items-center justify-center min-h-[400px]">
+            <Card className="bg-white shadow-sm border-0 max-w-md w-full">
+              <CardContent className="p-8 text-center">
+                <div className="w-16 h-16 bg-red-100 rounded-full flex items-center justify-center mx-auto mb-6">
+                  <AlertCircle className="w-8 h-8 text-red-500" />
+                </div>
+                <h3 className="text-xl font-semibold text-gray-900 mb-3">
+                  Acceso Denegado
+                </h3>
+                <p className="text-gray-600 mb-6">
+                  Debes estar autenticado para crear empleos.
+                </p>
+                <Button
+                  onClick={() => router.push("/auth/login")}
+                  className="w-full h-11"
+                >
+                  Iniciar Sesión
+                </Button>
+              </CardContent>
+            </Card>
           </div>
         </div>
       </div>
@@ -281,19 +312,30 @@ export default function CreateJobPage() {
       "Expected: COMPANIES or EMPRESAS"
     );
     return (
-      <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
-        <div className="text-center">
-          <h1 className="text-2xl font-bold text-gray-900 mb-4">
-            Acceso Denegado
-          </h1>
-          <p className="text-gray-600">
-            Solo las empresas pueden crear empleos.
-          </p>
-          <div className="mt-4">
-            <p className="text-sm text-gray-500">
-              Debug: Tu rol actual es "{user.role}" pero necesitas ser
-              "COMPANIES" o "EMPRESAS"
-            </p>
+      <div className="min-h-screen bg-gray-50">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6 sm:py-8">
+          <div className="flex items-center justify-center min-h-[400px]">
+            <Card className="bg-white shadow-sm border-0 max-w-md w-full">
+              <CardContent className="p-8 text-center">
+                <div className="w-16 h-16 bg-orange-100 rounded-full flex items-center justify-center mx-auto mb-6">
+                  <Briefcase className="w-8 h-8 text-orange-500" />
+                </div>
+                <h3 className="text-xl font-semibold text-gray-900 mb-3">
+                  Acceso Denegado
+                </h3>
+                <p className="text-gray-600 mb-6">
+                  Solo las empresas pueden crear empleos.
+                </p>
+                <Button
+                  onClick={() => router.back()}
+                  variant="outline"
+                  className="w-full h-11"
+                >
+                  <ArrowLeft className="w-4 h-4 mr-2" />
+                  Volver
+                </Button>
+              </CardContent>
+            </Card>
           </div>
         </div>
       </div>
@@ -303,408 +345,526 @@ export default function CreateJobPage() {
   if (preview) {
     // Show preview of the job posting
     return (
-      <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
-        <div className="flex items-center justify-between mb-6">
-          <Button variant="ghost" onClick={() => setPreview(false)}>
-            <ArrowLeft className="w-4 h-4 mr-2" />
-            Volver a editar
-          </Button>
-          <div className="space-x-2">
+      <div className="min-h-screen bg-gray-50">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6 sm:py-8">
+          <div className="flex items-center justify-between mb-8">
             <Button
               variant="outline"
-              onClick={() => handleSubmit("DRAFT")}
-              disabled={isLoading}
+              onClick={() => setPreview(false)}
+              className="h-11 px-6"
             >
-              Guardar borrador
+              <ArrowLeft className="w-4 h-4 mr-2" />
+              Volver a editar
             </Button>
-            <Button onClick={() => handleSubmit("ACTIVE")} disabled={isLoading}>
-              Publicar empleo
-            </Button>
+            <div className="flex gap-3">
+              <Button
+                variant="outline"
+                onClick={() => handleSubmit("DRAFT")}
+                disabled={isLoading}
+                className="h-11 px-6"
+              >
+                {isLoading ? (
+                  <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                ) : (
+                  <Save className="w-4 h-4 mr-2" />
+                )}
+                Guardar borrador
+              </Button>
+              <Button
+                onClick={() => handleSubmit("ACTIVE")}
+                disabled={isLoading}
+                className="h-11 px-6"
+              >
+                {isLoading ? (
+                  <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                ) : (
+                  <CheckCircle className="w-4 h-4 mr-2" />
+                )}
+                Publicar empleo
+              </Button>
+            </div>
           </div>
-        </div>
 
-        {/* Job Preview */}
-        <Card>
-          <CardHeader>
-            <div className="flex items-center space-x-4">
-              <div className="w-16 h-16 bg-gray-200 rounded-lg flex items-center justify-center">
-                <span className="text-xl font-bold text-gray-600">TC</span>
-              </div>
-              <div>
-                <h1 className="text-2xl font-bold">{jobData.title}</h1>
-                <p className="text-gray-600">TechCorp Bolivia</p>
-                <p className="text-sm text-gray-500">{jobData.location}</p>
-              </div>
-            </div>
-          </CardHeader>
-          <CardContent>
-            <div className="space-y-6">
-              <div className="flex flex-wrap gap-2">
-                <Badge variant="secondary">
-                  {
-                    contractTypeOptions.find(
-                      (o) => o.value === jobData.contractType
-                    )?.label
-                  }
-                </Badge>
-                <Badge variant="outline">
-                  {
-                    workModalityOptions.find(
-                      (o) => o.value === jobData.workModality
-                    )?.label
-                  }
-                </Badge>
-                <Badge variant="outline">
-                  {
-                    experienceLevelOptions.find(
-                      (o) => o.value === jobData.experienceLevel
-                    )?.label
-                  }
-                </Badge>
-              </div>
-
-              <div>
-                <h3 className="font-semibold mb-2">Descripción</h3>
-                <p className="text-gray-700 whitespace-pre-wrap">
-                  {jobData.description}
-                </p>
-              </div>
-
-              {jobData.responsibilities.length > 0 && (
+          {/* Job Preview */}
+          <Card className="bg-white shadow-sm border-0">
+            <CardHeader className="pb-6">
+              <div className="flex items-center space-x-4">
+                <div className="w-16 h-16 bg-blue-100 rounded-lg flex items-center justify-center">
+                  <Briefcase className="w-8 h-8 text-blue-600" />
+                </div>
                 <div>
-                  <h3 className="font-semibold mb-2">Responsabilidades</h3>
-                  <ul className="space-y-1">
-                    {jobData.responsibilities.map((resp, i) => (
-                      <li key={i} className="flex items-start space-x-2">
-                        <span className="w-2 h-2 bg-blue-600 rounded-full mt-2" />
-                        <span>{resp}</span>
-                      </li>
-                    ))}
-                  </ul>
-                </div>
-              )}
-
-              <div>
-                <h3 className="font-semibold mb-2">Habilidades requeridas</h3>
-                <div className="flex flex-wrap gap-2">
-                  {jobData.requiredSkills.map((skill, i) => (
-                    <Badge key={i}>{skill}</Badge>
-                  ))}
+                  <h1 className="text-2xl font-bold text-gray-900">
+                    {jobData.title}
+                  </h1>
+                  <p className="text-gray-600 text-lg">
+                    {user?.company?.name || "Tu Empresa"}
+                  </p>
+                  <div className="flex items-center gap-2 mt-1">
+                    <MapPin className="w-4 h-4 text-gray-400" />
+                    <p className="text-sm text-gray-500">{jobData.location}</p>
+                  </div>
                 </div>
               </div>
-            </div>
-          </CardContent>
-        </Card>
+            </CardHeader>
+            <CardContent>
+              <div className="space-y-6">
+                <div className="flex flex-wrap gap-2">
+                  <Badge
+                    variant="secondary"
+                    className="bg-blue-100 text-blue-800"
+                  >
+                    {
+                      contractTypeOptions.find(
+                        (o) => o.value === jobData.contractType
+                      )?.label
+                    }
+                  </Badge>
+                  <Badge
+                    variant="outline"
+                    className="border-green-200 text-green-800"
+                  >
+                    {
+                      workModalityOptions.find(
+                        (o) => o.value === jobData.workModality
+                      )?.label
+                    }
+                  </Badge>
+                  <Badge
+                    variant="outline"
+                    className="border-purple-200 text-purple-800"
+                  >
+                    {
+                      experienceLevelOptions.find(
+                        (o) => o.value === jobData.experienceLevel
+                      )?.label
+                    }
+                  </Badge>
+                </div>
+
+                <div>
+                  <h3 className="font-semibold mb-3 text-gray-900">
+                    Descripción
+                  </h3>
+                  <p className="text-gray-700 whitespace-pre-wrap leading-relaxed">
+                    {jobData.description}
+                  </p>
+                </div>
+
+                {jobData.responsibilities.length > 0 && (
+                  <div>
+                    <h3 className="font-semibold mb-3 text-gray-900">
+                      Responsabilidades
+                    </h3>
+                    <ul className="space-y-2">
+                      {jobData.responsibilities.map((resp, i) => (
+                        <li key={i} className="flex items-start space-x-3">
+                          <span className="w-2 h-2 bg-blue-600 rounded-full mt-2 flex-shrink-0" />
+                          <span className="text-gray-700">{resp}</span>
+                        </li>
+                      ))}
+                    </ul>
+                  </div>
+                )}
+
+                <div>
+                  <h3 className="font-semibold mb-3 text-gray-900">
+                    Habilidades requeridas
+                  </h3>
+                  <div className="flex flex-wrap gap-2">
+                    {jobData.requiredSkills.map((skill, i) => (
+                      <Badge key={i} className="bg-gray-100 text-gray-800">
+                        {skill}
+                      </Badge>
+                    ))}
+                  </div>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+        </div>
       </div>
     );
   }
 
   return (
-    <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
-      <Dialog open={showTermsModal} onOpenChange={setShowTermsModal}>
-        <DialogContent className="z-[9999] max-w-lg">
-          <DialogHeader>
-            <DialogTitle>Confirmación de publicación</DialogTitle>
-          </DialogHeader>
+    <div className="min-h-screen bg-gray-50">
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6 sm:py-8">
+        <Dialog open={showTermsModal} onOpenChange={setShowTermsModal}>
+          <DialogContent className="z-[9999] max-w-lg">
+            <DialogHeader>
+              <DialogTitle className="text-xl font-semibold text-gray-900">
+                Confirmación de publicación
+              </DialogTitle>
+            </DialogHeader>
 
-          <div className="space-y-4">
-            <p className="text-gray-700 text-sm">
-              Al publicar esta oferta confirmas que los datos proporcionados son
-              verídicos y que aceptas nuestros Términos y Condiciones.
-            </p>
-            <p className="text-gray-500 text-xs">
-              El contenido ofensivo, falso o que incumpla las reglas de la
-              plataforma puede ser eliminado.
-            </p>
-          </div>
+            <div className="space-y-4">
+              <p className="text-gray-700 text-sm leading-relaxed">
+                Al publicar esta oferta confirmas que los datos proporcionados
+                son verídicos y que aceptas nuestros Términos y Condiciones.
+              </p>
+              <p className="text-gray-500 text-xs">
+                El contenido ofensivo, falso o que incumpla las reglas de la
+                plataforma puede ser eliminado.
+              </p>
+            </div>
 
-          <div className="flex justify-end gap-2 mt-6">
-            <Button variant="outline" onClick={() => setShowTermsModal(false)}>
-              Cancelar
-            </Button>
+            <div className="flex justify-end gap-3 mt-6">
+              <Button
+                variant="outline"
+                onClick={() => setShowTermsModal(false)}
+                className="h-11 px-6"
+              >
+                Cancelar
+              </Button>
+              <Button
+                onClick={() => {
+                  setShowTermsModal(false);
+                  handleSubmit("ACTIVE");
+                }}
+                className="h-11 px-6"
+              >
+                <CheckCircle className="w-4 h-4 mr-2" />
+                Aceptar y Publicar
+              </Button>
+            </div>
+          </DialogContent>
+        </Dialog>
+
+        {/* Header */}
+        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-8">
+          <div className="flex items-center space-x-4">
             <Button
-              onClick={() => {
-                setShowTermsModal(false);
-                handleSubmit("ACTIVE");
-              }}
+              variant="outline"
+              onClick={() => router.back()}
+              className="h-11 px-6"
             >
-              Aceptar y Publicar
+              <ArrowLeft className="w-4 h-4 mr-2" />
+              Volver
+            </Button>
+            <div>
+              <h1 className="text-3xl sm:text-4xl font-bold text-gray-900">
+                Crear Nuevo Empleo
+              </h1>
+              <p className="text-gray-600 text-lg mt-2">
+                Completa la información para publicar tu oferta laboral
+              </p>
+            </div>
+          </div>
+          <div className="flex gap-3">
+            <Button
+              variant="outline"
+              onClick={() => setPreview(true)}
+              className="h-11 px-6"
+            >
+              <Eye className="w-4 h-4 mr-2" />
+              Vista previa
             </Button>
           </div>
-        </DialogContent>
-      </Dialog>
-
-      {/* Header */}
-      <div className="flex items-center justify-between mb-6">
-        <div className="flex items-center space-x-4">
-          <Button variant="ghost" onClick={() => router.back()}>
-            <ArrowLeft className="w-4 h-4 mr-2" />
-            Volver
-          </Button>
-          <div>
-            <h1 className="text-2xl font-bold text-gray-900">
-              Crear Nuevo Empleo
-            </h1>
-            <p className="text-gray-600">
-              Completa la información para publicar tu oferta laboral
-            </p>
-          </div>
         </div>
-        <div className="space-x-2">
-          <Button
-            variant="secondary"
-            onClick={async () => {
-              try {
-                const response = await fetch("/api/debug/user-info");
-                const debugInfo = await response.json();
-                console.log("🔍 DEBUG USER INFO:", debugInfo);
-                toast({
-                  title: "Debug Info",
-                  description:
-                    "Check browser console for detailed user information",
-                });
-              } catch (error) {
-                console.error("Debug error:", error);
-                toast({
-                  title: "Debug Error",
-                  description: "Failed to get debug info",
-                  variant: "destructive",
-                });
-              }
-            }}
-          >
-            Debug User
-          </Button>
-          <Button variant="outline" onClick={() => setPreview(true)}>
-            <Eye className="w-4 h-4 mr-2" />
-            Vista previa
-          </Button>
-        </div>
-      </div>
 
-      <div className="space-y-6">
-        {/* Basic Information */}
-        <Card>
-          <CardHeader>
-            <CardTitle>Información Básica</CardTitle>
-          </CardHeader>
-          <CardContent className="space-y-4">
-            <div>
-              <Label htmlFor="title">Título del empleo *</Label>
-              <Input
-                id="title"
-                placeholder="Ej: Desarrollador Frontend Junior"
-                value={jobData.title}
-                onChange={(e) =>
-                  setJobData((prev) => ({ ...prev, title: e.target.value }))
-                }
-              />
-            </div>
-
-            <div>
-              <Label htmlFor="description">Descripción del empleo *</Label>
-              <Textarea
-                id="description"
-                placeholder="Describe el puesto, responsabilidades principales y qué buscan en el candidato ideal..."
-                value={jobData.description}
-                onChange={(e) =>
-                  setJobData((prev) => ({
-                    ...prev,
-                    description: e.target.value,
-                  }))
-                }
-                className="min-h-[120px]"
-              />
-            </div>
-
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+        <div className="space-y-8">
+          {/* Basic Information */}
+          <Card className="bg-white shadow-sm border-0">
+            <CardHeader className="pb-6">
+              <CardTitle className="text-xl font-semibold text-gray-900 flex items-center gap-2">
+                <Briefcase className="w-5 h-5 text-blue-600" />
+                Información Básica
+              </CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-6">
               <div>
-                <Label htmlFor="location">Ubicación</Label>
-                <Input
-                  id="location"
-                  value={jobData.location}
-                  onChange={(e) =>
-                    setJobData((prev) => ({
-                      ...prev,
-                      location: e.target.value,
-                    }))
-                  }
-                />
-              </div>
-              <div>
-                <Label htmlFor="contractType">Tipo de contrato *</Label>
-                <Select
-                  value={jobData.contractType}
-                  onValueChange={(value) =>
-                    setJobData((prev) => ({
-                      ...prev,
-                      contractType: value as ContractType,
-                    }))
-                  }
+                <Label
+                  htmlFor="title"
+                  className="text-sm font-medium text-gray-700 mb-2 block"
                 >
-                  <SelectTrigger>
-                    <SelectValue placeholder="Selecciona tipo" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {contractTypeOptions.map((option) => (
-                      <SelectItem key={option.value} value={option.value}>
-                        {option.label}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </div>
-            </div>
-
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <div>
-                <Label htmlFor="workModality">Modalidad de trabajo *</Label>
-                <Select
-                  value={jobData.workModality}
-                  onValueChange={(value) =>
-                    setJobData((prev) => ({
-                      ...prev,
-                      workModality: value as WorkModality,
-                    }))
+                  Título del empleo *
+                </Label>
+                <Input
+                  id="title"
+                  placeholder="Ej: Desarrollador Frontend Junior"
+                  value={jobData.title}
+                  onChange={(e) =>
+                    setJobData((prev) => ({ ...prev, title: e.target.value }))
                   }
+                  className="h-12 border-gray-200 focus:border-blue-500"
+                />
+              </div>
+
+              <div>
+                <Label
+                  htmlFor="description"
+                  className="text-sm font-medium text-gray-700 mb-2 block"
                 >
-                  <SelectTrigger>
-                    <SelectValue placeholder="Selecciona modalidad" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {workModalityOptions.map((option) => (
-                      <SelectItem key={option.value} value={option.value}>
-                        {option.label}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </div>
-              <div>
-                <Label htmlFor="experienceLevel">Nivel de experiencia *</Label>
-                <Select
-                  value={jobData.experienceLevel}
-                  onValueChange={(value) =>
+                  Descripción del empleo *
+                </Label>
+                <Textarea
+                  id="description"
+                  placeholder="Describe el puesto, responsabilidades principales y qué buscan en el candidato ideal..."
+                  value={jobData.description}
+                  onChange={(e) =>
                     setJobData((prev) => ({
                       ...prev,
-                      experienceLevel: value as ExperienceLevel,
+                      description: e.target.value,
                     }))
                   }
+                  className="min-h-[120px] border-gray-200 focus:border-blue-500 resize-none"
+                />
+              </div>
+
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <div>
+                  <Label
+                    htmlFor="location"
+                    className="text-sm font-medium text-gray-700 mb-2 block"
+                  >
+                    Ubicación
+                  </Label>
+                  <Input
+                    id="location"
+                    value={jobData.location}
+                    onChange={(e) =>
+                      setJobData((prev) => ({
+                        ...prev,
+                        location: e.target.value,
+                      }))
+                    }
+                    className="h-12 border-gray-200 focus:border-blue-500"
+                  />
+                </div>
+                <div>
+                  <Label
+                    htmlFor="contractType"
+                    className="text-sm font-medium text-gray-700 mb-2 block"
+                  >
+                    Tipo de contrato *
+                  </Label>
+                  <Select
+                    value={jobData.contractType}
+                    onValueChange={(value) =>
+                      setJobData((prev) => ({
+                        ...prev,
+                        contractType: value as ContractType,
+                      }))
+                    }
+                  >
+                    <SelectTrigger className="h-12 border-gray-200 focus:border-blue-500">
+                      <SelectValue placeholder="Selecciona tipo" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {contractTypeOptions.map((option) => (
+                        <SelectItem key={option.value} value={option.value}>
+                          {option.label}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+              </div>
+
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <div>
+                  <Label
+                    htmlFor="workModality"
+                    className="text-sm font-medium text-gray-700 mb-2 block"
+                  >
+                    Modalidad de trabajo *
+                  </Label>
+                  <Select
+                    value={jobData.workModality}
+                    onValueChange={(value) =>
+                      setJobData((prev) => ({
+                        ...prev,
+                        workModality: value as WorkModality,
+                      }))
+                    }
+                  >
+                    <SelectTrigger className="h-12 border-gray-200 focus:border-blue-500">
+                      <SelectValue placeholder="Selecciona modalidad" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {workModalityOptions.map((option) => (
+                        <SelectItem key={option.value} value={option.value}>
+                          {option.label}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+                <div>
+                  <Label
+                    htmlFor="experienceLevel"
+                    className="text-sm font-medium text-gray-700 mb-2 block"
+                  >
+                    Nivel de experiencia *
+                  </Label>
+                  <Select
+                    value={jobData.experienceLevel}
+                    onValueChange={(value) =>
+                      setJobData((prev) => ({
+                        ...prev,
+                        experienceLevel: value as ExperienceLevel,
+                      }))
+                    }
+                  >
+                    <SelectTrigger className="h-12 border-gray-200 focus:border-blue-500">
+                      <SelectValue placeholder="Selecciona nivel" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {experienceLevelOptions.map((option) => (
+                        <SelectItem key={option.value} value={option.value}>
+                          {option.label}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+              </div>
+
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+                <div>
+                  <Label
+                    htmlFor="salaryMin"
+                    className="text-sm font-medium text-gray-700 mb-2 block"
+                  >
+                    Salario mínimo (BOB)
+                  </Label>
+                  <Input
+                    id="salaryMin"
+                    type="number"
+                    placeholder="3000"
+                    value={jobData.salaryMin}
+                    onChange={(e) =>
+                      setJobData((prev) => ({
+                        ...prev,
+                        salaryMin: e.target.value,
+                      }))
+                    }
+                    className="h-12 border-gray-200 focus:border-blue-500"
+                  />
+                </div>
+
+                <div>
+                  <Label
+                    htmlFor="salaryMax"
+                    className="text-sm font-medium text-gray-700 mb-2 block"
+                  >
+                    Salario máximo (BOB)
+                  </Label>
+                  <Input
+                    id="salaryMax"
+                    type="number"
+                    placeholder="5000"
+                    value={jobData.salaryMax}
+                    onChange={(e) =>
+                      setJobData((prev) => ({
+                        ...prev,
+                        salaryMax: e.target.value,
+                      }))
+                    }
+                    className="h-12 border-gray-200 focus:border-blue-500"
+                  />
+                </div>
+
+                <div>
+                  <Label
+                    htmlFor="closingDate"
+                    className="text-sm font-medium text-gray-700 mb-2 block"
+                  >
+                    Fecha límite de aplicación
+                  </Label>
+                  <Input
+                    id="closingDate"
+                    type="date"
+                    value={jobData.closingDate}
+                    onChange={(e) =>
+                      setJobData((prev) => ({
+                        ...prev,
+                        closingDate: e.target.value,
+                      }))
+                    }
+                    className="h-12 border-gray-200 focus:border-blue-500"
+                  />
+                </div>
+
+                <div>
+                  <Label
+                    htmlFor="educationRequired"
+                    className="text-sm font-medium text-gray-700 mb-2 block"
+                  >
+                    Educación requerida
+                  </Label>
+                  <Select
+                    value={jobData.educationRequired}
+                    onValueChange={(value) =>
+                      setJobData((prev) => ({
+                        ...prev,
+                        educationRequired: value,
+                      }))
+                    }
+                  >
+                    <SelectTrigger className="h-12 border-gray-200 focus:border-blue-500">
+                      <SelectValue placeholder="Selecciona nivel educativo" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="PRIMARY">Primaria</SelectItem>
+                      <SelectItem value="SECONDARY">Secundaria</SelectItem>
+                      <SelectItem value="TECHNICAL">Técnico</SelectItem>
+                      <SelectItem value="UNIVERSITY">Universidad</SelectItem>
+                      <SelectItem value="POSTGRADUATE">Postgrado</SelectItem>
+                      <SelectItem value="OTHER">Otro</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+              </div>
+
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <div>
+                  <Label
+                    htmlFor="department"
+                    className="text-sm font-medium text-gray-700 mb-2 block"
+                  >
+                    Departamento
+                  </Label>
+                  <Input
+                    id="department"
+                    value={jobData.department}
+                    onChange={(e) =>
+                      setJobData((prev) => ({
+                        ...prev,
+                        department: e.target.value,
+                      }))
+                    }
+                    className="h-12 border-gray-200 focus:border-blue-500"
+                  />
+                </div>
+                <div>
+                  <Label
+                    htmlFor="municipality"
+                    className="text-sm font-medium text-gray-700 mb-2 block"
+                  >
+                    Municipio
+                  </Label>
+                  <Input
+                    id="municipality"
+                    value={jobData.municipality}
+                    onChange={(e) =>
+                      setJobData((prev) => ({
+                        ...prev,
+                        municipality: e.target.value,
+                      }))
+                    }
+                    className="h-12 border-gray-200 focus:border-blue-500"
+                  />
+                </div>
+              </div>
+
+              <div>
+                <Label
+                  htmlFor="workSchedule"
+                  className="text-sm font-medium text-gray-700 mb-2 block"
                 >
-                  <SelectTrigger>
-                    <SelectValue placeholder="Selecciona nivel" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {experienceLevelOptions.map((option) => (
-                      <SelectItem key={option.value} value={option.value}>
-                        {option.label}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </div>
-            </div>
-
-            <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-              <div>
-                <Label htmlFor="salaryMin">Salario mínimo (BOB)</Label>
-                <Input
-                  id="salaryMin"
-                  type="number"
-                  placeholder="3000"
-                  value={jobData.salaryMin}
-                  onChange={(e) =>
-                    setJobData((prev) => ({
-                      ...prev,
-                      salaryMin: e.target.value,
-                    }))
-                  }
-                />
-              </div>
-
-              <div>
-                <Label htmlFor="salaryMax">Salario máximo (BOB)</Label>
-                <Input
-                  id="salaryMax"
-                  type="number"
-                  placeholder="5000"
-                  value={jobData.salaryMax}
-                  onChange={(e) =>
-                    setJobData((prev) => ({
-                      ...prev,
-                      salaryMax: e.target.value,
-                    }))
-                  }
-                />
-              </div>
-              <div>
-                <Label htmlFor="closingDate">Fecha límite de aplicación</Label>
-                <Input
-                  id="closingDate"
-                  type="date"
-                  value={jobData.closingDate}
-                  onChange={(e) =>
-                    setJobData((prev) => ({
-                      ...prev,
-                      closingDate: e.target.value,
-                    }))
-                  }
-                />
-              </div>
-
-              <div>
-                <Label htmlFor="department">Departamento</Label>
-                <Input
-                  id="department"
-                  value={jobData.department}
-                  onChange={(e) =>
-                    setJobData((prev) => ({
-                      ...prev,
-                      department: e.target.value,
-                    }))
-                  }
-                />
-              </div>
-              <div>
-                <Label htmlFor="municipality">Municipio</Label>
-                <Input
-                  id="municipality"
-                  value={jobData.municipality}
-                  onChange={(e) =>
-                    setJobData((prev) => ({
-                      ...prev,
-                      municipality: e.target.value,
-                    }))
-                  }
-                />
-              </div>
-              <div>
-                <Label htmlFor="educationRequired">Educación requerida</Label>
-                <Select
-                  value={jobData.educationRequired}
-                  onValueChange={(value) =>
-                    setJobData((prev) => ({
-                      ...prev,
-                      educationRequired: value,
-                    }))
-                  }
-                >
-                  <SelectTrigger>
-                    <SelectValue placeholder="Selecciona nivel educativo" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="PRIMARY">Primaria</SelectItem>
-                    <SelectItem value="SECONDARY">Secundaria</SelectItem>
-                    <SelectItem value="TECHNICAL">Técnico</SelectItem>
-                    <SelectItem value="UNIVERSITY">Universidad</SelectItem>
-                    <SelectItem value="POSTGRADUATE">Postgrado</SelectItem>
-                    <SelectItem value="OTHER">Otro</SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
-
-              <div className="md:col-span-4">
-                <Label htmlFor="workSchedule">Horario de trabajo *</Label>
+                  Horario de trabajo *
+                </Label>
                 <Input
                   id="workSchedule"
                   placeholder="Ej: Lunes a viernes, 8:00 a 17:00"
@@ -715,332 +875,384 @@ export default function CreateJobPage() {
                       workSchedule: e.target.value,
                     }))
                   }
+                  className="h-12 border-gray-200 focus:border-blue-500"
                 />
               </div>
-            </div>
-          </CardContent>
-        </Card>
+            </CardContent>
+          </Card>
 
-        {/* Skills and Requirements */}
-        <Card>
-          <CardHeader>
-            <CardTitle>Habilidades y Requisitos</CardTitle>
-          </CardHeader>
-          <CardContent className="space-y-6">
-            {/* Required Skills */}
-            <div>
-              <Label>Habilidades requeridas *</Label>
-              <div className="flex space-x-2 mt-2">
-                <Input
-                  placeholder="Ej: React, JavaScript, etc."
-                  value={skillInput}
-                  onChange={(e) => setSkillInput(e.target.value)}
-                  onKeyPress={(e) => {
-                    if (e.key === "Enter") {
-                      e.preventDefault();
-                      addToArray("requiredSkills", skillInput, setSkillInput);
+          {/* Skills and Requirements */}
+          <Card className="bg-white shadow-sm border-0">
+            <CardHeader className="pb-6">
+              <CardTitle className="text-xl font-semibold text-gray-900 flex items-center gap-2">
+                <Plus className="w-5 h-5 text-green-600" />
+                Habilidades y Requisitos
+              </CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-8">
+              {/* Required Skills */}
+              <div>
+                <Label className="text-sm font-medium text-gray-700 mb-3 block">
+                  Habilidades requeridas *
+                </Label>
+                <div className="flex gap-3">
+                  <Input
+                    placeholder="Ej: React, JavaScript, etc."
+                    value={skillInput}
+                    onChange={(e) => setSkillInput(e.target.value)}
+                    onKeyPress={(e) => {
+                      if (e.key === "Enter") {
+                        e.preventDefault();
+                        addToArray("requiredSkills", skillInput, setSkillInput);
+                      }
+                    }}
+                    className="h-12 border-gray-200 focus:border-blue-500"
+                  />
+                  <Button
+                    type="button"
+                    onClick={() =>
+                      addToArray("requiredSkills", skillInput, setSkillInput)
                     }
-                  }}
-                />
-                <Button
-                  type="button"
-                  onClick={() =>
-                    addToArray("requiredSkills", skillInput, setSkillInput)
-                  }
-                >
-                  Agregar
-                </Button>
-              </div>
-              <div className="flex flex-wrap gap-2 mt-2">
-                {jobData.requiredSkills.map((skill, i) => (
-                  <Badge
-                    key={i}
-                    variant="default"
-                    className="cursor-pointer"
-                    onClick={() => removeFromArray("requiredSkills", i)}
+                    className="h-12 px-6"
                   >
-                    {skill} ×
-                  </Badge>
-                ))}
+                    <Plus className="w-4 h-4 mr-2" />
+                    Agregar
+                  </Button>
+                </div>
+                <div className="flex flex-wrap gap-2 mt-3">
+                  {jobData.requiredSkills.map((skill, i) => (
+                    <Badge
+                      key={i}
+                      variant="default"
+                      className="cursor-pointer bg-blue-100 text-blue-800 hover:bg-blue-200 transition-colors"
+                      onClick={() => removeFromArray("requiredSkills", i)}
+                    >
+                      {skill} <X className="w-3 h-3 ml-1" />
+                    </Badge>
+                  ))}
+                </div>
               </div>
-            </div>
 
-            {/* Desired Skills */}
-            <div>
-              <Label>Habilidades deseadas</Label>
-              <div className="flex space-x-2 mt-2">
-                <Input
-                  placeholder="Ej: TypeScript, Docker, etc."
-                  value={desiredSkillInput}
-                  onChange={(e) => setDesiredSkillInput(e.target.value)}
-                  onKeyPress={(e) => {
-                    if (e.key === "Enter") {
-                      e.preventDefault();
+              {/* Desired Skills */}
+              <div>
+                <Label className="text-sm font-medium text-gray-700 mb-3 block">
+                  Habilidades deseadas
+                </Label>
+                <div className="flex gap-3">
+                  <Input
+                    placeholder="Ej: TypeScript, Docker, etc."
+                    value={desiredSkillInput}
+                    onChange={(e) => setDesiredSkillInput(e.target.value)}
+                    onKeyPress={(e) => {
+                      if (e.key === "Enter") {
+                        e.preventDefault();
+                        addToArray(
+                          "desiredSkills",
+                          desiredSkillInput,
+                          setDesiredSkillInput
+                        );
+                      }
+                    }}
+                    className="h-12 border-gray-200 focus:border-blue-500"
+                  />
+                  <Button
+                    type="button"
+                    onClick={() =>
                       addToArray(
                         "desiredSkills",
                         desiredSkillInput,
                         setDesiredSkillInput
-                      );
+                      )
                     }
-                  }}
-                />
-                <Button
-                  type="button"
-                  onClick={() =>
-                    addToArray(
-                      "desiredSkills",
-                      desiredSkillInput,
-                      setDesiredSkillInput
-                    )
-                  }
-                >
-                  Agregar
-                </Button>
-              </div>
-              <div className="flex flex-wrap gap-2 mt-2">
-                {jobData.desiredSkills.map((skill, i) => (
-                  <Badge
-                    key={i}
-                    variant="outline"
-                    className="cursor-pointer"
-                    onClick={() => removeFromArray("desiredSkills", i)}
+                    className="h-12 px-6"
                   >
-                    {skill} ×
-                  </Badge>
-                ))}
+                    <Plus className="w-4 h-4 mr-2" />
+                    Agregar
+                  </Button>
+                </div>
+                <div className="flex flex-wrap gap-2 mt-3">
+                  {jobData.desiredSkills.map((skill, i) => (
+                    <Badge
+                      key={i}
+                      variant="outline"
+                      className="cursor-pointer border-green-200 text-green-800 hover:bg-green-50 transition-colors"
+                      onClick={() => removeFromArray("desiredSkills", i)}
+                    >
+                      {skill} <X className="w-3 h-3 ml-1" />
+                    </Badge>
+                  ))}
+                </div>
               </div>
-            </div>
 
-            {/* Requirements */}
-            <div>
-              <Label>Requisitos</Label>
-              <div className="flex space-x-2 mt-2">
-                <Input
-                  placeholder="Ej: Título universitario en ingeniería"
-                  value={requirementInput}
-                  onChange={(e) => setRequirementInput(e.target.value)}
-                  onKeyPress={(e) => {
-                    if (e.key === "Enter") {
-                      e.preventDefault();
+              {/* Requirements */}
+              <div>
+                <Label className="text-sm font-medium text-gray-700 mb-3 block">
+                  Requisitos
+                </Label>
+                <div className="flex gap-3">
+                  <Input
+                    placeholder="Ej: Título universitario en ingeniería"
+                    value={requirementInput}
+                    onChange={(e) => setRequirementInput(e.target.value)}
+                    onKeyPress={(e) => {
+                      if (e.key === "Enter") {
+                        e.preventDefault();
+                        addToArray(
+                          "requirements",
+                          requirementInput,
+                          setRequirementInput
+                        );
+                      }
+                    }}
+                    className="h-12 border-gray-200 focus:border-blue-500"
+                  />
+                  <Button
+                    type="button"
+                    onClick={() =>
                       addToArray(
                         "requirements",
                         requirementInput,
                         setRequirementInput
-                      );
+                      )
                     }
-                  }}
-                />
-                <Button
-                  type="button"
-                  onClick={() =>
-                    addToArray(
-                      "requirements",
-                      requirementInput,
-                      setRequirementInput
-                    )
-                  }
-                >
-                  Agregar
-                </Button>
-              </div>
-              <div className="space-y-1 mt-2">
-                {jobData.requirements.map((req, i) => (
-                  <div
-                    key={i}
-                    className="flex items-center justify-between p-2 bg-gray-50 rounded"
+                    className="h-12 px-6"
                   >
-                    <span className="text-sm">{req}</span>
-                    <Button
-                      size="sm"
-                      variant="ghost"
+                    <Plus className="w-4 h-4 mr-2" />
+                    Agregar
+                  </Button>
+                </div>
+                <div className="flex flex-wrap gap-2 mt-3">
+                  {jobData.requirements.map((req, i) => (
+                    <Badge
+                      key={i}
+                      variant="outline"
+                      className="cursor-pointer border-orange-200 text-orange-800 hover:bg-orange-50 transition-colors"
                       onClick={() => removeFromArray("requirements", i)}
                     >
-                      ×
-                    </Button>
-                  </div>
-                ))}
+                      {req} <X className="w-3 h-3 ml-1" />
+                    </Badge>
+                  ))}
+                </div>
               </div>
-            </div>
 
-            {/* Responsibilities */}
-            <div>
-              <Label>Responsabilidades</Label>
-              <div className="flex space-x-2 mt-2">
-                <Input
-                  placeholder="Ej: Desarrollar interfaces de usuario"
-                  value={responsibilityInput}
-                  onChange={(e) => setResponsibilityInput(e.target.value)}
-                  onKeyPress={(e) => {
-                    if (e.key === "Enter") {
-                      e.preventDefault();
+              {/* Responsibilities */}
+              <div>
+                <Label className="text-sm font-medium text-gray-700 mb-3 block">
+                  Responsabilidades
+                </Label>
+                <div className="flex gap-3">
+                  <Input
+                    placeholder="Ej: Desarrollar interfaces de usuario"
+                    value={responsibilityInput}
+                    onChange={(e) => setResponsibilityInput(e.target.value)}
+                    onKeyPress={(e) => {
+                      if (e.key === "Enter") {
+                        e.preventDefault();
+                        addToArray(
+                          "responsibilities",
+                          responsibilityInput,
+                          setResponsibilityInput
+                        );
+                      }
+                    }}
+                    className="h-12 border-gray-200 focus:border-blue-500"
+                  />
+                  <Button
+                    type="button"
+                    onClick={() =>
                       addToArray(
                         "responsibilities",
                         responsibilityInput,
                         setResponsibilityInput
-                      );
+                      )
                     }
-                  }}
-                />
-                <Button
-                  type="button"
-                  onClick={() =>
-                    addToArray(
-                      "responsibilities",
-                      responsibilityInput,
-                      setResponsibilityInput
-                    )
-                  }
-                >
-                  Agregar
-                </Button>
-              </div>
-              <div className="space-y-1 mt-2">
-                {jobData.responsibilities.map((resp, i) => (
-                  <div
-                    key={i}
-                    className="flex items-center justify-between p-2 bg-gray-50 rounded"
+                    className="h-12 px-6"
                   >
-                    <span className="text-sm">{resp}</span>
-                    <Button
-                      size="sm"
-                      variant="ghost"
+                    <Plus className="w-4 h-4 mr-2" />
+                    Agregar
+                  </Button>
+                </div>
+                <div className="flex flex-wrap gap-2 mt-3">
+                  {jobData.responsibilities.map((resp, i) => (
+                    <Badge
+                      key={i}
+                      variant="outline"
+                      className="cursor-pointer border-indigo-200 text-indigo-800 hover:bg-indigo-50 transition-colors"
                       onClick={() => removeFromArray("responsibilities", i)}
                     >
-                      ×
-                    </Button>
-                  </div>
-                ))}
+                      {resp} <X className="w-3 h-3 ml-1" />
+                    </Badge>
+                  ))}
+                </div>
               </div>
-            </div>
 
-            {/* Benefits */}
-            <div>
-              <Label>Beneficios</Label>
-              <div className="flex space-x-2 mt-2">
-                <Input
-                  placeholder="Ej: Seguro médico, capacitaciones"
-                  value={benefitInput}
-                  onChange={(e) => setBenefitInput(e.target.value)}
-                  onKeyPress={(e) => {
-                    if (e.key === "Enter") {
-                      e.preventDefault();
-                      addToArray("benefits", benefitInput, setBenefitInput);
+              {/* Benefits */}
+              <div>
+                <Label className="text-sm font-medium text-gray-700 mb-3 block">
+                  Beneficios
+                </Label>
+                <div className="flex gap-3">
+                  <Input
+                    placeholder="Ej: Seguro médico, capacitaciones"
+                    value={benefitInput}
+                    onChange={(e) => setBenefitInput(e.target.value)}
+                    onKeyPress={(e) => {
+                      if (e.key === "Enter") {
+                        e.preventDefault();
+                        addToArray("benefits", benefitInput, setBenefitInput);
+                      }
+                    }}
+                    className="h-12 border-gray-200 focus:border-blue-500"
+                  />
+                  <Button
+                    type="button"
+                    onClick={() =>
+                      addToArray("benefits", benefitInput, setBenefitInput)
                     }
-                  }}
-                />
-                <Button
-                  type="button"
-                  onClick={() =>
-                    addToArray("benefits", benefitInput, setBenefitInput)
-                  }
-                >
-                  Agregar
-                </Button>
-              </div>
-              <div className="flex flex-wrap gap-2 mt-2">
-                {jobData.benefits.map((benefit, i) => (
-                  <Badge
-                    key={i}
-                    variant="outline"
-                    className="cursor-pointer"
-                    onClick={() => removeFromArray("benefits", i)}
+                    className="h-12 px-6"
                   >
-                    {benefit} ×
-                  </Badge>
-                ))}
+                    <Plus className="w-4 h-4 mr-2" />
+                    Agregar
+                  </Button>
+                </div>
+                <div className="flex flex-wrap gap-2 mt-3">
+                  {jobData.benefits.map((benefit, i) => (
+                    <Badge
+                      key={i}
+                      variant="outline"
+                      className="cursor-pointer border-purple-200 text-purple-800 hover:bg-purple-50 transition-colors"
+                      onClick={() => removeFromArray("benefits", i)}
+                    >
+                      {benefit} <X className="w-3 h-3 ml-1" />
+                    </Badge>
+                  ))}
+                </div>
               </div>
-            </div>
-          </CardContent>
-        </Card>
+            </CardContent>
+          </Card>
 
-        {!showTermsModal && (
-          <Card>
-            <CardHeader>
-              <CardTitle>Ubicación Geográfica</CardTitle>
+          {!showTermsModal && (
+            <Card className="bg-white shadow-sm border-0">
+              <CardHeader className="pb-6">
+                <CardTitle className="text-xl font-semibold text-gray-900 flex items-center gap-2">
+                  <MapPin className="w-5 h-5 text-orange-600" />
+                  Ubicación Geográfica
+                </CardTitle>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                <Label className="text-sm font-medium text-gray-700">
+                  Selecciona en el mapa la ubicación del empleo
+                </Label>
+                <div className="border border-gray-200 rounded-lg overflow-hidden">
+                  {isMounted ? (
+                    <MapPicker
+                      onChange={(coords) =>
+                        setJobData((prev) => ({ ...prev, coordinates: coords }))
+                      }
+                    />
+                  ) : (
+                    <div className="h-[300px] w-full bg-gray-100 rounded-lg flex items-center justify-center">
+                      <div className="text-gray-500">Cargando mapa...</div>
+                    </div>
+                  )}
+                </div>
+                {jobData.coordinates && (
+                  <p className="text-sm text-gray-500 mt-2">
+                    Latitud: {jobData.coordinates[0]}, Longitud:{" "}
+                    {jobData.coordinates[1]}
+                  </p>
+                )}
+              </CardContent>
+            </Card>
+          )}
+
+          <Card className="bg-white shadow-sm border-0">
+            <CardHeader className="pb-6">
+              <CardTitle className="text-xl font-semibold text-gray-900 flex items-center gap-2">
+                <ImageIcon className="w-5 h-5 text-purple-600" />
+                Imágenes del Empleo
+              </CardTitle>
             </CardHeader>
-            <CardContent className="space-y-2">
-              <Label>Selecciona en el mapa la ubicación del empleo</Label>
-              <MapPicker
-                onChange={(coords) =>
-                  setJobData((prev) => ({ ...prev, coordinates: coords }))
-                }
-              />
-              {jobData.coordinates && (
-                <p className="text-sm text-muted-foreground mt-2">
-                  Latitud: {jobData.coordinates[0]}, Longitud:{" "}
-                  {jobData.coordinates[1]}
-                </p>
+            <CardContent className="space-y-6">
+              <div>
+                <Label className="text-sm font-medium text-gray-700 mb-3 block">
+                  Selecciona una o varias imágenes
+                </Label>
+                <div className="flex items-center gap-3">
+                  <Input
+                    ref={fileInputRef}
+                    type="file"
+                    accept="image/*"
+                    multiple
+                    className="hidden"
+                    onChange={(e) => handleFiles(e.target.files)}
+                  />
+                  <Button
+                    variant="outline"
+                    onClick={() => fileInputRef.current?.click()}
+                    className="h-12 px-6"
+                  >
+                    <ImageIcon className="w-4 h-4 mr-2" />
+                    Subir imágenes
+                  </Button>
+                </div>
+              </div>
+
+              {imageUrls.length > 0 && (
+                <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
+                  {imageUrls.map((src, index) => (
+                    <div
+                      key={index}
+                      className="relative group rounded-lg overflow-hidden border border-gray-200"
+                    >
+                      <img
+                        src={src}
+                        alt={`imagen-${index}`}
+                        className="object-cover w-full h-32"
+                      />
+                      <Button
+                        size="icon"
+                        variant="destructive"
+                        className="absolute top-2 right-2 opacity-0 group-hover:opacity-100 transition-opacity h-8 w-8"
+                        onClick={() => removeImage(index)}
+                      >
+                        <Trash className="w-4 h-4" />
+                      </Button>
+                    </div>
+                  ))}
+                </div>
               )}
             </CardContent>
           </Card>
-        )}
 
-        <Card>
-          <CardHeader>
-            <CardTitle>Imágenes del Empleo</CardTitle>
-          </CardHeader>
-          <CardContent className="space-y-4">
-            <div>
-              <Label>Selecciona una o varias imágenes</Label>
-              <div className="flex items-center space-x-2 mt-2">
-                <Input
-                  ref={fileInputRef}
-                  type="file"
-                  accept="image/*"
-                  multiple
-                  className="hidden"
-                  onChange={(e) => handleFiles(e.target.files)}
-                />
-                <Button
-                  variant="outline"
-                  onClick={() => fileInputRef.current?.click()}
-                >
-                  <ImageIcon className="w-4 h-4 mr-2" />
-                  Subir imágenes
-                </Button>
-              </div>
-            </div>
-
-            {imageUrls.length > 0 && (
-              <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
-                {imageUrls.map((src, index) => (
-                  <div
-                    key={index}
-                    className="relative group rounded-lg overflow-hidden border"
-                  >
-                    <img
-                      src={src}
-                      alt={`imagen-${index}`}
-                      className="object-cover w-full h-32"
-                    />
-                    <Button
-                      size="icon"
-                      variant="destructive"
-                      className="absolute top-2 right-2 opacity-0 group-hover:opacity-100 transition-opacity"
-                      onClick={() => removeImage(index)}
-                    >
-                      <Trash className="w-4 h-4" />
-                    </Button>
-                  </div>
-                ))}
-              </div>
-            )}
-          </CardContent>
-        </Card>
-
-        {/* Actions */}
-        <div className="flex justify-end space-x-4 pb-8">
-          <Button
-            variant="outline"
-            onClick={() => handleSubmit("DRAFT")}
-            disabled={isLoading}
-          >
-            <Save className="w-4 h-4 mr-2" />
-            Guardar borrador
-          </Button>
-          <Button onClick={handlePublishClick} disabled={isLoading}>
-            Publicar empleo
-          </Button>
+          {/* Actions */}
+          <div className="flex justify-end gap-4 pt-8">
+            <Button
+              variant="outline"
+              onClick={() => handleSubmit("DRAFT")}
+              disabled={isLoading}
+              className="h-12 px-8"
+            >
+              {isLoading ? (
+                <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+              ) : (
+                <Save className="w-4 h-4 mr-2" />
+              )}
+              Guardar borrador
+            </Button>
+            <Button
+              onClick={handlePublishClick}
+              disabled={isLoading}
+              className="h-12 px-8"
+            >
+              {isLoading ? (
+                <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+              ) : (
+                <CheckCircle className="w-4 h-4 mr-2" />
+              )}
+              Publicar empleo
+            </Button>
+          </div>
         </div>
       </div>
     </div>

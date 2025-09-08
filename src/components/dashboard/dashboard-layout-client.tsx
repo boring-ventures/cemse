@@ -38,7 +38,7 @@ export function DashboardLayoutClient({ children }: DashboardLayoutProps) {
               "overflow-x-hidden" // Prevent horizontal overflow
             )}
           >
-            <AdaptiveHeader />
+            <AdaptiveHeader title="" />
             {children}
           </div>
         </SidebarProvider>

@@ -79,10 +79,21 @@ export class ResourceService {
 
   // Update resource
   static async updateResource(id: string, data: any) {
-    return await apiCall(`/resource`, {
-      method: "PUT",
-      body: JSON.stringify({ id, ...data }),
-    });
+    // If data is FormData, send as-is; otherwise, send as JSON
+    if (data instanceof FormData) {
+      return await apiCall(`/resource/${id}`, {
+        method: "PUT",
+        body: data,
+      });
+    } else {
+      return await apiCall(`/resource/${id}`, {
+        method: "PUT",
+        body: JSON.stringify(data),
+        headers: {
+          "Content-Type": "application/json",
+        },
+      });
+    }
   }
 
   // Delete resource

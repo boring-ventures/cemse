@@ -1,18 +1,34 @@
 "use client";
 
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { MapPin, ExternalLink, AlertCircle, Info } from "lucide-react";
-import { Button } from "@/components/ui/button";
+import { MapPin, AlertCircle, Info } from "lucide-react";
 import dynamic from "next/dynamic";
-import { useEffect, useState } from "react";
+import { useEffect, useState, useRef } from "react";
 
 // Import Leaflet CSS directly
 import "leaflet/dist/leaflet.css";
 
+// Add global CSS to fix z-index issues with modals
+if (typeof document !== "undefined") {
+  const style = document.createElement("style");
+  style.textContent = `
+    .leaflet-container {
+      z-index: 1 !important;
+    }
+    .leaflet-control-container {
+      z-index: 1 !important;
+    }
+    .leaflet-popup {
+      z-index: 1 !important;
+    }
+  `;
+  document.head.appendChild(style);
+}
+
 // Dynamically import the map components to avoid SSR issues
 const MapContainer = dynamic(
   () => import("react-leaflet").then((mod) => mod.MapContainer),
-  { 
+  {
     ssr: false,
     loading: () => (
       <div className="h-full w-full flex items-center justify-center bg-gray-50">
@@ -21,7 +37,7 @@ const MapContainer = dynamic(
           <p className="text-sm">Cargando mapa...</p>
         </div>
       </div>
-    )
+    ),
   }
 );
 
@@ -35,10 +51,9 @@ const Marker = dynamic(
   { ssr: false }
 );
 
-const Popup = dynamic(
-  () => import("react-leaflet").then((mod) => mod.Popup),
-  { ssr: false }
-);
+const Popup = dynamic(() => import("react-leaflet").then((mod) => mod.Popup), {
+  ssr: false,
+});
 
 interface LocationMapProps {
   latitude?: number;
@@ -57,15 +72,18 @@ function useMapInitialization() {
     const fixLeafletIcons = async () => {
       try {
         const L = await import("leaflet");
-        
+
         // Fix for default markers in react-leaflet
         delete (L.Icon.Default.prototype as any)._getIconUrl;
         L.Icon.Default.mergeOptions({
-          iconRetinaUrl: "https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.7.1/images/marker-icon-2x.png",
-          iconUrl: "https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.7.1/images/marker-icon.png",
-          shadowUrl: "https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.7.1/images/marker-shadow.png",
+          iconRetinaUrl:
+            "https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.7.1/images/marker-icon-2x.png",
+          iconUrl:
+            "https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.7.1/images/marker-icon.png",
+          shadowUrl:
+            "https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.7.1/images/marker-shadow.png",
         });
-        
+
         setIsMapReady(true);
         setMapError(null);
       } catch (error) {
@@ -89,10 +107,28 @@ export function LocationMap({
 }: LocationMapProps) {
   const [isClient, setIsClient] = useState(false);
   const { isMapReady, mapError } = useMapInitialization();
+  const mapRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     setIsClient(true);
   }, []);
+
+  // Fix z-index issues with modals
+  useEffect(() => {
+    const fixMapZIndex = () => {
+      // Find all leaflet map containers and set their z-index
+      const mapContainers = document.querySelectorAll(".leaflet-container");
+      mapContainers.forEach((container) => {
+        (container as HTMLElement).style.zIndex = "1";
+      });
+    };
+
+    // Run immediately and after a short delay to catch dynamically created elements
+    fixMapZIndex();
+    const timeoutId = setTimeout(fixMapZIndex, 100);
+
+    return () => clearTimeout(timeoutId);
+  }, [isMapReady]);
 
   // Default coordinates for Cochabamba, Bolivia
   const defaultLat = -17.3895;
@@ -103,7 +139,7 @@ export function LocationMap({
   const lat = hasCoordinates ? latitude : defaultLat;
   const lng = hasCoordinates ? longitude : defaultLng;
 
-  // Create Google Maps and OpenStreetMap URLs
+  // Create Google Maps and OpenStreetMap URLs (for potential future use)
   const googleMapsUrl = `https://www.google.com/maps?q=${lat},${lng}&z=15`;
   const openStreetMapUrl = `https://www.openstreetmap.org/?mlat=${lat}&mlon=${lng}&zoom=15`;
 
@@ -162,34 +198,11 @@ export function LocationMap({
               </div>
             </div>
 
-            {/* Action Buttons */}
-            <div className="flex flex-col sm:flex-row gap-2">
-              <Button
-                variant="outline"
-                size="sm"
-                className="flex-1"
-                onClick={() => window.open(googleMapsUrl, "_blank")}
-              >
-                <ExternalLink className="w-4 h-4 mr-2" />
-                Ver en Google Maps
-              </Button>
-              <Button
-                variant="outline"
-                size="sm"
-                className="flex-1"
-                onClick={() => window.open(openStreetMapUrl, "_blank")}
-              >
-                <ExternalLink className="w-4 h-4 mr-2" />
-                Ver en OpenStreetMap
-              </Button>
-            </div>
-
             {/* Additional Location Information */}
             <div className="text-center text-xs text-gray-500 space-y-1">
               <p>
                 <Info className="w-3 h-3 inline mr-1" />
-                Haz clic en los botones para ver la ubicación exacta en mapas
-                externos
+                Ubicación exacta del empleo
               </p>
             </div>
           </div>
@@ -250,38 +263,17 @@ export function LocationMap({
               <div className="text-center text-red-600">
                 <AlertCircle className="w-12 h-12 mx-auto mb-2" />
                 <p className="text-sm font-medium">Error al cargar el mapa</p>
-                <p className="text-xs mt-1">Usa los botones de abajo para ver la ubicación</p>
+                <p className="text-xs mt-1">
+                  No se pudo cargar el mapa interactivo
+                </p>
               </div>
-            </div>
-
-            {/* Action Buttons */}
-            <div className="flex flex-col sm:flex-row gap-2">
-              <Button
-                variant="outline"
-                size="sm"
-                className="flex-1"
-                onClick={() => window.open(googleMapsUrl, "_blank")}
-              >
-                <ExternalLink className="w-4 h-4 mr-2" />
-                Ver en Google Maps
-              </Button>
-              <Button
-                variant="outline"
-                size="sm"
-                className="flex-1"
-                onClick={() => window.open(openStreetMapUrl, "_blank")}
-              >
-                <ExternalLink className="w-4 h-4 mr-2" />
-                Ver en OpenStreetMap
-              </Button>
             </div>
 
             {/* Additional Location Information */}
             <div className="text-center text-xs text-gray-500 space-y-1">
               <p>
                 <Info className="w-3 h-3 inline mr-1" />
-                Haz clic en los botones para ver la ubicación exacta en mapas
-                externos
+                Ubicación exacta del empleo
               </p>
             </div>
           </div>
@@ -336,16 +328,21 @@ export function LocationMap({
           </div>
 
           {/* Interactive Map */}
-          <div className="h-64 w-full rounded-lg border border-gray-200 overflow-hidden">
+          <div
+            ref={mapRef}
+            className="h-64 w-full rounded-lg border border-gray-200 overflow-hidden relative z-0"
+            style={{ zIndex: 1 }}
+          >
             <MapContainer
               center={[lat, lng]}
               zoom={15}
-              style={{ height: "100%", width: "100%" }}
+              style={{ height: "100%", width: "100%", zIndex: 1 }}
               zoomControl={true}
               scrollWheelZoom={false}
               doubleClickZoom={false}
               dragging={true}
               touchZoom={true}
+              className="map-container"
             >
               <TileLayer
                 attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
@@ -365,34 +362,14 @@ export function LocationMap({
             </MapContainer>
           </div>
 
-          {/* Action Buttons */}
-          <div className="flex flex-col sm:flex-row gap-2">
-            <Button
-              variant="outline"
-              size="sm"
-              className="flex-1"
-              onClick={() => window.open(googleMapsUrl, "_blank")}
-            >
-              <ExternalLink className="w-4 h-4 mr-2" />
-              Ver en Google Maps
-            </Button>
-            <Button
-              variant="outline"
-              size="sm"
-              className="flex-1"
-              onClick={() => window.open(openStreetMapUrl, "_blank")}
-            >
-              <ExternalLink className="w-4 h-4 mr-2" />
-              Ver en OpenStreetMap
-            </Button>
-          </div>
-
           {/* Additional Location Information */}
           <div className="text-center text-xs text-gray-500 space-y-1">
             <p>
               <Info className="w-3 h-3 inline mr-1" />
-              Haz clic en los botones para ver la ubicación exacta en mapas
-              externos
+              Ubicación exacta del empleo
+            </p>
+            <p>
+              Coordenadas: {lat.toFixed(6)}, {lng.toFixed(6)}
             </p>
           </div>
         </div>

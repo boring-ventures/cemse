@@ -284,18 +284,28 @@ export const apiCall = async (
       // For 400 and 500 errors, try to get the specific error message from response
       if (response.status === 400 || response.status === 500) {
         try {
-          const errorData = await response.json();
-          const errorMessage =
-            errorData.error ||
-            errorData.message ||
-            `HTTP error! status: ${response.status}`;
+          const responseText = await response.text();
+          let errorData = null;
+          let errorMessage = `HTTP error! status: ${response.status}`;
+
+          if (responseText) {
+            try {
+              errorData = JSON.parse(responseText);
+              errorMessage =
+                errorData.error || errorData.message || errorMessage;
+            } catch (jsonError) {
+              // If JSON parsing fails, use the raw text as error message
+              errorMessage = responseText || errorMessage;
+            }
+          }
+
           console.error(
             `🔐 apiCall - ${response.status} error details:`,
-            errorData
+            errorData || responseText
           );
 
           // Log debug information if available
-          if (errorData.debug) {
+          if (errorData?.debug) {
             console.error(`🔐 apiCall - Debug info:`, errorData.debug);
           }
 
@@ -1160,77 +1170,8 @@ const getMockData = (endpoint: string, options?: RequestInit) => {
     };
   }
 
-  // Mock data for municipality endpoints
-  if (endpoint.includes("/municipality/auth/me")) {
-    return {
-      id: "1",
-      name: "Cercado",
-      department: "La Paz",
-      region: "Altiplano",
-      population: 850000,
-      mayor: "Dr. Juan Pérez",
-      mayorEmail: "alcalde@cercado.gob.bo",
-      mayorPhone: "+591 2 1234567",
-      address: "Plaza Mayor 1",
-      website: "https://cercado.gob.bo",
-      email: "info@cercado.gob.bo",
-      phone: "+591 2 7654321",
-      logo: "https://ui-avatars.com/api/?name=Cercado&background=random",
-      coverImage:
-        "https://images.unsplash.com/photo-1449824913935-59a10b8d2000?w=800",
-      description: "Municipio de Cercado, La Paz - Bolivia",
-      isActive: true,
-      createdAt: "2024-01-01T00:00:00Z",
-      updatedAt: "2024-01-01T00:00:00Z",
-    };
-  }
-
-  if (endpoint.includes("/municipality")) {
-    return [
-      {
-        id: "1",
-        name: "Cercado",
-        department: "La Paz",
-        region: "Altiplano",
-        population: 850000,
-        mayor: "Dr. Juan Pérez",
-        mayorEmail: "alcalde@cercado.gob.bo",
-        mayorPhone: "+591 2 1234567",
-        address: "Plaza Mayor 1",
-        website: "https://cercado.gob.bo",
-        email: "info@cercado.gob.bo",
-        phone: "+591 2 7654321",
-        logo: "https://ui-avatars.com/api/?name=Cercado&background=random",
-        coverImage:
-          "https://images.unsplash.com/photo-1449824913935-59a10b8d2000?w=800",
-        description: "Municipio de Cercado, La Paz - Bolivia",
-        isActive: true,
-        createdAt: "2024-01-01T00:00:00Z",
-        updatedAt: "2024-01-01T00:00:00Z",
-      },
-      {
-        id: "2",
-        name: "El Alto",
-        department: "La Paz",
-        region: "Altiplano",
-        population: 1200000,
-        mayor: "Dra. María García",
-        mayorEmail: "alcalde@elalto.gob.bo",
-        mayorPhone: "+591 2 9876543",
-        address: "Av. Principal 100",
-        website: "https://elalto.gob.bo",
-        email: "info@elalto.gob.bo",
-        phone: "+591 2 4567890",
-        logo: "https://ui-avatars.com/api/?name=El+Alto&background=random",
-        coverImage:
-          "https://images.unsplash.com/photo-1449824913935-59a10b8d2000?w=800",
-        description: "Municipio de El Alto, La Paz - Bolivia",
-        isActive: true,
-        createdAt: "2024-01-01T00:00:00Z",
-        updatedAt: "2024-01-01T00:00:00Z",
-      },
-    ];
-  }
+  // Mock data for municipality endpoints - REMOVED
+  // Municipalities now fetch real data from the database
 
   // Default mock response
   return {

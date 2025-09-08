@@ -70,13 +70,19 @@ export function useCompanyProfile() {
       }
 
       console.log("🔍 useCompanyProfile - Company ID to fetch:", companyId);
+      console.log("🔍 useCompanyProfile - User ID:", user.id);
+      console.log("🔍 useCompanyProfile - User company object:", user.company);
 
       if (!companyId) {
         throw new Error("No company ID available");
       }
 
       // Check if we already have company data from authentication
-      if (user.company && user.company.id === companyId) {
+      // For company users, the user.id IS the company ID, so we can use the company data directly
+      if (
+        user.company &&
+        (user.company.id === companyId || user.id === companyId)
+      ) {
         console.log(
           "🔍 useCompanyProfile - Using company data from authentication context"
         );
@@ -107,13 +113,147 @@ export function useCompanyProfile() {
         return;
       }
 
+      // If we don't have company data from auth but we're a company user,
+      // try to create a basic company profile from user data as a fallback
+      if (!user.company && isCompany) {
+        console.log(
+          "🔍 useCompanyProfile - No company data in auth, creating basic profile from user data"
+        );
+
+        const basicCompanyProfile: CompanyProfile = {
+          id: user.id, // Use user ID as company ID
+          name: user.firstName || "Mi Empresa",
+          description: null,
+          businessSector: null,
+          companySize: null,
+          foundedYear: null,
+          website: null,
+          email: user.email || null,
+          phone: null,
+          address: null,
+          taxId: null,
+          legalRepresentative: null,
+          municipality: null,
+          isActive: true,
+          createdAt: user.createdAt || new Date().toISOString(),
+          updatedAt: user.updatedAt || new Date().toISOString(),
+          logoUrl: null,
+        };
+
+        setProfile(basicCompanyProfile);
+        setLoading(false);
+        return;
+      }
+
       // If we don't have company data from auth context, fetch it from API
-      console.log("🔍 useCompanyProfile - Fetching company data from API");
+      console.log(
+        "🔍 useCompanyProfile - Fetching company data from API with companyId:",
+        companyId
+      );
       const response = await fetch(`/api/company/${companyId}`);
 
       if (!response.ok) {
         if (response.status === 404) {
-          throw new Error("Company profile not found");
+          console.log(
+            "🔍 useCompanyProfile - Company not found, attempting to create from profile data"
+          );
+
+          // Try to create company from profile data
+          try {
+            console.log(
+              "🔧 useCompanyProfile - Attempting to create company for user:",
+              user.id
+            );
+            const createResponse = await fetch(
+              `/api/company/create-from-profile`,
+              {
+                method: "POST",
+                headers: {
+                  "Content-Type": "application/json",
+                },
+                body: JSON.stringify({ userId: user.id }),
+              }
+            );
+
+            console.log(
+              "🔧 useCompanyProfile - Create response status:",
+              createResponse.status
+            );
+
+            if (createResponse.ok) {
+              const createResult = await createResponse.json();
+              console.log(
+                "✅ useCompanyProfile - Company created successfully:",
+                createResult
+              );
+
+              // Retry fetching the company profile
+              console.log(
+                "🔧 useCompanyProfile - Retrying fetch with companyId:",
+                companyId
+              );
+              const retryResponse = await fetch(`/api/company/${companyId}`);
+              console.log(
+                "🔧 useCompanyProfile - Retry response status:",
+                retryResponse.status
+              );
+
+              if (retryResponse.ok) {
+                const retryResult = await retryResponse.json();
+                const companyData = retryResult.company || retryResult;
+                console.log(
+                  "✅ useCompanyProfile - Retry successful, company data:",
+                  companyData
+                );
+
+                // Transform the API response to match our interface
+                const companyProfile: CompanyProfile = {
+                  id: companyData.id,
+                  name: companyData.name || "Mi Empresa",
+                  description: companyData.description || null,
+                  businessSector: companyData.businessSector || null,
+                  companySize: companyData.companySize || null,
+                  foundedYear: companyData.foundedYear || null,
+                  website: companyData.website || null,
+                  email: companyData.email || null,
+                  phone: companyData.phone || null,
+                  address: companyData.address || null,
+                  taxId: companyData.taxId || null,
+                  legalRepresentative: companyData.legalRepresentative || null,
+                  municipality: companyData.municipality || null,
+                  isActive: companyData.isActive || true,
+                  createdAt: companyData.createdAt || new Date().toISOString(),
+                  updatedAt: companyData.updatedAt || new Date().toISOString(),
+                  logoUrl: companyData.logoUrl || null,
+                };
+
+                setProfile(companyProfile);
+                setLoading(false);
+                return;
+              } else {
+                const retryError = await retryResponse.text();
+                console.error(
+                  "❌ useCompanyProfile - Retry failed:",
+                  retryResponse.status,
+                  retryError
+                );
+              }
+            } else {
+              const createError = await createResponse.text();
+              console.error(
+                "❌ useCompanyProfile - Create failed:",
+                createResponse.status,
+                createError
+              );
+            }
+          } catch (createError) {
+            console.error(
+              "❌ useCompanyProfile - Failed to create company:",
+              createError
+            );
+          }
+
+          throw new Error("Company profile not found and could not be created");
         }
         throw new Error(
           `Failed to fetch company profile: ${response.statusText}`

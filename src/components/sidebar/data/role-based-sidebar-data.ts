@@ -68,6 +68,21 @@ export const youthSidebarData: SidebarData = {
           url: "/my-youth-applications",
           icon: FileText,
         },
+        {
+          title: "Instituciones",
+          url: "/institutions",
+          icon: Building2,
+        },
+        {
+          title: "Mi Perfil",
+          url: "/profile",
+          icon: User,
+        },
+        {
+          title: "CV Builder",
+          url: "/cv-builder",
+          icon: FileText,
+        },
       ],
     },
     {
@@ -123,21 +138,6 @@ export const youthSidebarData: SidebarData = {
           title: "Noticias",
           icon: Newspaper,
           url: "/news",
-        },
-      ],
-    },
-    {
-      title: "Personal",
-      items: [
-        {
-          title: "Mi Perfil",
-          url: "/profile",
-          icon: User,
-        },
-        {
-          title: "CV Builder",
-          url: "/cv-builder",
-          icon: FileText,
         },
       ],
     },
@@ -643,6 +643,11 @@ export const youthSidebarItems: SidebarItem[] = [
         title: "Postulaciones",
         icon: FileText,
         href: "/my-applications",
+      },
+      {
+        title: "Instituciones",
+        icon: Building2,
+        href: "/institutions",
       },
     ],
   },

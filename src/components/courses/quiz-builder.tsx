@@ -9,6 +9,8 @@ import { Textarea } from "@/components/ui/textarea";
 import { Checkbox } from "@/components/ui/checkbox";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { Badge } from "@/components/ui/badge";
+import { ConfirmationModal } from "@/components/ui/confirmation-modal";
+import { AlertModal } from "@/components/ui/alert-modal";
 import {
   Select,
   SelectContent,
@@ -99,6 +101,28 @@ export function QuizBuilder({
   >("setup");
   const [editingQuestion, setEditingQuestion] = useState<Question | null>(null);
   const [showQuestionDialog, setShowQuestionDialog] = useState(false);
+  const [confirmationModal, setConfirmationModal] = useState<{
+    isOpen: boolean;
+    title: string;
+    description: string;
+    onConfirm: () => void;
+  }>({
+    isOpen: false,
+    title: "",
+    description: "",
+    onConfirm: () => {},
+  });
+  const [alertModal, setAlertModal] = useState<{
+    isOpen: boolean;
+    title: string;
+    message: string;
+    variant: "default" | "destructive" | "warning" | "info" | "success";
+  }>({
+    isOpen: false,
+    title: "",
+    message: "",
+    variant: "default",
+  });
 
   const updateQuiz = (updates: Partial<Quiz>) => {
     setQuiz((prev) => ({ ...prev, ...updates }));
@@ -124,11 +148,18 @@ export function QuizBuilder({
   };
 
   const deleteQuestion = (questionId: string) => {
-    if (window.confirm("¿Estás seguro de eliminar esta pregunta?")) {
-      updateQuiz({
-        questions: quiz.questions.filter((q) => q.id !== questionId),
-      });
-    }
+    setConfirmationModal({
+      isOpen: true,
+      title: "Eliminar pregunta",
+      description:
+        "¿Estás seguro de eliminar esta pregunta? Esta acción no se puede deshacer.",
+      onConfirm: () => {
+        updateQuiz({
+          questions: quiz.questions.filter((q) => q.id !== questionId),
+        });
+        setConfirmationModal((prev) => ({ ...prev, isOpen: false }));
+      },
+    });
   };
 
   const moveQuestion = (questionId: string, direction: "up" | "down") => {
@@ -171,7 +202,12 @@ export function QuizBuilder({
     if (quiz.title.trim() && quiz.questions.length > 0) {
       onSave(quiz);
     } else {
-      alert("El quiz debe tener un título y al menos una pregunta.");
+      setAlertModal({
+        isOpen: true,
+        title: "Información incompleta",
+        message: "El quiz debe tener un título y al menos una pregunta.",
+        variant: "warning",
+      });
     }
   };
 
@@ -611,6 +647,27 @@ export function QuizBuilder({
           setEditingQuestion(null);
         }}
         question={editingQuestion}
+      />
+
+      {/* Confirmation Modal */}
+      <ConfirmationModal
+        isOpen={confirmationModal.isOpen}
+        onClose={() =>
+          setConfirmationModal((prev) => ({ ...prev, isOpen: false }))
+        }
+        onConfirm={confirmationModal.onConfirm}
+        title={confirmationModal.title}
+        description={confirmationModal.description}
+        variant="destructive"
+      />
+
+      {/* Alert Modal */}
+      <AlertModal
+        isOpen={alertModal.isOpen}
+        onClose={() => setAlertModal((prev) => ({ ...prev, isOpen: false }))}
+        title={alertModal.title}
+        message={alertModal.message}
+        variant={alertModal.variant}
       />
     </div>
   );

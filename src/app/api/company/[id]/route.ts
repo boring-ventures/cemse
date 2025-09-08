@@ -44,7 +44,199 @@ export async function PUT(
     });
 
     if (!existingCompany) {
-      return NextResponse.json({ error: "Company not found" }, { status: 404 });
+      console.log(
+        "🔧 Company Update API - Company not found, attempting to create from user data"
+      );
+
+      // Try to create company from user/profile data
+      try {
+        // Get the user who should own this company
+        // First try to find by company ID (for self-created companies)
+        let user = await prisma.user.findUnique({
+          where: { id: resolvedParams.id },
+        });
+
+        // If not found, try to find by company credentials (for admin-created companies)
+        if (!user) {
+          console.log(
+            "🔧 Company Update API - User not found by ID, trying to find by company credentials"
+          );
+          const company = await prisma.company.findUnique({
+            where: { id: resolvedParams.id },
+          });
+
+          if (company) {
+            user = await prisma.user.findFirst({
+              where: {
+                OR: [
+                  { username: company.username },
+                  { email: company.loginEmail },
+                ],
+              },
+            });
+          }
+        }
+
+        if (!user || user.role !== "COMPANIES") {
+          console.log(
+            "❌ Company Update API - User not found or not a company user"
+          );
+          return NextResponse.json(
+            { error: "Company not found" },
+            { status: 404 }
+          );
+        }
+
+        // Get profile data
+        const profile = await prisma.profile.findUnique({
+          where: { userId: user.id },
+        });
+
+        if (!profile) {
+          console.log("❌ Company Update API - Profile not found");
+          return NextResponse.json(
+            { error: "Company not found" },
+            { status: 404 }
+          );
+        }
+
+        // Get a default municipality (Cochabamba)
+        const defaultMunicipality = await prisma.municipality.findFirst({
+          where: { name: "Cochabamba" },
+        });
+
+        if (!defaultMunicipality) {
+          console.log("❌ Company Update API - Default municipality not found");
+          return NextResponse.json(
+            { error: "Default municipality not found" },
+            { status: 500 }
+          );
+        }
+
+        // Create the company
+        const newCompany = await prisma.company.create({
+          data: {
+            id: resolvedParams.id, // Use the provided ID
+            name:
+              profile.companyName ||
+              profile.firstName ||
+              body.name ||
+              "Mi Empresa",
+            description: profile.companyDescription || body.description || null,
+            businessSector:
+              profile.businessSector || body.businessSector || null,
+            companySize: profile.companySize || body.companySize || "SMALL",
+            foundedYear: profile.foundedYear || body.foundedYear || null,
+            website: profile.website || body.website || null,
+            email: profile.email || body.email || `${user.username}@cemse.dev`,
+            phone: profile.phone || body.phone || null,
+            address: profile.address || body.address || null,
+            taxId: profile.taxId || body.taxId || null,
+            legalRepresentative:
+              profile.legalRepresentative || body.legalRepresentative || null,
+            logoUrl: body.logoUrl || null,
+            municipalityId: defaultMunicipality.id,
+            createdBy: user.id,
+            loginEmail: profile.email || `${user.username}@cemse.dev`,
+            username: user.username,
+            password: user.password,
+          },
+          include: {
+            municipality: {
+              select: {
+                id: true,
+                name: true,
+                department: true,
+              },
+            },
+            creator: {
+              select: {
+                username: true,
+                role: true,
+              },
+            },
+          },
+        });
+
+        console.log(
+          "✅ Company Update API - Company created successfully:",
+          newCompany.name
+        );
+
+        // Now update the newly created company with the provided data
+        const updatedCompany = await prisma.company.update({
+          where: { id: resolvedParams.id },
+          data: {
+            name: body.name,
+            description: body.description,
+            businessSector: body.businessSector,
+            companySize: body.companySize,
+            foundedYear: body.foundedYear,
+            website: body.website,
+            email: body.email,
+            phone: body.phone,
+            address: body.address,
+            taxId: body.taxId,
+            legalRepresentative: body.legalRepresentative,
+            isActive: body.isActive !== undefined ? body.isActive : true,
+            municipalityId: body.municipalityId || newCompany.municipalityId,
+          },
+          include: {
+            municipality: {
+              select: {
+                id: true,
+                name: true,
+                department: true,
+              },
+            },
+            creator: {
+              select: {
+                username: true,
+                role: true,
+              },
+            },
+          },
+        });
+
+        console.log(
+          "✅ Company Update API - Company updated successfully:",
+          updatedCompany.name
+        );
+
+        // Transform the data to match the expected format
+        const transformedCompany = {
+          id: updatedCompany.id,
+          name: updatedCompany.name,
+          description: updatedCompany.description,
+          businessSector: updatedCompany.businessSector,
+          companySize: updatedCompany.companySize,
+          foundedYear: updatedCompany.foundedYear,
+          website: updatedCompany.website,
+          email: updatedCompany.email,
+          phone: updatedCompany.phone,
+          address: updatedCompany.address,
+          taxId: updatedCompany.taxId,
+          legalRepresentative: updatedCompany.legalRepresentative,
+          isActive: updatedCompany.isActive,
+          username: updatedCompany.username,
+          loginEmail: updatedCompany.loginEmail,
+          municipality: updatedCompany.municipality,
+          creator: updatedCompany.creator,
+          createdAt: updatedCompany.createdAt.toISOString(),
+          updatedAt: updatedCompany.updatedAt.toISOString(),
+        };
+
+        return NextResponse.json(transformedCompany, { status: 200 });
+      } catch (createError) {
+        console.error(
+          "❌ Company Update API - Failed to create company:",
+          createError
+        );
+        return NextResponse.json(
+          { error: "Company not found and could not be created" },
+          { status: 404 }
+        );
+      }
     }
 
     // Update company using Prisma
@@ -62,6 +254,7 @@ export async function PUT(
         address: body.address,
         taxId: body.taxId,
         legalRepresentative: body.legalRepresentative,
+        logoUrl: body.logoUrl,
         isActive:
           body.isActive !== undefined
             ? body.isActive
@@ -421,7 +614,154 @@ export async function GET(
     });
 
     if (!company) {
-      return NextResponse.json({ error: "Company not found" }, { status: 404 });
+      console.log(
+        "🔧 Company GET API - Company not found, attempting to create from user data"
+      );
+
+      // Try to create company from user/profile data
+      try {
+        // Get the user who should own this company
+        // First try to find by company ID (for self-created companies)
+        let user = await prisma.user.findUnique({
+          where: { id: resolvedParams.id },
+        });
+
+        // If not found, try to find by company credentials (for admin-created companies)
+        if (!user) {
+          console.log(
+            "🔧 Company GET API - User not found by ID, trying to find by company credentials"
+          );
+          const company = await prisma.company.findUnique({
+            where: { id: resolvedParams.id },
+          });
+
+          if (company) {
+            user = await prisma.user.findFirst({
+              where: {
+                OR: [
+                  { username: company.username },
+                  { email: company.loginEmail },
+                ],
+              },
+            });
+          }
+        }
+
+        if (!user || user.role !== "COMPANIES") {
+          console.log(
+            "❌ Company GET API - User not found or not a company user"
+          );
+          return NextResponse.json(
+            { error: "Company not found" },
+            { status: 404 }
+          );
+        }
+
+        // Get profile data
+        const profile = await prisma.profile.findUnique({
+          where: { userId: user.id },
+        });
+
+        if (!profile) {
+          console.log("❌ Company GET API - Profile not found");
+          return NextResponse.json(
+            { error: "Company not found" },
+            { status: 404 }
+          );
+        }
+
+        // Get a default municipality (Cochabamba)
+        const defaultMunicipality = await prisma.municipality.findFirst({
+          where: { name: "Cochabamba" },
+        });
+
+        if (!defaultMunicipality) {
+          console.log("❌ Company GET API - Default municipality not found");
+          return NextResponse.json(
+            { error: "Default municipality not found" },
+            { status: 500 }
+          );
+        }
+
+        // Create the company
+        const newCompany = await prisma.company.create({
+          data: {
+            id: resolvedParams.id, // Use the provided ID
+            name: profile.companyName || profile.firstName || "Mi Empresa",
+            description: profile.companyDescription || null,
+            businessSector: profile.businessSector || null,
+            companySize: profile.companySize || "SMALL",
+            foundedYear: profile.foundedYear || null,
+            website: profile.website || null,
+            email: profile.email || `${user.username}@cemse.dev`,
+            phone: profile.phone || null,
+            address: profile.address || null,
+            taxId: profile.taxId || null,
+            legalRepresentative: profile.legalRepresentative || null,
+            logoUrl: null,
+            municipalityId: defaultMunicipality.id,
+            createdBy: user.id,
+            loginEmail: profile.email || `${user.username}@cemse.dev`,
+            username: user.username,
+            password: user.password,
+          },
+          include: {
+            municipality: {
+              select: {
+                id: true,
+                name: true,
+                department: true,
+              },
+            },
+            creator: {
+              select: {
+                username: true,
+                role: true,
+              },
+            },
+          },
+        });
+
+        console.log(
+          "✅ Company GET API - Company created successfully:",
+          newCompany.name
+        );
+
+        // Transform the data to match the expected format
+        const transformedCompany = {
+          id: newCompany.id,
+          name: newCompany.name,
+          description: newCompany.description,
+          businessSector: newCompany.businessSector,
+          companySize: newCompany.companySize,
+          foundedYear: newCompany.foundedYear,
+          website: newCompany.website,
+          email: newCompany.email,
+          phone: newCompany.phone,
+          address: newCompany.address,
+          taxId: newCompany.taxId,
+          legalRepresentative: newCompany.legalRepresentative,
+          isActive: newCompany.isActive,
+          username: newCompany.username,
+          loginEmail: newCompany.loginEmail,
+          municipality: newCompany.municipality,
+          creator: newCompany.creator,
+          createdAt: newCompany.createdAt.toISOString(),
+          updatedAt: newCompany.updatedAt.toISOString(),
+        };
+
+        console.log("✅ Company fetched successfully:", newCompany.name);
+        return NextResponse.json({ company: transformedCompany });
+      } catch (createError) {
+        console.error(
+          "❌ Company GET API - Failed to create company:",
+          createError
+        );
+        return NextResponse.json(
+          { error: "Company not found and could not be created" },
+          { status: 404 }
+        );
+      }
     }
 
     // Transform the data to match the expected format

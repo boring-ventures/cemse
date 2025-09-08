@@ -7,10 +7,10 @@ import { Textarea } from "@/components/ui/textarea";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { 
-  Download, 
-  Printer, 
-  Palette, 
+import {
+  Download,
+  Printer,
+  Palette,
   Edit3,
   Save,
   FileText,
@@ -20,10 +20,17 @@ import {
   MapPin,
   Mail,
   Phone,
-  X
+  X,
 } from "lucide-react";
 import { useCV } from "@/hooks/useCV";
-import { Document, Page, Text, View, StyleSheet, pdf } from "@react-pdf/renderer";
+import {
+  Document,
+  Page,
+  Text,
+  View,
+  StyleSheet,
+  pdf,
+} from "@react-pdf/renderer";
 
 // Estilos para el PDF de la carta de presentación - Template Professional
 const professionalCoverLetterStyles = StyleSheet.create({
@@ -254,7 +261,13 @@ const minimalistCoverLetterStyles = StyleSheet.create({
 });
 
 // Componente PDF de la carta de presentación - Template Professional
-const ProfessionalCoverLetterPDF = ({ coverLetterData, cvData }: { coverLetterData: any; cvData: any }) => (
+const ProfessionalCoverLetterPDF = ({
+  coverLetterData,
+  cvData,
+}: {
+  coverLetterData: any;
+  cvData: any;
+}) => (
   <Document>
     <Page size="A4" style={professionalCoverLetterStyles.page}>
       {/* Header */}
@@ -264,10 +277,13 @@ const ProfessionalCoverLetterPDF = ({ coverLetterData, cvData }: { coverLetterDa
             {cvData?.personalInfo?.firstName} {cvData?.personalInfo?.lastName}
           </Text>
           <Text style={professionalCoverLetterStyles.senderDetails}>
-            {cvData?.personalInfo?.address}
+            {cvData?.personalInfo?.addressLine || cvData?.personalInfo?.address}
           </Text>
           <Text style={professionalCoverLetterStyles.senderDetails}>
-            {cvData?.personalInfo?.municipality}, {cvData?.personalInfo?.department}
+            {cvData?.personalInfo?.city && `${cvData.personalInfo.city}, `}
+            {cvData?.personalInfo?.municipality &&
+              `${cvData.personalInfo.municipality}, `}
+            {cvData?.personalInfo?.department}
           </Text>
           <Text style={professionalCoverLetterStyles.senderDetails}>
             {cvData?.personalInfo?.country}
@@ -280,10 +296,10 @@ const ProfessionalCoverLetterPDF = ({ coverLetterData, cvData }: { coverLetterDa
           </Text>
         </View>
         <Text style={professionalCoverLetterStyles.date}>
-          {new Date().toLocaleDateString('es-ES', { 
-            year: 'numeric', 
-            month: 'long', 
-            day: 'numeric' 
+          {new Date().toLocaleDateString("es-ES", {
+            year: "numeric",
+            month: "long",
+            day: "numeric",
           })}
         </Text>
       </View>
@@ -291,7 +307,8 @@ const ProfessionalCoverLetterPDF = ({ coverLetterData, cvData }: { coverLetterDa
       {/* Recipient */}
       <View style={professionalCoverLetterStyles.recipientInfo}>
         <Text style={professionalCoverLetterStyles.recipientTitle}>
-          {coverLetterData?.recipient?.department || "Departamento de Recursos Humanos"}
+          {coverLetterData?.recipient?.department ||
+            "Departamento de Recursos Humanos"}
         </Text>
         <Text style={professionalCoverLetterStyles.recipientDetails}>
           {coverLetterData?.recipient?.companyName || "Nombre de la Empresa"}
@@ -308,17 +325,19 @@ const ProfessionalCoverLetterPDF = ({ coverLetterData, cvData }: { coverLetterDa
       <View style={professionalCoverLetterStyles.subject}>
         <Text style={professionalCoverLetterStyles.subjectLabel}>Asunto:</Text>
         <Text style={professionalCoverLetterStyles.subjectText}>
-          {coverLetterData?.subject || `Postulación para el puesto de ${cvData?.targetPosition || "Desarrollador Frontend"}`}
+          {coverLetterData?.subject ||
+            `Postulación para el puesto de ${cvData?.jobTitle || cvData?.targetPosition || "Desarrollador Frontend"}`}
         </Text>
       </View>
 
       {/* Content */}
       <Text style={professionalCoverLetterStyles.content}>
-        {coverLetterData?.content || `Estimado/a ${cvData?.personalInfo?.firstName || "Reclutador"},
+        {coverLetterData?.content ||
+          `Estimado/a ${cvData?.personalInfo?.firstName || "Reclutador"},
 
-Me dirijo a usted con gran interés para postularme a la posición de ${cvData?.targetPosition || "Desarrollador Frontend"} en su empresa. Soy ${cvData?.personalInfo?.firstName || ""} ${cvData?.personalInfo?.lastName || ""}, un/a joven profesional con sólidos conocimientos en ${cvData?.skills?.map((skill: any) => skill.name).join(", ") || "diversas áreas"}.
+Me dirijo a usted con gran interés para postularme a la posición de ${cvData?.jobTitle || cvData?.targetPosition || "Desarrollador Frontend"} en su empresa. Soy ${cvData?.personalInfo?.firstName || ""} ${cvData?.personalInfo?.lastName || ""}, un/a joven profesional con sólidos conocimientos en ${cvData?.skills?.map((skill: any) => skill.name).join(", ") || "diversas áreas"}.
 
-Mi formación académica en ${cvData?.education?.institution || "mi institución educativa"} me ha proporcionado una base sólida en ${cvData?.education?.level || "mi campo de estudio"}, y estoy comprometido/a con el aprendizaje continuo y el desarrollo profesional.
+Mi formación académica en ${cvData?.education?.universityName || cvData?.education?.currentInstitution || "mi institución educativa"} me ha proporcionado una base sólida en ${cvData?.education?.level || "mi campo de estudio"}, y estoy comprometido/a con el aprendizaje continuo y el desarrollo profesional.
 
 Mis principales fortalezas incluyen:
 ${cvData?.skills?.map((skill: any) => `• ${skill.name}`).join("\n") || "• Capacidad de aprendizaje rápido\n• Trabajo en equipo\n• Comunicación efectiva"}
@@ -335,7 +354,13 @@ ${cvData?.personalInfo?.firstName || ""} ${cvData?.personalInfo?.lastName || ""}
 );
 
 // Componente PDF de la carta de presentación - Template Creative
-const CreativeCoverLetterPDF = ({ coverLetterData, cvData }: { coverLetterData: any; cvData: any }) => (
+const CreativeCoverLetterPDF = ({
+  coverLetterData,
+  cvData,
+}: {
+  coverLetterData: any;
+  cvData: any;
+}) => (
   <Document>
     <Page size="A4" style={creativeCoverLetterStyles.page}>
       {/* Header */}
@@ -347,29 +372,36 @@ const CreativeCoverLetterPDF = ({ coverLetterData, cvData }: { coverLetterData: 
           {cvData?.targetPosition || "Desarrollador Frontend"}
         </Text>
         <View style={creativeCoverLetterStyles.contactInfo}>
-          <Text style={creativeCoverLetterStyles.contactItem}>{cvData?.personalInfo?.email}</Text>
-          <Text style={creativeCoverLetterStyles.contactItem}>{cvData?.personalInfo?.phone}</Text>
-          <Text style={creativeCoverLetterStyles.contactItem}>{cvData?.personalInfo?.municipality}</Text>
+          <Text style={creativeCoverLetterStyles.contactItem}>
+            {cvData?.personalInfo?.email}
+          </Text>
+          <Text style={creativeCoverLetterStyles.contactItem}>
+            {cvData?.personalInfo?.phone}
+          </Text>
+          <Text style={creativeCoverLetterStyles.contactItem}>
+            {cvData?.personalInfo?.municipality}
+          </Text>
         </View>
       </View>
 
       {/* Date */}
       <Text style={creativeCoverLetterStyles.date}>
-        {new Date().toLocaleDateString('es-ES', { 
-          year: 'numeric', 
-          month: 'long', 
-          day: 'numeric' 
+        {new Date().toLocaleDateString("es-ES", {
+          year: "numeric",
+          month: "long",
+          day: "numeric",
         })}
       </Text>
 
       {/* Content */}
       <View style={creativeCoverLetterStyles.content}>
         <Text style={creativeCoverLetterStyles.contentText}>
-          {coverLetterData?.content || `Estimado/a ${cvData?.personalInfo?.firstName || "Reclutador"},
+          {coverLetterData?.content ||
+            `Estimado/a ${cvData?.personalInfo?.firstName || "Reclutador"},
 
-Me dirijo a usted con gran interés para postularme a la posición de ${cvData?.targetPosition || "Desarrollador Frontend"} en su empresa. Soy ${cvData?.personalInfo?.firstName || ""} ${cvData?.personalInfo?.lastName || ""}, un/a joven profesional con sólidos conocimientos en ${cvData?.skills?.map((skill: any) => skill.name).join(", ") || "diversas áreas"}.
+Me dirijo a usted con gran interés para postularme a la posición de ${cvData?.jobTitle || cvData?.targetPosition || "Desarrollador Frontend"} en su empresa. Soy ${cvData?.personalInfo?.firstName || ""} ${cvData?.personalInfo?.lastName || ""}, un/a joven profesional con sólidos conocimientos en ${cvData?.skills?.map((skill: any) => skill.name).join(", ") || "diversas áreas"}.
 
-Mi formación académica en ${cvData?.education?.institution || "mi institución educativa"} me ha proporcionado una base sólida en ${cvData?.education?.level || "mi campo de estudio"}, y estoy comprometido/a con el aprendizaje continuo y el desarrollo profesional.
+Mi formación académica en ${cvData?.education?.universityName || cvData?.education?.currentInstitution || "mi institución educativa"} me ha proporcionado una base sólida en ${cvData?.education?.level || "mi campo de estudio"}, y estoy comprometido/a con el aprendizaje continuo y el desarrollo profesional.
 
 Mis principales fortalezas incluyen:
 ${cvData?.skills?.map((skill: any) => `• ${skill.name}`).join("\n") || "• Capacidad de aprendizaje rápido\n• Trabajo en equipo\n• Comunicación efectiva"}
@@ -385,7 +417,9 @@ ${cvData?.personalInfo?.firstName || ""} ${cvData?.personalInfo?.lastName || ""}
 
       {/* Signature */}
       <View style={creativeCoverLetterStyles.signature}>
-        <Text style={creativeCoverLetterStyles.signatureText}>Atentamente,</Text>
+        <Text style={creativeCoverLetterStyles.signatureText}>
+          Atentamente,
+        </Text>
         <Text style={creativeCoverLetterStyles.signatureName}>
           {cvData?.personalInfo?.firstName} {cvData?.personalInfo?.lastName}
         </Text>
@@ -398,7 +432,13 @@ ${cvData?.personalInfo?.firstName || ""} ${cvData?.personalInfo?.lastName || ""}
 );
 
 // Componente PDF de la carta de presentación - Template Minimalist
-const MinimalistCoverLetterPDF = ({ coverLetterData, cvData }: { coverLetterData: any; cvData: any }) => (
+const MinimalistCoverLetterPDF = ({
+  coverLetterData,
+  cvData,
+}: {
+  coverLetterData: any;
+  cvData: any;
+}) => (
   <Document>
     <Page size="A4" style={minimalistCoverLetterStyles.page}>
       {/* Header */}
@@ -416,26 +456,28 @@ const MinimalistCoverLetterPDF = ({ coverLetterData, cvData }: { coverLetterData
           {cvData?.personalInfo?.phone}
         </Text>
         <Text style={minimalistCoverLetterStyles.senderDetails}>
-          {cvData?.personalInfo?.municipality}, {cvData?.personalInfo?.department}
+          {cvData?.personalInfo?.municipality},{" "}
+          {cvData?.personalInfo?.department}
         </Text>
       </View>
 
       {/* Date */}
       <Text style={minimalistCoverLetterStyles.date}>
-        {new Date().toLocaleDateString('es-ES', { 
-          year: 'numeric', 
-          month: 'long', 
-          day: 'numeric' 
+        {new Date().toLocaleDateString("es-ES", {
+          year: "numeric",
+          month: "long",
+          day: "numeric",
         })}
       </Text>
 
       {/* Content */}
       <Text style={minimalistCoverLetterStyles.content}>
-        {coverLetterData?.content || `Estimado/a ${cvData?.personalInfo?.firstName || "Reclutador"},
+        {coverLetterData?.content ||
+          `Estimado/a ${cvData?.personalInfo?.firstName || "Reclutador"},
 
-Me dirijo a usted con gran interés para postularme a la posición de ${cvData?.targetPosition || "Desarrollador Frontend"} en su empresa. Soy ${cvData?.personalInfo?.firstName || ""} ${cvData?.personalInfo?.lastName || ""}, un/a joven profesional con sólidos conocimientos en ${cvData?.skills?.map((skill: any) => skill.name).join(", ") || "diversas áreas"}.
+Me dirijo a usted con gran interés para postularme a la posición de ${cvData?.jobTitle || cvData?.targetPosition || "Desarrollador Frontend"} en su empresa. Soy ${cvData?.personalInfo?.firstName || ""} ${cvData?.personalInfo?.lastName || ""}, un/a joven profesional con sólidos conocimientos en ${cvData?.skills?.map((skill: any) => skill.name).join(", ") || "diversas áreas"}.
 
-Mi formación académica en ${cvData?.education?.institution || "mi institución educativa"} me ha proporcionado una base sólida en ${cvData?.education?.level || "mi campo de estudio"}, y estoy comprometido/a con el aprendizaje continuo y el desarrollo profesional.
+Mi formación académica en ${cvData?.education?.universityName || cvData?.education?.currentInstitution || "mi institución educativa"} me ha proporcionado una base sólida en ${cvData?.education?.level || "mi campo de estudio"}, y estoy comprometido/a con el aprendizaje continuo y el desarrollo profesional.
 
 Mis principales fortalezas incluyen:
 ${cvData?.skills?.map((skill: any) => `• ${skill.name}`).join("\n") || "• Capacidad de aprendizaje rápido\n• Trabajo en equipo\n• Comunicación efectiva"}
@@ -450,7 +492,9 @@ ${cvData?.personalInfo?.firstName || ""} ${cvData?.personalInfo?.lastName || ""}
 
       {/* Signature */}
       <View style={minimalistCoverLetterStyles.signature}>
-        <Text style={minimalistCoverLetterStyles.signatureText}>Atentamente,</Text>
+        <Text style={minimalistCoverLetterStyles.signatureText}>
+          Atentamente,
+        </Text>
         <Text style={minimalistCoverLetterStyles.signatureName}>
           {cvData?.personalInfo?.firstName} {cvData?.personalInfo?.lastName}
         </Text>
@@ -463,17 +507,17 @@ ${cvData?.personalInfo?.firstName || ""} ${cvData?.personalInfo?.lastName || ""}
 );
 
 // Template 1: Professional Business
-function ProfessionalBusinessTemplate({ 
-  currentContent, 
+function ProfessionalBusinessTemplate({
+  currentContent,
   currentRecipient,
   currentSubject,
-  cvData, 
+  cvData,
   isEditing = false,
   onContentChange,
   onRecipientChange,
-  onSubjectChange
-}: { 
-  currentContent: string; 
+  onSubjectChange,
+}: {
+  currentContent: string;
   currentRecipient: {
     department: string;
     companyName: string; // Changed from company to companyName
@@ -482,7 +526,7 @@ function ProfessionalBusinessTemplate({
     country: string; // Added country field
   };
   currentSubject: string;
-  cvData: any; 
+  cvData: any;
   isEditing?: boolean;
   onContentChange?: (content: string) => void;
   onRecipientChange?: (field: string, value: string) => void;
@@ -511,18 +555,23 @@ function ProfessionalBusinessTemplate({
             </h1>
             <div className="text-sm text-gray-600 space-y-1">
               <div>{cvData?.personalInfo?.address}</div>
-              <div>{cvData?.personalInfo?.municipality}, {cvData?.personalInfo?.department}</div>
+              <div>
+                {cvData?.personalInfo?.municipality},{" "}
+                {cvData?.personalInfo?.department}
+              </div>
               <div>{cvData?.personalInfo?.country}</div>
               <div>{cvData?.personalInfo?.email}</div>
               <div>{cvData?.personalInfo?.phone}</div>
             </div>
           </div>
           <div className="text-right text-sm text-gray-600">
-            <div>{new Date().toLocaleDateString('es-ES', { 
-              year: 'numeric', 
-              month: 'long', 
-              day: 'numeric' 
-            })}</div>
+            <div>
+              {new Date().toLocaleDateString("es-ES", {
+                year: "numeric",
+                month: "long",
+                day: "numeric",
+              })}
+            </div>
           </div>
         </div>
       </div>
@@ -534,31 +583,35 @@ function ProfessionalBusinessTemplate({
           <div className="space-y-2">
             <Input
               value={currentRecipient.department}
-              onChange={(e) => handleRecipientChange('department', e.target.value)}
+              onChange={(e) =>
+                handleRecipientChange("department", e.target.value)
+              }
               placeholder="Departamento"
               className="text-sm"
             />
             <Input
               value={currentRecipient.companyName}
-              onChange={(e) => handleRecipientChange('companyName', e.target.value)}
+              onChange={(e) =>
+                handleRecipientChange("companyName", e.target.value)
+              }
               placeholder="Nombre de la Empresa"
               className="text-sm"
             />
             <Input
               value={currentRecipient.address}
-              onChange={(e) => handleRecipientChange('address', e.target.value)}
+              onChange={(e) => handleRecipientChange("address", e.target.value)}
               placeholder="Dirección de la Empresa"
               className="text-sm"
             />
             <Input
               value={currentRecipient.city}
-              onChange={(e) => handleRecipientChange('city', e.target.value)}
+              onChange={(e) => handleRecipientChange("city", e.target.value)}
               placeholder="Ciudad, País"
               className="text-sm"
             />
             <Input
               value={currentRecipient.country}
-              onChange={(e) => handleRecipientChange('country', e.target.value)}
+              onChange={(e) => handleRecipientChange("country", e.target.value)}
               placeholder="País"
               className="text-sm"
             />
@@ -585,9 +638,7 @@ function ProfessionalBusinessTemplate({
             className="text-sm font-medium"
           />
         ) : (
-          <div className="font-medium">
-            {currentSubject}
-          </div>
+          <div className="font-medium">{currentSubject}</div>
         )}
       </div>
 
@@ -602,11 +653,12 @@ function ProfessionalBusinessTemplate({
           />
         ) : (
           <div className="text-sm leading-relaxed whitespace-pre-wrap">
-            {currentContent || `Estimado/a ${cvData?.personalInfo?.firstName || "Reclutador"},
+            {currentContent ||
+              `Estimado/a ${cvData?.personalInfo?.firstName || "Reclutador"},
 
-Me dirijo a usted con gran interés para postularme a la posición de ${cvData?.targetPosition || "Desarrollador Frontend"} en su empresa. Soy ${cvData?.personalInfo?.firstName || ""} ${cvData?.personalInfo?.lastName || ""}, un/a joven profesional con sólidos conocimientos en ${cvData?.skills?.map((skill: any) => skill.name).join(", ") || "diversas áreas"}.
+Me dirijo a usted con gran interés para postularme a la posición de ${cvData?.jobTitle || cvData?.targetPosition || "Desarrollador Frontend"} en su empresa. Soy ${cvData?.personalInfo?.firstName || ""} ${cvData?.personalInfo?.lastName || ""}, un/a joven profesional con sólidos conocimientos en ${cvData?.skills?.map((skill: any) => skill.name).join(", ") || "diversas áreas"}.
 
-Mi formación académica en ${cvData?.education?.institution || "mi institución educativa"} me ha proporcionado una base sólida en ${cvData?.education?.level || "mi campo de estudio"}, y estoy comprometido/a con el aprendizaje continuo y el desarrollo profesional.
+Mi formación académica en ${cvData?.education?.universityName || cvData?.education?.currentInstitution || "mi institución educativa"} me ha proporcionado una base sólida en ${cvData?.education?.level || "mi campo de estudio"}, y estoy comprometido/a con el aprendizaje continuo y el desarrollo profesional.
 
 Mis principales fortalezas incluyen:
 ${cvData?.skills?.map((skill: any) => `• ${skill.name}`).join("\n") || "• Capacidad de aprendizaje rápido\n• Trabajo en equipo\n• Comunicación efectiva"}
@@ -625,17 +677,17 @@ ${cvData?.personalInfo?.firstName || ""} ${cvData?.personalInfo?.lastName || ""}
 }
 
 // Template 2: Modern Creative
-function ModernCreativeTemplate({ 
-  currentContent, 
+function ModernCreativeTemplate({
+  currentContent,
   currentRecipient,
   currentSubject,
-  cvData, 
+  cvData,
   isEditing = false,
   onContentChange,
   onRecipientChange,
-  onSubjectChange
-}: { 
-  currentContent: string; 
+  onSubjectChange,
+}: {
+  currentContent: string;
   currentRecipient: {
     department: string;
     companyName: string; // Changed from company to companyName
@@ -644,7 +696,7 @@ function ModernCreativeTemplate({
     country: string; // Added country field
   };
   currentSubject: string;
-  cvData: any; 
+  cvData: any;
   isEditing?: boolean;
   onContentChange?: (content: string) => void;
   onRecipientChange?: (field: string, value: string) => void;
@@ -672,7 +724,9 @@ function ModernCreativeTemplate({
               {cvData?.personalInfo?.firstName} {cvData?.personalInfo?.lastName}
             </h1>
             <p className="text-lg text-blue-600 mb-4">
-              {cvData?.targetPosition || "Desarrollador Frontend"}
+              {cvData?.jobTitle ||
+                cvData?.targetPosition ||
+                "Desarrollador Frontend"}
             </p>
             <div className="flex justify-center gap-6 text-sm text-gray-600">
               <div className="flex items-center gap-2">
@@ -692,10 +746,10 @@ function ModernCreativeTemplate({
 
           {/* Date */}
           <div className="text-right text-sm text-gray-500 mb-6">
-            {new Date().toLocaleDateString('es-ES', { 
-              year: 'numeric', 
-              month: 'long', 
-              day: 'numeric' 
+            {new Date().toLocaleDateString("es-ES", {
+              year: "numeric",
+              month: "long",
+              day: "numeric",
             })}
           </div>
 
@@ -706,31 +760,41 @@ function ModernCreativeTemplate({
               <div className="space-y-2">
                 <Input
                   value={currentRecipient.department}
-                  onChange={(e) => handleRecipientChange('department', e.target.value)}
+                  onChange={(e) =>
+                    handleRecipientChange("department", e.target.value)
+                  }
                   placeholder="Departamento"
                   className="text-sm"
                 />
                 <Input
                   value={currentRecipient.companyName}
-                  onChange={(e) => handleRecipientChange('companyName', e.target.value)}
+                  onChange={(e) =>
+                    handleRecipientChange("companyName", e.target.value)
+                  }
                   placeholder="Nombre de la Empresa"
                   className="text-sm"
                 />
                 <Input
                   value={currentRecipient.address}
-                  onChange={(e) => handleRecipientChange('address', e.target.value)}
+                  onChange={(e) =>
+                    handleRecipientChange("address", e.target.value)
+                  }
                   placeholder="Dirección de la Empresa"
                   className="text-sm"
                 />
                 <Input
                   value={currentRecipient.city}
-                  onChange={(e) => handleRecipientChange('city', e.target.value)}
+                  onChange={(e) =>
+                    handleRecipientChange("city", e.target.value)
+                  }
                   placeholder="Ciudad, País"
                   className="text-sm"
                 />
                 <Input
                   value={currentRecipient.country}
-                  onChange={(e) => handleRecipientChange('country', e.target.value)}
+                  onChange={(e) =>
+                    handleRecipientChange("country", e.target.value)
+                  }
                   placeholder="País"
                   className="text-sm"
                 />
@@ -757,9 +821,7 @@ function ModernCreativeTemplate({
                 className="text-sm font-medium"
               />
             ) : (
-              <div className="font-medium">
-                {currentSubject}
-              </div>
+              <div className="font-medium">{currentSubject}</div>
             )}
           </div>
 
@@ -774,11 +836,12 @@ function ModernCreativeTemplate({
               />
             ) : (
               <div className="text-sm leading-relaxed whitespace-pre-wrap text-gray-700">
-                {currentContent || `Estimado/a ${cvData?.personalInfo?.firstName || "Reclutador"},
+                {currentContent ||
+                  `Estimado/a ${cvData?.personalInfo?.firstName || "Reclutador"},
 
-Me dirijo a usted con gran interés para postularme a la posición de ${cvData?.targetPosition || "Desarrollador Frontend"} en su empresa. Soy ${cvData?.personalInfo?.firstName || ""} ${cvData?.personalInfo?.lastName || ""}, un/a joven profesional con sólidos conocimientos en ${cvData?.skills?.map((skill: any) => skill.name).join(", ") || "diversas áreas"}.
+Me dirijo a usted con gran interés para postularme a la posición de ${cvData?.jobTitle || cvData?.targetPosition || "Desarrollador Frontend"} en su empresa. Soy ${cvData?.personalInfo?.firstName || ""} ${cvData?.personalInfo?.lastName || ""}, un/a joven profesional con sólidos conocimientos en ${cvData?.skills?.map((skill: any) => skill.name).join(", ") || "diversas áreas"}.
 
-Mi formación académica en ${cvData?.education?.institution || "mi institución educativa"} me ha proporcionado una base sólida en ${cvData?.education?.level || "mi campo de estudio"}, y estoy comprometido/a con el aprendizaje continuo y el desarrollo profesional.
+Mi formación académica en ${cvData?.education?.universityName || cvData?.education?.currentInstitution || "mi institución educativa"} me ha proporcionado una base sólida en ${cvData?.education?.level || "mi campo de estudio"}, y estoy comprometido/a con el aprendizaje continuo y el desarrollo profesional.
 
 Mis principales fortalezas incluyen:
 ${cvData?.skills?.map((skill: any) => `• ${skill.name}`).join("\n") || "• Capacidad de aprendizaje rápido\n• Trabajo en equipo\n• Comunicación efectiva"}
@@ -797,7 +860,8 @@ ${cvData?.personalInfo?.firstName || ""} ${cvData?.personalInfo?.lastName || ""}
           <div className="border-t-2 border-blue-200 pt-6">
             <div className="text-center">
               <div className="font-semibold text-gray-800">
-                {cvData?.personalInfo?.firstName} {cvData?.personalInfo?.lastName}
+                {cvData?.personalInfo?.firstName}{" "}
+                {cvData?.personalInfo?.lastName}
               </div>
               <div className="text-sm text-gray-600">
                 {cvData?.targetPosition || "Desarrollador Frontend"}
@@ -811,17 +875,17 @@ ${cvData?.personalInfo?.firstName || ""} ${cvData?.personalInfo?.lastName || ""}
 }
 
 // Template 3: Minimalist Clean
-function MinimalistCleanTemplate({ 
-  currentContent, 
+function MinimalistCleanTemplate({
+  currentContent,
   currentRecipient,
   currentSubject,
-  cvData, 
+  cvData,
   isEditing = false,
   onContentChange,
   onRecipientChange,
-  onSubjectChange
-}: { 
-  currentContent: string; 
+  onSubjectChange,
+}: {
+  currentContent: string;
   currentRecipient: {
     department: string;
     companyName: string; // Changed from company to companyName
@@ -830,7 +894,7 @@ function MinimalistCleanTemplate({
     country: string; // Added country field
   };
   currentSubject: string;
-  cvData: any; 
+  cvData: any;
   isEditing?: boolean;
   onContentChange?: (content: string) => void;
   onRecipientChange?: (field: string, value: string) => void;
@@ -856,21 +920,26 @@ function MinimalistCleanTemplate({
           {cvData?.personalInfo?.firstName} {cvData?.personalInfo?.lastName}
         </h1>
         <p className="text-lg text-gray-600 mb-4">
-          {cvData?.targetPosition || "Desarrollador Frontend"}
+          {cvData?.jobTitle ||
+            cvData?.targetPosition ||
+            "Desarrollador Frontend"}
         </p>
         <div className="text-sm text-gray-500 space-y-1">
           <div>{cvData?.personalInfo?.email}</div>
           <div>{cvData?.personalInfo?.phone}</div>
-          <div>{cvData?.personalInfo?.municipality}, {cvData?.personalInfo?.department}</div>
+          <div>
+            {cvData?.personalInfo?.municipality},{" "}
+            {cvData?.personalInfo?.department}
+          </div>
         </div>
       </div>
 
       {/* Date */}
       <div className="text-sm text-gray-500 mb-8">
-        {new Date().toLocaleDateString('es-ES', { 
-          year: 'numeric', 
-          month: 'long', 
-          day: 'numeric' 
+        {new Date().toLocaleDateString("es-ES", {
+          year: "numeric",
+          month: "long",
+          day: "numeric",
         })}
       </div>
 
@@ -881,31 +950,35 @@ function MinimalistCleanTemplate({
           <div className="space-y-2">
             <Input
               value={currentRecipient.department}
-              onChange={(e) => handleRecipientChange('department', e.target.value)}
+              onChange={(e) =>
+                handleRecipientChange("department", e.target.value)
+              }
               placeholder="Departamento"
               className="text-sm"
             />
             <Input
               value={currentRecipient.companyName}
-              onChange={(e) => handleRecipientChange('companyName', e.target.value)}
+              onChange={(e) =>
+                handleRecipientChange("companyName", e.target.value)
+              }
               placeholder="Nombre de la Empresa"
               className="text-sm"
             />
             <Input
               value={currentRecipient.address}
-              onChange={(e) => handleRecipientChange('address', e.target.value)}
+              onChange={(e) => handleRecipientChange("address", e.target.value)}
               placeholder="Dirección de la Empresa"
               className="text-sm"
             />
             <Input
               value={currentRecipient.city}
-              onChange={(e) => handleRecipientChange('city', e.target.value)}
+              onChange={(e) => handleRecipientChange("city", e.target.value)}
               placeholder="Ciudad, País"
               className="text-sm"
             />
             <Input
               value={currentRecipient.country}
-              onChange={(e) => handleRecipientChange('country', e.target.value)}
+              onChange={(e) => handleRecipientChange("country", e.target.value)}
               placeholder="País"
               className="text-sm"
             />
@@ -932,9 +1005,7 @@ function MinimalistCleanTemplate({
             className="text-sm font-medium"
           />
         ) : (
-          <div className="font-medium">
-            {currentSubject}
-          </div>
+          <div className="font-medium">{currentSubject}</div>
         )}
       </div>
 
@@ -949,11 +1020,12 @@ function MinimalistCleanTemplate({
           />
         ) : (
           <div className="text-sm leading-relaxed whitespace-pre-wrap text-gray-700">
-            {currentContent || `Estimado/a ${cvData?.personalInfo?.firstName || "Reclutador"},
+            {currentContent ||
+              `Estimado/a ${cvData?.personalInfo?.firstName || "Reclutador"},
 
-Me dirijo a usted con gran interés para postularme a la posición de ${cvData?.targetPosition || "Desarrollador Frontend"} en su empresa. Soy ${cvData?.personalInfo?.firstName || ""} ${cvData?.personalInfo?.lastName || ""}, un/a joven profesional con sólidos conocimientos en ${cvData?.skills?.map((skill: any) => skill.name).join(", ") || "diversas áreas"}.
+Me dirijo a usted con gran interés para postularme a la posición de ${cvData?.jobTitle || cvData?.targetPosition || "Desarrollador Frontend"} en su empresa. Soy ${cvData?.personalInfo?.firstName || ""} ${cvData?.personalInfo?.lastName || ""}, un/a joven profesional con sólidos conocimientos en ${cvData?.skills?.map((skill: any) => skill.name).join(", ") || "diversas áreas"}.
 
-Mi formación académica en ${cvData?.education?.institution || "mi institución educativa"} me ha proporcionado una base sólida en ${cvData?.education?.level || "mi campo de estudio"}, y estoy comprometido/a con el aprendizaje continuo y el desarrollo profesional.
+Mi formación académica en ${cvData?.education?.universityName || cvData?.education?.currentInstitution || "mi institución educativa"} me ha proporcionado una base sólida en ${cvData?.education?.level || "mi campo de estudio"}, y estoy comprometido/a con el aprendizaje continuo y el desarrollo profesional.
 
 Mis principales fortalezas incluyen:
 ${cvData?.skills?.map((skill: any) => `• ${skill.name}`).join("\n") || "• Capacidad de aprendizaje rápido\n• Trabajo en equipo\n• Comunicación efectiva"}
@@ -973,7 +1045,8 @@ ${cvData?.personalInfo?.firstName || ""} ${cvData?.personalInfo?.lastName || ""}
 
 // Main Cover Letter Template Selector
 export function CoverLetterTemplateSelector() {
-  const { cvData, coverLetterData, loading, error, saveCoverLetterData } = useCV();
+  const { cvData, coverLetterData, loading, error, saveCoverLetterData } =
+    useCV();
   const [selectedTemplate, setSelectedTemplate] = useState("professional");
   const [isEditing, setIsEditing] = useState(false);
   const [currentContent, setCurrentContent] = useState("");
@@ -984,7 +1057,9 @@ export function CoverLetterTemplateSelector() {
     city: "Ciudad, País",
     country: "Bolivia", // Added missing country field
   });
-  const [currentSubject, setCurrentSubject] = useState("Postulación para el puesto de Desarrollador Frontend");
+  const [currentSubject, setCurrentSubject] = useState(
+    "Postulación para el puesto de Desarrollador Frontend"
+  );
 
   // Sincronizar currentContent con coverLetterData cuando cambie
   useEffect(() => {
@@ -1004,9 +1079,9 @@ export function CoverLetterTemplateSelector() {
   };
 
   const handleRecipientChange = (field: string, value: string) => {
-    setCurrentRecipient(prev => ({
+    setCurrentRecipient((prev) => ({
       ...prev,
-      [field]: value
+      [field]: value,
     }));
   };
 
@@ -1020,7 +1095,7 @@ export function CoverLetterTemplateSelector() {
         content: currentContent,
         template: selectedTemplate,
         recipient: currentRecipient,
-        subject: currentSubject
+        subject: currentSubject,
       });
       setIsEditing(false);
     } catch (error) {
@@ -1030,29 +1105,49 @@ export function CoverLetterTemplateSelector() {
 
   const handleDownloadPDF = async () => {
     if (!coverLetterData || !cvData) return;
-    
+
     try {
       let pdfComponent;
       const coverLetterDataWithEdits = {
         content: currentContent,
         recipient: currentRecipient,
-        subject: currentSubject
+        subject: currentSubject,
       };
-      
+
       switch (selectedTemplate) {
         case "professional":
-          pdfComponent = <ProfessionalCoverLetterPDF coverLetterData={coverLetterDataWithEdits} cvData={cvData} />;
+          pdfComponent = (
+            <ProfessionalCoverLetterPDF
+              coverLetterData={coverLetterDataWithEdits}
+              cvData={cvData}
+            />
+          );
           break;
         case "creative":
-          pdfComponent = <CreativeCoverLetterPDF coverLetterData={coverLetterDataWithEdits} cvData={cvData} />;
+          pdfComponent = (
+            <CreativeCoverLetterPDF
+              coverLetterData={coverLetterDataWithEdits}
+              cvData={cvData}
+            />
+          );
           break;
         case "minimalist":
-          pdfComponent = <MinimalistCoverLetterPDF coverLetterData={coverLetterDataWithEdits} cvData={cvData} />;
+          pdfComponent = (
+            <MinimalistCoverLetterPDF
+              coverLetterData={coverLetterDataWithEdits}
+              cvData={cvData}
+            />
+          );
           break;
         default:
-          pdfComponent = <ProfessionalCoverLetterPDF coverLetterData={coverLetterDataWithEdits} cvData={cvData} />;
+          pdfComponent = (
+            <ProfessionalCoverLetterPDF
+              coverLetterData={coverLetterDataWithEdits}
+              cvData={cvData}
+            />
+          );
       }
-      
+
       const blob = await pdf(pdfComponent).toBlob();
       const url = URL.createObjectURL(blob);
       const link = document.createElement("a");
@@ -1097,7 +1192,7 @@ export function CoverLetterTemplateSelector() {
       isEditing,
       onContentChange: handleContentChange,
       onRecipientChange: handleRecipientChange,
-      onSubjectChange: handleSubjectChange
+      onSubjectChange: handleSubjectChange,
     };
 
     switch (selectedTemplate) {
@@ -1163,7 +1258,10 @@ export function CoverLetterTemplateSelector() {
                     <Printer className="h-4 w-4 mr-2" />
                     Imprimir
                   </Button>
-                  <Button onClick={handleDownloadPDF} data-cover-letter-download>
+                  <Button
+                    onClick={handleDownloadPDF}
+                    data-cover-letter-download
+                  >
                     <Download className="h-4 w-4 mr-2" />
                     Descargar PDF
                   </Button>

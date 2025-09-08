@@ -44,10 +44,10 @@ export function Header({ className, fixed, children, ...props }: HeaderProps) {
       )}
       {...props}
     >
-      <SidebarTrigger variant="outline" className="scale-125 sm:scale-100" />
+      <SidebarTrigger className="scale-125 sm:scale-100" />
       <Separator orientation="vertical" className="h-6" />
       <span className="text-sm font-medium text-muted-foreground">
-        {formattedPath || "Dashboard"}
+        {formattedPath || "Panel Principal"}
       </span>
 
       {children}

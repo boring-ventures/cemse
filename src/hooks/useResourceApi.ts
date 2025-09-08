@@ -37,8 +37,13 @@ export const useUpdateResource = () => {
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: ({ id, data }: { id: string; data: Partial<Resource> }) =>
-      ResourceService.updateResource(id, data),
+    mutationFn: ({
+      id,
+      data,
+    }: {
+      id: string;
+      data: Partial<Resource> | FormData;
+    }) => ResourceService.updateResource(id, data),
     onSuccess: (_, { id }) => {
       queryClient.invalidateQueries({ queryKey: ["resources"] });
       queryClient.invalidateQueries({ queryKey: ["resource", id] });

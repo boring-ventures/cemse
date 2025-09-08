@@ -415,6 +415,7 @@ export interface Resource {
   rating: number;
   tags: string[];
   isPublic: boolean;
+  createdByUserId: string;
   createdAt: Date | string;
   updatedAt: Date | string;
 }

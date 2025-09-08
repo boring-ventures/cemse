@@ -2,16 +2,25 @@
 
 import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent } from "@/components/ui/card";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import { Skeleton } from "@/components/ui/skeleton";
 import {
   Dialog,
   DialogContent,
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import { Checkbox } from "@/components/ui/checkbox";
 import {
   Search,
   Filter,
@@ -124,6 +133,15 @@ export default function NetworkingPage() {
       ownerName: string;
       entrepreneurships: any[];
     } | null>(null);
+
+  // Filter states
+  const [showFilters, setShowFilters] = useState(false);
+  const [filters, setFilters] = useState({
+    category: "",
+    businessStage: "",
+    department: "",
+    municipality: "",
+  });
 
   // Función para calcular la edad
   const calculateAge = (birthDate: string): number => {
@@ -277,11 +295,25 @@ export default function NetworkingPage() {
   };
 
   // Buscar propietarios de emprendimientos
-  const searchEntrepreneurshipOwners = async (query?: string) => {
+  const searchEntrepreneurshipOwners = async (
+    query?: string,
+    appliedFilters?: typeof filters
+  ) => {
     try {
       const params = new URLSearchParams();
       if (query) params.append("category", query);
       params.append("isPublic", "true"); // Solo emprendimientos públicos
+
+      // Add filter parameters
+      const currentFilters = appliedFilters || filters;
+      if (currentFilters.category)
+        params.append("category", currentFilters.category);
+      if (currentFilters.businessStage)
+        params.append("businessStage", currentFilters.businessStage);
+      if (currentFilters.department)
+        params.append("department", currentFilters.department);
+      if (currentFilters.municipality)
+        params.append("municipality", currentFilters.municipality);
 
       const url = `/api/entrepreneurship${params.toString() ? `?${params.toString()}` : ""}`;
       console.log(
@@ -653,14 +685,98 @@ export default function NetworkingPage() {
     }
   };
 
+  // Handle filter changes
+  const handleFilterChange = (
+    filterType: keyof typeof filters,
+    value: string
+  ) => {
+    setFilters((prev) => ({
+      ...prev,
+      [filterType]: value,
+    }));
+  };
+
+  // Clear individual filter
+  const handleClearFilter = (filterType: keyof typeof filters) => {
+    setFilters((prev) => ({
+      ...prev,
+      [filterType]: "",
+    }));
+  };
+
+  // Apply filters
+  const handleApplyFilters = async () => {
+    await searchEntrepreneurshipOwners(searchQuery, filters);
+  };
+
+  // Clear filters
+  const handleClearFilters = async () => {
+    const clearedFilters = {
+      category: "",
+      businessStage: "",
+      department: "",
+      municipality: "",
+    };
+    setFilters(clearedFilters);
+    await searchEntrepreneurshipOwners(searchQuery, clearedFilters);
+  };
+
   if (loading) {
     return (
-      <div className="container mx-auto p-6">
-        <div className="animate-pulse space-y-6">
-          <div className="h-32 bg-gray-200 rounded-lg" />
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+      <div className="min-h-screen bg-gray-50">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6 sm:py-8">
+          {/* Header Skeleton */}
+          <div className="mb-6 sm:mb-8">
+            <Skeleton className="h-8 w-64 mb-2" />
+            <Skeleton className="h-4 w-96" />
+          </div>
+
+          {/* Stats Skeleton */}
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
+            {[...Array(4)].map((_, i) => (
+              <Card key={i} className="bg-white shadow-sm border-0">
+                <CardContent className="p-6 text-center">
+                  <Skeleton className="h-8 w-12 mx-auto mb-2" />
+                  <Skeleton className="h-4 w-20 mx-auto" />
+                </CardContent>
+              </Card>
+            ))}
+          </div>
+
+          {/* Search Skeleton */}
+          <div className="mb-6">
+            <div className="flex items-center justify-between gap-4">
+              <Skeleton className="h-12 flex-1 max-w-md" />
+              <Skeleton className="h-10 w-20" />
+              <Skeleton className="h-10 w-24" />
+            </div>
+          </div>
+
+          {/* Cards Skeleton */}
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
             {[...Array(6)].map((_, i) => (
-              <div key={i} className="h-64 bg-gray-200 rounded" />
+              <Card key={i} className="bg-white shadow-sm border-0">
+                <CardContent className="p-6">
+                  <div className="flex items-center gap-3 mb-4">
+                    <Skeleton className="h-12 w-12 rounded-full" />
+                    <div className="flex-1">
+                      <Skeleton className="h-4 w-32 mb-2" />
+                      <Skeleton className="h-3 w-48 mb-2" />
+                      <Skeleton className="h-3 w-24" />
+                    </div>
+                  </div>
+                  <div className="mb-4 p-3 bg-gray-50 rounded-lg">
+                    <Skeleton className="h-4 w-28 mb-2" />
+                    <Skeleton className="h-3 w-full mb-2" />
+                    <Skeleton className="h-3 w-3/4 mb-2" />
+                    <div className="flex gap-2">
+                      <Skeleton className="h-5 w-16" />
+                      <Skeleton className="h-5 w-20" />
+                    </div>
+                  </div>
+                  <Skeleton className="h-10 w-full" />
+                </CardContent>
+              </Card>
             ))}
           </div>
         </div>
@@ -669,170 +785,392 @@ export default function NetworkingPage() {
   }
 
   return (
-    <div className="container mx-auto p-6">
-      {/* Header */}
-      <div className="mb-8">
-        <h1 className="text-3xl font-bold mb-2">Red de Emprendedores</h1>
-        <p className="text-muted-foreground">
-          Conecta, colabora y crece junto a otros emprendedores bolivianos
-        </p>
-      </div>
-
-      {/* Estadísticas */}
-      {stats && (
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
-          <Card>
-            <CardContent className="p-4 text-center">
-              <div className="text-2xl font-bold text-blue-600">
-                {stats.totalContacts}
-              </div>
-              <div className="text-sm text-muted-foreground">Contactos</div>
-            </CardContent>
-          </Card>
-          <Card>
-            <CardContent className="p-4 text-center">
-              <div className="text-2xl font-bold text-orange-600">
-                {stats.pendingReceived}
-              </div>
-              <div className="text-sm text-muted-foreground">
-                Solicitudes Pendientes
-              </div>
-            </CardContent>
-          </Card>
-          <Card>
-            <CardContent className="p-4 text-center">
-              <div className="text-2xl font-bold text-green-600">
-                {stats.pendingSent}
-              </div>
-              <div className="text-sm text-muted-foreground">Enviadas</div>
-            </CardContent>
-          </Card>
-          <Card>
-            <CardContent className="p-4 text-center">
-              <div className="text-2xl font-bold text-purple-600">
-                {stats.totalRequests}
-              </div>
-              <div className="text-sm text-muted-foreground">
-                Total Solicitudes
-              </div>
-            </CardContent>
-          </Card>
-        </div>
-      )}
-
-      {/* Emprendedores Section */}
-      <div className="space-y-6">
-        <div className="flex items-center justify-between">
-          <div className="relative flex-1 max-w-md">
-            <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-            <Input
-              placeholder="Buscar emprendedores por categoría de negocio..."
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
-              onKeyPress={(e) => e.key === "Enter" && handleSearch()}
-              className="pl-10"
-            />
+    <div className="min-h-screen bg-gray-50">
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6 sm:py-8">
+        {/* Header */}
+        <div className="mb-6 sm:mb-8">
+          <div className="flex items-center gap-3 mb-4">
+            <div className="p-2 bg-green-100 rounded-lg">
+              <Users className="h-6 w-6 text-green-600" />
+            </div>
+            <h1 className="text-3xl sm:text-4xl font-bold text-gray-900">
+              Red de Emprendedores
+            </h1>
           </div>
-          <div className="flex items-center gap-2">
-            <Button variant="outline" size="sm">
-              <Filter className="h-4 w-4 mr-2" />
-              Filtros
-            </Button>
-            <Button onClick={handleSearch}>
-              <Search className="h-4 w-4 mr-2" />
-              Buscar
-            </Button>
-          </div>
+          <p className="text-gray-600 text-lg">
+            Conecta, colabora y crece junto a otros emprendedores bolivianos
+          </p>
         </div>
 
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-          {(entrepreneurshipOwners || [])
-            .filter(
-              (entrepreneurship) => entrepreneurship && entrepreneurship.ownerId
-            )
-            .map((entrepreneurship) => (
-              <Card
-                key={entrepreneurship?.id || Math.random().toString()}
-                className="overflow-hidden hover:shadow-lg transition-shadow"
-              >
-                <CardContent className="p-6">
-                  <div className="flex items-center gap-3 mb-4">
-                    <Avatar className="h-12 w-12">
-                      <AvatarImage
-                        src={entrepreneurship?.owner?.avatarUrl}
-                        alt={`${entrepreneurship?.owner?.firstName || ""} ${entrepreneurship?.owner?.lastName || ""}`}
-                      />
-                      <AvatarFallback>
-                        {entrepreneurship?.owner?.firstName?.[0] || ""}
-                        {entrepreneurship?.owner?.lastName?.[0] || ""}
-                      </AvatarFallback>
-                    </Avatar>
-                    <div className="flex-1">
-                      <h3 className="font-semibold">
-                        {entrepreneurship?.owner?.firstName || "Sin nombre"}{" "}
-                        {entrepreneurship?.owner?.lastName || ""}
-                      </h3>
-                      <p className="text-sm text-muted-foreground">
-                        {entrepreneurship?.owner?.email || "Sin email"}
-                      </p>
-                      <div className="flex items-center gap-1 text-xs text-muted-foreground">
-                        <MapPin className="h-3 w-3" />
-                        {entrepreneurship?.municipality ||
-                          "Sin ubicación"}, {entrepreneurship?.department || ""}
-                      </div>
-                    </div>
-                  </div>
-
-                  {/* Entrepreneurship Information */}
-                  <div className="mb-4 p-3 bg-gray-50 rounded-lg">
-                    <h4 className="font-medium text-sm mb-1">
-                      {entrepreneurship?.name}
-                    </h4>
-                    <p className="text-xs text-muted-foreground mb-2 line-clamp-2">
-                      {entrepreneurship?.description}
-                    </p>
-                    <div className="flex flex-wrap gap-1">
-                      <Badge variant="secondary" className="text-xs">
-                        {entrepreneurship?.category}
-                      </Badge>
-                      <Badge variant="outline" className="text-xs">
-                        {entrepreneurship?.businessStage}
-                      </Badge>
-                    </div>
-                  </div>
-
-                  <Button
-                    size="sm"
-                    onClick={() =>
-                      handleViewEntrepreneurships(
-                        entrepreneurship?.ownerId || ""
-                      )
-                    }
-                    className="w-full"
-                    variant="outline"
-                  >
-                    <Eye className="w-4 h-4 mr-2" />
-                    Ver Emprendimientos
-                  </Button>
-                </CardContent>
-              </Card>
-            ))}
-        </div>
-
-        {(entrepreneurshipOwners || []).filter(
-          (entrepreneurship) => entrepreneurship && entrepreneurship.ownerId
-        ).length === 0 && (
-          <div className="text-center py-12">
-            <Users className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
-            <h3 className="text-lg font-medium mb-2">
-              No se encontraron emprendedores
-            </h3>
-            <p className="text-muted-foreground">
-              Intenta con otros términos de búsqueda o publica tu emprendimiento
-              para aparecer en la red.
-            </p>
+        {/* Estadísticas */}
+        {stats && (
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
+            <Card className="bg-white shadow-sm border-0">
+              <CardContent className="p-6 text-center">
+                <div className="text-3xl font-bold text-blue-600 mb-1">
+                  {stats.totalContacts}
+                </div>
+                <div className="text-sm text-gray-600 font-medium">
+                  Contactos
+                </div>
+              </CardContent>
+            </Card>
+            <Card className="bg-white shadow-sm border-0">
+              <CardContent className="p-6 text-center">
+                <div className="text-3xl font-bold text-orange-600 mb-1">
+                  {stats.pendingReceived}
+                </div>
+                <div className="text-sm text-gray-600 font-medium">
+                  Solicitudes Pendientes
+                </div>
+              </CardContent>
+            </Card>
+            <Card className="bg-white shadow-sm border-0">
+              <CardContent className="p-6 text-center">
+                <div className="text-3xl font-bold text-green-600 mb-1">
+                  {stats.pendingSent}
+                </div>
+                <div className="text-sm text-gray-600 font-medium">
+                  Enviadas
+                </div>
+              </CardContent>
+            </Card>
+            <Card className="bg-white shadow-sm border-0">
+              <CardContent className="p-6 text-center">
+                <div className="text-3xl font-bold text-purple-600 mb-1">
+                  {stats.totalRequests}
+                </div>
+                <div className="text-sm text-gray-600 font-medium">
+                  Total Solicitudes
+                </div>
+              </CardContent>
+            </Card>
           </div>
         )}
+
+        {/* Emprendedores Section */}
+        <div className="space-y-6">
+          <div className="flex flex-col sm:flex-row items-center justify-between gap-4">
+            <div className="relative flex-1 max-w-md w-full">
+              <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
+              <Input
+                placeholder="Buscar emprendedores por categoría de negocio..."
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                onKeyPress={(e) => e.key === "Enter" && handleSearch()}
+                className="pl-10 h-12 border-gray-200 focus:border-blue-500"
+              />
+            </div>
+            <div className="flex items-center gap-2">
+              <Button
+                variant="outline"
+                size="sm"
+                className="h-10"
+                onClick={() => setShowFilters(!showFilters)}
+              >
+                <Filter className="h-4 w-4 mr-2" />
+                {showFilters ? "Ocultar Filtros" : "Mostrar Filtros"}
+              </Button>
+              <Button onClick={handleSearch} className="h-10">
+                <Search className="h-4 w-4 mr-2" />
+                Buscar
+              </Button>
+            </div>
+          </div>
+
+          {/* Inline Filters */}
+          {showFilters && (
+            <Card className="bg-white shadow-sm border-0 mb-6">
+              <CardContent className="p-6">
+                <div className="space-y-4">
+                  <div className="flex items-center justify-between">
+                    <h3 className="text-lg font-semibold text-gray-900">
+                      Filtros de Búsqueda
+                    </h3>
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      onClick={handleClearFilters}
+                      className="text-gray-500 hover:text-gray-700"
+                    >
+                      <X className="h-4 w-4 mr-1" />
+                      Limpiar Todo
+                    </Button>
+                  </div>
+
+                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+                    {/* Categoría */}
+                    <div className="space-y-2">
+                      <div className="flex items-center justify-between">
+                        <label className="text-sm font-medium text-gray-700">
+                          Categoría
+                        </label>
+                        {filters.category && (
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            onClick={() => handleClearFilter("category")}
+                            className="h-5 px-1 text-xs text-gray-400 hover:text-gray-600"
+                          >
+                            <X className="h-3 w-3" />
+                          </Button>
+                        )}
+                      </div>
+                      <Select
+                        value={filters.category}
+                        onValueChange={(value) =>
+                          handleFilterChange("category", value)
+                        }
+                      >
+                        <SelectTrigger className="h-9">
+                          <SelectValue placeholder="Seleccionar categoría" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="Tecnología">Tecnología</SelectItem>
+                          <SelectItem value="Comercio">Comercio</SelectItem>
+                          <SelectItem value="Servicios">Servicios</SelectItem>
+                          <SelectItem value="Manufactura">
+                            Manufactura
+                          </SelectItem>
+                          <SelectItem value="Agricultura">
+                            Agricultura
+                          </SelectItem>
+                          <SelectItem value="Turismo">Turismo</SelectItem>
+                          <SelectItem value="Educación">Educación</SelectItem>
+                          <SelectItem value="Salud">Salud</SelectItem>
+                          <SelectItem value="Finanzas">Finanzas</SelectItem>
+                          <SelectItem value="Otros">Otros</SelectItem>
+                        </SelectContent>
+                      </Select>
+                    </div>
+
+                    {/* Etapa del Negocio */}
+                    <div className="space-y-2">
+                      <div className="flex items-center justify-between">
+                        <label className="text-sm font-medium text-gray-700">
+                          Etapa
+                        </label>
+                        {filters.businessStage && (
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            onClick={() => handleClearFilter("businessStage")}
+                            className="h-5 px-1 text-xs text-gray-400 hover:text-gray-600"
+                          >
+                            <X className="h-3 w-3" />
+                          </Button>
+                        )}
+                      </div>
+                      <Select
+                        value={filters.businessStage}
+                        onValueChange={(value) =>
+                          handleFilterChange("businessStage", value)
+                        }
+                      >
+                        <SelectTrigger className="h-9">
+                          <SelectValue placeholder="Seleccionar etapa" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="Idea">Idea</SelectItem>
+                          <SelectItem value="Desarrollo">Desarrollo</SelectItem>
+                          <SelectItem value="Lanzamiento">
+                            Lanzamiento
+                          </SelectItem>
+                          <SelectItem value="Crecimiento">
+                            Crecimiento
+                          </SelectItem>
+                          <SelectItem value="Expansión">Expansión</SelectItem>
+                          <SelectItem value="Establecido">
+                            Establecido
+                          </SelectItem>
+                        </SelectContent>
+                      </Select>
+                    </div>
+
+                    {/* Departamento */}
+                    <div className="space-y-2">
+                      <div className="flex items-center justify-between">
+                        <label className="text-sm font-medium text-gray-700">
+                          Departamento
+                        </label>
+                        {filters.department && (
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            onClick={() => handleClearFilter("department")}
+                            className="h-5 px-1 text-xs text-gray-400 hover:text-gray-600"
+                          >
+                            <X className="h-3 w-3" />
+                          </Button>
+                        )}
+                      </div>
+                      <Select
+                        value={filters.department}
+                        onValueChange={(value) =>
+                          handleFilterChange("department", value)
+                        }
+                      >
+                        <SelectTrigger className="h-9">
+                          <SelectValue placeholder="Seleccionar departamento" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="La Paz">La Paz</SelectItem>
+                          <SelectItem value="Cochabamba">Cochabamba</SelectItem>
+                          <SelectItem value="Santa Cruz">Santa Cruz</SelectItem>
+                          <SelectItem value="Potosí">Potosí</SelectItem>
+                          <SelectItem value="Oruro">Oruro</SelectItem>
+                          <SelectItem value="Chuquisaca">Chuquisaca</SelectItem>
+                          <SelectItem value="Tarija">Tarija</SelectItem>
+                          <SelectItem value="Beni">Beni</SelectItem>
+                          <SelectItem value="Pando">Pando</SelectItem>
+                        </SelectContent>
+                      </Select>
+                    </div>
+
+                    {/* Municipio */}
+                    <div className="space-y-2">
+                      <div className="flex items-center justify-between">
+                        <label className="text-sm font-medium text-gray-700">
+                          Municipio
+                        </label>
+                        {filters.municipality && (
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            onClick={() => handleClearFilter("municipality")}
+                            className="h-5 px-1 text-xs text-gray-400 hover:text-gray-600"
+                          >
+                            <X className="h-3 w-3" />
+                          </Button>
+                        )}
+                      </div>
+                      <Input
+                        placeholder="Ingresar municipio"
+                        value={filters.municipality}
+                        onChange={(e) =>
+                          handleFilterChange("municipality", e.target.value)
+                        }
+                        className="h-9"
+                      />
+                    </div>
+                  </div>
+
+                  {/* Apply Filters Button */}
+                  <div className="flex justify-end pt-2">
+                    <Button onClick={handleApplyFilters} className="px-6">
+                      Aplicar Filtros
+                    </Button>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+          )}
+
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+            {(entrepreneurshipOwners || [])
+              .filter(
+                (entrepreneurship) =>
+                  entrepreneurship && entrepreneurship.ownerId
+              )
+              .map((entrepreneurship) => (
+                <Card
+                  key={entrepreneurship?.id || Math.random().toString()}
+                  className="bg-white shadow-sm border-0 overflow-hidden hover:shadow-lg transition-shadow"
+                >
+                  <CardContent className="p-6">
+                    <div className="flex items-center gap-3 mb-4">
+                      <Avatar className="h-12 w-12">
+                        <AvatarImage
+                          src={entrepreneurship?.owner?.avatarUrl}
+                          alt={`${entrepreneurship?.owner?.firstName || ""} ${entrepreneurship?.owner?.lastName || ""}`}
+                        />
+                        <AvatarFallback>
+                          {entrepreneurship?.owner?.firstName?.[0] || ""}
+                          {entrepreneurship?.owner?.lastName?.[0] || ""}
+                        </AvatarFallback>
+                      </Avatar>
+                      <div className="flex-1">
+                        <h3 className="font-semibold text-gray-900">
+                          {entrepreneurship?.owner?.firstName || "Sin nombre"}{" "}
+                          {entrepreneurship?.owner?.lastName || ""}
+                        </h3>
+                        <p className="text-sm text-gray-600">
+                          {entrepreneurship?.owner?.email || "Sin email"}
+                        </p>
+                        <div className="flex items-center gap-1 text-xs text-gray-500">
+                          <MapPin className="h-3 w-3" />
+                          {entrepreneurship?.municipality ||
+                            "Sin ubicación"},{" "}
+                          {entrepreneurship?.department || ""}
+                        </div>
+                      </div>
+                    </div>
+
+                    {/* Entrepreneurship Information */}
+                    <div className="mb-4 p-4 bg-gray-50 rounded-lg">
+                      <h4 className="font-medium text-sm mb-2 text-gray-900">
+                        {entrepreneurship?.name}
+                      </h4>
+                      <p className="text-xs text-gray-600 mb-3 line-clamp-2">
+                        {entrepreneurship?.description}
+                      </p>
+                      <div className="flex flex-wrap gap-2">
+                        <Badge
+                          variant="secondary"
+                          className="text-xs bg-blue-100 text-blue-800"
+                        >
+                          {entrepreneurship?.category}
+                        </Badge>
+                        <Badge
+                          variant="outline"
+                          className="text-xs border-green-200 text-green-800"
+                        >
+                          {entrepreneurship?.businessStage}
+                        </Badge>
+                      </div>
+                    </div>
+
+                    <Button
+                      size="sm"
+                      onClick={() =>
+                        handleViewEntrepreneurships(
+                          entrepreneurship?.ownerId || ""
+                        )
+                      }
+                      className="w-full h-10"
+                      variant="outline"
+                    >
+                      <Eye className="w-4 h-4 mr-2" />
+                      Ver Emprendimientos
+                    </Button>
+                  </CardContent>
+                </Card>
+              ))}
+          </div>
+
+          {(entrepreneurshipOwners || []).filter(
+            (entrepreneurship) => entrepreneurship && entrepreneurship.ownerId
+          ).length === 0 && (
+            <Card className="bg-white shadow-sm border-0">
+              <CardContent className="p-8 text-center">
+                <div className="flex flex-col items-center gap-4">
+                  <div className="p-3 bg-gray-100 rounded-full">
+                    <Users className="h-8 w-8 text-gray-400" />
+                  </div>
+                  <div>
+                    <h3 className="text-lg font-semibold text-gray-900 mb-2">
+                      No se encontraron emprendedores
+                    </h3>
+                    <p className="text-gray-600">
+                      Intenta con otros términos de búsqueda o publica tu
+                      emprendimiento para aparecer en la red.
+                    </p>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+          )}
+        </div>
       </div>
 
       {/* Modal para ver emprendimientos de un usuario */}
@@ -842,7 +1180,7 @@ export default function NetworkingPage() {
       >
         <DialogContent className="max-w-4xl max-h-[80vh] overflow-y-auto">
           <DialogHeader>
-            <DialogTitle>
+            <DialogTitle className="text-xl font-semibold">
               Emprendimientos de{" "}
               {selectedUserEntrepreneurships?.ownerName || "Usuario"}
             </DialogTitle>
@@ -853,7 +1191,7 @@ export default function NetworkingPage() {
               (entrepreneurship: any) => (
                 <Card
                   key={entrepreneurship.id}
-                  className="overflow-hidden hover:shadow-lg transition-shadow"
+                  className="bg-white shadow-sm border-0 overflow-hidden hover:shadow-lg transition-shadow"
                 >
                   <CardContent className="p-6">
                     <div className="space-y-4">
@@ -862,35 +1200,41 @@ export default function NetworkingPage() {
                           {entrepreneurship.name?.[0]?.toUpperCase() || "E"}
                         </div>
                         <div className="flex-1">
-                          <h3 className="font-semibold text-lg mb-1">
+                          <h3 className="font-semibold text-lg mb-1 text-gray-900">
                             {entrepreneurship.name}
                           </h3>
-                          <p className="text-sm text-muted-foreground line-clamp-2">
+                          <p className="text-sm text-gray-600 line-clamp-2">
                             {entrepreneurship.description}
                           </p>
                         </div>
                       </div>
 
-                      <div className="space-y-2">
+                      <div className="space-y-3">
                         <div className="flex items-center gap-2">
-                          <MapPin className="w-4 h-4 text-muted-foreground" />
-                          <span className="text-sm">
+                          <MapPin className="w-4 h-4 text-gray-400" />
+                          <span className="text-sm text-gray-600">
                             {entrepreneurship.municipality}
                           </span>
                         </div>
 
                         <div className="flex flex-wrap gap-2">
-                          <Badge variant="secondary" className="text-xs">
+                          <Badge
+                            variant="secondary"
+                            className="text-xs bg-blue-100 text-blue-800"
+                          >
                             {entrepreneurship.category}
                           </Badge>
-                          <Badge variant="outline" className="text-xs">
+                          <Badge
+                            variant="outline"
+                            className="text-xs border-green-200 text-green-800"
+                          >
                             {entrepreneurship.businessStage}
                           </Badge>
                         </div>
 
                         {entrepreneurship.website && (
                           <div className="flex items-center gap-2">
-                            <TrendingUp className="w-4 h-4 text-muted-foreground" />
+                            <TrendingUp className="w-4 h-4 text-gray-400" />
                             <a
                               href={entrepreneurship.website}
                               target="_blank"
@@ -911,15 +1255,23 @@ export default function NetworkingPage() {
 
           {(!selectedUserEntrepreneurships?.entrepreneurships ||
             selectedUserEntrepreneurships?.entrepreneurships.length === 0) && (
-            <div className="text-center py-12">
-              <TrendingUp className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
-              <h3 className="text-lg font-medium mb-2">
-                No hay emprendimientos
-              </h3>
-              <p className="text-muted-foreground">
-                Este usuario no tiene emprendimientos registrados.
-              </p>
-            </div>
+            <Card className="bg-white shadow-sm border-0">
+              <CardContent className="p-8 text-center">
+                <div className="flex flex-col items-center gap-4">
+                  <div className="p-3 bg-gray-100 rounded-full">
+                    <TrendingUp className="h-8 w-8 text-gray-400" />
+                  </div>
+                  <div>
+                    <h3 className="text-lg font-semibold text-gray-900 mb-2">
+                      No hay emprendimientos
+                    </h3>
+                    <p className="text-gray-600">
+                      Este usuario no tiene emprendimientos registrados.
+                    </p>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
           )}
         </DialogContent>
       </Dialog>
@@ -931,7 +1283,7 @@ export default function NetworkingPage() {
       >
         <DialogContent className="max-w-4xl h-[600px]">
           <DialogHeader>
-            <DialogTitle>
+            <DialogTitle className="text-xl font-semibold">
               Chat con {selectedContact?.firstName || "Un Contacto"}
             </DialogTitle>
           </DialogHeader>

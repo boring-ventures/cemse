@@ -4,6 +4,7 @@ import { useState, useEffect } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
+import { Skeleton } from "@/components/ui/skeleton";
 
 import { useToast } from "@/hooks/use-toast";
 import { JobOffer } from "@/types/jobs";
@@ -17,6 +18,12 @@ import {
   Trash2,
   TrendingUp,
   Calendar,
+  RefreshCw,
+  AlertCircle,
+  MapPin,
+  Clock,
+  Building,
+  Eye,
 } from "lucide-react";
 
 import { useRouter } from "next/navigation";
@@ -74,10 +81,17 @@ export default function CompanyJobsPage() {
 
     try {
       setLoading(true);
-      console.log("Fetching job offers for company:", user.id);
 
-      // Use the user ID directly as the company ID for company users
-      const companyId = user.id;
+      // Use the same logic as job creation to determine company ID
+      const companyId = user.company?.id || user.id;
+
+      console.log("Fetching job offers for company:", {
+        userId: user.id,
+        userCompanyId: user.company?.id,
+        finalCompanyId: companyId,
+        userRole: user.role,
+        hasCompanyObject: !!user.company,
+      });
 
       // Fetch job offers
       const response = await fetch(`/api/joboffer?companyId=${companyId}`, {
@@ -306,18 +320,72 @@ export default function CompanyJobsPage() {
 
   if (loading) {
     return (
-      <div className="space-y-6">
-        <div className="animate-pulse">
-          <div className="h-8 bg-gray-200 rounded w-1/3 mb-6"></div>
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
-            {[1, 2, 3].map((i) => (
-              <div key={i} className="h-24 bg-gray-200 rounded"></div>
-            ))}
-          </div>
-          <div className="space-y-3">
-            {[1, 2, 3].map((i) => (
-              <div key={i} className="h-32 bg-gray-200 rounded"></div>
-            ))}
+      <div className="min-h-screen bg-gray-50">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6 sm:py-8">
+          <div className="space-y-8">
+            {/* Header Skeleton */}
+            <div className="flex items-center justify-between">
+              <div>
+                <Skeleton className="h-8 w-64 mb-2" />
+                <Skeleton className="h-4 w-96" />
+              </div>
+              <Skeleton className="h-10 w-32" />
+            </div>
+
+            {/* Stats Cards Skeleton */}
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+              {[...Array(3)].map((_, i) => (
+                <Card key={i} className="bg-white shadow-sm border-0">
+                  <CardContent className="p-6">
+                    <div className="flex items-center justify-between">
+                      <div className="space-y-2">
+                        <Skeleton className="h-4 w-24" />
+                        <Skeleton className="h-8 w-16" />
+                      </div>
+                      <Skeleton className="h-8 w-8 rounded" />
+                    </div>
+                  </CardContent>
+                </Card>
+              ))}
+            </div>
+
+            {/* Job Cards Skeleton */}
+            <div className="space-y-6">
+              <div className="flex items-center justify-between">
+                <Skeleton className="h-6 w-48" />
+                <Skeleton className="h-10 w-24" />
+              </div>
+              <div className="space-y-4">
+                {[...Array(3)].map((_, i) => (
+                  <Card key={i} className="bg-white shadow-sm border-0">
+                    <CardContent className="p-6">
+                      <div className="flex justify-between items-start">
+                        <div className="flex-1 space-y-4">
+                          <div className="flex items-center gap-3">
+                            <Skeleton className="h-6 w-48" />
+                            <Skeleton className="h-6 w-20" />
+                          </div>
+                          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                            <Skeleton className="h-4 w-32" />
+                            <Skeleton className="h-4 w-28" />
+                            <Skeleton className="h-4 w-24" />
+                          </div>
+                          <div className="flex items-center gap-6">
+                            <Skeleton className="h-4 w-24" />
+                            <Skeleton className="h-4 w-32" />
+                          </div>
+                        </div>
+                        <div className="flex gap-2">
+                          <Skeleton className="h-8 w-20" />
+                          <Skeleton className="h-8 w-24" />
+                          <Skeleton className="h-8 w-20" />
+                        </div>
+                      </div>
+                    </CardContent>
+                  </Card>
+                ))}
+              </div>
+            </div>
           </div>
         </div>
 
@@ -362,220 +430,271 @@ export default function CompanyJobsPage() {
   }
 
   return (
-    <div className="space-y-6">
-      <div className="flex justify-between items-center">
-        <div>
-          <h1 className="text-3xl font-bold">Gestión de Puestos de Trabajo</h1>
-          <p className="text-sm text-gray-600 mt-1">
-            Administra las ofertas de trabajo de tu empresa
-          </p>
-        </div>
-        <div className="flex gap-2">
-          <Button onClick={() => router.push("/jobs/create")}>
-            <Plus className="w-4 h-4 mr-2" />
-            Crear Puesto
-          </Button>
-        </div>
-      </div>
-
-      {/* Estadísticas */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-        <Card>
-          <CardContent className="p-6">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-sm font-medium text-gray-600">
-                  Total Puestos
-                </p>
-                <p className="text-2xl font-bold">{stats.total}</p>
-              </div>
-              <Briefcase className="w-8 h-8 text-blue-600" />
-            </div>
-          </CardContent>
-        </Card>
-
-        <Card>
-          <CardContent className="p-6">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-sm font-medium text-gray-600">
-                  Puestos Activos
-                </p>
-                <p className="text-2xl font-bold">{stats.active}</p>
-              </div>
-              <TrendingUp className="w-8 h-8 text-green-600" />
-            </div>
-          </CardContent>
-        </Card>
-
-        <Card>
-          <CardContent className="p-6">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-sm font-medium text-gray-600">
-                  Total Aplicaciones
-                </p>
-                <p className="text-2xl font-bold">{stats.totalApplications}</p>
-              </div>
-              <Users className="w-8 h-8 text-purple-600" />
-            </div>
-          </CardContent>
-        </Card>
-      </div>
-
-      {/* Lista de puestos de trabajo */}
-      <div className="space-y-6">
-        <div className="flex justify-between items-center">
-          <h2 className="text-xl font-semibold">Mis Puestos de Trabajo</h2>
-          <Button variant="outline" onClick={fetchJobOffers}>
-            Actualizar
-          </Button>
-        </div>
-
-        {jobOffers.length === 0 ? (
-          <Card>
-            <CardContent className="text-center py-12">
-              <Briefcase className="w-16 h-16 text-gray-400 mx-auto mb-4" />
-              <h3 className="text-lg font-medium text-gray-900 mb-2">
-                No hay puestos de trabajo
-              </h3>
-              <p className="text-gray-500 mb-4">
-                Comienza creando tu primer puesto de trabajo para atraer
-                candidatos
+    <div className="min-h-screen bg-gray-50">
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6 sm:py-8">
+        <div className="space-y-8">
+          {/* Header Section */}
+          <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+            <div>
+              <h1 className="text-3xl sm:text-4xl font-bold text-gray-900 mb-2">
+                Gestión de Puestos de Trabajo
+              </h1>
+              <p className="text-gray-600 text-lg">
+                Administra las ofertas de trabajo de tu empresa
               </p>
-              <Button onClick={() => router.push("/jobs/create")}>
-                <Plus className="w-4 h-4 mr-2" />
-                Crear Primer Puesto
-              </Button>
-            </CardContent>
-          </Card>
-        ) : (
-          <div className="grid gap-4">
-            {jobOffers.map((jobOffer) => (
-              <Card
-                key={jobOffer.id}
-                className="hover:shadow-md transition-shadow"
+            </div>
+            <div className="flex gap-3">
+              <Button
+                variant="outline"
+                onClick={fetchJobOffers}
+                className="border-gray-200 hover:border-blue-500 hover:text-blue-600"
               >
-                <CardContent className="p-6">
-                  <div className="flex justify-between items-start">
-                    <div className="flex-1">
-                      <div className="flex items-center gap-3 mb-2">
-                        <h3 className="text-lg font-semibold">
-                          {jobOffer.title}
-                        </h3>
-                        <Badge className={statusColors[jobOffer.status]}>
-                          {statusLabels[jobOffer.status]}
-                        </Badge>
-                      </div>
+                <RefreshCw className="w-4 h-4 mr-2" />
+                Actualizar
+              </Button>
+              <Button
+                onClick={() => router.push("/jobs/create")}
+                className="bg-blue-600 hover:bg-blue-700 text-white"
+              >
+                <Plus className="w-4 h-4 mr-2" />
+                Crear Puesto
+              </Button>
+            </div>
+          </div>
 
-                      <div className="grid grid-cols-1 md:grid-cols-3 gap-4 text-sm text-gray-600 mb-4">
-                        <div>
-                          <span className="font-medium">Ubicación:</span>{" "}
-                          {jobOffer.location}
-                        </div>
-                        <div>
-                          <span className="font-medium">Tipo de contrato:</span>{" "}
-                          {jobOffer.contractType}
-                        </div>
-                        <div>
-                          <span className="font-medium">Modalidad:</span>{" "}
-                          {jobOffer.workModality}
-                        </div>
-                      </div>
-
-                      <div className="flex items-center gap-6 text-sm">
-                        <div
-                          className="flex items-center gap-1 cursor-pointer hover:text-blue-600 transition-colors"
-                          onClick={() =>
-                            router.push(
-                              `/company/jobs/${jobOffer.id}/applications`
-                            )
-                          }
-                        >
-                          <Users className="w-4 h-4" />
-                          {jobOffer.applicationsCount || 0} aplicaciones
-                        </div>
-                        <div className="flex items-center gap-1">
-                          <Calendar className="w-4 h-4" />
-                          Creado {formatDate(jobOffer.createdAt)}
-                        </div>
-                      </div>
-                    </div>
-
-                    <div className="flex gap-2">
-                      <Button
-                        variant="outline"
-                        size="sm"
-                        onClick={() => router.push(`/jobs/${jobOffer.id}/edit`)}
-                      >
-                        <Edit className="w-4 h-4 mr-2" />
-                        Editar
-                      </Button>
-                      <Button
-                        variant="outline"
-                        size="sm"
-                        onClick={() =>
-                          router.push(
-                            `/company/jobs/${jobOffer.id}/applications`
-                          )
-                        }
-                      >
-                        <Users className="w-4 h-4 mr-2" />
-                        Ver Aplicaciones
-                      </Button>
-                      <Button
-                        variant="outline"
-                        size="sm"
-                        onClick={() => handleDeleteJobOffer(jobOffer.id)}
-                        disabled={loading}
-                      >
-                        <Trash2 className="w-4 h-4 mr-2" />
-                        {loading ? "Eliminando..." : "Eliminar"}
-                      </Button>
-                    </div>
+          {/* Statistics Cards */}
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+            <Card className="bg-white shadow-sm border-0 hover:shadow-md transition-shadow">
+              <CardContent className="p-6">
+                <div className="flex items-center justify-between">
+                  <div>
+                    <p className="text-sm font-medium text-gray-600 mb-1">
+                      Total Puestos
+                    </p>
+                    <p className="text-3xl font-bold text-gray-900">
+                      {stats.total}
+                    </p>
                   </div>
+                  <div className="bg-blue-100 rounded-full p-3">
+                    <Briefcase className="w-6 h-6 text-blue-600" />
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+
+            <Card className="bg-white shadow-sm border-0 hover:shadow-md transition-shadow">
+              <CardContent className="p-6">
+                <div className="flex items-center justify-between">
+                  <div>
+                    <p className="text-sm font-medium text-gray-600 mb-1">
+                      Puestos Activos
+                    </p>
+                    <p className="text-3xl font-bold text-green-600">
+                      {stats.active}
+                    </p>
+                  </div>
+                  <div className="bg-green-100 rounded-full p-3">
+                    <TrendingUp className="w-6 h-6 text-green-600" />
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+
+            <Card className="bg-white shadow-sm border-0 hover:shadow-md transition-shadow">
+              <CardContent className="p-6">
+                <div className="flex items-center justify-between">
+                  <div>
+                    <p className="text-sm font-medium text-gray-600 mb-1">
+                      Total Aplicaciones
+                    </p>
+                    <p className="text-3xl font-bold text-purple-600">
+                      {stats.totalApplications}
+                    </p>
+                  </div>
+                  <div className="bg-purple-100 rounded-full p-3">
+                    <Users className="w-6 h-6 text-purple-600" />
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+          </div>
+
+          {/* Lista de puestos de trabajo */}
+          <div className="space-y-6">
+            <div className="flex justify-between items-center">
+              <h2 className="text-xl font-semibold">Mis Puestos de Trabajo</h2>
+              <Button variant="outline" onClick={fetchJobOffers}>
+                Actualizar
+              </Button>
+            </div>
+
+            {jobOffers.length === 0 ? (
+              <Card className="bg-white shadow-sm border-0">
+                <CardContent className="text-center py-16">
+                  <div className="bg-gray-100 rounded-full p-6 w-24 h-24 mx-auto mb-6 flex items-center justify-center">
+                    <Briefcase className="w-12 h-12 text-gray-400" />
+                  </div>
+                  <h3 className="text-xl font-semibold text-gray-900 mb-3">
+                    No hay puestos de trabajo
+                  </h3>
+                  <p className="text-gray-600 mb-8 max-w-md mx-auto text-lg leading-relaxed">
+                    Comienza creando tu primer puesto de trabajo para atraer
+                    candidatos y encontrar el talento que necesitas.
+                  </p>
+                  <Button
+                    onClick={() => router.push("/jobs/create")}
+                    className="bg-blue-600 hover:bg-blue-700 text-white"
+                  >
+                    <Plus className="w-4 h-4 mr-2" />
+                    Crear Primer Puesto
+                  </Button>
                 </CardContent>
               </Card>
-            ))}
-          </div>
-        )}
-      </div>
+            ) : (
+              <div className="space-y-6">
+                {jobOffers.map((jobOffer) => (
+                  <Card
+                    key={jobOffer.id}
+                    className="bg-white shadow-sm border-0 hover:shadow-lg transition-shadow"
+                  >
+                    <CardContent className="p-6">
+                      <div className="flex flex-col lg:flex-row lg:justify-between lg:items-start gap-6">
+                        <div className="flex-1">
+                          <div className="flex items-center gap-3 mb-4">
+                            <h3 className="text-xl font-semibold text-gray-900">
+                              {jobOffer.title}
+                            </h3>
+                            <Badge
+                              className={`${statusColors[jobOffer.status]} px-3 py-1`}
+                            >
+                              {statusLabels[jobOffer.status]}
+                            </Badge>
+                          </div>
 
-      {/* Delete Confirmation Modal */}
-      <AlertDialog
-        open={deleteConfirmation.isOpen}
-        onOpenChange={(open) => {
-          if (!open) {
-            setDeleteConfirmation({ isOpen: false, jobOffer: null });
-          }
-        }}
-      >
-        <AlertDialogContent>
-          <AlertDialogHeader>
-            <AlertDialogTitle>Confirmar eliminación</AlertDialogTitle>
-            <AlertDialogDescription>
-              ¿Estás seguro de que quieres eliminar "
-              {deleteConfirmation.jobOffer?.title}"?
-              <br />
-              <br />
-              <strong>Esta acción no se puede deshacer</strong> y se eliminarán
-              todas las aplicaciones asociadas a esta oferta de trabajo.
-            </AlertDialogDescription>
-          </AlertDialogHeader>
-          <AlertDialogFooter>
-            <AlertDialogCancel onClick={cancelDelete}>
-              Cancelar
-            </AlertDialogCancel>
-            <AlertDialogAction
-              onClick={confirmDelete}
-              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
-              disabled={loading}
-            >
-              {loading ? "Eliminando..." : "Sí, eliminar"}
-            </AlertDialogAction>
-          </AlertDialogFooter>
-        </AlertDialogContent>
-      </AlertDialog>
+                          <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
+                            <div className="flex items-center gap-2 text-sm text-gray-600">
+                              <MapPin className="w-4 h-4 text-gray-400" />
+                              <span className="font-medium">Ubicación:</span>
+                              <span>{jobOffer.location}</span>
+                            </div>
+                            <div className="flex items-center gap-2 text-sm text-gray-600">
+                              <Building className="w-4 h-4 text-gray-400" />
+                              <span className="font-medium">Contrato:</span>
+                              <span>{jobOffer.contractType}</span>
+                            </div>
+                            <div className="flex items-center gap-2 text-sm text-gray-600">
+                              <Clock className="w-4 h-4 text-gray-400" />
+                              <span className="font-medium">Modalidad:</span>
+                              <span>{jobOffer.workModality}</span>
+                            </div>
+                          </div>
+
+                          <div className="flex items-center gap-6 text-sm">
+                            <div
+                              className="flex items-center gap-2 cursor-pointer hover:text-blue-600 transition-colors p-2 rounded-lg hover:bg-blue-50"
+                              onClick={() =>
+                                router.push(
+                                  `/company/jobs/${jobOffer.id}/applications`
+                                )
+                              }
+                            >
+                              <Users className="w-4 h-4" />
+                              <span className="font-medium">
+                                {jobOffer.applicationsCount || 0}
+                              </span>
+                              <span>aplicaciones</span>
+                            </div>
+                            <div className="flex items-center gap-2 text-gray-600 p-2 rounded-lg">
+                              <Calendar className="w-4 h-4" />
+                              <span>
+                                Creado {formatDate(jobOffer.createdAt)}
+                              </span>
+                            </div>
+                          </div>
+                        </div>
+
+                        <div className="flex flex-col sm:flex-row gap-2 lg:flex-col">
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            onClick={() =>
+                              router.push(`/jobs/${jobOffer.id}/edit`)
+                            }
+                            className="border-gray-200 hover:border-blue-500 hover:text-blue-600"
+                          >
+                            <Edit className="w-4 h-4 mr-2" />
+                            Editar
+                          </Button>
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            onClick={() =>
+                              router.push(
+                                `/company/jobs/${jobOffer.id}/applications`
+                              )
+                            }
+                            className="border-gray-200 hover:border-green-500 hover:text-green-600"
+                          >
+                            <Users className="w-4 h-4 mr-2" />
+                            Ver Aplicaciones
+                          </Button>
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            onClick={() => handleDeleteJobOffer(jobOffer.id)}
+                            disabled={loading}
+                            className="border-gray-200 hover:border-red-500 hover:text-red-600"
+                          >
+                            <Trash2 className="w-4 h-4 mr-2" />
+                            {loading ? "Eliminando..." : "Eliminar"}
+                          </Button>
+                        </div>
+                      </div>
+                    </CardContent>
+                  </Card>
+                ))}
+              </div>
+            )}
+          </div>
+
+          {/* Delete Confirmation Modal */}
+          <AlertDialog
+            open={deleteConfirmation.isOpen}
+            onOpenChange={(open) => {
+              if (!open) {
+                setDeleteConfirmation({ isOpen: false, jobOffer: null });
+              }
+            }}
+          >
+            <AlertDialogContent>
+              <AlertDialogHeader>
+                <AlertDialogTitle>Confirmar eliminación</AlertDialogTitle>
+                <AlertDialogDescription>
+                  ¿Estás seguro de que quieres eliminar "
+                  {deleteConfirmation.jobOffer?.title}"?
+                  <br />
+                  <br />
+                  <strong>Esta acción no se puede deshacer</strong> y se
+                  eliminarán todas las aplicaciones asociadas a esta oferta de
+                  trabajo.
+                </AlertDialogDescription>
+              </AlertDialogHeader>
+              <AlertDialogFooter>
+                <AlertDialogCancel onClick={cancelDelete}>
+                  Cancelar
+                </AlertDialogCancel>
+                <AlertDialogAction
+                  onClick={confirmDelete}
+                  className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+                  disabled={loading}
+                >
+                  {loading ? "Eliminando..." : "Sí, eliminar"}
+                </AlertDialogAction>
+              </AlertDialogFooter>
+            </AlertDialogContent>
+          </AlertDialog>
+        </div>
+      </div>
     </div>
   );
 }

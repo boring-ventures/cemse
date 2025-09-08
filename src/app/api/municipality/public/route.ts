@@ -1,26 +1,45 @@
-import { NextRequest, NextResponse } from 'next/server';
-// import { API_BASE } from '@/lib/api';
+import { NextRequest, NextResponse } from "next/server";
+import { prisma } from "@/lib/prisma";
 
 export async function GET() {
   try {
-    const backendUrl = process.env.BACKEND_URL || '${BACKEND_URL}';
-    const response = await fetch(`${backendUrl}/api/municipality/public`, {
-      method: 'GET',
-      headers: {
-        'Content-Type': 'application/json',
+    console.log(
+      "🏛️ GET /api/municipality/public - Fetching public municipalities"
+    );
+
+    // Fetch only active municipalities for public display
+    const municipalities = await prisma.municipality.findMany({
+      where: {
+        isActive: true,
       },
+      select: {
+        id: true,
+        name: true,
+        department: true,
+        region: true,
+        address: true,
+        website: true,
+        email: true,
+        phone: true,
+        institutionType: true,
+        customType: true,
+        primaryColor: true,
+        secondaryColor: true,
+        createdAt: true,
+        updatedAt: true,
+      },
+      orderBy: [{ department: "asc" }, { name: "asc" }],
     });
 
-    if (!response.ok) {
-      throw new Error(`Backend responded with status: ${response.status}`);
-    }
+    console.log(
+      `🏛️ GET /api/municipality/public - Found ${municipalities.length} active municipalities`
+    );
 
-    const data = await response.json();
-    return NextResponse.json(data);
+    return NextResponse.json({ municipalities });
   } catch (error) {
-    console.error('Error fetching municipalities:', error);
+    console.error("Error fetching public municipalities:", error);
     return NextResponse.json(
-      { error: 'Error al cargar los municipios' },
+      { error: "Error al cargar los municipios" },
       { status: 500 }
     );
   }

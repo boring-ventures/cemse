@@ -13,6 +13,7 @@ import {
 } from "@/components/ui/dialog";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Separator } from "@/components/ui/separator";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import {
   Play,
   ChevronRight,
@@ -27,6 +28,8 @@ import {
   CheckCircle2,
   FileText,
   Award,
+  StickyNote,
+  FolderOpen,
 } from "lucide-react";
 import { QuizComponent } from "@/components/courses/quiz-component";
 import { LessonNotes } from "@/components/courses/lesson-notes";
@@ -139,10 +142,14 @@ function CourseLearnClient({ params }: PageProps) {
   console.log("🔍 Enrollment matching debug:", {
     courseId,
     enrollmentsCount: enrollments.length,
-    enrollments: enrollments.map(e => ({ id: e.id, courseId: e.courseId, status: e.status })),
+    enrollments: enrollments.map((e) => ({
+      id: e.id,
+      courseId: e.courseId,
+      status: e.status,
+    })),
     userEnrollment,
     isEnrolled,
-    enrollmentsLoading
+    enrollmentsLoading,
   });
 
   // Refresh enrollments when component mounts to ensure we have the latest data
@@ -169,13 +176,19 @@ function CourseLearnClient({ params }: PageProps) {
       // If we don't have a userEnrollment in local state, try to fetch it directly
       let enrollmentToUse = userEnrollment;
       if (!enrollmentToUse) {
-        console.log("🔍 No local enrollment found, trying to fetch from API...");
+        console.log(
+          "🔍 No local enrollment found, trying to fetch from API..."
+        );
         try {
           // Try to get enrollments for this specific course
-          const response = await apiCall(`/course-enrollments?courseId=${courseId}`);
+          const response = await apiCall(
+            `/course-enrollments?courseId=${courseId}`
+          );
           const courseEnrollments = response.enrollments || [];
-          enrollmentToUse = courseEnrollments.find((e: any) => e.courseId === courseId);
-          
+          enrollmentToUse = courseEnrollments.find(
+            (e: any) => e.courseId === courseId
+          );
+
           if (enrollmentToUse) {
             console.log("✅ Found enrollment via API:", enrollmentToUse.id);
           } else {
@@ -571,21 +584,24 @@ function CourseLearnClient({ params }: PageProps) {
   }
 
   return (
-    <div className="flex flex-col md:flex-row min-h-screen bg-background">
+    <div className="flex flex-col lg:flex-row min-h-screen bg-background">
       {/* Course Content Sidebar */}
       <div
         className={`${
-          sidebarCollapsed ? "w-0 md:w-16" : "w-full md:w-80"
+          sidebarCollapsed ? "w-0 lg:w-16" : "w-full lg:w-80"
         } bg-card border-r transition-all duration-300 overflow-hidden`}
       >
         {course && (
-          <div className="p-4">
+          <div className="p-3 sm:p-4">
             <div className="flex items-center justify-between mb-4">
-              <h2 className="text-xl font-bold truncate">{course.title}</h2>
+              <h2 className="text-lg sm:text-xl font-bold truncate">
+                {course.title}
+              </h2>
               <Button
                 variant="ghost"
                 size="icon"
                 onClick={() => setSidebarCollapsed(!sidebarCollapsed)}
+                className="hidden lg:flex"
               >
                 {sidebarCollapsed ? <ChevronRight /> : <ChevronLeft />}
               </Button>
@@ -605,18 +621,20 @@ function CourseLearnClient({ params }: PageProps) {
             {/* Course Stats */}
             <div className="grid grid-cols-2 gap-2 mb-4">
               <Card>
-                <CardContent className="p-3">
-                  <div className="flex items-center gap-2">
-                    <Clock className="h-4 w-4 text-muted-foreground" />
-                    <span className="text-sm">{course.duration}h</span>
+                <CardContent className="p-2 sm:p-3">
+                  <div className="flex items-center gap-1 sm:gap-2">
+                    <Clock className="h-3 w-3 sm:h-4 sm:w-4 text-muted-foreground" />
+                    <span className="text-xs sm:text-sm">
+                      {course.duration}h
+                    </span>
                   </div>
                 </CardContent>
               </Card>
               <Card>
-                <CardContent className="p-3">
-                  <div className="flex items-center gap-2">
-                    <BookOpen className="h-4 w-4 text-muted-foreground" />
-                    <span className="text-sm">
+                <CardContent className="p-2 sm:p-3">
+                  <div className="flex items-center gap-1 sm:gap-2">
+                    <BookOpen className="h-3 w-3 sm:h-4 sm:w-4 text-muted-foreground" />
+                    <span className="text-xs sm:text-sm">
                       {course.totalLessons} lecciones
                     </span>
                   </div>
@@ -625,7 +643,7 @@ function CourseLearnClient({ params }: PageProps) {
             </div>
 
             {/* Course Modules */}
-            <ScrollArea className="h-[calc(100vh-300px)]">
+            <ScrollArea className="h-[calc(100vh-300px)] lg:h-[calc(100vh-300px)]">
               {course.modules.length > 0 ? (
                 course.modules.map((module) => (
                   <Collapsible
@@ -634,7 +652,7 @@ function CourseLearnClient({ params }: PageProps) {
                     onOpenChange={() => toggleModuleExpanded(module.id)}
                   >
                     <div
-                      className={`p-3 mb-2 rounded-lg ${
+                      className={`p-2 sm:p-3 mb-2 rounded-lg ${
                         module.completed
                           ? "bg-primary/10"
                           : module.isLocked
@@ -644,34 +662,34 @@ function CourseLearnClient({ params }: PageProps) {
                     >
                       <CollapsibleTrigger className="w-full">
                         <div className="flex items-center justify-between">
-                          <div className="flex items-center gap-2">
+                          <div className="flex items-center gap-1 sm:gap-2">
                             {module.completed ? (
-                              <CheckCircle2 className="h-4 w-4 text-primary" />
+                              <CheckCircle2 className="h-3 w-3 sm:h-4 sm:w-4 text-primary" />
                             ) : module.isLocked ? (
-                              <Lock className="h-4 w-4 text-muted-foreground" />
+                              <Lock className="h-3 w-3 sm:h-4 sm:w-4 text-muted-foreground" />
                             ) : (
-                              <FileText className="h-4 w-4 text-muted-foreground" />
+                              <FileText className="h-3 w-3 sm:h-4 sm:w-4 text-muted-foreground" />
                             )}
-                            <span className="text-sm font-medium">
+                            <span className="text-xs sm:text-sm font-medium truncate">
                               {module.title}
                             </span>
                           </div>
                           {expandedModules.includes(module.id) ? (
-                            <ChevronUp className="h-4 w-4" />
+                            <ChevronUp className="h-3 w-3 sm:h-4 sm:w-4" />
                           ) : (
-                            <ChevronDown className="h-4 w-4" />
+                            <ChevronDown className="h-3 w-3 sm:h-4 sm:w-4" />
                           )}
                         </div>
                       </CollapsibleTrigger>
                     </div>
 
                     <CollapsibleContent>
-                      <div className="pl-4">
+                      <div className="pl-2 sm:pl-4">
                         {module.lessons.map((lesson) => (
                           <button
                             key={lesson.id}
                             onClick={() => selectLesson(module.id, lesson.id)}
-                            className={`w-full text-left p-2 rounded-lg mb-1 flex items-center gap-2 ${
+                            className={`w-full text-left p-1.5 sm:p-2 rounded-lg mb-1 flex items-center gap-1 sm:gap-2 ${
                               currentLessonId === lesson.id
                                 ? "bg-primary text-primary-foreground"
                                 : lesson.completed
@@ -681,17 +699,20 @@ function CourseLearnClient({ params }: PageProps) {
                             disabled={module.isLocked}
                           >
                             {lesson.completed ? (
-                              <CheckCircle2 className="h-4 w-4" />
+                              <CheckCircle2 className="h-3 w-3 sm:h-4 sm:w-4" />
                             ) : lesson.type === LessonType.VIDEO ? (
-                              <Play className="h-4 w-4" />
+                              <Play className="h-3 w-3 sm:h-4 sm:w-4" />
                             ) : (
-                              <FileText className="h-4 w-4" />
+                              <FileText className="h-3 w-3 sm:h-4 sm:w-4" />
                             )}
-                            <span className="text-sm truncate">
+                            <span className="text-xs sm:text-sm truncate">
                               {lesson.title}
                             </span>
                             {lesson.isPreview && (
-                              <Badge variant="secondary" className="ml-auto">
+                              <Badge
+                                variant="secondary"
+                                className="ml-auto text-xs"
+                              >
                                 Preview
                               </Badge>
                             )}
@@ -719,50 +740,173 @@ function CourseLearnClient({ params }: PageProps) {
       </div>
 
       {/* Main Content Area */}
-      <div className="flex-1 p-4">
+      <div className="flex-1 p-3 sm:p-4">
         {course && currentLesson && (
           <>
             <div className="mb-4">
-              <h1 className="text-2xl font-bold mb-2">{currentLesson.title}</h1>
-              <p className="text-muted-foreground">
+              <h1 className="text-xl sm:text-2xl font-bold mb-2">
+                {currentLesson.title}
+              </h1>
+              <p className="text-sm sm:text-base text-muted-foreground">
                 {currentLesson.description}
               </p>
             </div>
 
-            {/* Lesson Content */}
-            {currentLesson.type === LessonType.VIDEO &&
-              currentLesson.content.video && (
-                <LessonPlayer
-                  lesson={currentLesson}
-                  onComplete={() => handleLessonComplete(currentLesson.id)}
-                />
-              )}
+            {/* Lesson Content with Tabs */}
+            <Tabs defaultValue="content" className="w-full">
+              <TabsList className="grid w-full grid-cols-3 mb-6">
+                <TabsTrigger
+                  value="content"
+                  className="flex items-center gap-2"
+                >
+                  <Play className="h-4 w-4" />
+                  <span className="hidden sm:inline">Contenido</span>
+                  <span className="sm:hidden">Video</span>
+                </TabsTrigger>
+                <TabsTrigger
+                  value="resources"
+                  className="flex items-center gap-2"
+                >
+                  <FolderOpen className="h-4 w-4" />
+                  <span className="hidden sm:inline">Recursos</span>
+                  <span className="sm:hidden">Files</span>
+                  {currentLesson.resources &&
+                    currentLesson.resources.length > 0 && (
+                      <Badge variant="secondary" className="ml-1 text-xs">
+                        {currentLesson.resources.length}
+                      </Badge>
+                    )}
+                </TabsTrigger>
+                <TabsTrigger value="notes" className="flex items-center gap-2">
+                  <StickyNote className="h-4 w-4" />
+                  <span className="hidden sm:inline">Notas</span>
+                  <span className="sm:hidden">Notes</span>
+                </TabsTrigger>
+              </TabsList>
 
-            {currentLesson.type === LessonType.QUIZ && currentLesson.quiz && (
-              <QuizComponent
-                quiz={currentLesson.quiz}
-                onComplete={() => handleLessonComplete(currentLesson.id)}
-              />
-            )}
+              <TabsContent value="content" className="space-y-4">
+                {/* Lesson Content */}
+                {currentLesson.type === LessonType.VIDEO &&
+                  currentLesson.content.video && (
+                    <LessonPlayer
+                      lesson={currentLesson}
+                      onComplete={() => handleLessonComplete(currentLesson.id)}
+                    />
+                  )}
 
-            {/* Navigation Buttons */}
-            <div className="flex justify-between mt-4">
-              <Button
-                variant="outline"
-                onClick={goToPreviousLesson}
-                disabled={!hasPreviousLesson()}
-              >
-                <ChevronLeft className="mr-2 h-4 w-4" />
-                Anterior
-              </Button>
-              <Button onClick={goToNextLesson} disabled={!hasNextLesson()}>
-                Siguiente
-                <ChevronRight className="ml-2 h-4 w-4" />
-              </Button>
-            </div>
+                {currentLesson.type === LessonType.QUIZ &&
+                  currentLesson.quiz && (
+                    <QuizComponent
+                      quiz={currentLesson.quiz}
+                      onComplete={() => handleLessonComplete(currentLesson.id)}
+                    />
+                  )}
 
-            {/* Lesson Notes */}
-            <LessonNotes lessonId={currentLesson.id} />
+                {/* Navigation Buttons */}
+                <div className="flex flex-col sm:flex-row gap-2 sm:gap-0 sm:justify-between mt-4">
+                  <Button
+                    variant="outline"
+                    onClick={goToPreviousLesson}
+                    disabled={!hasPreviousLesson()}
+                    className="w-full sm:w-auto"
+                  >
+                    <ChevronLeft className="mr-2 h-4 w-4" />
+                    <span className="hidden sm:inline">Anterior</span>
+                    <span className="sm:hidden">← Anterior</span>
+                  </Button>
+                  <Button
+                    onClick={goToNextLesson}
+                    disabled={!hasNextLesson()}
+                    className="w-full sm:w-auto"
+                  >
+                    <span className="hidden sm:inline">Siguiente</span>
+                    <span className="sm:hidden">Siguiente →</span>
+                    <ChevronRight className="ml-2 h-4 w-4" />
+                  </Button>
+                </div>
+              </TabsContent>
+
+              <TabsContent value="resources" className="space-y-4">
+                <Card>
+                  <CardContent className="p-4 sm:p-6">
+                    <div className="flex items-center gap-2 mb-4">
+                      <FolderOpen className="h-5 w-5 text-blue-600" />
+                      <h3 className="text-lg font-semibold">
+                        Recursos de la Lección
+                      </h3>
+                    </div>
+
+                    {currentLesson.resources &&
+                    currentLesson.resources.length > 0 ? (
+                      <div className="space-y-3">
+                        {currentLesson.resources.map((resource) => (
+                          <div
+                            key={resource.id}
+                            className="flex items-center justify-between p-3 rounded-lg border hover:bg-gray-50 cursor-pointer transition-colors"
+                            onClick={() => {
+                              if (
+                                resource.type === "PDF" ||
+                                resource.type === "IMAGE"
+                              ) {
+                                window.open(resource.url, "_blank");
+                              } else if (resource.type === "LINK") {
+                                window.open(resource.url, "_blank");
+                              }
+                            }}
+                          >
+                            <div className="flex items-center space-x-3">
+                              {resource.type === "PDF" ? (
+                                <FileText className="w-5 h-5 text-red-600" />
+                              ) : resource.type === "VIDEO" ? (
+                                <Play className="w-5 h-5 text-blue-600" />
+                              ) : resource.type === "LINK" ? (
+                                <FileText className="w-5 h-5 text-green-600" />
+                              ) : (
+                                <FileText className="w-5 h-5 text-gray-600" />
+                              )}
+                              <div>
+                                <p className="font-medium">{resource.title}</p>
+                                {resource.description && (
+                                  <p className="text-sm text-muted-foreground">
+                                    {resource.description}
+                                  </p>
+                                )}
+                              </div>
+                            </div>
+                            <div className="flex items-center space-x-3 text-sm text-muted-foreground">
+                              {resource.fileSize && (
+                                <span>{resource.fileSize}</span>
+                              )}
+                              {resource.duration && (
+                                <span className="flex items-center">
+                                  <Clock className="w-4 h-4 mr-1" />
+                                  {resource.duration}
+                                </span>
+                              )}
+                              <Download className="w-4 h-4" />
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                    ) : (
+                      <div className="text-center py-8">
+                        <FolderOpen className="h-12 w-12 text-muted-foreground mx-auto mb-3" />
+                        <h3 className="font-medium text-muted-foreground mb-2">
+                          Sin recursos disponibles
+                        </h3>
+                        <p className="text-sm text-muted-foreground">
+                          Esta lección no tiene recursos adicionales
+                        </p>
+                      </div>
+                    )}
+                  </CardContent>
+                </Card>
+              </TabsContent>
+
+              <TabsContent value="notes" className="space-y-4">
+                <LessonNotes lessonId={currentLesson.id} />
+              </TabsContent>
+            </Tabs>
           </>
         )}
 

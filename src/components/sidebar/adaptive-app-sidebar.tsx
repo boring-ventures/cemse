@@ -6,7 +6,6 @@ import {
   SidebarContent,
   SidebarFooter,
   SidebarHeader,
-  SidebarInset,
 } from "@/components/ui/sidebar";
 import { TeamSwitcher } from "@/components/sidebar/team-switcher";
 import { NavGroup } from "@/components/sidebar/nav-group";
@@ -63,16 +62,16 @@ export function AdaptiveAppSidebar({ className }: AdaptiveAppSidebarProps) {
     userRole,
     sidebarData: {
       navGroupsCount: sidebarData.navGroups.length,
-      navGroups: sidebarData.navGroups.map(group => ({
+      navGroups: sidebarData.navGroups.map((group) => ({
         title: group.title,
         itemsCount: group.items.length,
-        items: group.items.map(item => ({
+        items: group.items.map((item) => ({
           title: item.title,
           url: item.url,
-          icon: item.icon?.name || 'No icon'
-        }))
-      }))
-    }
+          icon: item.icon?.name || "No icon",
+        })),
+      })),
+    },
   });
 
   // Condición especial para municipios: aplicar colores primario y secundario - DESHABILITADO TEMPORALMENTE
@@ -103,10 +102,10 @@ export function AdaptiveAppSidebar({ className }: AdaptiveAppSidebarProps) {
   // Debug: Log the navigation items being rendered
   console.log("🎨 AdaptiveAppSidebar - Navigation items to render:", {
     count: navigationItems.length,
-    items: navigationItems.map(group => ({
+    items: navigationItems.map((group) => ({
       title: group.title,
-      itemsCount: group.items.length
-    }))
+      itemsCount: group.items.length,
+    })),
   });
 
   // Define teams data for TeamSwitcher
@@ -161,15 +160,9 @@ export function AdaptiveAppSidebar({ className }: AdaptiveAppSidebarProps) {
         <TeamSwitcher teams={teams} />
       </SidebarHeader>
       <SidebarContent>
-        <SidebarInset>
-          {navigationItems.map((group, groupIndex) => (
-            <NavGroup
-              key={groupIndex}
-              title={group.title}
-              items={group.items}
-            />
-          ))}
-        </SidebarInset>
+        {navigationItems.map((group, groupIndex) => (
+          <NavGroup key={groupIndex} title={group.title} items={group.items} />
+        ))}
       </SidebarContent>
       <SidebarFooter>
         <NavUser />

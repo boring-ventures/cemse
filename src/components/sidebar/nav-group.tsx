@@ -35,6 +35,7 @@ import type {
   NavLink,
   NavGroup as NavGroupType,
 } from "./types";
+import { cn } from "@/lib/utils";
 
 export function NavGroup({ title, items }: NavGroupType) {
   const { state } = useSidebar();
@@ -71,7 +72,9 @@ export function NavGroup({ title, items }: NavGroupType) {
 }
 
 const NavBadge = ({ children }: { children: ReactNode }) => (
-  <Badge className="rounded-full px-1 py-0 text-xs">{children}</Badge>
+  <Badge className="rounded-full px-2 py-0.5 text-xs font-medium bg-sidebar-primary/10 text-sidebar-primary border-0 shadow-sm">
+    {children}
+  </Badge>
 );
 
 function isNavLink(item: NavItem): item is NavLink {
@@ -87,30 +90,54 @@ const SidebarMenuLink = ({
 }) => {
   const { setOpenMobile } = useSidebar();
   const isDisabled = item.disabled || false;
+  const isActive = checkIsActive(pathname, item);
 
   return (
     <SidebarMenuItem>
       <SidebarMenuButton
         asChild={!isDisabled}
-        isActive={checkIsActive(pathname, item)}
+        isActive={isActive}
         tooltip={item.title}
         disabled={isDisabled}
-        className={isDisabled ? "opacity-50 cursor-not-allowed" : ""}
+        className={cn(
+          "group relative overflow-hidden",
+          isDisabled && "opacity-50 cursor-not-allowed",
+          isActive &&
+            "shadow-sm bg-sidebar-accent/20 border-l-2 border-sidebar-primary"
+        )}
       >
         {isDisabled ? (
-          <div className="flex items-center gap-2 w-full">
-            {item.icon && <item.icon className="w-4 h-4 flex-shrink-0" />}
-            <span className="flex-1 min-w-0">{item.title}</span>
+          <div className="flex items-center gap-3 w-full">
+            {item.icon && (
+              <item.icon
+                className={cn(
+                  "w-4 h-4 flex-shrink-0 transition-colors",
+                  isActive
+                    ? "text-sidebar-primary-foreground"
+                    : "text-sidebar-foreground/70"
+                )}
+              />
+            )}
+            <span className="flex-1 min-w-0 font-medium">{item.title}</span>
             {item.badge && <NavBadge>{item.badge}</NavBadge>}
           </div>
         ) : (
           <Link
             href={item.url}
             onClick={() => setOpenMobile(false)}
-            className="flex items-center gap-2 w-full"
+            className="flex items-center gap-3 w-full"
           >
-            {item.icon && <item.icon className="w-4 h-4 flex-shrink-0" />}
-            <span className="flex-1 min-w-0">{item.title}</span>
+            {item.icon && (
+              <item.icon
+                className={cn(
+                  "w-4 h-4 flex-shrink-0 transition-colors",
+                  isActive
+                    ? "text-sidebar-primary-foreground"
+                    : "text-sidebar-foreground/70 group-hover:text-sidebar-accent-foreground"
+                )}
+              />
+            )}
+            <span className="flex-1 min-w-0 font-medium">{item.title}</span>
             {item.badge && <NavBadge>{item.badge}</NavBadge>}
           </Link>
         )}
@@ -128,24 +155,35 @@ const SidebarMenuCollapsible = ({
 }) => {
   const { setOpenMobile } = useSidebar();
   const isDisabled = item.disabled || false;
+  const isActive = checkIsActive(pathname, item, true);
 
   return (
-    <Collapsible
-      asChild
-      defaultOpen={checkIsActive(pathname, item, true)}
-      className="group/collapsible"
-    >
+    <Collapsible asChild defaultOpen={isActive} className="group/collapsible">
       <SidebarMenuItem>
         <CollapsibleTrigger asChild disabled={isDisabled}>
           <SidebarMenuButton
             tooltip={item.title}
             disabled={isDisabled}
-            className={isDisabled ? "opacity-50 cursor-not-allowed" : ""}
+            className={cn(
+              "group relative overflow-hidden",
+              isDisabled && "opacity-50 cursor-not-allowed",
+              isActive &&
+                "shadow-sm bg-sidebar-accent/20 border-l-2 border-sidebar-primary"
+            )}
           >
-            {item.icon && <item.icon className="w-4 h-4 flex-shrink-0" />}
-            <span className="flex-1 min-w-0">{item.title}</span>
+            {item.icon && (
+              <item.icon
+                className={cn(
+                  "w-4 h-4 flex-shrink-0 transition-colors",
+                  isActive
+                    ? "text-sidebar-primary-foreground"
+                    : "text-sidebar-foreground/70 group-hover:text-sidebar-accent-foreground"
+                )}
+              />
+            )}
+            <span className="flex-1 min-w-0 font-medium">{item.title}</span>
             {item.badge && <NavBadge>{item.badge}</NavBadge>}
-            <ChevronRight className="ml-auto transition-transform duration-200 group-data-[state=open]/collapsible:rotate-90 flex-shrink-0" />
+            <ChevronRight className="ml-auto transition-transform duration-200 group-data-[state=open]/collapsible:rotate-90 flex-shrink-0 text-sidebar-foreground/50" />
           </SidebarMenuButton>
         </CollapsibleTrigger>
         <CollapsibleContent className="CollapsibleContent">
@@ -153,21 +191,25 @@ const SidebarMenuCollapsible = ({
             {item.items.map((subItem: NavItem) => {
               if (isNavLink(subItem)) {
                 const isSubDisabled = subItem.disabled || false;
+                const isSubActive = checkIsActive(pathname, subItem);
                 return (
                   <SidebarMenuSubItem key={subItem.title}>
                     <SidebarMenuSubButton
                       asChild={!isSubDisabled}
-                      isActive={checkIsActive(pathname, subItem)}
-                      className={
-                        isSubDisabled ? "opacity-50 cursor-not-allowed" : ""
-                      }
+                      isActive={isSubActive}
+                      className={cn(
+                        "group/sub relative",
+                        isSubDisabled && "opacity-50 cursor-not-allowed",
+                        isSubActive &&
+                          "bg-sidebar-accent/15 border-l-2 border-sidebar-primary/60"
+                      )}
                     >
                       {isSubDisabled ? (
-                        <div className="flex items-center gap-2 w-full">
+                        <div className="flex items-center gap-3 w-full">
                           {subItem.icon && (
-                            <subItem.icon className="w-4 h-4 flex-shrink-0" />
+                            <subItem.icon className="w-4 h-4 flex-shrink-0 text-sidebar-foreground/50" />
                           )}
-                          <span className="flex-1 min-w-0">
+                          <span className="flex-1 min-w-0 font-medium">
                             {subItem.title}
                           </span>
                           {subItem.badge && (
@@ -178,12 +220,19 @@ const SidebarMenuCollapsible = ({
                         <Link
                           href={subItem.url}
                           onClick={() => setOpenMobile(false)}
-                          className="flex items-center gap-2 w-full"
+                          className="flex items-center gap-3 w-full"
                         >
                           {subItem.icon && (
-                            <subItem.icon className="w-4 h-4 flex-shrink-0" />
+                            <subItem.icon
+                              className={cn(
+                                "w-4 h-4 flex-shrink-0 transition-colors",
+                                isSubActive
+                                  ? "text-sidebar-primary"
+                                  : "text-sidebar-foreground/50 group-hover/sub:text-sidebar-accent-foreground"
+                              )}
+                            />
                           )}
-                          <span className="flex-1 min-w-0">
+                          <span className="flex-1 min-w-0 font-medium">
                             {subItem.title}
                           </span>
                           {subItem.badge && (
@@ -236,7 +285,7 @@ const SidebarMenuCollapsedDropdown = ({
                 <DropdownMenuItem key={`${sub.title}-${sub.url}`} asChild>
                   <Link
                     href={sub.url}
-                    className={`${checkIsActive(pathname, sub) ? "bg-secondary" : ""}`}
+                    className={`${checkIsActive(pathname, sub) ? "bg-sidebar-accent/20 text-sidebar-primary font-medium" : ""}`}
                   >
                     {sub.icon && <sub.icon />}
                     <span className="max-w-52 text-wrap">{sub.title}</span>

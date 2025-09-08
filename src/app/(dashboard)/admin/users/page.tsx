@@ -5,6 +5,7 @@ import {
   Plus,
   MoreVertical,
   Eye,
+  EyeOff,
   Edit,
   Trash2,
   Users,
@@ -365,6 +366,7 @@ export default function UsersManagementPage() {
   }>({ isValid: true, message: "", isChecking: false });
   const [skillInput, setSkillInput] = useState("");
   const [interestInput, setInterestInput] = useState("");
+  const [showPassword, setShowPassword] = useState(false);
 
   // Load users on component mount
   useEffect(() => {
@@ -719,6 +721,7 @@ export default function UsersManagementPage() {
     setSkillInput("");
     setInterestInput("");
     setEmailValidation({ isValid: true, message: "", isChecking: false });
+    setShowPassword(false);
   };
 
   const handleCreate = async () => {
@@ -1044,36 +1047,39 @@ export default function UsersManagementPage() {
                     </div>
                     <div className="grid gap-2">
                       <Label htmlFor="password">Contraseña *</Label>
-                      <Input
-                        id="password"
-                        type="password"
-                        value={formData.password}
-                        onChange={(e) =>
-                          setFormData({ ...formData, password: e.target.value })
-                        }
-                        placeholder="••••••••"
-                      />
+                      <div className="relative">
+                        <Input
+                          id="password"
+                          type={showPassword ? "text" : "password"}
+                          value={formData.password}
+                          onChange={(e) =>
+                            setFormData({
+                              ...formData,
+                              password: e.target.value,
+                            })
+                          }
+                          placeholder="••••••••"
+                          className="pr-10"
+                        />
+                        <Button
+                          type="button"
+                          variant="ghost"
+                          size="sm"
+                          className="absolute right-0 top-0 h-full px-3 py-2 hover:bg-transparent"
+                          onClick={() => setShowPassword(!showPassword)}
+                        >
+                          {showPassword ? (
+                            <EyeOff className="h-4 w-4 text-gray-500" />
+                          ) : (
+                            <Eye className="h-4 w-4 text-gray-500" />
+                          )}
+                        </Button>
+                      </div>
                       <p className="text-xs text-muted-foreground">
                         Mínimo 6 caracteres, se recomienda usar la generación
                         automática
                       </p>
                     </div>
-                  </div>
-
-                  <div className="grid gap-2">
-                    <Label htmlFor="role">Rol</Label>
-                    <div className="flex items-center gap-2 p-3 bg-gray-50 rounded-md border">
-                      <GraduationCap className="w-4 h-4 text-blue-600" />
-                      <span className="text-sm font-medium text-gray-700">
-                        Joven
-                      </span>
-                      <Badge variant="secondary" className="ml-auto">
-                        Por defecto
-                      </Badge>
-                    </div>
-                    <p className="text-xs text-muted-foreground">
-                      Los nuevos usuarios se crean automáticamente como jóvenes
-                    </p>
                   </div>
                 </TabsContent>
 
