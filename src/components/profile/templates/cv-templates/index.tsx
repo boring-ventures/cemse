@@ -115,7 +115,7 @@ const modernCVStyles = StyleSheet.create({
     backgroundColor: "#f8fafc",
     borderRadius: 4,
   },
-  projectTitle: {
+  modernProjectTitle: {
     fontSize: 12,
     fontWeight: "bold",
     color: "#1f2937",
@@ -133,7 +133,6 @@ const modernCVStyles = StyleSheet.create({
     padding: "4px 8px",
     borderRadius: 12,
     margin: "2px 4px 2px 0",
-    display: "inline-block",
   },
   relevantSkillTag: {
     fontSize: 10,
@@ -142,7 +141,6 @@ const modernCVStyles = StyleSheet.create({
     padding: "4px 8px",
     borderRadius: 12,
     margin: "2px 4px 2px 0",
-    display: "inline-block",
   },
   section: {
     marginBottom: 25,
@@ -233,7 +231,7 @@ const modernCVStyles = StyleSheet.create({
     paddingLeft: 15,
     marginBottom: 18,
   },
-  projectTitle: {
+  modernProjectsTitle: {
     fontSize: 12,
     fontWeight: "bold",
     color: "#1f2937",
@@ -434,7 +432,7 @@ const creativeCVStyles = StyleSheet.create({
     paddingLeft: 15,
     marginBottom: 18,
   },
-  projectTitle: {
+  creativeProjectTitle: {
     fontSize: 12,
     fontWeight: "bold",
     color: "#1f2937",
@@ -633,7 +631,7 @@ const minimalistCVStyles = StyleSheet.create({
   projectsItem: {
     marginBottom: 20,
   },
-  projectTitle: {
+  minimalistProjectTitle: {
     fontSize: 14,
     fontWeight: "400",
     color: "#111827",
@@ -919,7 +917,9 @@ const ModernProfessionalPDF = ({ cvData }: { cvData: CVData }) => (
             <Text style={modernCVStyles.sectionTitle}>Proyectos</Text>
             {cvData.projects.map((project, index) => (
               <View key={index} style={modernCVStyles.projectItem}>
-                <Text style={modernCVStyles.projectTitle}>{project.title}</Text>
+                <Text style={modernCVStyles.modernProjectTitle}>
+                  {project.title}
+                </Text>
                 {project.location && (
                   <Text style={modernCVStyles.projectLocation}>
                     Ubicación: {project.location}
@@ -1282,7 +1282,7 @@ const CreativePortfolioPDF = ({ cvData }: { cvData: CVData }) => (
               <Text style={creativeCVStyles.sectionTitle}>Proyectos</Text>
               {cvData.projects.map((project, index) => (
                 <View key={index} style={creativeCVStyles.projectsItem}>
-                  <Text style={creativeCVStyles.projectTitle}>
+                  <Text style={creativeCVStyles.creativeProjectTitle}>
                     {project.title}
                   </Text>
                   {project.location && (
@@ -1499,7 +1499,7 @@ const MinimalistPDF = ({ cvData }: { cvData: CVData }) => (
           {cvData.projects.map((project, index) => (
             <View key={index} style={minimalistCVStyles.projectsItem}>
               <View style={minimalistCVStyles.projectHeader}>
-                <Text style={minimalistCVStyles.projectTitle}>
+                <Text style={minimalistCVStyles.minimalistProjectTitle}>
                   {project.title}
                 </Text>
                 <Text style={minimalistCVStyles.date}>
