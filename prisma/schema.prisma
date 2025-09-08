@@ -33,8 +33,9 @@ model Profile {
   currentInstitution        String?             @map("current_institution")
   graduationYear            Int?                @map("graduation_year")
   isStudying                Boolean?            @map("is_studying")
-  skills                    String[]
-  interests                 String[]
+  skills                    Json?
+  interests                 Json?
+  socialLinks               Json?               @map("social_links")
   workExperience            Json?               @map("work_experience")
   companyName               String?             @map("company_name")
   taxId                     String?             @map("tax_id")
@@ -57,7 +58,10 @@ model Profile {
   achievements              Json?
   companyId                 String?             @map("company_id")
   addressLine               String?             @map("address_line")
+  city                      String?
+  state                     String?
   cityState                 String?             @map("city_state")
+  professionalSummary       String?             @map("professional_summary")
   extracurricularActivities Json?               @map("extracurricular_activities")
   jobTitle                  String?             @map("job_title")
   languages                 Json?
@@ -76,6 +80,9 @@ model Profile {
   universityName            String?             @map("university_name")
   universityStartDate       DateTime?           @map("university_start_date")
   universityStatus          String?             @map("university_status")
+  targetPosition            String?             @map("target_position")
+  targetCompany             String?             @map("target_company")
+  relevantSkills            String[]            @map("relevant_skills")
   certificates              Certificate[]
   contactOf                 Contact[]           @relation("ContactOfUser")
   contacts                  Contact[]           @relation("UserContacts")

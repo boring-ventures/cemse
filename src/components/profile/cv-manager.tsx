@@ -113,6 +113,7 @@ export function CVManager() {
   const [isEditing, setIsEditing] = useState(false);
   const [newSkill, setNewSkill] = useState("");
   const [newInterest, setNewInterest] = useState("");
+  const [newRelevantSkill, setNewRelevantSkill] = useState("");
   const [uploading, setUploading] = useState(false);
   const [profileImage, setProfileImage] = useState("");
   const [showImageUpload, setShowImageUpload] = useState(false);
@@ -128,7 +129,9 @@ export function CVManager() {
     workExperience: false,
     projects: false,
     skills: false,
+    activities: false,
     interests: false,
+    achievements: false,
   });
 
   // Sync profile image with CV data
@@ -154,6 +157,10 @@ export function CVManager() {
       country: "",
       municipality: "",
       department: "",
+      birthDate: "",
+      gender: "",
+      documentType: "",
+      documentNumber: "",
     },
     education: {
       level: "",
@@ -174,11 +181,18 @@ export function CVManager() {
     projects: [] as any[],
     skills: [] as any[],
     interests: [] as string[],
+    activities: [] as any[],
+    achievements: [] as any[],
+    // certifications: [] as any[],
+    targetPosition: "",
+    targetCompany: "",
+    relevantSkills: [] as string[],
   });
 
   // Initialize local state when CV data loads
   useEffect(() => {
     if (cvData) {
+      console.log("🔄 Loading CV data into form:", cvData);
       setLocalFormData({
         jobTitle: cvData.jobTitle || "",
         professionalSummary: cvData.professionalSummary || "",
@@ -194,6 +208,13 @@ export function CVManager() {
           country: cvData.personalInfo?.country || "",
           municipality: cvData.personalInfo?.municipality || "",
           department: cvData.personalInfo?.department || "",
+          // Include fields that might exist in database but not in form
+          birthDate: cvData.personalInfo?.birthDate
+            ? String(cvData.personalInfo.birthDate)
+            : "",
+          gender: cvData.personalInfo?.gender || "",
+          documentType: (cvData.personalInfo as any)?.documentType || "",
+          documentNumber: (cvData.personalInfo as any)?.documentNumber || "",
         },
         education: {
           level: cvData.education?.level || "",
@@ -214,6 +235,13 @@ export function CVManager() {
         projects: cvData.projects || [],
         skills: cvData.skills || [],
         interests: cvData.interests || [],
+        activities: cvData.activities || [],
+        achievements: cvData.achievements || [],
+        // Note: certifications field doesn't exist in database yet
+        // certifications: cvData.certifications || [],
+        targetPosition: cvData.targetPosition || "",
+        targetCompany: cvData.targetCompany || "",
+        relevantSkills: cvData.relevantSkills || [],
       });
       setHasUnsavedChanges(false);
       setLastSaved(new Date());
@@ -222,14 +250,15 @@ export function CVManager() {
 
   // Auto-save functionality
   useEffect(() => {
-    if (hasUnsavedChanges && lastSaved) {
+    // Only auto-save if we have unsaved changes, lastSaved exists, and cvData has been loaded
+    if (hasUnsavedChanges && lastSaved && cvData) {
       const autoSaveTimer = setTimeout(() => {
         saveAllData();
       }, 30000); // Auto-save after 30 seconds of inactivity
 
       return () => clearTimeout(autoSaveTimer);
     }
-  }, [hasUnsavedChanges, localFormData]);
+  }, [hasUnsavedChanges, localFormData, cvData]);
 
   // Warn user about unsaved changes before leaving
   useEffect(() => {
@@ -587,9 +616,122 @@ export function CVManager() {
     setHasUnsavedChanges(true);
   };
 
+  // Activity handlers
+  const handleActivityChange = (
+    index: number,
+    field: string,
+    value: string
+  ) => {
+    setLocalFormData((prev) => {
+      const newActivities = [...prev.activities];
+      newActivities[index] = {
+        ...newActivities[index],
+        [field]: value,
+      };
+      return { ...prev, activities: newActivities };
+    });
+    setHasUnsavedChanges(true);
+  };
+
+  const addActivity = () => {
+    setLocalFormData((prev) => ({
+      ...prev,
+      activities: [
+        ...prev.activities,
+        {
+          title: "",
+          organization: "",
+          startDate: "",
+          endDate: "",
+          description: "",
+        },
+      ],
+    }));
+    setHasUnsavedChanges(true);
+  };
+
+  const removeActivity = (index: number) => {
+    setLocalFormData((prev) => ({
+      ...prev,
+      activities: prev.activities.filter((_, i) => i !== index),
+    }));
+    setHasUnsavedChanges(true);
+  };
+
+  // General achievements handlers
+  const handleGeneralAchievementChange = (
+    index: number,
+    field: string,
+    value: any
+  ) => {
+    setLocalFormData((prev) => {
+      const newAchievements = [...prev.achievements];
+      newAchievements[index] = {
+        ...newAchievements[index],
+        [field]: value,
+      };
+      return { ...prev, achievements: newAchievements };
+    });
+    setHasUnsavedChanges(true);
+  };
+
+  const addGeneralAchievement = () => {
+    setLocalFormData((prev) => ({
+      ...prev,
+      achievements: [
+        ...prev.achievements,
+        {
+          title: "",
+          date: "",
+          description: "",
+        },
+      ],
+    }));
+    setHasUnsavedChanges(true);
+  };
+
+  const removeGeneralAchievement = (index: number) => {
+    setLocalFormData((prev) => ({
+      ...prev,
+      achievements: prev.achievements.filter((_, i) => i !== index),
+    }));
+    setHasUnsavedChanges(true);
+  };
+
+  // Relevant skills handlers
+  const addRelevantSkill = () => {
+    if (
+      newRelevantSkill.trim() &&
+      !localFormData.relevantSkills.includes(newRelevantSkill.trim())
+    ) {
+      setLocalFormData((prev) => ({
+        ...prev,
+        relevantSkills: [...prev.relevantSkills, newRelevantSkill.trim()],
+      }));
+      setNewRelevantSkill("");
+      setHasUnsavedChanges(true);
+    }
+  };
+
+  const removeRelevantSkill = (skillToRemove: string) => {
+    setLocalFormData((prev) => ({
+      ...prev,
+      relevantSkills: prev.relevantSkills.filter(
+        (skill) => skill !== skillToRemove
+      ),
+    }));
+    setHasUnsavedChanges(true);
+  };
+
   // Enhanced save function with validation and better error handling
   const saveAllData = async () => {
     try {
+      // Don't save if cvData hasn't been loaded yet
+      if (!cvData) {
+        console.log("⚠️ Skipping save - cvData not loaded yet");
+        return;
+      }
+
       // Basic validation
       if (
         !localFormData.personalInfo.firstName?.trim() ||
@@ -627,12 +769,19 @@ export function CVManager() {
           department: localFormData.personalInfo.department.trim(),
           country: localFormData.personalInfo.country.trim() || "Bolivia",
           profileImage: cvData?.personalInfo?.profileImage,
+          // Include existing fields from database that aren't in the form
+          birthDate: cvData?.personalInfo?.birthDate || undefined,
+          gender: cvData?.personalInfo?.gender || "",
+          documentType: (cvData?.personalInfo as any)?.documentType || "",
+          documentNumber: (cvData?.personalInfo as any)?.documentNumber || "",
         },
         education: {
           level: localFormData.education.level,
           institution: localFormData.education.currentInstitution.trim(),
           currentInstitution: localFormData.education.currentInstitution.trim(),
-          graduationYear: localFormData.education.graduationYear || 0,
+          graduationYear: localFormData.education.graduationYear
+            ? parseInt(localFormData.education.graduationYear.toString())
+            : 0,
           isStudying: localFormData.education.isStudying,
           gpa: cvData?.education?.gpa || 0,
           educationHistory: localFormData.education.educationHistory.map(
@@ -644,8 +793,9 @@ export function CVManager() {
           ),
           currentDegree: localFormData.education.currentDegree.trim(),
           universityName: localFormData.education.universityName.trim(),
-          universityStartDate: localFormData.education.universityStartDate,
-          universityEndDate: localFormData.education.universityEndDate,
+          universityStartDate:
+            localFormData.education.universityStartDate || "",
+          universityEndDate: localFormData.education.universityEndDate || "",
           universityStatus: localFormData.education.universityStatus,
           academicAchievements:
             localFormData.education.academicAchievements.map((item) => ({
@@ -678,10 +828,31 @@ export function CVManager() {
         interests: localFormData.interests.filter((interest) =>
           interest?.trim()
         ),
+        activities: localFormData.activities.filter((activity) =>
+          activity.title?.trim()
+        ),
+        achievements: localFormData.achievements.filter((achievement) =>
+          achievement.title?.trim()
+        ),
+        // Note: certifications field doesn't exist in database yet
+        // certifications: localFormData.certifications.filter((cert) =>
+        //   cert.title?.trim()
+        // ),
+        targetPosition: localFormData.targetPosition.trim(),
+        targetCompany: localFormData.targetCompany.trim(),
+        relevantSkills: localFormData.relevantSkills.filter((skill) =>
+          skill?.trim()
+        ),
       };
 
+      console.log("💾 Saving CV data:", dataToSave);
+      console.log(
+        "🔍 Data structure check - personalInfo:",
+        dataToSave.personalInfo
+      );
+      console.log("🔍 Data structure check - education:", dataToSave.education);
       await updateCVData(dataToSave);
-      console.log("CV data saved successfully");
+      console.log("✅ CV data saved successfully");
 
       // Reset unsaved changes flag and update last saved time
       setHasUnsavedChanges(false);
@@ -1757,15 +1928,17 @@ export function CVManager() {
                         >
                           Fecha de Inicio
                         </Label>
-                        <DateInputWithCalendar
+                        <Input
                           id="universityStartDate"
+                          type="month"
                           value={localFormData.education.universityStartDate}
-                          onChange={(value) =>
+                          onChange={(e) =>
                             handleEducationFieldChange(
                               "universityStartDate",
-                              value
+                              e.target.value
                             )
                           }
+                          className="h-12 border-gray-200 focus:border-blue-500"
                         />
                       </div>
 
@@ -1776,15 +1949,17 @@ export function CVManager() {
                         >
                           Fecha de Fin (opcional)
                         </Label>
-                        <DateInputWithCalendar
+                        <Input
                           id="universityEndDate"
+                          type="month"
                           value={localFormData.education.universityEndDate}
-                          onChange={(value) =>
+                          onChange={(e) =>
                             handleEducationFieldChange(
                               "universityEndDate",
-                              value
+                              e.target.value
                             )
                           }
+                          className="h-12 border-gray-200 focus:border-blue-500"
                         />
                       </div>
 
@@ -2662,6 +2837,159 @@ export function CVManager() {
               )}
             </Card>
 
+            {/* Actividades Extracurriculares */}
+            <Card>
+              <CardHeader
+                className="cursor-pointer hover:bg-gray-50 transition-colors"
+                onClick={() => toggleSection("activities")}
+              >
+                <div className="flex items-center justify-between">
+                  <CardTitle className="flex items-center gap-2">
+                    <Briefcase className="h-5 w-5" />
+                    Actividades Extracurriculares
+                  </CardTitle>
+                  {collapsedSections.activities ? (
+                    <ChevronRight className="h-5 w-5" />
+                  ) : (
+                    <ChevronDown className="h-5 w-5" />
+                  )}
+                </div>
+              </CardHeader>
+              {!collapsedSections.activities && (
+                <CardContent className="space-y-4">
+                  <div className="bg-teal-50 border border-teal-200 rounded-lg p-3">
+                    <p className="text-sm text-teal-800">
+                      <strong>💡 Consejo:</strong> Incluye voluntariados,
+                      clubes, organizaciones estudiantiles, deportes o cualquier
+                      actividad que demuestre tus habilidades de liderazgo y
+                      trabajo en equipo.
+                    </p>
+                  </div>
+
+                  {localFormData.activities?.map((activity, index) => (
+                    <div
+                      key={index}
+                      className="border rounded-lg p-4 space-y-3"
+                    >
+                      <div className="flex justify-between items-start">
+                        <h4 className="font-medium">Actividad {index + 1}</h4>
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          onClick={() => removeActivity(index)}
+                          className="text-red-600 hover:text-red-700"
+                        >
+                          <X className="h-4 w-4" />
+                        </Button>
+                      </div>
+
+                      <div className="grid grid-cols-1 lg:grid-cols-2 gap-3">
+                        <div>
+                          <Label htmlFor={`activityTitle-${index}`}>
+                            Título de la Actividad
+                          </Label>
+                          <Input
+                            id={`activityTitle-${index}`}
+                            value={activity.title || ""}
+                            onChange={(e) =>
+                              handleActivityChange(
+                                index,
+                                "title",
+                                e.target.value
+                              )
+                            }
+                            placeholder="Voluntario en ONG"
+                          />
+                        </div>
+                        <div>
+                          <Label htmlFor={`activityOrganization-${index}`}>
+                            Organización
+                          </Label>
+                          <Input
+                            id={`activityOrganization-${index}`}
+                            value={activity.organization || ""}
+                            onChange={(e) =>
+                              handleActivityChange(
+                                index,
+                                "organization",
+                                e.target.value
+                              )
+                            }
+                            placeholder="Nombre de la organización"
+                          />
+                        </div>
+                      </div>
+
+                      <div className="grid grid-cols-2 gap-3">
+                        <div>
+                          <Label htmlFor={`activityStartDate-${index}`}>
+                            Fecha de Inicio
+                          </Label>
+                          <Input
+                            id={`activityStartDate-${index}`}
+                            type="month"
+                            value={activity.startDate || ""}
+                            onChange={(e) =>
+                              handleActivityChange(
+                                index,
+                                "startDate",
+                                e.target.value
+                              )
+                            }
+                          />
+                        </div>
+                        <div>
+                          <Label htmlFor={`activityEndDate-${index}`}>
+                            Fecha de Fin
+                          </Label>
+                          <Input
+                            id={`activityEndDate-${index}`}
+                            type="month"
+                            value={activity.endDate || ""}
+                            onChange={(e) =>
+                              handleActivityChange(
+                                index,
+                                "endDate",
+                                e.target.value
+                              )
+                            }
+                          />
+                        </div>
+                      </div>
+
+                      <div>
+                        <Label htmlFor={`activityDescription-${index}`}>
+                          Descripción
+                        </Label>
+                        <Textarea
+                          id={`activityDescription-${index}`}
+                          value={activity.description || ""}
+                          onChange={(e) =>
+                            handleActivityChange(
+                              index,
+                              "description",
+                              e.target.value
+                            )
+                          }
+                          placeholder="Describe tu rol y logros en esta actividad"
+                          rows={3}
+                        />
+                      </div>
+                    </div>
+                  ))}
+
+                  <Button
+                    variant="outline"
+                    onClick={addActivity}
+                    className="w-full"
+                  >
+                    <Plus className="h-4 w-4 mr-2" />
+                    Agregar Actividad
+                  </Button>
+                </CardContent>
+              )}
+            </Card>
+
             {/* Intereses */}
             <Card>
               <CardHeader
@@ -2707,6 +3035,220 @@ export function CVManager() {
                   </div>
                 </CardContent>
               )}
+            </Card>
+
+            {/* Logros Generales */}
+            <Card>
+              <CardHeader
+                className="cursor-pointer hover:bg-gray-50 transition-colors"
+                onClick={() => toggleSection("achievements")}
+              >
+                <div className="flex items-center justify-between">
+                  <CardTitle className="flex items-center gap-2">
+                    <Award className="h-5 w-5" />
+                    Logros Generales
+                  </CardTitle>
+                  {collapsedSections.achievements ? (
+                    <ChevronRight className="h-5 w-5" />
+                  ) : (
+                    <ChevronDown className="h-5 w-5" />
+                  )}
+                </div>
+              </CardHeader>
+              {!collapsedSections.achievements && (
+                <CardContent className="space-y-4">
+                  <div className="bg-orange-50 border border-orange-200 rounded-lg p-3">
+                    <p className="text-sm text-orange-800">
+                      <strong>💡 Consejo:</strong> Incluye logros profesionales,
+                      premios, reconocimientos o certificaciones relevantes para
+                      tu carrera.
+                    </p>
+                  </div>
+
+                  {localFormData.achievements?.map((achievement, index) => (
+                    <div
+                      key={index}
+                      className="border rounded-lg p-4 space-y-3"
+                    >
+                      <div className="flex justify-between items-start">
+                        <h4 className="font-medium">Logro {index + 1}</h4>
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          onClick={() => removeGeneralAchievement(index)}
+                          className="text-red-600 hover:text-red-700"
+                        >
+                          <X className="h-4 w-4" />
+                        </Button>
+                      </div>
+
+                      <div className="grid grid-cols-1 lg:grid-cols-2 gap-3">
+                        <div>
+                          <Label htmlFor={`generalAchievementTitle-${index}`}>
+                            Título del Logro
+                          </Label>
+                          <Input
+                            id={`generalAchievementTitle-${index}`}
+                            value={achievement.title || ""}
+                            onChange={(e) =>
+                              handleGeneralAchievementChange(
+                                index,
+                                "title",
+                                e.target.value
+                              )
+                            }
+                            placeholder="Premio al Mejor Proyecto"
+                          />
+                        </div>
+                        <div>
+                          <Label htmlFor={`generalAchievementDate-${index}`}>
+                            Fecha
+                          </Label>
+                          <Input
+                            id={`generalAchievementDate-${index}`}
+                            type="month"
+                            value={achievement.date || ""}
+                            onChange={(e) =>
+                              handleGeneralAchievementChange(
+                                index,
+                                "date",
+                                e.target.value
+                              )
+                            }
+                          />
+                        </div>
+                      </div>
+
+                      <div>
+                        <Label
+                          htmlFor={`generalAchievementDescription-${index}`}
+                        >
+                          Descripción
+                        </Label>
+                        <Textarea
+                          id={`generalAchievementDescription-${index}`}
+                          value={achievement.description || ""}
+                          onChange={(e) =>
+                            handleGeneralAchievementChange(
+                              index,
+                              "description",
+                              e.target.value
+                            )
+                          }
+                          placeholder="Descripción detallada del logro"
+                          rows={3}
+                        />
+                      </div>
+                    </div>
+                  ))}
+
+                  <Button
+                    variant="outline"
+                    onClick={addGeneralAchievement}
+                    className="w-full"
+                  >
+                    <Plus className="h-4 w-4 mr-2" />
+                    Agregar Logro
+                  </Button>
+                </CardContent>
+              )}
+            </Card>
+
+            {/* Objetivos Profesionales */}
+            <Card>
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2">
+                  <Briefcase className="h-5 w-5 text-indigo-600" />
+                  Objetivos Profesionales
+                </CardTitle>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                <div className="bg-indigo-50 border border-indigo-200 rounded-lg p-3">
+                  <p className="text-sm text-indigo-800">
+                    <strong>💡 Consejo:</strong> Especifica tu posición objetivo
+                    y empresa ideal para personalizar mejor tu CV y carta de
+                    presentación.
+                  </p>
+                </div>
+
+                <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+                  <div>
+                    <Label htmlFor="targetPosition">Posición Objetivo</Label>
+                    <Input
+                      id="targetPosition"
+                      value={localFormData.targetPosition}
+                      onChange={(e) => {
+                        setLocalFormData((prev) => ({
+                          ...prev,
+                          targetPosition: e.target.value,
+                        }));
+                        setHasUnsavedChanges(true);
+                      }}
+                      placeholder="Desarrollador Frontend Senior"
+                      className="h-12 border-gray-200 focus:border-blue-500"
+                    />
+                    <p className="text-sm text-gray-500 mt-2">
+                      El puesto específico que buscas
+                    </p>
+                  </div>
+
+                  <div>
+                    <Label htmlFor="targetCompany">Empresa Objetivo</Label>
+                    <Input
+                      id="targetCompany"
+                      value={localFormData.targetCompany}
+                      onChange={(e) => {
+                        setLocalFormData((prev) => ({
+                          ...prev,
+                          targetCompany: e.target.value,
+                        }));
+                        setHasUnsavedChanges(true);
+                      }}
+                      placeholder="Google, Microsoft, Startup local"
+                      className="h-12 border-gray-200 focus:border-blue-500"
+                    />
+                    <p className="text-sm text-gray-500 mt-2">
+                      Empresa o tipo de empresa que te interesa
+                    </p>
+                  </div>
+                </div>
+
+                <div>
+                  <Label htmlFor="relevantSkills">
+                    Habilidades Relevantes para el Puesto
+                  </Label>
+                  <div className="flex items-center gap-2 mt-2">
+                    <Input
+                      id="relevantSkills"
+                      value={newRelevantSkill}
+                      onChange={(e) => setNewRelevantSkill(e.target.value)}
+                      placeholder="Nueva habilidad relevante"
+                      onKeyPress={(e) =>
+                        e.key === "Enter" && addRelevantSkill()
+                      }
+                      className="h-12 border-gray-200 focus:border-blue-500"
+                    />
+                    <Button onClick={addRelevantSkill} size="sm">
+                      <Plus className="h-4 w-4" />
+                    </Button>
+                  </div>
+                  <p className="text-sm text-gray-500 mt-2">
+                    Habilidades específicas requeridas para tu posición objetivo
+                  </p>
+
+                  <div className="flex flex-wrap gap-2 mt-3">
+                    {localFormData.relevantSkills?.map((skill, index) => (
+                      <Badge key={index} variant="secondary" className="gap-1">
+                        {skill}
+                        <X
+                          className="h-3 w-3 cursor-pointer"
+                          onClick={() => removeRelevantSkill(skill)}
+                        />
+                      </Badge>
+                    ))}
+                  </div>
+                </div>
+              </CardContent>
             </Card>
           </TabsContent>
 

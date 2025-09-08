@@ -76,6 +76,9 @@ export async function GET(request: NextRequest) {
         email: profile.email || "",
         phone: profile.phone || "",
         address: profile.address || "",
+        addressLine: profile.addressLine || "",
+        city: (profile as any).city || "",
+        state: (profile as any).state || "",
         municipality: profile.municipality || "",
         department: profile.department || "",
         country: profile.country || "Bolivia",
@@ -123,6 +126,12 @@ export async function GET(request: NextRequest) {
         lastUpdated: profile.updatedAt,
         createdAt: profile.createdAt,
       },
+      professionalSummary: (profile as any).professionalSummary || "",
+      targetPosition: (profile as any).targetPosition || "",
+      targetCompany: (profile as any).targetCompany || "",
+      relevantSkills: (profile as any).relevantSkills || [],
+      // Note: certifications field doesn't exist in database yet
+      // certifications: profile.certifications || [],
     };
 
     return NextResponse.json(cvData);
@@ -180,9 +189,20 @@ export async function PUT(request: NextRequest) {
     }
 
     const body = await request.json();
+    console.log("📥 Received CV data to save:", JSON.stringify(body, null, 2));
+    console.log(
+      "🔍 personalInfo structure:",
+      JSON.stringify(body.personalInfo, null, 2)
+    );
 
-    const { personalInfo, education, professional, additional, coverLetter } =
-      body;
+    const {
+      personalInfo,
+      education,
+      professional,
+      additional,
+      coverLetter,
+      professionalSummary,
+    } = body;
 
     const updateData: any = {};
 
@@ -193,6 +213,9 @@ export async function PUT(request: NextRequest) {
       updateData.email = personalInfo.email;
       updateData.phone = personalInfo.phone;
       updateData.address = personalInfo.address;
+      updateData.addressLine = personalInfo.addressLine;
+      updateData.city = personalInfo.city;
+      updateData.state = personalInfo.state;
       updateData.municipality = personalInfo.municipality;
       updateData.department = personalInfo.department;
       updateData.country = personalInfo.country;
@@ -264,6 +287,26 @@ export async function PUT(request: NextRequest) {
       updateData.coverLetterTemplate = coverLetter.template;
     }
 
+    // Actualizar resumen profesional
+    if (professionalSummary !== undefined) {
+      updateData.professionalSummary = professionalSummary;
+    }
+
+    // Actualizar campos adicionales
+    if (body.targetPosition !== undefined) {
+      updateData.targetPosition = body.targetPosition;
+    }
+    if (body.targetCompany !== undefined) {
+      updateData.targetCompany = body.targetCompany;
+    }
+    if (body.relevantSkills !== undefined) {
+      updateData.relevantSkills = body.relevantSkills;
+    }
+    // Note: certifications field doesn't exist in database yet
+    // if (body.certifications !== undefined) {
+    //   updateData.certifications = body.certifications;
+    // }
+
     // Calculate profile completion percentage
     const completionFields = [
       updateData.firstName,
@@ -282,10 +325,37 @@ export async function PUT(request: NextRequest) {
       (completedFields.length / completionFields.length) * 100
     );
 
-    const updatedProfile = await prisma.profile.update({
-      where: { userId: decoded.id },
-      data: updateData,
-    });
+    console.log("💾 Saving to database:", JSON.stringify(updateData, null, 2));
+    console.log("🔍 User ID:", decoded.id);
+
+    let updatedProfile;
+    try {
+      // First, let's check if the user exists
+      const existingProfile = await prisma.profile.findUnique({
+        where: { userId: decoded.id },
+      });
+
+      if (!existingProfile) {
+        console.error("❌ Profile not found for user:", decoded.id);
+        throw new Error("Profile not found");
+      }
+
+      console.log("✅ Profile found:", existingProfile.id);
+
+      updatedProfile = await prisma.profile.update({
+        where: { userId: decoded.id },
+        data: updateData,
+      });
+      console.log("✅ Profile updated successfully:", updatedProfile.id);
+    } catch (dbError) {
+      console.error("❌ Database error:", dbError);
+      console.error(
+        "❌ Error message:",
+        dbError instanceof Error ? dbError.message : "Unknown error"
+      );
+      console.error("❌ Error code:", (dbError as any)?.code);
+      throw dbError;
+    }
 
     return NextResponse.json({
       message: "CV actualizado exitosamente",
