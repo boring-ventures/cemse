@@ -343,35 +343,20 @@ body {
     0 2px 4px -1px hsl(var(--sidebar-border) / 0.06);
 }
 
-/* Modern scrollbar for sidebar content */
+/* Sidebar content - no scrolling allowed */
 [data-sidebar="content"] {
-  scrollbar-width: thin;
-  scrollbar-color: hsl(var(--sidebar-border)) transparent;
-  overflow-x: hidden !important;
+  overflow: hidden !important;
   max-width: 100% !important;
 }
 
-/* Custom scrollbar for sidebar content - only shows when needed */
-[data-sidebar="content"] {
-  scrollbar-width: thin;
-  scrollbar-color: hsl(var(--sidebar-border)) transparent;
-}
-
-[data-sidebar="content"]::-webkit-scrollbar {
-  width: 4px;
-}
-
-[data-sidebar="content"]::-webkit-scrollbar-track {
-  background: transparent;
-}
-
-[data-sidebar="content"]::-webkit-scrollbar-thumb {
-  background: hsl(var(--sidebar-border));
-  border-radius: 2px;
-}
-
-[data-sidebar="content"]::-webkit-scrollbar-thumb:hover {
-  background: hsl(var(--sidebar-primary) / 0.3);
+/* Prevent scrolling on all sidebar elements */
+[data-sidebar="group"],
+[data-sidebar="menu"],
+[data-sidebar="menu-item"],
+[data-sidebar="menu-button"],
+[data-sidebar="menu-sub"],
+[data-sidebar="menu-sub-button"] {
+  overflow: hidden !important;
 }
 
 /* Removed conflicting scrollbar styles - now handled by .sidebar-content-scroll */
