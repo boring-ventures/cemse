@@ -343,20 +343,28 @@ body {
     0 2px 4px -1px hsl(var(--sidebar-border) / 0.06);
 }
 
-/* Sidebar content - no scrolling allowed */
+/* Sidebar content - allow vertical scrolling when needed */
 [data-sidebar="content"] {
-  overflow: hidden !important;
+  overflow-x: hidden !important;
+  overflow-y: auto !important;
   max-width: 100% !important;
+  scrollbar-width: none !important; /* Firefox */
+  -ms-overflow-style: none !important; /* IE and Edge */
 }
 
-/* Prevent scrolling on all sidebar elements */
+/* Hide scrollbar for webkit browsers */
+[data-sidebar="content"]::-webkit-scrollbar {
+  display: none !important;
+}
+
+/* Prevent scrolling on individual sidebar elements but allow content to flow */
 [data-sidebar="group"],
 [data-sidebar="menu"],
 [data-sidebar="menu-item"],
 [data-sidebar="menu-button"],
 [data-sidebar="menu-sub"],
 [data-sidebar="menu-sub-button"] {
-  overflow: hidden !important;
+  overflow: visible !important;
 }
 
 /* Removed conflicting scrollbar styles - now handled by .sidebar-content-scroll */
