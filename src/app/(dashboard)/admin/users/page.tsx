@@ -364,6 +364,11 @@ export default function UsersManagementPage() {
     message: string;
     isChecking: boolean;
   }>({ isValid: true, message: "", isChecking: false });
+
+  // Form validation state
+  const [formErrors, setFormErrors] = useState<{
+    [key: string]: string;
+  }>({});
   const [skillInput, setSkillInput] = useState("");
   const [interestInput, setInterestInput] = useState("");
   const [showPassword, setShowPassword] = useState(false);
@@ -534,9 +539,242 @@ export default function UsersManagementPage() {
     return () => clearTimeout(timeoutId);
   }, [formData.email]);
 
+  // Validation functions
+  const validateField = (field: string, value: any): string => {
+    switch (field) {
+      case "username":
+        if (!value || value.trim().length === 0) {
+          return "El nombre de usuario es requerido";
+        }
+        if (value.length < 3) {
+          return "El nombre de usuario debe tener al menos 3 caracteres";
+        }
+        if (!/^[a-zA-Z0-9_]+$/.test(value)) {
+          return "El nombre de usuario solo puede contener letras, números y guiones bajos";
+        }
+        return "";
+
+      case "password":
+        if (!value || value.length === 0) {
+          return "La contraseña es requerida";
+        }
+        if (value.length < 6) {
+          return "La contraseña debe tener al menos 6 caracteres";
+        }
+        if (value.length > 50) {
+          return "La contraseña no puede tener más de 50 caracteres";
+        }
+        return "";
+
+      case "firstName":
+        if (!value || value.trim().length === 0) {
+          return "El nombre es requerido";
+        }
+        if (value.length < 2) {
+          return "El nombre debe tener al menos 2 caracteres";
+        }
+        if (!/^[a-zA-ZáéíóúÁÉÍÓÚñÑ\s]+$/.test(value)) {
+          return "El nombre solo puede contener letras y espacios";
+        }
+        return "";
+
+      case "lastName":
+        if (!value || value.trim().length === 0) {
+          return "El apellido es requerido";
+        }
+        if (value.length < 2) {
+          return "El apellido debe tener al menos 2 caracteres";
+        }
+        if (!/^[a-zA-ZáéíóúÁÉÍÓÚñÑ\s]+$/.test(value)) {
+          return "El apellido solo puede contener letras y espacios";
+        }
+        return "";
+
+      case "email":
+        if (value && value.trim().length > 0) {
+          const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+          if (!emailRegex.test(value)) {
+            return "Formato de email inválido";
+          }
+        }
+        return "";
+
+      case "phone":
+        if (value && value.trim().length > 0) {
+          // Bolivian phone number validation (supports +591, 591, or local format)
+          const phoneRegex = /^(\+591|591)?[0-9\s-]{7,10}$/;
+          if (!phoneRegex.test(value.replace(/\s/g, ""))) {
+            return "Formato de teléfono inválido. Use: +591 700 123 456";
+          }
+        }
+        return "";
+
+      case "graduationYear":
+        if (value && value !== "") {
+          const year = parseInt(value);
+          const currentYear = new Date().getFullYear();
+          if (isNaN(year) || year < 1950 || year > currentYear + 10) {
+            return `El año debe estar entre 1950 y ${currentYear + 10}`;
+          }
+        }
+        return "";
+
+      case "birthDate":
+        if (value && value.trim().length > 0) {
+          const date = new Date(value);
+          const currentDate = new Date();
+          const minDate = new Date(currentDate.getFullYear() - 100, 0, 1);
+          const maxDate = new Date(currentDate.getFullYear() - 13, 11, 31);
+
+          if (isNaN(date.getTime())) {
+            return "Fecha de nacimiento inválida";
+          }
+          if (date < minDate || date > maxDate) {
+            return "La edad debe estar entre 13 y 100 años";
+          }
+        }
+        return "";
+
+      case "address":
+        if (value && value.length > 200) {
+          return "La dirección no puede tener más de 200 caracteres";
+        }
+        return "";
+
+      case "currentInstitution":
+        if (value && value.length > 100) {
+          return "El nombre de la institución no puede tener más de 100 caracteres";
+        }
+        return "";
+
+      default:
+        return "";
+    }
+  };
+
+  const validateForm = (): boolean => {
+    const errors: { [key: string]: string } = {};
+    let isValid = true;
+
+    // Required fields
+    const requiredFields = ["username", "password", "firstName", "lastName"];
+
+    requiredFields.forEach((field) => {
+      const error = validateField(field, formData[field as keyof UserData]);
+      if (error) {
+        errors[field] = error;
+        isValid = false;
+      }
+    });
+
+    // Optional fields
+    const optionalFields = [
+      "email",
+      "phone",
+      "graduationYear",
+      "birthDate",
+      "address",
+      "currentInstitution",
+    ];
+
+    optionalFields.forEach((field) => {
+      const error = validateField(field, formData[field as keyof UserData]);
+      if (error) {
+        errors[field] = error;
+        isValid = false;
+      }
+    });
+
+    setFormErrors(errors);
+    return isValid;
+  };
+
+  const handleFieldChange = (field: string, value: any) => {
+    let processedValue = value;
+
+    // Special handling for different field types
+    if (field === "phone") {
+      // Only allow numbers, +, -, and spaces
+      processedValue = String(value || "").replace(/[^0-9+\-\s]/g, "");
+
+      // Format phone number as user types
+      if (processedValue.length > 0) {
+        // Remove all non-digits except + at the beginning
+        const digits = processedValue.replace(/[^\d]/g, "");
+        const hasPlus = processedValue.startsWith("+");
+
+        if (hasPlus && digits.length > 0) {
+          // Format: +591 700 123 456
+          if (digits.length <= 3) {
+            processedValue = `+${digits}`;
+          } else if (digits.length <= 6) {
+            processedValue = `+${digits.slice(0, 3)} ${digits.slice(3)}`;
+          } else if (digits.length <= 9) {
+            processedValue = `+${digits.slice(0, 3)} ${digits.slice(3, 6)} ${digits.slice(6)}`;
+          } else {
+            processedValue = `+${digits.slice(0, 3)} ${digits.slice(3, 6)} ${digits.slice(6, 9)} ${digits.slice(9, 12)}`;
+          }
+        } else if (!hasPlus && digits.length > 0) {
+          // Format: 591 700 123 456 or 700 123 456
+          if (digits.length <= 3) {
+            processedValue = digits;
+          } else if (digits.length <= 6) {
+            processedValue = `${digits.slice(0, 3)} ${digits.slice(3)}`;
+          } else if (digits.length <= 9) {
+            processedValue = `${digits.slice(0, 3)} ${digits.slice(3, 6)} ${digits.slice(6)}`;
+          } else {
+            processedValue = `${digits.slice(0, 3)} ${digits.slice(3, 6)} ${digits.slice(6, 9)} ${digits.slice(9, 12)}`;
+          }
+        }
+      }
+    } else if (field === "username") {
+      // Only allow alphanumeric characters and underscores
+      processedValue = String(value || "").replace(/[^a-zA-Z0-9_]/g, "");
+    } else if (field === "graduationYear") {
+      // Only allow numbers - convert to string first if it's a number
+      const stringValue = String(value || "");
+      const cleanedValue = stringValue.replace(/[^0-9]/g, "");
+      // Convert back to number if it's not empty, otherwise keep as empty string
+      processedValue = cleanedValue ? parseInt(cleanedValue, 10) : undefined;
+    } else if (field === "firstName" || field === "lastName") {
+      // Only allow letters, spaces, and Spanish characters
+      processedValue = String(value || "").replace(
+        /[^a-zA-ZáéíóúÁÉÍÓÚñÑ\s]/g,
+        ""
+      );
+    }
+
+    setFormData((prev) => ({ ...prev, [field]: processedValue }));
+
+    // Clear error when user starts typing
+    if (formErrors[field]) {
+      setFormErrors((prev) => {
+        const newErrors = { ...prev };
+        delete newErrors[field];
+        return newErrors;
+      });
+    }
+  };
+
   const copyToClipboard = async (text: string, field: string) => {
     try {
-      await navigator.clipboard.writeText(text);
+      // Check if clipboard API is available
+      if (navigator?.clipboard?.writeText) {
+        await navigator.clipboard.writeText(text);
+      } else {
+        // Fallback for older browsers or when clipboard API is not available
+        const textArea = document.createElement("textarea");
+        textArea.value = text;
+        textArea.style.position = "fixed";
+        textArea.style.left = "-999999px";
+        textArea.style.top = "-999999px";
+        document.body.appendChild(textArea);
+        textArea.focus();
+        textArea.select();
+        document.execCommand("copy");
+        textArea.remove();
+      }
+
       setCopiedField(field);
       toast({
         title: "Copiado",
@@ -695,6 +933,71 @@ export default function UsersManagementPage() {
     }
   };
 
+  const handleKeyPress = (e: React.KeyboardEvent, field: string) => {
+    // Prevent invalid characters from being typed
+    if (field === "phone") {
+      // Allow: numbers, +, -, space, backspace, delete, arrow keys, etc.
+      if (
+        !/[0-9+\-\s]/.test(e.key) &&
+        ![
+          "Backspace",
+          "Delete",
+          "ArrowLeft",
+          "ArrowRight",
+          "Tab",
+          "Enter",
+        ].includes(e.key)
+      ) {
+        e.preventDefault();
+      }
+    } else if (field === "username") {
+      // Allow: alphanumeric, underscore, backspace, delete, arrow keys, etc.
+      if (
+        !/[a-zA-Z0-9_]/.test(e.key) &&
+        ![
+          "Backspace",
+          "Delete",
+          "ArrowLeft",
+          "ArrowRight",
+          "Tab",
+          "Enter",
+        ].includes(e.key)
+      ) {
+        e.preventDefault();
+      }
+    } else if (field === "graduationYear") {
+      // Allow: numbers only, backspace, delete, arrow keys, etc.
+      if (
+        !/[0-9]/.test(e.key) &&
+        ![
+          "Backspace",
+          "Delete",
+          "ArrowLeft",
+          "ArrowRight",
+          "Tab",
+          "Enter",
+        ].includes(e.key)
+      ) {
+        e.preventDefault();
+      }
+    } else if (field === "firstName" || field === "lastName") {
+      // Allow: letters, spaces, Spanish characters, backspace, delete, arrow keys, etc.
+      if (
+        !/[a-zA-ZáéíóúÁÉÍÓÚñÑ\s]/.test(e.key) &&
+        ![
+          "Backspace",
+          "Delete",
+          "ArrowLeft",
+          "ArrowRight",
+          "Tab",
+          "Enter",
+        ].includes(e.key)
+      ) {
+        e.preventDefault();
+      }
+    }
+  };
+
   const resetForm = () => {
     setFormData({
       username: "",
@@ -721,36 +1024,23 @@ export default function UsersManagementPage() {
     setSkillInput("");
     setInterestInput("");
     setEmailValidation({ isValid: true, message: "", isChecking: false });
+    setFormErrors({});
     setShowPassword(false);
   };
 
   const handleCreate = async () => {
     try {
-      if (
-        !formData.username ||
-        !formData.password ||
-        !formData.firstName ||
-        !formData.lastName
-      ) {
+      // Validate form using comprehensive validation
+      if (!validateForm()) {
         toast({
-          title: "Error",
-          description: "Por favor complete todos los campos requeridos",
+          title: "Error de validación",
+          description: "Por favor corrige los errores en el formulario",
           variant: "destructive",
         });
         return;
       }
 
-      // Validate password strength
-      if (!formData.password || formData.password.length < 6) {
-        toast({
-          title: "Error",
-          description: "La contraseña debe tener al menos 6 caracteres",
-          variant: "destructive",
-        });
-        return;
-      }
-
-      // Validate email if provided
+      // Additional email validation check
       if (formData.email && !emailValidation.isValid) {
         toast({
           title: "Error",
@@ -766,7 +1056,7 @@ export default function UsersManagementPage() {
       // Store credentials for the modal
       setCreatedUserCredentials({
         username: formData.username,
-        password: formData.password,
+        password: formData.password || "",
       });
 
       setShowCreateDialog(false);
@@ -815,6 +1105,26 @@ export default function UsersManagementPage() {
   const handleUpdate = async () => {
     try {
       if (!selectedUser?.id) return;
+
+      // Validate form using comprehensive validation
+      if (!validateForm()) {
+        toast({
+          title: "Error de validación",
+          description: "Por favor corrige los errores en el formulario",
+          variant: "destructive",
+        });
+        return;
+      }
+
+      // Additional email validation check
+      if (formData.email && !emailValidation.isValid) {
+        toast({
+          title: "Error",
+          description: "Por favor corrige el email antes de continuar",
+          variant: "destructive",
+        });
+        return;
+      }
 
       const updateData = { ...formData };
       // Only include password if it was changed and not empty
@@ -1034,13 +1344,17 @@ export default function UsersManagementPage() {
                         id="username"
                         value={formData.username}
                         onChange={(e) =>
-                          setFormData({
-                            ...formData,
-                            username: e.target.value,
-                          })
+                          handleFieldChange("username", e.target.value)
                         }
+                        onKeyPress={(e) => handleKeyPress(e, "username")}
                         placeholder="joven_abc12"
+                        className={formErrors.username ? "border-red-500" : ""}
                       />
+                      {formErrors.username && (
+                        <p className="text-sm text-red-500 mt-1">
+                          {formErrors.username}
+                        </p>
+                      )}
                       <p className="text-xs text-muted-foreground">
                         Formato sugerido: joven_XXXXX (5 caracteres aleatorios)
                       </p>
@@ -1053,13 +1367,10 @@ export default function UsersManagementPage() {
                           type={showPassword ? "text" : "password"}
                           value={formData.password}
                           onChange={(e) =>
-                            setFormData({
-                              ...formData,
-                              password: e.target.value,
-                            })
+                            handleFieldChange("password", e.target.value)
                           }
                           placeholder="••••••••"
-                          className="pr-10"
+                          className={`pr-10 ${formErrors.password ? "border-red-500" : ""}`}
                         />
                         <Button
                           type="button"
@@ -1075,6 +1386,11 @@ export default function UsersManagementPage() {
                           )}
                         </Button>
                       </div>
+                      {formErrors.password && (
+                        <p className="text-sm text-red-500 mt-1">
+                          {formErrors.password}
+                        </p>
+                      )}
                       <p className="text-xs text-muted-foreground">
                         Mínimo 6 caracteres, se recomienda usar la generación
                         automática
@@ -1091,13 +1407,17 @@ export default function UsersManagementPage() {
                         id="firstName"
                         value={formData.firstName}
                         onChange={(e) =>
-                          setFormData({
-                            ...formData,
-                            firstName: e.target.value,
-                          })
+                          handleFieldChange("firstName", e.target.value)
                         }
+                        onKeyPress={(e) => handleKeyPress(e, "firstName")}
                         placeholder="Juan Carlos"
+                        className={formErrors.firstName ? "border-red-500" : ""}
                       />
+                      {formErrors.firstName && (
+                        <p className="text-sm text-red-500 mt-1">
+                          {formErrors.firstName}
+                        </p>
+                      )}
                     </div>
                     <div className="grid gap-2">
                       <Label htmlFor="lastName">Apellido *</Label>
@@ -1105,10 +1425,17 @@ export default function UsersManagementPage() {
                         id="lastName"
                         value={formData.lastName}
                         onChange={(e) =>
-                          setFormData({ ...formData, lastName: e.target.value })
+                          handleFieldChange("lastName", e.target.value)
                         }
+                        onKeyPress={(e) => handleKeyPress(e, "lastName")}
                         placeholder="Pérez"
+                        className={formErrors.lastName ? "border-red-500" : ""}
                       />
+                      {formErrors.lastName && (
+                        <p className="text-sm text-red-500 mt-1">
+                          {formErrors.lastName}
+                        </p>
+                      )}
                     </div>
                   </div>
 
@@ -1158,10 +1485,17 @@ export default function UsersManagementPage() {
                         id="phone"
                         value={formData.phone}
                         onChange={(e) =>
-                          setFormData({ ...formData, phone: e.target.value })
+                          handleFieldChange("phone", e.target.value)
                         }
+                        onKeyPress={(e) => handleKeyPress(e, "phone")}
                         placeholder="+591 700 123 456"
+                        className={formErrors.phone ? "border-red-500" : ""}
                       />
+                      {formErrors.phone && (
+                        <p className="text-sm text-red-500 mt-1">
+                          {formErrors.phone}
+                        </p>
+                      )}
                     </div>
                     <div className="grid gap-2">
                       <Label htmlFor="gender">Género</Label>
@@ -1245,14 +1579,19 @@ export default function UsersManagementPage() {
                         type="number"
                         value={formData.graduationYear || ""}
                         onChange={(e) =>
-                          setFormData({
-                            ...formData,
-                            graduationYear:
-                              Number.parseInt(e.target.value) || undefined,
-                          })
+                          handleFieldChange("graduationYear", e.target.value)
                         }
+                        onKeyPress={(e) => handleKeyPress(e, "graduationYear")}
                         placeholder="2024"
+                        className={
+                          formErrors.graduationYear ? "border-red-500" : ""
+                        }
                       />
+                      {formErrors.graduationYear && (
+                        <p className="text-sm text-red-500 mt-1">
+                          {formErrors.graduationYear}
+                        </p>
+                      )}
                     </div>
                   </div>
 
@@ -1264,13 +1603,18 @@ export default function UsersManagementPage() {
                       id="currentInstitution"
                       value={formData.currentInstitution}
                       onChange={(e) =>
-                        setFormData({
-                          ...formData,
-                          currentInstitution: e.target.value,
-                        })
+                        handleFieldChange("currentInstitution", e.target.value)
                       }
                       placeholder="Universidad Mayor de San Simón"
+                      className={
+                        formErrors.currentInstitution ? "border-red-500" : ""
+                      }
                     />
+                    {formErrors.currentInstitution && (
+                      <p className="text-sm text-red-500 mt-1">
+                        {formErrors.currentInstitution}
+                      </p>
+                    )}
                   </div>
 
                   <div className="grid gap-2">
@@ -1279,10 +1623,16 @@ export default function UsersManagementPage() {
                       id="address"
                       value={formData.address}
                       onChange={(e) =>
-                        setFormData({ ...formData, address: e.target.value })
+                        handleFieldChange("address", e.target.value)
                       }
                       placeholder="Av. Principal 123"
+                      className={formErrors.address ? "border-red-500" : ""}
                     />
+                    {formErrors.address && (
+                      <p className="text-sm text-red-500 mt-1">
+                        {formErrors.address}
+                      </p>
+                    )}
                   </div>
 
                   <div className="grid grid-cols-2 gap-4">
