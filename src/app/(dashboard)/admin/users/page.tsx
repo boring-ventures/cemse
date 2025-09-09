@@ -372,6 +372,7 @@ export default function UsersManagementPage() {
   const [skillInput, setSkillInput] = useState("");
   const [interestInput, setInterestInput] = useState("");
   const [showPassword, setShowPassword] = useState(false);
+  const [showCredentialsPassword, setShowCredentialsPassword] = useState(false);
 
   // Load users on component mount
   useEffect(() => {
@@ -2311,13 +2312,30 @@ export default function UsersManagementPage() {
             <div className="space-y-2">
               <Label htmlFor="created-password">Contraseña</Label>
               <div className="flex items-center gap-2">
-                <Input
-                  id="created-password"
-                  value={createdUserCredentials?.password || ""}
-                  readOnly
-                  type="password"
-                  className="bg-gray-50"
-                />
+                <div className="relative flex-1">
+                  <Input
+                    id="created-password"
+                    value={createdUserCredentials?.password || ""}
+                    readOnly
+                    type={showCredentialsPassword ? "text" : "password"}
+                    className="bg-gray-50 pr-10"
+                  />
+                  <Button
+                    type="button"
+                    variant="ghost"
+                    size="sm"
+                    className="absolute right-0 top-0 h-full px-3 py-2 hover:bg-transparent"
+                    onClick={() =>
+                      setShowCredentialsPassword(!showCredentialsPassword)
+                    }
+                  >
+                    {showCredentialsPassword ? (
+                      <EyeOff className="h-4 w-4 text-gray-500" />
+                    ) : (
+                      <Eye className="h-4 w-4 text-gray-500" />
+                    )}
+                  </Button>
+                </div>
                 <Button
                   size="sm"
                   variant="outline"
@@ -2362,6 +2380,7 @@ export default function UsersManagementPage() {
                 setCredentialsModalOpen(false);
                 setCreatedUserCredentials(null);
                 setCopiedField(null);
+                setShowCredentialsPassword(false);
               }}
             >
               Cerrar
