@@ -325,6 +325,16 @@ export const municipalGovernmentSidebarData: SidebarData = {
           url: "/admin/companies",
           icon: Building2,
         },
+        {
+          title: "Gestión de Instituciones",
+          url: "/admin/municipalities",
+          icon: Building2,
+        },
+        {
+          title: "Gestión de Jóvenes",
+          url: "/admin/users",
+          icon: UserCog,
+        },
       ],
     },
     {
@@ -507,7 +517,7 @@ export const superAdminSidebarData: SidebarData = {
           icon: LayoutDashboard,
         },
         {
-          title: "Gestión de Usuarios",
+          title: "Gestión de Jóvenes",
           url: "/admin/users",
           icon: UserCog,
         },

@@ -23,6 +23,7 @@ import { useToast } from "@/hooks/use-toast";
 import { Loader2, RefreshCw, Eye, EyeOff } from "lucide-react";
 import { generateMunicipalityCredentials } from "@/lib/utils/generate-credentials";
 import { CredentialsModal } from "./credentials-modal";
+import { useAuthContext } from "@/hooks/use-auth";
 
 interface Credentials {
   username: string;
@@ -31,7 +32,8 @@ interface Credentials {
   institutionName: string;
 }
 
-const createMunicipalitySchema = z.object({
+// Base schema without institution type
+const baseMunicipalitySchema = z.object({
   name: z
     .string()
     .min(2, "El nombre debe tener al menos 2 caracteres")
@@ -80,7 +82,6 @@ const createMunicipalitySchema = z.object({
     )
     .optional()
     .or(z.literal("")),
-  institutionType: z.enum(["MUNICIPALITY", "NGO", "FOUNDATION", "OTHER"]),
   customType: z
     .string()
     .max(50, "El tipo personalizado no puede tener más de 50 caracteres")
@@ -99,7 +100,21 @@ const createMunicipalitySchema = z.object({
     .optional(),
 });
 
-type CreateMunicipalityFormData = z.infer<typeof createMunicipalitySchema>;
+// Function to create schema based on user role
+const createMunicipalitySchema = (userRole?: string) => {
+  const institutionTypeEnum =
+    userRole === "MUNICIPAL_GOVERNMENTS"
+      ? z.enum(["NGO", "FOUNDATION", "OTHER"])
+      : z.enum(["MUNICIPALITY", "NGO", "FOUNDATION", "OTHER"]);
+
+  return baseMunicipalitySchema.extend({
+    institutionType: institutionTypeEnum,
+  });
+};
+
+type CreateMunicipalityFormData = z.infer<
+  ReturnType<typeof createMunicipalitySchema>
+>;
 
 interface CreateMunicipalityFormProps {
   onSuccess: () => void;
@@ -117,6 +132,7 @@ export function CreateMunicipalityForm({
   const { data: existingMunicipalities } = useMunicipalities();
   const { toast } = useToast();
   const [emailError, setEmailError] = useState<string | null>(null);
+  const { user } = useAuthContext();
 
   const {
     register,
@@ -126,10 +142,11 @@ export function CreateMunicipalityForm({
     setValue,
     watch,
   } = useForm<CreateMunicipalityFormData>({
-    resolver: zodResolver(createMunicipalitySchema),
+    resolver: zodResolver(createMunicipalitySchema(user?.role)),
     defaultValues: {
       department: "Cochabamba",
-      institutionType: "MUNICIPALITY",
+      institutionType:
+        user?.role === "MUNICIPAL_GOVERNMENTS" ? "NGO" : "MUNICIPALITY",
       primaryColor: "#1E40AF",
       secondaryColor: "#F59E0B",
     },
@@ -429,10 +446,12 @@ export function CreateMunicipalityForm({
                   <SelectValue placeholder="Seleccionar tipo" />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="MUNICIPALITY">Municipio</SelectItem>
+                  {user?.role !== "MUNICIPAL_GOVERNMENTS" && (
+                    <SelectItem value="MUNICIPALITY">Municipio</SelectItem>
+                  )}
                   <SelectItem value="NGO">ONG</SelectItem>
                   <SelectItem value="FOUNDATION">Fundación</SelectItem>
-                  <SelectItem value="OTHER">Otro</SelectItem>
+                  <SelectItem value="OTHER">Centro de Capacitación</SelectItem>
                 </SelectContent>
               </Select>
               {errors.institutionType && (
