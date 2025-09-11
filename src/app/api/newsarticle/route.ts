@@ -5,7 +5,6 @@ import { writeFile, mkdir } from "fs/promises";
 import { join } from "path";
 import { v4 as uuidv4 } from "uuid";
 import jwt from "jsonwebtoken";
-import { cookies } from "next/headers";
 
 const JWT_SECRET = process.env.JWT_SECRET || "dev-secret-key";
 
@@ -141,39 +140,17 @@ export async function GET(request: NextRequest) {
 
 export async function POST(request: NextRequest) {
   try {
-    // Get token from cookies (consistent with other API routes)
-    const cookieStore = await cookies();
-    const token = cookieStore.get("cemse-auth-token")?.value;
-
-    if (!token) {
+    // Get auth token from Authorization header
+    const authHeader = request.headers.get("authorization");
+    if (!authHeader || !authHeader.startsWith("Bearer ")) {
       return NextResponse.json(
-        { message: "Authorization required" },
+        { message: "Authorization header required" },
         { status: 401 }
       );
     }
 
-    let decoded: any = null;
-
-    // Handle different token types (consistent with other API routes)
-    if (token.includes(".") && token.split(".").length === 3) {
-      // JWT token
-      decoded = verifyToken(token);
-    } else if (token.startsWith("auth-token-")) {
-      // Database token format: auth-token-{role}-{userId}-{timestamp}
-      const tokenParts = token.split("-");
-
-      if (tokenParts.length >= 4) {
-        const tokenUserId = tokenParts[3];
-
-        // Create a simple decoded object
-        decoded = {
-          id: tokenUserId,
-          username: `user_${tokenUserId}`,
-        };
-      }
-    } else {
-      decoded = verifyToken(token);
-    }
+    const token = authHeader.substring(7);
+    const decoded = verifyToken(token);
 
     if (!decoded) {
       return NextResponse.json(
@@ -184,7 +161,7 @@ export async function POST(request: NextRequest) {
 
     console.log(
       "📰 POST /api/newsarticle - Authenticated user:",
-      decoded.username || decoded.id
+      decoded.username
     );
 
     // Get user from database

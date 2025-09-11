@@ -1,7 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { Client } from "minio";
 import jwt from "jsonwebtoken";
-import { cookies } from "next/headers";
 
 // MinIO configuration
 const minioClient = new Client({
@@ -17,10 +16,8 @@ const JWT_SECRET = process.env.JWT_SECRET || "dev-secret-key";
 
 export async function POST(request: NextRequest) {
   try {
-    // Get token from cookies (consistent with other API routes)
-    const cookieStore = await cookies();
-    const token = cookieStore.get("cemse-auth-token")?.value;
-
+    // Get auth token
+    const token = request.headers.get("authorization")?.replace("Bearer ", "");
     if (!token) {
       return NextResponse.json(
         { message: "Authorization required" },
@@ -28,40 +25,9 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    let decoded: any = null;
-
-    // Handle different token types (consistent with other API routes)
-    if (token.includes(".") && token.split(".").length === 3) {
-      // JWT token
-      decoded = jwt.verify(token, JWT_SECRET) as any;
-    } else if (token.startsWith("auth-token-")) {
-      // Database token format: auth-token-{role}-{userId}-{timestamp}
-      const tokenParts = token.split("-");
-
-      if (tokenParts.length >= 4) {
-        const tokenUserId = tokenParts[3];
-
-        // Create a simple decoded object
-        decoded = {
-          id: tokenUserId,
-          username: `user_${tokenUserId}`,
-        };
-      }
-    } else {
-      decoded = jwt.verify(token, JWT_SECRET) as any;
-    }
-
-    if (!decoded) {
-      return NextResponse.json(
-        { message: "Invalid or expired token" },
-        { status: 401 }
-      );
-    }
-
-    console.log(
-      "🔧 Video Fix API - Authenticated user:",
-      decoded.username || decoded.id
-    );
+    // Verify token
+    const decoded = jwt.verify(token, JWT_SECRET) as any;
+    console.log("🔧 Video Fix API - Authenticated user:", decoded.username);
 
     const { videoUrl } = await request.json();
 
