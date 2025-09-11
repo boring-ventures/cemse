@@ -39,7 +39,384 @@ import {
   TooltipProvider,
   TooltipTrigger,
 } from "@/components/ui/tooltip";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
+import {
+  Document,
+  Page,
+  Text,
+  View,
+  StyleSheet,
+  pdf,
+} from "@react-pdf/renderer";
 import { useBusinessPlanSimulator } from "@/hooks/useBusinessPlanSimulator";
+
+// PDF Styles for Business Model Canvas
+const canvasStyles = StyleSheet.create({
+  page: {
+    flexDirection: "column",
+    backgroundColor: "#f8fafc",
+    padding: 30,
+    fontFamily: "Helvetica",
+    fontSize: 10,
+  },
+  header: {
+    backgroundColor: "#1e293b",
+    padding: 20,
+    marginBottom: 25,
+    borderRadius: 8,
+  },
+  title: {
+    fontSize: 28,
+    fontWeight: "bold",
+    textAlign: "center",
+    marginBottom: 8,
+    color: "#ffffff",
+    letterSpacing: 1,
+  },
+  subtitle: {
+    fontSize: 16,
+    textAlign: "center",
+    color: "#cbd5e1",
+    fontWeight: "normal",
+  },
+  canvas: {
+    position: "relative",
+    height: 400,
+    width: "100%",
+  },
+  row: {
+    position: "absolute",
+    flexDirection: "row",
+    width: "100%",
+    height: 120,
+  },
+  section: {
+    border: "2px solid #e2e8f0",
+    borderRadius: 8,
+    padding: 8,
+    height: 110,
+    backgroundColor: "#ffffff",
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.1,
+    shadowRadius: 4,
+    marginRight: 4,
+  },
+  sectionTitle: {
+    fontSize: 11,
+    fontWeight: "bold",
+    color: "#ffffff",
+    marginBottom: 8,
+    padding: 8,
+    textAlign: "center",
+    borderRadius: 4,
+    letterSpacing: 0.5,
+  },
+  sectionContent: {
+    fontSize: 9,
+    lineHeight: 1.4,
+    color: "#374151",
+    textAlign: "justify",
+  },
+  // Specific section colors with gradients
+  keyPartners: {
+    backgroundColor: "#ffffff",
+  },
+  keyPartnersTitle: {
+    backgroundColor: "#3b82f6",
+  },
+  keyActivities: {
+    backgroundColor: "#ffffff",
+  },
+  keyActivitiesTitle: {
+    backgroundColor: "#22c55e",
+  },
+  valuePropositions: {
+    backgroundColor: "#ffffff",
+  },
+  valuePropositionsTitle: {
+    backgroundColor: "#ef4444",
+  },
+  customerRelationships: {
+    backgroundColor: "#ffffff",
+  },
+  customerRelationshipsTitle: {
+    backgroundColor: "#9333ea",
+  },
+  customerSegments: {
+    backgroundColor: "#ffffff",
+  },
+  customerSegmentsTitle: {
+    backgroundColor: "#f97316",
+  },
+  keyResources: {
+    backgroundColor: "#ffffff",
+  },
+  keyResourcesTitle: {
+    backgroundColor: "#22c55e",
+  },
+  channels: {
+    backgroundColor: "#ffffff",
+  },
+  channelsTitle: {
+    backgroundColor: "#9333ea",
+  },
+  costStructure: {
+    backgroundColor: "#ffffff",
+  },
+  costStructureTitle: {
+    backgroundColor: "#eab308",
+  },
+  revenueStreams: {
+    backgroundColor: "#ffffff",
+  },
+  revenueStreamsTitle: {
+    backgroundColor: "#14b8a6",
+  },
+  footer: {
+    position: "absolute",
+    bottom: 20,
+    left: 30,
+    right: 30,
+    textAlign: "center",
+    fontSize: 9,
+    color: "#64748b",
+    backgroundColor: "#f1f5f9",
+    padding: 8,
+    borderRadius: 4,
+  },
+  logo: {
+    position: "absolute",
+    top: 20,
+    right: 20,
+    fontSize: 12,
+    fontWeight: "bold",
+    color: "#3b82f6",
+  },
+});
+
+// Business Model Canvas PDF Component
+const BusinessModelCanvasPDF = ({ canvasData }: { canvasData: any }) => (
+  <Document>
+    <Page size="A4" orientation="landscape" style={canvasStyles.page}>
+      {/* Header */}
+      <View style={canvasStyles.header}>
+        <Text style={canvasStyles.title}>Business Model Canvas</Text>
+        <Text style={canvasStyles.subtitle}>Plan de Negocios - CEMSE</Text>
+      </View>
+
+      {/* Logo */}
+      <Text style={canvasStyles.logo}>CEMSE</Text>
+
+      {/* Canvas Grid */}
+      <View style={canvasStyles.canvas}>
+        {/* Top Row */}
+        <View style={[canvasStyles.row, { top: 0 }]}>
+          <View
+            style={[
+              canvasStyles.section,
+              canvasStyles.keyPartners,
+              { width: "18%" },
+            ]}
+          >
+            <Text
+              style={[canvasStyles.sectionTitle, canvasStyles.keyPartnersTitle]}
+            >
+              Socios Clave
+            </Text>
+            <Text style={canvasStyles.sectionContent}>
+              {canvasData.keyPartners || "Sin contenido"}
+            </Text>
+          </View>
+
+          <View
+            style={[
+              canvasStyles.section,
+              canvasStyles.keyActivities,
+              { width: "18%" },
+            ]}
+          >
+            <Text
+              style={[
+                canvasStyles.sectionTitle,
+                canvasStyles.keyActivitiesTitle,
+              ]}
+            >
+              Actividades Clave
+            </Text>
+            <Text style={canvasStyles.sectionContent}>
+              {canvasData.keyActivities || "Sin contenido"}
+            </Text>
+          </View>
+
+          <View
+            style={[
+              canvasStyles.section,
+              canvasStyles.valuePropositions,
+              { width: "28%" },
+            ]}
+          >
+            <Text
+              style={[
+                canvasStyles.sectionTitle,
+                canvasStyles.valuePropositionsTitle,
+              ]}
+            >
+              Propuesta de Valor
+            </Text>
+            <Text style={canvasStyles.sectionContent}>
+              {canvasData.valuePropositions || "Sin contenido"}
+            </Text>
+          </View>
+
+          <View
+            style={[
+              canvasStyles.section,
+              canvasStyles.customerRelationships,
+              { width: "18%" },
+            ]}
+          >
+            <Text
+              style={[
+                canvasStyles.sectionTitle,
+                canvasStyles.customerRelationshipsTitle,
+              ]}
+            >
+              Relación con Clientes
+            </Text>
+            <Text style={canvasStyles.sectionContent}>
+              {canvasData.customerRelationships || "Sin contenido"}
+            </Text>
+          </View>
+
+          <View
+            style={[
+              canvasStyles.section,
+              canvasStyles.customerSegments,
+              { width: "18%" },
+            ]}
+          >
+            <Text
+              style={[
+                canvasStyles.sectionTitle,
+                canvasStyles.customerSegmentsTitle,
+              ]}
+            >
+              Segmentos de Clientes
+            </Text>
+            <Text style={canvasStyles.sectionContent}>
+              {canvasData.customerSegments || "Sin contenido"}
+            </Text>
+          </View>
+        </View>
+
+        {/* Middle Row */}
+        <View style={[canvasStyles.row, { top: 130 }]}>
+          <View
+            style={[
+              canvasStyles.section,
+              canvasStyles.keyResources,
+              { width: "18%" },
+            ]}
+          >
+            <Text
+              style={[
+                canvasStyles.sectionTitle,
+                canvasStyles.keyResourcesTitle,
+              ]}
+            >
+              Recursos Clave
+            </Text>
+            <Text style={canvasStyles.sectionContent}>
+              {canvasData.keyResources || "Sin contenido"}
+            </Text>
+          </View>
+
+          <View
+            style={[
+              canvasStyles.section,
+              canvasStyles.channels,
+              { width: "18%" },
+            ]}
+          >
+            <Text
+              style={[canvasStyles.sectionTitle, canvasStyles.channelsTitle]}
+            >
+              Canales
+            </Text>
+            <Text style={canvasStyles.sectionContent}>
+              {canvasData.channels || "Sin contenido"}
+            </Text>
+          </View>
+
+          {/* Empty space for value propositions */}
+          <View style={{ width: "28%", height: 100 }} />
+
+          {/* Empty space for customer relationships */}
+          <View style={{ width: "18%", height: 100 }} />
+
+          {/* Empty space for customer segments */}
+          <View style={{ width: "18%", height: 100 }} />
+        </View>
+
+        {/* Bottom Row */}
+        <View style={[canvasStyles.row, { top: 260 }]}>
+          <View
+            style={[
+              canvasStyles.section,
+              canvasStyles.costStructure,
+              { width: "36%" },
+            ]}
+          >
+            <Text
+              style={[
+                canvasStyles.sectionTitle,
+                canvasStyles.costStructureTitle,
+              ]}
+            >
+              Estructura de Costos
+            </Text>
+            <Text style={canvasStyles.sectionContent}>
+              {canvasData.costStructure || "Sin contenido"}
+            </Text>
+          </View>
+
+          <View
+            style={[
+              canvasStyles.section,
+              canvasStyles.revenueStreams,
+              { width: "46%" },
+            ]}
+          >
+            <Text
+              style={[
+                canvasStyles.sectionTitle,
+                canvasStyles.revenueStreamsTitle,
+              ]}
+            >
+              Fuentes de Ingresos
+            </Text>
+            <Text style={canvasStyles.sectionContent}>
+              {canvasData.revenueStreams || "Sin contenido"}
+            </Text>
+          </View>
+        </View>
+      </View>
+
+      {/* Footer */}
+      <Text style={canvasStyles.footer}>
+        Generado el {new Date().toLocaleDateString("es-ES")} • CEMSE - Centro de
+        Emprendimiento y Servicios Empresariales
+      </Text>
+    </Page>
+  </Document>
+);
 
 interface BusinessPlan {
   id?: string;
@@ -170,6 +547,8 @@ export default function BusinessPlanSimulatorPage() {
 
   const [activeTab, setActiveTab] = useState("wizard");
   const [autoSaving, setAutoSaving] = useState(false);
+  const [showCompletionDialog, setShowCompletionDialog] = useState(false);
+  const [completionData, setCompletionData] = useState<any>(null);
 
   const [businessModelCanvas, setBusinessModelCanvas] = useState({
     keyPartners: "",
@@ -233,7 +612,7 @@ export default function BusinessPlanSimulatorPage() {
           const currentDataString = JSON.stringify(backendData);
           if (currentDataString !== lastSavedDataRef.current) {
             setAutoSaving(true);
-            console.log('🔄 Auto-saving business plan data:', backendData);
+            console.log("🔄 Auto-saving business plan data:", backendData);
             await saveSimulatorData(backendData, { silent: true });
             lastSavedDataRef.current = currentDataString;
           }
@@ -271,8 +650,12 @@ export default function BusinessPlanSimulatorPage() {
       // Sync from business plan to calculator
       setFinancialData((prev) => ({
         ...prev,
-        initialInvestment: businessPlan.financialProjections.startupCosts || prev.initialInvestment,
-        monthlyRevenue: businessPlan.financialProjections.monthlyRevenue || prev.monthlyRevenue,
+        initialInvestment:
+          businessPlan.financialProjections.startupCosts ||
+          prev.initialInvestment,
+        monthlyRevenue:
+          businessPlan.financialProjections.monthlyRevenue ||
+          prev.monthlyRevenue,
       }));
     }
   }, [activeTab, businessPlan.financialProjections]);
@@ -310,9 +693,10 @@ export default function BusinessPlanSimulatorPage() {
         competitiveAnalysis: latestPlan.competitiveAnalysis || "",
         marketingPlan: latestPlan.marketingStrategy || "",
         operationalPlan: latestPlan.operationalPlan || "",
-        managementTeam: typeof latestPlan.managementTeam === 'object' 
-          ? (latestPlan.managementTeam?.description || "") 
-          : (latestPlan.managementTeam || ""),
+        managementTeam:
+          typeof latestPlan.managementTeam === "object"
+            ? latestPlan.managementTeam?.description || ""
+            : latestPlan.managementTeam || "",
         financialProjections: {
           startupCosts:
             latestPlan.costStructure?.startupCosts ||
@@ -375,12 +759,17 @@ export default function BusinessPlanSimulatorPage() {
       // Cargar datos del canvas si existen
       if (latestPlan.businessModelCanvas) {
         try {
-          const canvasData = typeof latestPlan.businessModelCanvas === 'string' 
-            ? JSON.parse(latestPlan.businessModelCanvas)
-            : latestPlan.businessModelCanvas;
-          
+          const canvasData =
+            typeof latestPlan.businessModelCanvas === "string"
+              ? JSON.parse(latestPlan.businessModelCanvas)
+              : latestPlan.businessModelCanvas;
+
           // Only update if canvasData has the expected structure
-          if (canvasData && typeof canvasData === 'object' && canvasData.keyPartners !== undefined) {
+          if (
+            canvasData &&
+            typeof canvasData === "object" &&
+            canvasData.keyPartners !== undefined
+          ) {
             setBusinessModelCanvas({
               keyPartners: canvasData.keyPartners || "",
               keyActivities: canvasData.keyActivities || "",
@@ -539,6 +928,34 @@ export default function BusinessPlanSimulatorPage() {
     return ((annualProfit / financialData.initialInvestment) * 100).toFixed(1);
   };
 
+  const calculateIUE = () => {
+    // IUE (Impuesto sobre las Utilidades de las Empresas) - 25% sobre utilidades
+    const monthlyProfit =
+      financialData.monthlyRevenue -
+      (financialData.fixedCosts + financialData.variableCosts);
+    const annualProfit = monthlyProfit * 12;
+    const iue = annualProfit > 0 ? annualProfit * 0.25 : 0;
+    return iue;
+  };
+
+  const calculateIT = () => {
+    // IT (Impuesto a las Transacciones) - 3% sobre ingresos brutos
+    const monthlyIT = financialData.monthlyRevenue * 0.03;
+    const annualIT = monthlyIT * 12;
+    return annualIT;
+  };
+
+  const calculateNetProfit = () => {
+    const monthlyProfit =
+      financialData.monthlyRevenue -
+      (financialData.fixedCosts + financialData.variableCosts);
+    const annualProfit = monthlyProfit * 12;
+    const iue = calculateIUE();
+    const it = calculateIT();
+    const netProfit = annualProfit - iue - it;
+    return netProfit;
+  };
+
   const generateCashFlow = () => {
     const months = [];
     let cumulativeCash = -financialData.initialInvestment;
@@ -557,6 +974,23 @@ export default function BusinessPlanSimulatorPage() {
       });
     }
     return months;
+  };
+
+  const downloadCanvasPDF = async () => {
+    try {
+      const blob = await pdf(
+        <BusinessModelCanvasPDF canvasData={businessModelCanvas} />
+      ).toBlob();
+      const url = URL.createObjectURL(blob);
+      const link = document.createElement("a");
+      link.href = url;
+      link.download = `business-model-canvas-${new Date().toISOString().split("T")[0]}.pdf`;
+      link.click();
+      URL.revokeObjectURL(url);
+    } catch (error) {
+      console.error("Error generating PDF:", error);
+      alert("Error al generar el PDF. Por favor, inténtalo de nuevo.");
+    }
   };
 
   const analyzeTripleImpact = () => {
@@ -620,12 +1054,12 @@ export default function BusinessPlanSimulatorPage() {
   }
 
   return (
-    <div className="container mx-auto p-6">
-      <div className="mb-8">
-        <h1 className="text-3xl font-bold mb-2">
+    <div className="container mx-auto p-4 sm:p-6">
+      <div className="mb-6 sm:mb-8">
+        <h1 className="text-2xl sm:text-3xl font-bold mb-2">
           Simulador de Plan de Negocios
         </h1>
-        <p className="text-muted-foreground">
+        <p className="text-sm sm:text-base text-muted-foreground">
           Crea tu plan de negocios paso a paso con herramientas integradas de
           cálculo financiero
         </p>
@@ -634,24 +1068,46 @@ export default function BusinessPlanSimulatorPage() {
       <Tabs
         value={activeTab}
         onValueChange={setActiveTab}
-        className="space-y-6"
+        className="space-y-4 sm:space-y-6"
       >
-        <TabsList className="grid w-full grid-cols-3">
-          <TabsTrigger value="wizard">Asistente Guiado</TabsTrigger>
-          <TabsTrigger value="canvas">Business Model Canvas</TabsTrigger>
-          <TabsTrigger value="calculator">Calculadora Financiera</TabsTrigger>
+        <TabsList className="grid w-full grid-cols-1 sm:grid-cols-3 h-auto">
+          <TabsTrigger
+            value="wizard"
+            className="text-xs sm:text-sm py-2 sm:py-3"
+          >
+            <span className="hidden sm:inline">Asistente Guiado</span>
+            <span className="sm:hidden">Asistente</span>
+          </TabsTrigger>
+          <TabsTrigger
+            value="canvas"
+            className="text-xs sm:text-sm py-2 sm:py-3"
+          >
+            <span className="hidden sm:inline">Business Model Canvas</span>
+            <span className="sm:hidden">Canvas</span>
+          </TabsTrigger>
+          <TabsTrigger
+            value="calculator"
+            className="text-xs sm:text-sm py-2 sm:py-3"
+          >
+            <span className="hidden sm:inline">Calculadora Financiera</span>
+            <span className="sm:hidden">Calculadora</span>
+          </TabsTrigger>
         </TabsList>
 
         {/* Guided Wizard */}
-        <TabsContent value="wizard" className="space-y-6">
+        <TabsContent value="wizard" className="space-y-4 sm:space-y-6">
           <Card>
             <CardHeader>
-              <div className="flex items-center justify-between">
+              <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
                 <div className="flex items-center gap-2">
                   <div>
-                    <CardTitle className="flex items-center gap-2">
+                    <CardTitle className="flex items-center gap-2 text-lg sm:text-xl">
                       {planSteps[currentStep].icon}
-                      Paso {currentStep + 1}: {planSteps[currentStep].title}
+                      <span className="hidden sm:inline">
+                        Paso {currentStep + 1}:{" "}
+                      </span>
+                      <span className="sm:hidden">{currentStep + 1}. </span>
+                      {planSteps[currentStep].title}
                       <TooltipProvider>
                         <Tooltip>
                           <TooltipTrigger>
@@ -665,16 +1121,74 @@ export default function BusinessPlanSimulatorPage() {
                         </Tooltip>
                       </TooltipProvider>
                     </CardTitle>
-                    <p className="text-muted-foreground mt-1">
+                    <p className="text-sm sm:text-base text-muted-foreground mt-1">
                       {planSteps[currentStep].description}
                     </p>
                   </div>
                 </div>
-                <Badge variant="outline" className="min-w-[80px] text-center">
+                <Badge
+                  variant="outline"
+                  className="min-w-[80px] text-center self-start sm:self-auto"
+                >
                   {currentStep + 1} de {planSteps.length}
                 </Badge>
               </div>
-              <Progress value={progress} className="mt-4" />
+
+              {/* Progress Bar */}
+              <div className="mt-4 space-y-2">
+                <div className="flex justify-between text-sm text-muted-foreground">
+                  <span>Progreso del Plan</span>
+                  <span>{Math.round(progress)}%</span>
+                </div>
+                <Progress value={progress} className="h-2" />
+              </div>
+
+              {/* Step Navigation */}
+              <div className="flex justify-between items-center mt-4">
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => setCurrentStep(Math.max(0, currentStep - 1))}
+                  disabled={currentStep === 0}
+                  className="flex items-center gap-2"
+                >
+                  <ChevronLeft className="h-4 w-4" />
+                  <span className="hidden sm:inline">Anterior</span>
+                </Button>
+
+                <div className="flex gap-2">
+                  {planSteps.map((_, index) => (
+                    <button
+                      key={index}
+                      onClick={() => setCurrentStep(index)}
+                      className={`w-3 h-3 rounded-full transition-colors ${
+                        index === currentStep
+                          ? "bg-blue-600"
+                          : index < currentStep
+                            ? "bg-green-500"
+                            : "bg-gray-300"
+                      }`}
+                      aria-label={`Ir al paso ${index + 1}`}
+                    />
+                  ))}
+                </div>
+
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() =>
+                    setCurrentStep(
+                      Math.min(planSteps.length - 1, currentStep + 1)
+                    )
+                  }
+                  disabled={currentStep === planSteps.length - 1}
+                  className="flex items-center gap-2"
+                >
+                  <span className="hidden sm:inline">Siguiente</span>
+                  <ChevronRight className="h-4 w-4" />
+                </Button>
+              </div>
+
               <div className="h-6 mt-2">
                 {autoSaving && (
                   <div className="flex items-center gap-2 text-sm text-blue-600">
@@ -686,32 +1200,45 @@ export default function BusinessPlanSimulatorPage() {
             </CardHeader>
             <CardContent className="space-y-6">
               {currentStep === 0 ? (
-                <div className="max-w-6xl mx-auto">
+                <div className="max-w-6xl mx-auto space-y-6">
+                  {/* Introduction */}
+                  <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 sm:p-6">
+                    <h3 className="text-lg font-semibold text-blue-900 mb-2">
+                      🌟 Descubre el Impacto de tu Negocio
+                    </h3>
+                    <p className="text-blue-800 text-sm sm:text-base">
+                      Completa estas preguntas para entender cómo tu negocio
+                      puede generar un <strong>triple impacto</strong>:
+                      económico, social y ambiental. Esto te ayudará a crear un
+                      negocio más sostenible y atractivo para inversionistas.
+                    </p>
+                  </div>
+
                   {/* Impact Questions Grid */}
-                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6">
                     {impactQuestions.map((q, index) => (
                       <div
                         key={index}
-                        className="bg-white rounded-xl p-6 shadow-sm border-2 border-transparent hover:border-blue-100 transition-all"
+                        className="bg-white rounded-xl p-4 sm:p-6 shadow-sm border-2 border-transparent hover:border-blue-100 transition-all"
                       >
                         <div className="space-y-4">
                           <div className="flex items-start gap-3">
-                            <div className="bg-blue-50 rounded-full p-2 mt-1">
-                              <div className="h-6 w-6 text-blue-600">
+                            <div className="bg-blue-50 rounded-full p-2 mt-1 flex-shrink-0">
+                              <div className="h-5 w-5 sm:h-6 sm:w-6 text-blue-600">
                                 {index === 0 ? (
-                                  <Lightbulb className="h-6 w-6" />
+                                  <Lightbulb className="h-5 w-5 sm:h-6 sm:w-6" />
                                 ) : index === 1 ? (
-                                  <Users className="h-6 w-6" />
+                                  <Users className="h-5 w-5 sm:h-6 sm:w-6" />
                                 ) : index === 2 ? (
-                                  <Leaf className="h-6 w-6" />
+                                  <Leaf className="h-5 w-5 sm:h-6 sm:w-6" />
                                 ) : index === 3 ? (
-                                  <Heart className="h-6 w-6" />
+                                  <Heart className="h-5 w-5 sm:h-6 sm:w-6" />
                                 ) : (
-                                  <Target className="h-6 w-6" />
+                                  <Target className="h-5 w-5 sm:h-6 sm:w-6" />
                                 )}
                               </div>
                             </div>
-                            <Label className="text-lg font-medium leading-tight">
+                            <Label className="text-base sm:text-lg font-medium leading-tight">
                               {q.question}
                             </Label>
                           </div>
@@ -729,22 +1256,22 @@ export default function BusinessPlanSimulatorPage() {
                               })
                             }
                             placeholder={q.placeholder}
-                            className="min-h-[120px] text-base resize-none bg-gray-50/50"
+                            className="min-h-[100px] sm:min-h-[120px] text-sm sm:text-base resize-none bg-gray-50/50"
                           />
 
-                          <div className="flex gap-3 pt-2">
+                          <div className="flex flex-col sm:flex-row gap-2 sm:gap-3 pt-2">
                             <Link
                               href={q.helpLink}
-                              className="flex items-center gap-1.5 text-sm text-blue-600 hover:text-blue-700 hover:underline"
+                              className="flex items-center gap-1.5 text-xs sm:text-sm text-blue-600 hover:text-blue-700 hover:underline"
                             >
-                              <FileText className="h-4 w-4" />
+                              <FileText className="h-3 w-3 sm:h-4 sm:w-4" />
                               Ver guía
                             </Link>
                             <Link
                               href={q.videoLink}
-                              className="flex items-center gap-1.5 text-sm text-blue-600 hover:text-blue-700 hover:underline"
+                              className="flex items-center gap-1.5 text-xs sm:text-sm text-blue-600 hover:text-blue-700 hover:underline"
                             >
-                              <Video className="h-4 w-4" />
+                              <Video className="h-3 w-3 sm:h-4 sm:w-4" />
                               Ver video
                             </Link>
                           </div>
@@ -758,66 +1285,83 @@ export default function BusinessPlanSimulatorPage() {
                     Object.values(businessPlan.tripleImpactAssessment).some(
                       (value) => value && value.length > 0
                     ) && (
-                      <div className="mt-8 bg-white rounded-xl p-6 shadow-sm border-2 border-transparent">
+                      <div className="mt-6 sm:mt-8 bg-white rounded-xl p-4 sm:p-6 shadow-sm border-2 border-transparent">
                         <div
-                          className={`text-lg font-medium ${getImpactFeedback().color} flex items-center gap-2 mb-4`}
+                          className={`text-base sm:text-lg font-medium ${getImpactFeedback().color} flex items-center gap-2 mb-4`}
                         >
-                          <CheckCircle className="h-5 w-5" />
+                          <CheckCircle className="h-4 w-4 sm:h-5 sm:w-5" />
                           {getImpactFeedback().message}
                         </div>
 
                         {/* Impact Analysis Visual */}
-                        <div className="grid grid-cols-3 gap-4">
+                        <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 sm:gap-4">
                           <div
-                            className={`text-center p-3 rounded-lg border-2 ${impacts.economic ? "bg-green-50 border-green-200" : "bg-gray-50 border-gray-200"}`}
+                            className={`text-center p-3 sm:p-4 rounded-lg border-2 ${impacts.economic ? "bg-green-50 border-green-200" : "bg-gray-50 border-gray-200"}`}
                           >
                             <div
-                              className={`text-2xl mb-1 ${impacts.economic ? "text-green-600" : "text-gray-400"}`}
+                              className={`text-xl sm:text-2xl mb-1 ${impacts.economic ? "text-green-600" : "text-gray-400"}`}
                             >
                               💰
                             </div>
-                            <div className="text-sm font-medium">Económico</div>
+                            <div className="text-sm font-medium">
+                              Impacto Económico
+                            </div>
                             <div className="text-xs text-muted-foreground">
-                              {impacts.economic ? "Detectado" : "Pendiente"}
+                              {impacts.economic
+                                ? "✅ Detectado"
+                                : "⏳ Pendiente"}
+                            </div>
+                            <div className="text-xs text-muted-foreground mt-1">
+                              Genera valor económico
                             </div>
                           </div>
 
                           <div
-                            className={`text-center p-3 rounded-lg border-2 ${impacts.social ? "bg-blue-50 border-blue-200" : "bg-gray-50 border-gray-200"}`}
+                            className={`text-center p-3 sm:p-4 rounded-lg border-2 ${impacts.social ? "bg-blue-50 border-blue-200" : "bg-gray-50 border-gray-200"}`}
                           >
                             <div
-                              className={`text-2xl mb-1 ${impacts.social ? "text-blue-600" : "text-gray-400"}`}
+                              className={`text-xl sm:text-2xl mb-1 ${impacts.social ? "text-blue-600" : "text-gray-400"}`}
                             >
                               👥
                             </div>
-                            <div className="text-sm font-medium">Social</div>
+                            <div className="text-sm font-medium">
+                              Impacto Social
+                            </div>
                             <div className="text-xs text-muted-foreground">
-                              {impacts.social ? "Detectado" : "Pendiente"}
+                              {impacts.social ? "✅ Detectado" : "⏳ Pendiente"}
+                            </div>
+                            <div className="text-xs text-muted-foreground mt-1">
+                              Beneficia a la comunidad
                             </div>
                           </div>
 
                           <div
-                            className={`text-center p-3 rounded-lg border-2 ${impacts.environmental ? "bg-emerald-50 border-emerald-200" : "bg-gray-50 border-gray-200"}`}
+                            className={`text-center p-3 sm:p-4 rounded-lg border-2 ${impacts.environmental ? "bg-emerald-50 border-emerald-200" : "bg-gray-50 border-gray-200"}`}
                           >
                             <div
-                              className={`text-2xl mb-1 ${impacts.environmental ? "text-emerald-600" : "text-gray-400"}`}
+                              className={`text-xl sm:text-2xl mb-1 ${impacts.environmental ? "text-emerald-600" : "text-gray-400"}`}
                             >
                               🌱
                             </div>
-                            <div className="text-sm font-medium">Ambiental</div>
+                            <div className="text-sm font-medium">
+                              Impacto Ambiental
+                            </div>
                             <div className="text-xs text-muted-foreground">
                               {impacts.environmental
-                                ? "Detectado"
-                                : "Pendiente"}
+                                ? "✅ Detectado"
+                                : "⏳ Pendiente"}
+                            </div>
+                            <div className="text-xs text-muted-foreground mt-1">
+                              Cuida el medio ambiente
                             </div>
                           </div>
                         </div>
 
                         {/* Botón para analizar impacto */}
-                        <div className="mt-6 flex justify-center">
+                        <div className="mt-4 sm:mt-6 flex justify-center">
                           <Button
                             onClick={analyzeTripleImpact}
-                            className="bg-blue-600 hover:bg-blue-700"
+                            className="bg-blue-600 hover:bg-blue-700 text-sm sm:text-base"
                           >
                             <Target className="h-4 w-4 mr-2" />
                             Analizar Triple Impacto
@@ -876,83 +1420,270 @@ export default function BusinessPlanSimulatorPage() {
 
                   {currentStep === 8 && (
                     <div className="space-y-6">
-                      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                      {/* Financial Introduction */}
+                      <div className="bg-green-50 border border-green-200 rounded-lg p-4 sm:p-6">
+                        <h3 className="text-lg font-semibold text-green-900 mb-2">
+                          💰 Proyecciones Financieras
+                        </h3>
+                        <p className="text-green-800 text-sm sm:text-base">
+                          Define los números clave de tu negocio. Estos datos te
+                          ayudarán a entender la viabilidad financiera y
+                          planificar el crecimiento.
+                        </p>
+                      </div>
+
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-4 sm:gap-6">
                         <div className="space-y-2">
-                          <Label>Costos de Inicio (Bs.)</Label>
+                          <Label className="text-sm sm:text-base font-medium">
+                            Costos de Inicio (Bs.)
+                            <TooltipProvider>
+                              <Tooltip>
+                                <TooltipTrigger>
+                                  <HelpCircle className="h-4 w-4 ml-1 text-muted-foreground" />
+                                </TooltipTrigger>
+                                <TooltipContent className="bg-white border border-gray-200 shadow-lg">
+                                  <p className="max-w-xs text-gray-800">
+                                    Incluye equipos, inventario inicial,
+                                    permisos, marketing inicial, capital de
+                                    trabajo, etc.
+                                  </p>
+                                </TooltipContent>
+                              </Tooltip>
+                            </TooltipProvider>
+                          </Label>
                           <Input
-                            type="number"
+                            type="text"
+                            inputMode="numeric"
+                            placeholder="Ej: 50000"
                             value={
-                              businessPlan.financialProjections.startupCosts
+                              businessPlan.financialProjections.startupCosts ===
+                              0
+                                ? ""
+                                : businessPlan.financialProjections.startupCosts.toString()
                             }
-                            onChange={(e) =>
+                            onChange={(e) => {
+                              const value = e.target.value.replace(
+                                /[^0-9]/g,
+                                ""
+                              );
                               updateBusinessPlan("financialProjections", {
                                 ...businessPlan.financialProjections,
-                                startupCosts: Number(e.target.value),
-                              })
-                            }
+                                startupCosts: value === "" ? 0 : Number(value),
+                              });
+                            }}
+                            className="text-sm sm:text-base"
                           />
+                          <p className="text-xs text-muted-foreground">
+                            💡 Tip: Incluye todos los gastos necesarios para
+                            comenzar
+                          </p>
                         </div>
+
                         <div className="space-y-2">
-                          <Label>Ingresos Mensuales Proyectados (Bs.)</Label>
+                          <Label className="text-sm sm:text-base font-medium">
+                            Ingresos Mensuales Proyectados (Bs.)
+                            <TooltipProvider>
+                              <Tooltip>
+                                <TooltipTrigger>
+                                  <HelpCircle className="h-4 w-4 ml-1 text-muted-foreground" />
+                                </TooltipTrigger>
+                                <TooltipContent className="bg-white border border-gray-200 shadow-lg">
+                                  <p className="max-w-xs text-gray-800">
+                                    Estimación realista de tus ingresos
+                                    mensuales basada en precios y volumen de
+                                    ventas esperado.
+                                  </p>
+                                </TooltipContent>
+                              </Tooltip>
+                            </TooltipProvider>
+                          </Label>
                           <Input
-                            type="number"
+                            type="text"
+                            inputMode="numeric"
+                            placeholder="Ej: 15000"
                             value={
-                              businessPlan.financialProjections.monthlyRevenue
+                              businessPlan.financialProjections
+                                .monthlyRevenue === 0
+                                ? ""
+                                : businessPlan.financialProjections.monthlyRevenue.toString()
                             }
-                            onChange={(e) =>
+                            onChange={(e) => {
+                              const value = e.target.value.replace(
+                                /[^0-9]/g,
+                                ""
+                              );
                               updateBusinessPlan("financialProjections", {
                                 ...businessPlan.financialProjections,
-                                monthlyRevenue: Number(e.target.value),
-                              })
-                            }
+                                monthlyRevenue:
+                                  value === "" ? 0 : Number(value),
+                              });
+                            }}
+                            className="text-sm sm:text-base"
                           />
+                          <p className="text-xs text-muted-foreground">
+                            💡 Tip: Sé conservador en tus estimaciones iniciales
+                          </p>
                         </div>
+
                         <div className="space-y-2">
-                          <Label>Gastos Mensuales (Bs.)</Label>
+                          <Label className="text-sm sm:text-base font-medium">
+                            Gastos Mensuales (Bs.)
+                            <TooltipProvider>
+                              <Tooltip>
+                                <TooltipTrigger>
+                                  <HelpCircle className="h-4 w-4 ml-1 text-muted-foreground" />
+                                </TooltipTrigger>
+                                <TooltipContent className="bg-white border border-gray-200 shadow-lg">
+                                  <p className="max-w-xs text-gray-800">
+                                    Incluye alquiler, salarios, servicios,
+                                    marketing, insumos, etc. Todo lo que gastas
+                                    mensualmente.
+                                  </p>
+                                </TooltipContent>
+                              </Tooltip>
+                            </TooltipProvider>
+                          </Label>
                           <Input
-                            type="number"
+                            type="text"
+                            inputMode="numeric"
+                            placeholder="Ej: 8000"
                             value={
-                              businessPlan.financialProjections.monthlyExpenses
+                              businessPlan.financialProjections
+                                .monthlyExpenses === 0
+                                ? ""
+                                : businessPlan.financialProjections.monthlyExpenses.toString()
                             }
-                            onChange={(e) =>
+                            onChange={(e) => {
+                              const value = e.target.value.replace(
+                                /[^0-9]/g,
+                                ""
+                              );
                               updateBusinessPlan("financialProjections", {
                                 ...businessPlan.financialProjections,
-                                monthlyExpenses: Number(e.target.value),
-                              })
-                            }
+                                monthlyExpenses:
+                                  value === "" ? 0 : Number(value),
+                              });
+                            }}
+                            className="text-sm sm:text-base"
                           />
+                          <p className="text-xs text-muted-foreground">
+                            💡 Tip: No olvides incluir gastos fijos y variables
+                          </p>
                         </div>
+
                         <div className="space-y-2">
-                          <Label>Mes de Punto de Equilibrio</Label>
+                          <Label className="text-sm sm:text-base font-medium">
+                            Mes de Punto de Equilibrio
+                            <TooltipProvider>
+                              <Tooltip>
+                                <TooltipTrigger>
+                                  <HelpCircle className="h-4 w-4 ml-1 text-muted-foreground" />
+                                </TooltipTrigger>
+                                <TooltipContent className="bg-white border border-gray-200 shadow-lg">
+                                  <p className="max-w-xs text-gray-800">
+                                    El mes en que tus ingresos cubren todos tus
+                                    gastos. Se calcula automáticamente.
+                                  </p>
+                                </TooltipContent>
+                              </Tooltip>
+                            </TooltipProvider>
+                          </Label>
                           <Input
-                            type="number"
+                            type="text"
+                            inputMode="numeric"
+                            placeholder="Se calcula automáticamente"
                             value={
-                              businessPlan.financialProjections.breakEvenMonth
+                              businessPlan.financialProjections
+                                .breakEvenMonth === 0
+                                ? ""
+                                : businessPlan.financialProjections.breakEvenMonth.toString()
                             }
-                            onChange={(e) =>
+                            onChange={(e) => {
+                              const value = e.target.value.replace(
+                                /[^0-9]/g,
+                                ""
+                              );
                               updateBusinessPlan("financialProjections", {
                                 ...businessPlan.financialProjections,
-                                breakEvenMonth: Number(e.target.value),
-                              })
-                            }
+                                breakEvenMonth:
+                                  value === "" ? 0 : Number(value),
+                              });
+                            }}
+                            className="text-sm sm:text-base"
                           />
+                          <p className="text-xs text-muted-foreground">
+                            💡 Tip: Se calcula automáticamente basado en tus
+                            otros datos
+                          </p>
                         </div>
                       </div>
                     </div>
                   )}
 
-                  <div className="flex justify-between">
+                  {/* Risk Analysis Step */}
+                  {currentStep === 9 && (
+                    <div className="space-y-6">
+                      {/* Risk Analysis Introduction */}
+                      <div className="bg-orange-50 border border-orange-200 rounded-lg p-4 sm:p-6">
+                        <h3 className="text-lg font-semibold text-orange-900 mb-2">
+                          ⚠️ Análisis de Riesgos
+                        </h3>
+                        <p className="text-orange-800 text-sm sm:text-base">
+                          Identifica los principales riesgos de tu negocio y las
+                          estrategias para mitigarlos. Esto demuestra que has
+                          pensado en los desafíos y tienes un plan para
+                          superarlos.
+                        </p>
+                      </div>
+
+                      <div className="space-y-4">
+                        <Label className="text-lg font-medium">
+                          Describe los principales riesgos y estrategias de
+                          mitigación
+                          <TooltipProvider>
+                            <Tooltip>
+                              <TooltipTrigger>
+                                <HelpCircle className="h-4 w-4 ml-2 text-muted-foreground" />
+                              </TooltipTrigger>
+                              <TooltipContent className="bg-white border border-gray-200 shadow-lg">
+                                <p className="max-w-xs text-gray-800">
+                                  Considera riesgos financieros, de mercado,
+                                  operacionales, tecnológicos y regulatorios.
+                                </p>
+                              </TooltipContent>
+                            </Tooltip>
+                          </TooltipProvider>
+                        </Label>
+                        <Textarea
+                          placeholder="Ejemplo: Riesgo de competencia - Estrategia: Diferenciación por calidad y servicio al cliente. Riesgo financiero - Estrategia: Mantener reservas de efectivo y diversificar fuentes de ingresos..."
+                          value={businessPlan.riskAnalysis}
+                          onChange={(e) =>
+                            updateBusinessPlan("riskAnalysis", e.target.value)
+                          }
+                          className="min-h-[200px] text-sm sm:text-base"
+                        />
+                        <div className="text-sm text-muted-foreground">
+                          💡 Tip: Sé honesto sobre los riesgos. Los
+                          inversionistas valoran la transparencia y ver que
+                          tienes planes de contingencia.
+                        </div>
+                      </div>
+                    </div>
+                  )}
+
+                  <div className="flex flex-col sm:flex-row justify-between gap-4 pt-6">
                     <Button
                       variant="outline"
                       onClick={() =>
                         setCurrentStep(Math.max(0, currentStep - 1))
                       }
                       disabled={currentStep === 0}
+                      className="w-full sm:w-auto"
                     >
                       <ChevronLeft className="h-4 w-4 mr-2" />
                       Anterior
                     </Button>
-                    <div className="flex gap-2">
+                    <div className="flex flex-col sm:flex-row gap-2 w-full sm:w-auto">
                       <Button
                         variant="outline"
                         onClick={async () => {
@@ -965,28 +1696,44 @@ export default function BusinessPlanSimulatorPage() {
                             isCompleted: completionPercentage === 100,
                           });
 
-                                                      if (result.success && result.data) {
-                              // Show success message with better formatting
-                              let message = `✅ Plan guardado exitosamente!\n\n📊 Progreso: ${result.data.completionPercentage}%`;
-                              
-                              // Check if this is a new entrepreneurship creation
-                              if (result.data.message?.includes('created') && !businessPlan.entrepreneurshipId) {
-                                message = `🎉 ¡Emprendimiento creado automáticamente!\n\n` + message + `\n\n💡 Se ha creado un emprendimiento por defecto para tu plan de negocios. Puedes editarlo más tarde desde tu perfil.`;
-                              }
-                              
-                              if (result.data.impactAnalysis?.recommendations?.length > 0) {
-                                const recommendations = result.data.impactAnalysis.recommendations.join('\n• ');
-                                alert(`${message}\n\n💡 Recomendaciones:\n• ${recommendations}`);
-                              } else {
-                                alert(message);
-                              }
-                            } else {
-                              alert(
-                                "❌ Error al guardar el plan:\n" + (result.error || "Error desconocido")
-                              );
+                          if (result.success && result.data) {
+                            // Show success message with better formatting
+                            let message = `✅ Plan guardado exitosamente!\n\n📊 Progreso: ${result.data.completionPercentage}%`;
+
+                            // Check if this is a new entrepreneurship creation
+                            if (
+                              result.data.message?.includes("created") &&
+                              !businessPlan.entrepreneurshipId
+                            ) {
+                              message =
+                                `🎉 ¡Emprendimiento creado automáticamente!\n\n` +
+                                message +
+                                `\n\n💡 Se ha creado un emprendimiento por defecto para tu plan de negocios. Puedes editarlo más tarde desde tu perfil.`;
                             }
+
+                            if (
+                              result.data.impactAnalysis?.recommendations
+                                ?.length > 0
+                            ) {
+                              const recommendations =
+                                result.data.impactAnalysis.recommendations.join(
+                                  "\n• "
+                                );
+                              alert(
+                                `${message}\n\n💡 Recomendaciones:\n• ${recommendations}`
+                              );
+                            } else {
+                              alert(message);
+                            }
+                          } else {
+                            alert(
+                              "❌ Error al guardar el plan:\n" +
+                                (result.error || "Error desconocido")
+                            );
+                          }
                         }}
                         disabled={loading || autoSaving}
+                        className="w-full sm:w-auto"
                       >
                         <Save className="h-4 w-4 mr-2" />
                         {loading || autoSaving
@@ -1004,22 +1751,18 @@ export default function BusinessPlanSimulatorPage() {
                             });
 
                             if (result.success && result.data) {
-                              // Show completion message with better formatting
-                              const message = `🎉 ¡Plan de negocios finalizado!\n\n📊 Progreso: ${result.data.completionPercentage}%\n\n¡Felicitaciones por completar tu plan de negocios!`;
-                              
-                              if (result.data.impactAnalysis?.recommendations?.length > 0) {
-                                const recommendations = result.data.impactAnalysis.recommendations.join('\n• ');
-                                alert(`${message}\n\n💡 Recomendaciones finales:\n• ${recommendations}`);
-                              } else {
-                                alert(message);
-                              }
+                              // Store completion data and show dialog
+                              setCompletionData(result.data);
+                              setShowCompletionDialog(true);
                             } else {
                               alert(
-                                "❌ Error al finalizar el plan:\n" + (result.error || "Error desconocido")
+                                "❌ Error al finalizar el plan:\n" +
+                                  (result.error || "Error desconocido")
                               );
                             }
                           }}
                           disabled={loading || autoSaving}
+                          className="w-full sm:w-auto"
                         >
                           <CheckCircle className="h-4 w-4 mr-2" />
                           {loading || autoSaving
@@ -1033,6 +1776,7 @@ export default function BusinessPlanSimulatorPage() {
                               Math.min(planSteps.length - 1, currentStep + 1)
                             )
                           }
+                          className="w-full sm:w-auto"
                         >
                           Siguiente
                           <ChevronRight className="h-4 w-4 ml-2" />
@@ -1048,34 +1792,44 @@ export default function BusinessPlanSimulatorPage() {
           {/* Progress Overview */}
           <Card>
             <CardHeader>
-              <CardTitle>Progreso del Plan</CardTitle>
+              <CardTitle className="text-lg sm:text-xl">
+                Progreso del Plan
+              </CardTitle>
+              <p className="text-sm text-muted-foreground">
+                Haz clic en cualquier paso para navegar directamente
+              </p>
             </CardHeader>
             <CardContent>
-              <div className="grid grid-cols-3 md:grid-cols-5 gap-4">
+              <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-5 gap-3 sm:gap-4">
                 {planSteps.map((step, index) => (
                   <div
                     key={index}
-                    className={`text-center p-3 rounded-lg border cursor-pointer transition-colors ${
+                    className={`text-center p-3 sm:p-4 rounded-lg border cursor-pointer transition-colors ${
                       index <= currentStep
-                        ? "bg-green-50 border-green-200"
-                        : "bg-gray-50 border-gray-200"
+                        ? "bg-green-50 border-green-200 hover:bg-green-100"
+                        : "bg-gray-50 border-gray-200 hover:bg-gray-100"
                     }`}
                     onClick={() => setCurrentStep(index)}
                   >
                     <div
-                      className={`w-8 h-8 mx-auto mb-2 rounded-full flex items-center justify-center ${
+                      className={`w-6 h-6 sm:w-8 sm:h-8 mx-auto mb-2 rounded-full flex items-center justify-center ${
                         index <= currentStep
                           ? "bg-green-100 text-green-600"
                           : "bg-gray-100 text-gray-400"
                       }`}
                     >
                       {index < currentStep ? (
-                        <CheckCircle className="h-4 w-4" />
+                        <CheckCircle className="h-3 w-3 sm:h-4 sm:w-4" />
                       ) : (
-                        step.icon
+                        <div className="scale-75 sm:scale-100">{step.icon}</div>
                       )}
                     </div>
-                    <p className="text-xs font-medium">{step.title}</p>
+                    <p className="text-xs sm:text-sm font-medium leading-tight">
+                      {step.title}
+                    </p>
+                    <p className="text-xs text-muted-foreground mt-1 hidden sm:block">
+                      {index + 1}
+                    </p>
                   </div>
                 ))}
               </div>
@@ -1084,20 +1838,22 @@ export default function BusinessPlanSimulatorPage() {
         </TabsContent>
 
         {/* Business Model Canvas */}
-        <TabsContent value="canvas" className="space-y-6">
+        <TabsContent value="canvas" className="space-y-4 sm:space-y-6">
           <Card>
             <CardHeader>
-              <CardTitle>Business Model Canvas</CardTitle>
-              <p className="text-muted-foreground">
+              <CardTitle className="text-lg sm:text-xl">
+                Business Model Canvas
+              </CardTitle>
+              <p className="text-sm sm:text-base text-muted-foreground">
                 Visualiza tu modelo de negocio de forma interactiva
               </p>
             </CardHeader>
             <CardContent>
-              <div className="grid grid-cols-5 gap-4 min-h-[600px]">
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5 gap-3 sm:gap-4 min-h-[400px] sm:min-h-[600px]">
                 {/* Key Partners */}
                 <Card className="border-2 border-blue-200">
-                  <CardHeader className="pb-3">
-                    <CardTitle className="text-sm text-blue-600">
+                  <CardHeader className="pb-2 sm:pb-3">
+                    <CardTitle className="text-xs sm:text-sm text-blue-600">
                       Socios Clave
                     </CardTitle>
                   </CardHeader>
@@ -1111,15 +1867,15 @@ export default function BusinessPlanSimulatorPage() {
                           keyPartners: e.target.value,
                         }))
                       }
-                      className="min-h-[100px] border-none p-0 resize-none"
+                      className="min-h-[80px] sm:min-h-[100px] border-none p-0 resize-none text-xs sm:text-sm"
                     />
                   </CardContent>
                 </Card>
 
                 {/* Key Activities */}
                 <Card className="border-2 border-green-200">
-                  <CardHeader className="pb-3">
-                    <CardTitle className="text-sm text-green-600">
+                  <CardHeader className="pb-2 sm:pb-3">
+                    <CardTitle className="text-xs sm:text-sm text-green-600">
                       Actividades Clave
                     </CardTitle>
                   </CardHeader>
@@ -1133,15 +1889,15 @@ export default function BusinessPlanSimulatorPage() {
                           keyActivities: e.target.value,
                         }))
                       }
-                      className="min-h-[100px] border-none p-0 resize-none"
+                      className="min-h-[80px] sm:min-h-[100px] border-none p-0 resize-none text-xs sm:text-sm"
                     />
                   </CardContent>
                 </Card>
 
                 {/* Value Propositions */}
-                <Card className="border-2 border-red-200 row-span-2">
-                  <CardHeader className="pb-3">
-                    <CardTitle className="text-sm text-red-600">
+                <Card className="border-2 border-red-200 sm:row-span-2">
+                  <CardHeader className="pb-2 sm:pb-3">
+                    <CardTitle className="text-xs sm:text-sm text-red-600">
                       Propuesta de Valor
                     </CardTitle>
                   </CardHeader>
@@ -1155,15 +1911,15 @@ export default function BusinessPlanSimulatorPage() {
                           valuePropositions: e.target.value,
                         }))
                       }
-                      className="min-h-[200px] border-none p-0 resize-none"
+                      className="min-h-[120px] sm:min-h-[200px] border-none p-0 resize-none text-xs sm:text-sm"
                     />
                   </CardContent>
                 </Card>
 
                 {/* Customer Relationships */}
                 <Card className="border-2 border-purple-200">
-                  <CardHeader className="pb-3">
-                    <CardTitle className="text-sm text-purple-600">
+                  <CardHeader className="pb-2 sm:pb-3">
+                    <CardTitle className="text-xs sm:text-sm text-purple-600">
                       Relación con Clientes
                     </CardTitle>
                   </CardHeader>
@@ -1177,15 +1933,15 @@ export default function BusinessPlanSimulatorPage() {
                           customerRelationships: e.target.value,
                         }))
                       }
-                      className="min-h-[100px] border-none p-0 resize-none"
+                      className="min-h-[80px] sm:min-h-[100px] border-none p-0 resize-none text-xs sm:text-sm"
                     />
                   </CardContent>
                 </Card>
 
                 {/* Customer Segments */}
-                <Card className="border-2 border-orange-200 row-span-2">
-                  <CardHeader className="pb-3">
-                    <CardTitle className="text-sm text-orange-600">
+                <Card className="border-2 border-orange-200 sm:row-span-2">
+                  <CardHeader className="pb-2 sm:pb-3">
+                    <CardTitle className="text-xs sm:text-sm text-orange-600">
                       Segmentos de Clientes
                     </CardTitle>
                   </CardHeader>
@@ -1199,15 +1955,15 @@ export default function BusinessPlanSimulatorPage() {
                           customerSegments: e.target.value,
                         }))
                       }
-                      className="min-h-[200px] border-none p-0 resize-none"
+                      className="min-h-[120px] sm:min-h-[200px] border-none p-0 resize-none text-xs sm:text-sm"
                     />
                   </CardContent>
                 </Card>
 
                 {/* Key Resources */}
                 <Card className="border-2 border-green-200">
-                  <CardHeader className="pb-3">
-                    <CardTitle className="text-sm text-green-600">
+                  <CardHeader className="pb-2 sm:pb-3">
+                    <CardTitle className="text-xs sm:text-sm text-green-600">
                       Recursos Clave
                     </CardTitle>
                   </CardHeader>
@@ -1221,15 +1977,15 @@ export default function BusinessPlanSimulatorPage() {
                           keyResources: e.target.value,
                         }))
                       }
-                      className="min-h-[100px] border-none p-0 resize-none"
+                      className="min-h-[80px] sm:min-h-[100px] border-none p-0 resize-none text-xs sm:text-sm"
                     />
                   </CardContent>
                 </Card>
 
                 {/* Channels */}
                 <Card className="border-2 border-purple-200">
-                  <CardHeader className="pb-3">
-                    <CardTitle className="text-sm text-purple-600">
+                  <CardHeader className="pb-2 sm:pb-3">
+                    <CardTitle className="text-xs sm:text-sm text-purple-600">
                       Canales
                     </CardTitle>
                   </CardHeader>
@@ -1243,15 +1999,15 @@ export default function BusinessPlanSimulatorPage() {
                           channels: e.target.value,
                         }))
                       }
-                      className="min-h-[100px] border-none p-0 resize-none"
+                      className="min-h-[80px] sm:min-h-[100px] border-none p-0 resize-none text-xs sm:text-sm"
                     />
                   </CardContent>
                 </Card>
 
                 {/* Cost Structure */}
-                <Card className="border-2 border-yellow-200 col-span-2">
-                  <CardHeader className="pb-3">
-                    <CardTitle className="text-sm text-yellow-600">
+                <Card className="border-2 border-yellow-200 sm:col-span-2">
+                  <CardHeader className="pb-2 sm:pb-3">
+                    <CardTitle className="text-xs sm:text-sm text-yellow-600">
                       Estructura de Costos
                     </CardTitle>
                   </CardHeader>
@@ -1265,15 +2021,15 @@ export default function BusinessPlanSimulatorPage() {
                           costStructure: e.target.value,
                         }))
                       }
-                      className="min-h-[100px] border-none p-0 resize-none"
+                      className="min-h-[80px] sm:min-h-[100px] border-none p-0 resize-none text-xs sm:text-sm"
                     />
                   </CardContent>
                 </Card>
 
                 {/* Revenue Streams */}
-                <Card className="border-2 border-teal-200 col-span-3">
-                  <CardHeader className="pb-3">
-                    <CardTitle className="text-sm text-teal-600">
+                <Card className="border-2 border-teal-200 sm:col-span-3">
+                  <CardHeader className="pb-2 sm:pb-3">
+                    <CardTitle className="text-xs sm:text-sm text-teal-600">
                       Fuentes de Ingresos
                     </CardTitle>
                   </CardHeader>
@@ -1287,23 +2043,25 @@ export default function BusinessPlanSimulatorPage() {
                           revenueStreams: e.target.value,
                         }))
                       }
-                      className="min-h-[100px] border-none p-0 resize-none"
+                      className="min-h-[80px] sm:min-h-[100px] border-none p-0 resize-none text-xs sm:text-sm"
                     />
                   </CardContent>
                 </Card>
               </div>
 
-              <div className="flex justify-end mt-6 gap-2">
+              <div className="flex flex-col sm:flex-row justify-end mt-4 sm:mt-6 gap-2">
                 <Button
                   variant="outline"
                   onClick={async () => {
                     try {
-                      const completionPercentage = calculateCompletion(businessPlan);
-                      
+                      const completionPercentage =
+                        calculateCompletion(businessPlan);
+
                       // Format data for backend
                       const backendData = {
                         entrepreneurshipId: businessPlan.entrepreneurshipId,
-                        tripleImpactAssessment: businessPlan.tripleImpactAssessment,
+                        tripleImpactAssessment:
+                          businessPlan.tripleImpactAssessment,
                         executiveSummary: businessPlan.executiveSummary,
                         businessDescription: businessPlan.businessDescription,
                         marketAnalysis: businessPlan.marketAnalysis,
@@ -1312,23 +2070,30 @@ export default function BusinessPlanSimulatorPage() {
                         operationalPlan: businessPlan.operationalPlan,
                         managementTeam: businessPlan.managementTeam,
                         costStructure: {
-                          startupCosts: businessPlan.financialProjections.startupCosts,
-                          monthlyExpenses: businessPlan.financialProjections.monthlyExpenses,
-                          breakEvenMonth: businessPlan.financialProjections.breakEvenMonth,
+                          startupCosts:
+                            businessPlan.financialProjections.startupCosts,
+                          monthlyExpenses:
+                            businessPlan.financialProjections.monthlyExpenses,
+                          breakEvenMonth:
+                            businessPlan.financialProjections.breakEvenMonth,
                         },
-                        revenueStreams: businessPlan.financialProjections.revenueStreams,
+                        revenueStreams:
+                          businessPlan.financialProjections.revenueStreams,
                         riskAnalysis: businessPlan.riskAnalysis,
                         businessModelCanvas,
                         currentStep,
                         completionPercentage,
                         isCompleted: completionPercentage === 100,
                       };
-                      
+
                       const result = await saveSimulatorData(backendData);
                       if (result.success) {
                         alert("✅ Canvas guardado exitosamente!");
                       } else {
-                        alert("❌ Error al guardar: " + (result.error || "Error desconocido"));
+                        alert(
+                          "❌ Error al guardar: " +
+                            (result.error || "Error desconocido")
+                        );
                       }
                     } catch (error) {
                       console.error("Error saving canvas:", error);
@@ -1336,15 +2101,14 @@ export default function BusinessPlanSimulatorPage() {
                     }
                   }}
                   disabled={loading || autoSaving}
+                  className="w-full sm:w-auto"
                 >
                   <Save className="h-4 w-4 mr-2" />
                   {loading || autoSaving ? "Guardando..." : "Guardar Canvas"}
                 </Button>
                 <Button
-                  onClick={() => {
-                    // TODO: Implement PDF export functionality
-                    alert("Funcionalidad de exportación a PDF en desarrollo");
-                  }}
+                  onClick={downloadCanvasPDF}
+                  className="w-full sm:w-auto"
                 >
                   <Download className="h-4 w-4 mr-2" />
                   Exportar a PDF
@@ -1355,107 +2119,243 @@ export default function BusinessPlanSimulatorPage() {
         </TabsContent>
 
         {/* Financial Calculator */}
-        <TabsContent value="calculator" className="space-y-6">
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        <TabsContent value="calculator" className="space-y-4 sm:space-y-6">
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 sm:gap-6">
             {/* Input Parameters */}
             <Card>
               <CardHeader>
-                <CardTitle className="flex items-center gap-2">
+                <CardTitle className="flex items-center gap-2 text-lg sm:text-xl">
                   <Calculator className="h-5 w-5" />
                   Parámetros Financieros
                 </CardTitle>
               </CardHeader>
               <CardContent className="space-y-4">
                 <div className="space-y-2">
-                  <Label>Inversión Inicial (Bs.)</Label>
+                  <Label className="text-sm sm:text-base">
+                    Inversión Inicial (Bs.)
+                    <TooltipProvider>
+                      <Tooltip>
+                        <TooltipTrigger>
+                          <HelpCircle className="h-4 w-4 ml-1 text-muted-foreground" />
+                        </TooltipTrigger>
+                        <TooltipContent className="bg-white border border-gray-200 shadow-lg">
+                          <p className="max-w-xs text-gray-800">
+                            Capital inicial necesario para comenzar el negocio:
+                            equipos, inventario, permisos, capital de trabajo,
+                            etc.
+                          </p>
+                        </TooltipContent>
+                      </Tooltip>
+                    </TooltipProvider>
+                  </Label>
                   <Input
-                    type="number"
-                    value={financialData.initialInvestment}
-                    onChange={(e) => {
-                      const value = Number(e.target.value);
-                      setFinancialData((prev) => ({
-                        ...prev,
-                        initialInvestment: value,
-                      }));
-                      updateBusinessPlan("financialProjections", {
-                        ...businessPlan.financialProjections,
-                        startupCosts: value,
-                      });
-                    }}
-                  />
-                </div>
-                <div className="space-y-2">
-                  <Label>Ingresos Mensuales (Bs.)</Label>
-                  <Input
-                    type="number"
-                    value={financialData.monthlyRevenue}
-                    onChange={(e) => {
-                      const value = Number(e.target.value);
-                      setFinancialData((prev) => ({
-                        ...prev,
-                        monthlyRevenue: value,
-                      }));
-                      updateBusinessPlan("financialProjections", {
-                        ...businessPlan.financialProjections,
-                        monthlyRevenue: value,
-                      });
-                    }}
-                  />
-                </div>
-                <div className="space-y-2">
-                  <Label>Costos Fijos Mensuales (Bs.)</Label>
-                  <Input
-                    type="number"
-                    value={financialData.fixedCosts}
-                    onChange={(e) => {
-                      const value = Number(e.target.value);
-                      setFinancialData((prev) => ({
-                        ...prev,
-                        fixedCosts: value,
-                      }));
-                      // Update monthly expenses in business plan
-                      const totalExpenses = value + financialData.variableCosts;
-                      updateBusinessPlan("financialProjections", {
-                        ...businessPlan.financialProjections,
-                        monthlyExpenses: totalExpenses,
-                      });
-                    }}
-                  />
-                </div>
-                <div className="space-y-2">
-                  <Label>Costos Variables Mensuales (Bs.)</Label>
-                  <Input
-                    type="number"
-                    value={financialData.variableCosts}
-                    onChange={(e) => {
-                      const value = Number(e.target.value);
-                      setFinancialData((prev) => ({
-                        ...prev,
-                        variableCosts: value,
-                      }));
-                      // Update monthly expenses in business plan
-                      const totalExpenses = financialData.fixedCosts + value;
-                      updateBusinessPlan("financialProjections", {
-                        ...businessPlan.financialProjections,
-                        monthlyExpenses: totalExpenses,
-                      });
-                    }}
-                  />
-                </div>
-                <div className="space-y-2">
-                  <Label>Meses de Proyección</Label>
-                  <Input
-                    type="number"
-                    min="1"
-                    max="60"
-                    value={financialData.projectionMonths}
-                    onChange={(e) =>
-                      setFinancialData((prev) => ({
-                        ...prev,
-                        projectionMonths: Number(e.target.value),
-                      }))
+                    type="text"
+                    inputMode="numeric"
+                    placeholder="Ej: 50000"
+                    value={
+                      financialData.initialInvestment === 0
+                        ? ""
+                        : financialData.initialInvestment.toString()
                     }
+                    onChange={(e) => {
+                      const value = e.target.value.replace(/[^0-9]/g, "");
+                      const numValue = value === "" ? 0 : Number(value);
+                      setFinancialData((prev) => ({
+                        ...prev,
+                        initialInvestment: numValue,
+                      }));
+                      updateBusinessPlan("financialProjections", {
+                        ...businessPlan.financialProjections,
+                        startupCosts: numValue,
+                      });
+                    }}
+                    className="text-sm sm:text-base"
                   />
+                  <p className="text-xs text-muted-foreground">
+                    💡 Tip: Incluye todos los gastos necesarios para comenzar
+                  </p>
+                </div>
+                <div className="space-y-2">
+                  <Label className="text-sm sm:text-base">
+                    Ingresos Mensuales (Bs.)
+                    <TooltipProvider>
+                      <Tooltip>
+                        <TooltipTrigger>
+                          <HelpCircle className="h-4 w-4 ml-1 text-muted-foreground" />
+                        </TooltipTrigger>
+                        <TooltipContent className="bg-white border border-gray-200 shadow-lg">
+                          <p className="max-w-xs text-gray-800">
+                            Estimación realista de tus ingresos mensuales basada
+                            en precios y volumen de ventas esperado.
+                          </p>
+                        </TooltipContent>
+                      </Tooltip>
+                    </TooltipProvider>
+                  </Label>
+                  <Input
+                    type="text"
+                    inputMode="numeric"
+                    placeholder="Ej: 15000"
+                    value={
+                      financialData.monthlyRevenue === 0
+                        ? ""
+                        : financialData.monthlyRevenue.toString()
+                    }
+                    onChange={(e) => {
+                      const value = e.target.value.replace(/[^0-9]/g, "");
+                      const numValue = value === "" ? 0 : Number(value);
+                      setFinancialData((prev) => ({
+                        ...prev,
+                        monthlyRevenue: numValue,
+                      }));
+                      updateBusinessPlan("financialProjections", {
+                        ...businessPlan.financialProjections,
+                        monthlyRevenue: numValue,
+                      });
+                    }}
+                    className="text-sm sm:text-base"
+                  />
+                  <p className="text-xs text-muted-foreground">
+                    💡 Tip: Sé conservador en tus estimaciones iniciales
+                  </p>
+                </div>
+                <div className="space-y-2">
+                  <Label className="text-sm sm:text-base">
+                    Costos Fijos Mensuales (Bs.)
+                    <TooltipProvider>
+                      <Tooltip>
+                        <TooltipTrigger>
+                          <HelpCircle className="h-4 w-4 ml-1 text-muted-foreground" />
+                        </TooltipTrigger>
+                        <TooltipContent className="bg-white border border-gray-200 shadow-lg">
+                          <p className="max-w-xs text-gray-800">
+                            Gastos que no cambian independientemente del volumen
+                            de ventas: alquiler, salarios fijos, seguros,
+                            servicios básicos, etc.
+                          </p>
+                        </TooltipContent>
+                      </Tooltip>
+                    </TooltipProvider>
+                  </Label>
+                  <Input
+                    type="text"
+                    inputMode="numeric"
+                    placeholder="Ej: 5000"
+                    value={
+                      financialData.fixedCosts === 0
+                        ? ""
+                        : financialData.fixedCosts.toString()
+                    }
+                    onChange={(e) => {
+                      const value = e.target.value.replace(/[^0-9]/g, "");
+                      const numValue = value === "" ? 0 : Number(value);
+                      setFinancialData((prev) => ({
+                        ...prev,
+                        fixedCosts: numValue,
+                      }));
+                      // Update monthly expenses in business plan
+                      const totalExpenses =
+                        numValue + financialData.variableCosts;
+                      updateBusinessPlan("financialProjections", {
+                        ...businessPlan.financialProjections,
+                        monthlyExpenses: totalExpenses,
+                      });
+                    }}
+                    className="text-sm sm:text-base"
+                  />
+                  <p className="text-xs text-muted-foreground">
+                    💡 Tip: Gastos que pagas sin importar cuánto vendas
+                  </p>
+                </div>
+                <div className="space-y-2">
+                  <Label className="text-sm sm:text-base">
+                    Costos Variables Mensuales (Bs.)
+                    <TooltipProvider>
+                      <Tooltip>
+                        <TooltipTrigger>
+                          <HelpCircle className="h-4 w-4 ml-1 text-muted-foreground" />
+                        </TooltipTrigger>
+                        <TooltipContent className="bg-white border border-gray-200 shadow-lg">
+                          <p className="max-w-xs text-gray-800">
+                            Gastos que cambian según el volumen de ventas:
+                            materias primas, comisiones, empaques, transporte,
+                            etc.
+                          </p>
+                        </TooltipContent>
+                      </Tooltip>
+                    </TooltipProvider>
+                  </Label>
+                  <Input
+                    type="text"
+                    inputMode="numeric"
+                    placeholder="Ej: 3000"
+                    value={
+                      financialData.variableCosts === 0
+                        ? ""
+                        : financialData.variableCosts.toString()
+                    }
+                    onChange={(e) => {
+                      const value = e.target.value.replace(/[^0-9]/g, "");
+                      const numValue = value === "" ? 0 : Number(value);
+                      setFinancialData((prev) => ({
+                        ...prev,
+                        variableCosts: numValue,
+                      }));
+                      // Update monthly expenses in business plan
+                      const totalExpenses = financialData.fixedCosts + numValue;
+                      updateBusinessPlan("financialProjections", {
+                        ...businessPlan.financialProjections,
+                        monthlyExpenses: totalExpenses,
+                      });
+                    }}
+                    className="text-sm sm:text-base"
+                  />
+                  <p className="text-xs text-muted-foreground">
+                    💡 Tip: Gastos que aumentan con más ventas
+                  </p>
+                </div>
+                <div className="space-y-2">
+                  <Label className="text-sm sm:text-base">
+                    Meses de Proyección
+                    <TooltipProvider>
+                      <Tooltip>
+                        <TooltipTrigger>
+                          <HelpCircle className="h-4 w-4 ml-1 text-muted-foreground" />
+                        </TooltipTrigger>
+                        <TooltipContent className="bg-white border border-gray-200 shadow-lg">
+                          <p className="max-w-xs text-gray-800">
+                            Período de tiempo para proyectar el flujo de caja.
+                            Recomendado: 12-24 meses para análisis inicial.
+                          </p>
+                        </TooltipContent>
+                      </Tooltip>
+                    </TooltipProvider>
+                  </Label>
+                  <Input
+                    type="text"
+                    inputMode="numeric"
+                    placeholder="Ej: 12"
+                    value={
+                      financialData.projectionMonths === 0
+                        ? ""
+                        : financialData.projectionMonths.toString()
+                    }
+                    onChange={(e) => {
+                      const value = e.target.value.replace(/[^0-9]/g, "");
+                      const numValue =
+                        value === ""
+                          ? 0
+                          : Math.min(60, Math.max(1, Number(value)));
+                      setFinancialData((prev) => ({
+                        ...prev,
+                        projectionMonths: numValue,
+                      }));
+                    }}
+                    className="text-sm sm:text-base"
+                  />
+                  <p className="text-xs text-muted-foreground">
+                    💡 Tip: 12-24 meses es ideal para análisis inicial
+                  </p>
                 </div>
               </CardContent>
             </Card>
@@ -1463,26 +2363,26 @@ export default function BusinessPlanSimulatorPage() {
             {/* Key Metrics */}
             <Card>
               <CardHeader>
-                <CardTitle className="flex items-center gap-2">
+                <CardTitle className="flex items-center gap-2 text-lg sm:text-xl">
                   <PieChart className="h-5 w-5" />
                   Indicadores Clave
                 </CardTitle>
               </CardHeader>
               <CardContent className="space-y-4">
-                <div className="grid grid-cols-2 gap-4">
-                  <div className="text-center p-4 bg-green-50 rounded-lg">
-                    <div className="text-2xl font-bold text-green-600">
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4">
+                  <div className="text-center p-3 sm:p-4 bg-green-50 rounded-lg">
+                    <div className="text-xl sm:text-2xl font-bold text-green-600">
                       {calculateBreakEven()}
                     </div>
-                    <div className="text-sm text-muted-foreground">
+                    <div className="text-xs sm:text-sm text-muted-foreground">
                       Punto de Equilibrio (meses)
                     </div>
                   </div>
-                  <div className="text-center p-4 bg-blue-50 rounded-lg">
-                    <div className="text-2xl font-bold text-blue-600">
+                  <div className="text-center p-3 sm:p-4 bg-blue-50 rounded-lg">
+                    <div className="text-xl sm:text-2xl font-bold text-blue-600">
                       {calculateROI()}%
                     </div>
-                    <div className="text-sm text-muted-foreground">
+                    <div className="text-xs sm:text-sm text-muted-foreground">
                       ROI Anual
                     </div>
                   </div>
@@ -1491,7 +2391,7 @@ export default function BusinessPlanSimulatorPage() {
                 <Separator />
 
                 <div className="space-y-3">
-                  <div className="flex justify-between">
+                  <div className="flex justify-between text-sm sm:text-base">
                     <span>Ganancia Mensual:</span>
                     <span className="font-semibold">
                       Bs.{" "}
@@ -1502,21 +2402,23 @@ export default function BusinessPlanSimulatorPage() {
                       ).toLocaleString()}
                     </span>
                   </div>
-                  <div className="flex justify-between">
+                  <div className="flex justify-between text-sm sm:text-base">
                     <span>Margen de Ganancia:</span>
                     <span className="font-semibold">
-                      {(
-                        ((financialData.monthlyRevenue -
-                          financialData.fixedCosts -
-                          financialData.variableCosts) /
-                          financialData.monthlyRevenue) *
-                        100
-                      ).toFixed(1)}
+                      {financialData.monthlyRevenue > 0
+                        ? (
+                            ((financialData.monthlyRevenue -
+                              financialData.fixedCosts -
+                              financialData.variableCosts) /
+                              financialData.monthlyRevenue) *
+                            100
+                          ).toFixed(1)
+                        : "0.0"}
                       %
                     </span>
                   </div>
-                  <div className="flex justify-between">
-                    <span>Ganancia Anual:</span>
+                  <div className="flex justify-between text-sm sm:text-base">
+                    <span>Ganancia Anual (Bruta):</span>
                     <span className="font-semibold">
                       Bs.{" "}
                       {(
@@ -1528,6 +2430,56 @@ export default function BusinessPlanSimulatorPage() {
                     </span>
                   </div>
                 </div>
+
+                <Separator />
+
+                <div className="space-y-3">
+                  <div className="text-sm font-medium text-orange-600 mb-2">
+                    Impuestos Anuales
+                  </div>
+                  <div className="flex justify-between text-sm sm:text-base">
+                    <span>IUE (25% sobre utilidades):</span>
+                    <span className="font-semibold text-orange-600">
+                      Bs. {calculateIUE().toLocaleString()}
+                    </span>
+                  </div>
+                  <div className="flex justify-between text-sm sm:text-base">
+                    <span>IT (3% sobre ingresos):</span>
+                    <span className="font-semibold text-orange-600">
+                      Bs. {calculateIT().toLocaleString()}
+                    </span>
+                  </div>
+                  <div className="flex justify-between text-sm sm:text-base">
+                    <span>Total Impuestos:</span>
+                    <span className="font-semibold text-red-600">
+                      Bs. {(calculateIUE() + calculateIT()).toLocaleString()}
+                    </span>
+                  </div>
+                </div>
+
+                <Separator />
+
+                <div className="space-y-3">
+                  <div className="flex justify-between text-sm sm:text-base">
+                    <span>Ganancia Anual (Neta):</span>
+                    <span className="font-semibold text-green-600">
+                      Bs. {calculateNetProfit().toLocaleString()}
+                    </span>
+                  </div>
+                  <div className="flex justify-between text-sm sm:text-base">
+                    <span>ROI Neto:</span>
+                    <span className="font-semibold text-green-600">
+                      {financialData.initialInvestment > 0
+                        ? (
+                            (calculateNetProfit() /
+                              financialData.initialInvestment) *
+                            100
+                          ).toFixed(1)
+                        : "0.0"}
+                      %
+                    </span>
+                  </div>
+                </div>
               </CardContent>
             </Card>
           </div>
@@ -1535,39 +2487,47 @@ export default function BusinessPlanSimulatorPage() {
           {/* Cash Flow Projection */}
           <Card>
             <CardHeader>
-              <CardTitle>Proyección de Flujo de Caja</CardTitle>
+              <CardTitle className="text-lg sm:text-xl">
+                Proyección de Flujo de Caja
+              </CardTitle>
             </CardHeader>
             <CardContent>
               <div className="overflow-x-auto">
-                <table className="w-full text-sm">
+                <table className="w-full text-xs sm:text-sm">
                   <thead>
                     <tr className="border-b">
-                      <th className="text-left p-2">Mes</th>
-                      <th className="text-right p-2">Ingresos</th>
-                      <th className="text-right p-2">Gastos</th>
-                      <th className="text-right p-2">Ganancia</th>
-                      <th className="text-right p-2">Acumulado</th>
+                      <th className="text-left p-1 sm:p-2">Mes</th>
+                      <th className="text-right p-1 sm:p-2">Ingresos</th>
+                      <th className="text-right p-1 sm:p-2">Gastos</th>
+                      <th className="text-right p-1 sm:p-2">Ganancia</th>
+                      <th className="text-right p-1 sm:p-2">Acumulado</th>
                     </tr>
                   </thead>
                   <tbody>
                     {generateCashFlow().map((month) => (
                       <tr key={month.month} className="border-b">
-                        <td className="p-2">{month.month}</td>
-                        <td className="text-right p-2">
-                          Bs. {month.revenue.toLocaleString()}
+                        <td className="p-1 sm:p-2 font-medium">
+                          {month.month}
                         </td>
-                        <td className="text-right p-2">
-                          Bs. {month.expenses.toLocaleString()}
+                        <td className="text-right p-1 sm:p-2">
+                          <span className="hidden sm:inline">Bs. </span>
+                          {month.revenue.toLocaleString()}
+                        </td>
+                        <td className="text-right p-1 sm:p-2">
+                          <span className="hidden sm:inline">Bs. </span>
+                          {month.expenses.toLocaleString()}
                         </td>
                         <td
-                          className={`text-right p-2 ${month.profit >= 0 ? "text-green-600" : "text-red-600"}`}
+                          className={`text-right p-1 sm:p-2 ${month.profit >= 0 ? "text-green-600" : "text-red-600"}`}
                         >
-                          Bs. {month.profit.toLocaleString()}
+                          <span className="hidden sm:inline">Bs. </span>
+                          {month.profit.toLocaleString()}
                         </td>
                         <td
-                          className={`text-right p-2 font-semibold ${month.cumulative >= 0 ? "text-green-600" : "text-red-600"}`}
+                          className={`text-right p-1 sm:p-2 font-semibold ${month.cumulative >= 0 ? "text-green-600" : "text-red-600"}`}
                         >
-                          Bs. {month.cumulative.toLocaleString()}
+                          <span className="hidden sm:inline">Bs. </span>
+                          {month.cumulative.toLocaleString()}
                         </td>
                       </tr>
                     ))}
@@ -1578,6 +2538,122 @@ export default function BusinessPlanSimulatorPage() {
           </Card>
         </TabsContent>
       </Tabs>
+
+      {/* Completion Dialog */}
+      <Dialog
+        open={showCompletionDialog}
+        onOpenChange={setShowCompletionDialog}
+      >
+        <DialogContent className="max-w-2xl">
+          <DialogHeader>
+            <DialogTitle className="text-2xl font-bold text-center text-green-600 flex items-center justify-center gap-2">
+              <CheckCircle className="h-8 w-8" />
+              ¡Plan de Negocios Completado!
+            </DialogTitle>
+            <DialogDescription className="text-center text-lg">
+              Felicitaciones por finalizar tu plan de negocios
+            </DialogDescription>
+          </DialogHeader>
+
+          <div className="space-y-6 py-4">
+            {/* Progress Display */}
+            <div className="text-center">
+              <div className="text-4xl font-bold text-green-600 mb-2">
+                {completionData?.completionPercentage || 100}%
+              </div>
+              <div className="text-sm text-muted-foreground">
+                Progreso completado
+              </div>
+            </div>
+
+            {/* Success Message */}
+            <div className="bg-green-50 border border-green-200 rounded-lg p-4">
+              <div className="flex items-center gap-2 text-green-800">
+                <CheckCircle className="h-5 w-5" />
+                <span className="font-medium">
+                  ¡Tu plan de negocios ha sido guardado exitosamente!
+                </span>
+              </div>
+            </div>
+
+            {/* Entrepreneurship Creation Message */}
+            {completionData?.message?.includes("created") &&
+              !businessPlan.entrepreneurshipId && (
+                <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
+                  <div className="flex items-center gap-2 text-blue-800">
+                    <Lightbulb className="h-5 w-5" />
+                    <div>
+                      <div className="font-medium">
+                        ¡Emprendimiento creado automáticamente!
+                      </div>
+                      <div className="text-sm mt-1">
+                        Se ha creado un emprendimiento por defecto para tu plan
+                        de negocios. Puedes editarlo más tarde desde tu perfil.
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              )}
+
+            {/* Recommendations */}
+            {completionData?.impactAnalysis?.recommendations?.length > 0 && (
+              <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-4">
+                <div className="flex items-start gap-2 text-yellow-800">
+                  <Target className="h-5 w-5 mt-0.5" />
+                  <div>
+                    <div className="font-medium mb-2">
+                      Recomendaciones finales:
+                    </div>
+                    <ul className="text-sm space-y-1">
+                      {completionData.impactAnalysis.recommendations.map(
+                        (rec: string, index: number) => (
+                          <li key={index} className="flex items-start gap-2">
+                            <span className="text-yellow-600 mt-1">•</span>
+                            <span>{rec}</span>
+                          </li>
+                        )
+                      )}
+                    </ul>
+                  </div>
+                </div>
+              </div>
+            )}
+
+            {/* Action Buttons */}
+            <div className="flex flex-col sm:flex-row gap-3 pt-4">
+              <Button
+                onClick={() => setShowCompletionDialog(false)}
+                className="flex-1"
+              >
+                <CheckCircle className="h-4 w-4 mr-2" />
+                Continuar
+              </Button>
+              <Button
+                variant="outline"
+                onClick={() => {
+                  setShowCompletionDialog(false);
+                  setActiveTab("canvas");
+                }}
+                className="flex-1"
+              >
+                <FileText className="h-4 w-4 mr-2" />
+                Ver Canvas
+              </Button>
+              <Button
+                variant="outline"
+                onClick={() => {
+                  setShowCompletionDialog(false);
+                  setActiveTab("calculator");
+                }}
+                className="flex-1"
+              >
+                <Calculator className="h-4 w-4 mr-2" />
+                Ver Calculadora
+              </Button>
+            </div>
+          </div>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }

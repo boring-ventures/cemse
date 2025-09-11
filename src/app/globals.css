@@ -36,14 +36,14 @@ body {
     --chart-4: 43 74% 66%;
     --chart-5: 27 87% 67%;
     --radius: 0.5rem;
-    --sidebar-background: 0 0% 98%;
+    --sidebar-background: 0 0% 100%;
     --sidebar-foreground: 240 5.3% 26.1%;
-    --sidebar-primary: 240 5.9% 10%;
-    --sidebar-primary-foreground: 0 0% 98%;
-    --sidebar-accent: 240 4.8% 95.9%;
+    --sidebar-primary: 262 83% 58%;
+    --sidebar-primary-foreground: 0 0% 100%;
+    --sidebar-accent: 240 4.8% 96%;
     --sidebar-accent-foreground: 240 5.9% 10%;
-    --sidebar-border: 220 13% 91%;
-    --sidebar-ring: 217.2 91.2% 59.8%;
+    --sidebar-border: 240 5.9% 90%;
+    --sidebar-ring: 262 83% 58%;
   }
   .dark {
     --background: 0 0% 3.9%;
@@ -72,12 +72,12 @@ body {
     --chart-5: 340 75% 55%;
     --sidebar-background: 240 5.9% 10%;
     --sidebar-foreground: 240 4.8% 95.9%;
-    --sidebar-primary: 224.3 76.3% 48%;
+    --sidebar-primary: 262 83% 58%;
     --sidebar-primary-foreground: 0 0% 100%;
     --sidebar-accent: 240 3.7% 15.9%;
     --sidebar-accent-foreground: 240 4.8% 95.9%;
     --sidebar-border: 240 3.7% 15.9%;
-    --sidebar-ring: 217.2 91.2% 59.8%;
+    --sidebar-ring: 262 83% 58%;
   }
 }
 
@@ -149,33 +149,35 @@ body {
 
 /* Estilos para arreglar problemas de layout del sidebar */
 [data-sidebar-menu-button] {
-  min-height: 2.5rem !important;
+  min-block-size: 2.5rem !important;
   padding: 0.5rem 0.75rem !important;
   white-space: nowrap !important;
-  overflow: visible !important;
+  overflow: hidden !important;
+  max-width: 100% !important;
 }
 
 [data-sidebar-menu-button] span {
   white-space: nowrap !important;
-  overflow: visible !important;
-  text-overflow: unset !important;
-  max-width: none !important;
-  flex-shrink: 0 !important;
+  overflow: hidden !important;
+  text-overflow: ellipsis !important;
+  max-width: calc(16rem - 4rem) !important;
+  flex-shrink: 1 !important;
 }
 
 [data-sidebar-menu-sub-button] {
   min-height: 2.25rem !important;
   padding: 0.375rem 0.75rem !important;
   white-space: nowrap !important;
-  overflow: visible !important;
+  overflow: hidden !important;
+  max-width: 100% !important;
 }
 
 [data-sidebar-menu-sub-button] span {
   white-space: nowrap !important;
-  overflow: visible !important;
-  text-overflow: unset !important;
-  max-width: none !important;
-  flex-shrink: 0 !important;
+  overflow: hidden !important;
+  text-overflow: ellipsis !important;
+  max-width: calc(16rem - 5rem) !important;
+  flex-shrink: 1 !important;
 }
 
 [data-sidebar-group-label] {
@@ -186,7 +188,9 @@ body {
   letter-spacing: 0.05em !important;
   color: hsl(var(--muted-foreground)) !important;
   white-space: nowrap !important;
-  overflow: visible !important;
+  overflow: hidden !important;
+  text-overflow: ellipsis !important;
+  max-width: calc(16rem - 1.5rem) !important;
 }
 
 /* Asegurar que los iconos no se corten */
@@ -208,10 +212,12 @@ body {
   padding-left: 1rem !important;
 }
 
-/* Asegurar que el sidebar tenga suficiente ancho */
+/* Asegurar que el sidebar tenga suficiente ancho y no cause overflow */
 [data-sidebar] {
   min-width: 16rem !important;
   width: 16rem !important;
+  max-width: 16rem !important;
+  overflow-x: hidden !important;
 }
 
 /* Estilos para elementos deshabilitados */
@@ -227,4 +233,174 @@ body {
   font-size: 0.875rem !important;
   line-height: 1.25rem !important;
   font-weight: 500 !important;
+}
+
+/* Modern sidebar enhancements */
+[data-sidebar] {
+  background: linear-gradient(
+    180deg,
+    hsl(var(--sidebar-background)) 0%,
+    hsl(var(--sidebar-background)) 100%
+  );
+  border-right: 1px solid hsl(var(--sidebar-border));
+  box-shadow:
+    0 0 0 1px hsl(var(--sidebar-border) / 0.05),
+    0 1px 2px 0 hsl(var(--sidebar-border) / 0.1);
+}
+
+[data-sidebar-menu-button] {
+  position: relative;
+  transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+  border-radius: 0.5rem;
+  margin: 0.125rem 0.5rem;
+}
+
+[data-sidebar-menu-button]:hover {
+  background: hsl(var(--sidebar-accent));
+  transform: translateX(2px);
+  box-shadow:
+    0 1px 3px 0 hsl(var(--sidebar-border) / 0.1),
+    0 1px 2px 0 hsl(var(--sidebar-border) / 0.06);
+}
+
+[data-sidebar-menu-button][data-active="true"] {
+  background: linear-gradient(
+    135deg,
+    hsl(var(--sidebar-primary)) 0%,
+    hsl(var(--sidebar-primary) / 0.9) 100%
+  );
+  color: hsl(var(--sidebar-primary-foreground));
+  box-shadow:
+    0 2px 4px 0 hsl(var(--sidebar-primary) / 0.2),
+    0 1px 2px 0 hsl(var(--sidebar-primary) / 0.1);
+  transform: translateX(2px);
+}
+
+[data-sidebar-menu-button][data-active="true"]:hover {
+  background: linear-gradient(
+    135deg,
+    hsl(var(--sidebar-primary) / 0.9) 0%,
+    hsl(var(--sidebar-primary) / 0.8) 100%
+  );
+}
+
+[data-sidebar-menu-sub-button] {
+  position: relative;
+  transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+  border-radius: 0.375rem;
+  margin: 0.125rem 0.25rem;
+}
+
+[data-sidebar-menu-sub-button]:hover {
+  background: hsl(var(--sidebar-accent));
+  transform: translateX(1px);
+}
+
+[data-sidebar-menu-sub-button][data-active="true"] {
+  background: hsl(var(--sidebar-primary) / 0.1);
+  color: hsl(var(--sidebar-primary));
+  border-left: 2px solid hsl(var(--sidebar-primary));
+}
+
+[data-sidebar-group-label] {
+  position: relative;
+  margin: 1rem 0.5rem 0.5rem;
+  padding: 0.5rem 0.75rem 0.25rem;
+  font-size: 0.75rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: hsl(var(--muted-foreground));
+  border-bottom: 1px solid hsl(var(--sidebar-border) / 0.3);
+}
+
+[data-sidebar-group-label]:first-child {
+  margin-top: 0.5rem;
+}
+
+/* Enhanced team switcher styling */
+[data-sidebar-menu-button][data-size="lg"] {
+  background: linear-gradient(
+    135deg,
+    hsl(var(--sidebar-accent)) 0%,
+    hsl(var(--sidebar-accent) / 0.8) 100%
+  );
+  border: 1px solid hsl(var(--sidebar-border));
+  margin: 0.5rem;
+  padding: 0.75rem;
+}
+
+[data-sidebar-menu-button][data-size="lg"]:hover {
+  background: linear-gradient(
+    135deg,
+    hsl(var(--sidebar-accent) / 0.9) 0%,
+    hsl(var(--sidebar-accent) / 0.7) 100%
+  );
+  border-color: hsl(var(--sidebar-primary) / 0.3);
+  transform: translateY(-1px);
+  box-shadow:
+    0 4px 6px -1px hsl(var(--sidebar-border) / 0.1),
+    0 2px 4px -1px hsl(var(--sidebar-border) / 0.06);
+}
+
+/* Sidebar content - allow vertical scrolling when needed */
+[data-sidebar="content"] {
+  overflow-x: hidden !important;
+  overflow-y: auto !important;
+  max-width: 100% !important;
+  scrollbar-width: none !important; /* Firefox */
+  -ms-overflow-style: none !important; /* IE and Edge */
+}
+
+/* Hide scrollbar for webkit browsers */
+[data-sidebar="content"]::-webkit-scrollbar {
+  display: none !important;
+}
+
+/* Prevent scrolling on individual sidebar elements but allow content to flow */
+[data-sidebar="group"],
+[data-sidebar="menu"],
+[data-sidebar="menu-item"],
+[data-sidebar="menu-button"],
+[data-sidebar="menu-sub"],
+[data-sidebar="menu-sub-button"] {
+  overflow: visible !important;
+}
+
+/* Removed conflicting scrollbar styles - now handled by .sidebar-content-scroll */
+
+/* Enhanced collapsible animations */
+.CollapsibleContent {
+  overflow: hidden;
+  transition: height 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.CollapsibleContent[data-state="open"] {
+  animation: slideDown 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.CollapsibleContent[data-state="closed"] {
+  animation: slideUp 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+@keyframes slideDown {
+  from {
+    height: 0;
+    opacity: 0;
+  }
+  to {
+    height: var(--radix-collapsible-content-height);
+    opacity: 1;
+  }
+}
+
+@keyframes slideUp {
+  from {
+    height: var(--radix-collapsible-content-height);
+    opacity: 1;
+  }
+  to {
+    height: 0;
+    opacity: 0;
+  }
 }

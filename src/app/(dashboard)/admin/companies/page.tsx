@@ -80,21 +80,79 @@ import type {
 import { useToast } from "@/hooks/use-toast";
 import { copyToClipboard } from "@/lib/utils";
 
+// Predefined business sectors
+const BUSINESS_SECTORS = [
+  "Tecnología",
+  "Salud",
+  "Educación",
+  "Construcción",
+  "Comercio",
+  "Manufactura",
+  "Financiero",
+  "Turismo",
+  "Agricultura",
+  "Transporte",
+  "Energía",
+  "Medios",
+  "Consultoría",
+  "Inmobiliario",
+  "Alimentación",
+  "Textil",
+  "Farmacéutico",
+  "Automotriz",
+  "Aerospace",
+  "Otro",
+];
+
 // Utility function to generate credentials
-const generateCredentials = (companyName: string, email: string) => {
-  // Generate username: lowercase, no spaces, no special chars, max 20 chars
-  const username = companyName
+export const generateCredentials = (companyName: string, email: string) => {
+  const UPPERS = "ABCDEFGHIJKLMNOPQRSTUVWXYZ";
+  const LOWERS = "abcdefghijklmnopqrstuvwxyz";
+  const NUMBERS = "0123456789";
+  const SPECIALS = `!@#$%^&*(),.?":{}|<>`;
+  const ALL = UPPERS + LOWERS + NUMBERS + SPECIALS;
+
+  // Helper: random seguro
+  function randIndex(max: number): number {
+    const g = (globalThis as any).crypto;
+    if (g?.getRandomValues && typeof Uint32Array !== "undefined") {
+      const arr = new Uint32Array(1);
+      g.getRandomValues(arr);
+      return arr[0] % max;
+    }
+    return Math.floor(Math.random() * max);
+  }
+
+  function pick(set: string) {
+    return set[randIndex(set.length)];
+  }
+
+  function shuffle<T>(arr: T[]): T[] {
+    for (let i = arr.length - 1; i > 0; i--) {
+      const j = randIndex(i + 1);
+      [arr[i], arr[j]] = [arr[j], arr[i]];
+    }
+    return arr;
+  }
+
+  // Username
+  let username = companyName
     .toLowerCase()
     .replace(/[^a-z0-9]/g, "")
     .substring(0, 20);
-
-  // Generate password: 12 characters with mix of letters, numbers, and symbols
-  const chars =
-    "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789!@#$%^&*";
-  let password = "";
-  for (let i = 0; i < 12; i++) {
-    password += chars.charAt(Math.floor(Math.random() * chars.length));
+  if (!username) {
+    const local = email.split("@")[0] || "user";
+    username = local
+      .toLowerCase()
+      .replace(/[^a-z0-9]/g, "")
+      .substring(0, 20);
   }
+
+  // Password
+  const PASSWORD_LENGTH = 12;
+  const chars = [pick(UPPERS), pick(LOWERS), pick(NUMBERS), pick(SPECIALS)];
+  while (chars.length < PASSWORD_LENGTH) chars.push(pick(ALL));
+  const password = shuffle(chars).join("");
 
   return { username, password };
 };
@@ -148,6 +206,9 @@ export default function CompaniesPage() {
     username: string;
     password: string;
   } | null>(null);
+  const [selectedBusinessSector, setSelectedBusinessSector] =
+    useState<string>("");
+  const [customBusinessSector, setCustomBusinessSector] = useState<string>("");
 
   // Form state
   const [formData, setFormData] = useState<CreateCompanyRequest>({
@@ -226,41 +287,248 @@ export default function CompaniesPage() {
     return matchesSearch && matchesStatus;
   });
 
-  // Validation function
+  // Enhanced validation function
   const validateForm = () => {
     const errors: Record<string, string> = {};
 
+    // Name validation
     if (!formData.name.trim()) {
       errors.name = "El nombre de la empresa es requerido";
+    } else if (formData.name.length < 2) {
+      errors.name = "El nombre debe tener al menos 2 caracteres";
+    } else if (formData.name.length > 100) {
+      errors.name = "El nombre no puede tener más de 100 caracteres";
+    } else if (!/^[a-zA-ZáéíóúÁÉÍÓÚñÑ\s\d\-\.&]+$/.test(formData.name)) {
+      errors.name =
+        "El nombre solo puede contener letras, números, espacios, guiones, puntos y &";
     }
 
+    // Email validation
     if (!formData.email.trim()) {
       errors.email = "El email es requerido";
     } else if (!isValidEmail(formData.email)) {
       errors.email = "El formato del email no es válido";
+    } else if (formData.email.length > 100) {
+      errors.email = "El email no puede tener más de 100 caracteres";
     }
 
+    // Municipality validation
     if (!formData.municipalityId) {
       errors.municipalityId = "Debe seleccionar un municipio";
     }
 
+    // Username validation
     if (!formData.username.trim()) {
       errors.username = "El nombre de usuario es requerido";
     } else if (formData.username.length < 3) {
       errors.username = "El nombre de usuario debe tener al menos 3 caracteres";
+    } else if (formData.username.length > 30) {
+      errors.username =
+        "El nombre de usuario no puede tener más de 30 caracteres";
+    } else if (!/^[a-zA-Z0-9_]+$/.test(formData.username)) {
+      errors.username =
+        "El nombre de usuario solo puede contener letras, números y guiones bajos";
     }
 
+    // Password validation
     if (!formData.password) {
       errors.password = "La contraseña es requerida";
-    } else {
-      const passwordValidation = validatePasswordStrength(formData.password);
-      if (!passwordValidation.isValid) {
-        errors.password = `La contraseña debe cumplir: ${passwordValidation.errors.join(", ")}`;
+    } else if (formData.password.length < 6) {
+      errors.password = "La contraseña debe tener al menos 6 caracteres";
+    } else if (formData.password.length > 50) {
+      errors.password = "La contraseña no puede tener más de 50 caracteres";
+    }
+
+    // Phone validation (optional)
+    if (formData.phone && formData.phone.trim()) {
+      if (
+        !/^(\+591|591)?[0-9\s-]{7,10}$/.test(formData.phone.replace(/\s/g, ""))
+      ) {
+        errors.phone = "Formato de teléfono inválido. Use: +591 4 4222222";
       }
+    }
+
+    // Website validation (optional)
+    if (formData.website && formData.website.trim()) {
+      try {
+        new URL(formData.website);
+      } catch {
+        errors.website = "URL inválida";
+      }
+    }
+
+    // Founded year validation (optional)
+    if (formData.foundedYear) {
+      const currentYear = new Date().getFullYear();
+      if (formData.foundedYear < 1800 || formData.foundedYear > currentYear) {
+        errors.foundedYear = `El año debe estar entre 1800 y ${currentYear}`;
+      }
+    }
+
+    // Description validation (optional)
+    if (formData.description && formData.description.length > 500) {
+      errors.description =
+        "La descripción no puede tener más de 500 caracteres";
+    }
+
+    // Address validation (optional)
+    if (formData.address && formData.address.length > 200) {
+      errors.address = "La dirección no puede tener más de 200 caracteres";
     }
 
     setValidationErrors(errors);
     return Object.keys(errors).length === 0;
+  };
+
+  // Handle business sector selection
+  const handleBusinessSectorChange = (value: string) => {
+    setSelectedBusinessSector(value);
+    if (value === "Otro") {
+      setFormData((prev) => ({ ...prev, businessSector: "" }));
+    } else {
+      setFormData((prev) => ({ ...prev, businessSector: value }));
+      setCustomBusinessSector("");
+    }
+  };
+
+  // Handle custom business sector input
+  const handleCustomBusinessSectorChange = (value: string) => {
+    setCustomBusinessSector(value);
+    setFormData((prev) => ({ ...prev, businessSector: value }));
+  };
+
+  // Input formatting and restriction functions
+  const formatPhoneNumber = (value: string) => {
+    // Only allow numbers, +, -, and spaces
+    let cleaned = value.replace(/[^0-9+\-\s]/g, "");
+
+    if (cleaned.length > 0) {
+      // Remove all non-digits except + at the beginning
+      const digits = cleaned.replace(/[^\d]/g, "");
+      const hasPlus = cleaned.startsWith("+");
+
+      if (hasPlus && digits.length > 0) {
+        // Format: +591 4 4222222
+        if (digits.length <= 3) {
+          cleaned = `+${digits}`;
+        } else if (digits.length <= 6) {
+          cleaned = `+${digits.slice(0, 3)} ${digits.slice(3)}`;
+        } else {
+          cleaned = `+${digits.slice(0, 3)} ${digits.slice(3, 4)} ${digits.slice(4, 10)}`;
+        }
+      } else if (!hasPlus && digits.length > 0) {
+        // Format: 591 4 4222222 or 4 4222222
+        if (digits.length <= 3) {
+          cleaned = digits;
+        } else if (digits.length <= 6) {
+          cleaned = `${digits.slice(0, 3)} ${digits.slice(3)}`;
+        } else {
+          cleaned = `${digits.slice(0, 3)} ${digits.slice(3, 4)} ${digits.slice(4, 10)}`;
+        }
+      }
+    }
+
+    return cleaned;
+  };
+
+  const restrictToAlphanumericUnderscore = (value: string) => {
+    return value.replace(/[^a-zA-Z0-9_]/g, "");
+  };
+
+  const restrictToNameCharacters = (value: string) => {
+    return value.replace(/[^a-zA-ZáéíóúÁÉÍÓÚñÑ\s\d\-\.&]/g, "");
+  };
+
+  const restrictToNumbers = (value: string) => {
+    return value.replace(/[^0-9]/g, "");
+  };
+
+  const handleKeyPress = (e: React.KeyboardEvent, field: string) => {
+    // Prevent invalid characters from being typed
+    if (field === "phone") {
+      if (
+        !/[0-9+\-\s]/.test(e.key) &&
+        ![
+          "Backspace",
+          "Delete",
+          "ArrowLeft",
+          "ArrowRight",
+          "Tab",
+          "Enter",
+        ].includes(e.key)
+      ) {
+        e.preventDefault();
+      }
+    } else if (field === "username") {
+      if (
+        !/[a-zA-Z0-9_]/.test(e.key) &&
+        ![
+          "Backspace",
+          "Delete",
+          "ArrowLeft",
+          "ArrowRight",
+          "Tab",
+          "Enter",
+        ].includes(e.key)
+      ) {
+        e.preventDefault();
+      }
+    } else if (field === "name") {
+      if (
+        !/[a-zA-ZáéíóúÁÉÍÓÚñÑ\s\d\-\.&]/.test(e.key) &&
+        ![
+          "Backspace",
+          "Delete",
+          "ArrowLeft",
+          "ArrowRight",
+          "Tab",
+          "Enter",
+        ].includes(e.key)
+      ) {
+        e.preventDefault();
+      }
+    } else if (field === "foundedYear") {
+      if (
+        !/[0-9]/.test(e.key) &&
+        ![
+          "Backspace",
+          "Delete",
+          "ArrowLeft",
+          "ArrowRight",
+          "Tab",
+          "Enter",
+        ].includes(e.key)
+      ) {
+        e.preventDefault();
+      }
+    }
+  };
+
+  const handleFieldChange = (field: string, value: any) => {
+    let processedValue = value;
+
+    // Apply field-specific restrictions
+    if (field === "phone") {
+      processedValue = formatPhoneNumber(String(value || ""));
+    } else if (field === "username") {
+      processedValue = restrictToAlphanumericUnderscore(String(value || ""));
+    } else if (field === "name") {
+      processedValue = restrictToNameCharacters(String(value || ""));
+    } else if (field === "foundedYear") {
+      const numValue = restrictToNumbers(String(value || ""));
+      processedValue = numValue ? parseInt(numValue, 10) : undefined;
+    }
+
+    setFormData((prev) => ({ ...prev, [field]: processedValue }));
+
+    // Clear validation error when user starts typing
+    if (validationErrors[field]) {
+      setValidationErrors((prev) => {
+        const newErrors = { ...prev };
+        delete newErrors[field];
+        return newErrors;
+      });
+    }
   };
 
   // Auto-generate credentials
@@ -289,22 +557,33 @@ export default function CompaniesPage() {
 
   // Copy credentials to clipboard
   const copyToClipboardHandler = async (text: string, type: string) => {
-    await copyToClipboard(
-      text,
-      () => {
-        toast({
-          title: "Copiado",
-          description: `${type} copiado al portapapeles`,
-        });
-      },
-      (errorMessage) => {
-        toast({
-          title: "Error",
-          description: errorMessage,
-          variant: "destructive",
-        });
-      }
-    );
+    try {
+      const success = await copyToClipboard(
+        text,
+        () => {
+          toast({
+            title: "Copiado",
+            description: `${type} copiado al portapapeles`,
+          });
+        },
+        (errorMessage) => {
+          toast({
+            title: "Error",
+            description: errorMessage,
+            variant: "destructive",
+          });
+        }
+      );
+      return success;
+    } catch (error) {
+      console.error(`Copy ${type} error:`, error);
+      toast({
+        title: "Error",
+        description: `Error al copiar ${type}`,
+        variant: "destructive",
+      });
+      return false;
+    }
   };
 
   // Handlers
@@ -328,6 +607,8 @@ export default function CompaniesPage() {
     setGeneratedCredentials(null);
     setShowGeneratedCredentials(false);
     setShowPassword(false);
+    setSelectedBusinessSector("");
+    setCustomBusinessSector("");
   };
 
   const handleCreateCompany = async () => {
@@ -357,10 +638,12 @@ export default function CompaniesPage() {
       });
 
       // Show credentials modal with the credentials used for creation
-      setGeneratedCredentials({
+      const credentials = {
         username: formData.username,
         password: formData.password,
-      });
+      };
+      console.log("Setting generated credentials:", credentials);
+      setGeneratedCredentials(credentials);
       setShowGeneratedCredentials(true);
 
       // Don't close the create dialog yet, let user see credentials first
@@ -390,10 +673,14 @@ export default function CompaniesPage() {
 
   const handleEditCompany = (company: Company) => {
     setEditingCompany(company);
+    const businessSector = company.businessSector || "";
+    const isCustomSector =
+      businessSector && !BUSINESS_SECTORS.includes(businessSector);
+
     setFormData({
       name: company.name,
       description: company.description || "",
-      businessSector: company.businessSector || "",
+      businessSector: businessSector,
       companySize: company.companySize || undefined,
       foundedYear: company.foundedYear || new Date().getFullYear(),
       website: company.website || "",
@@ -405,6 +692,16 @@ export default function CompaniesPage() {
       password: "", // Don't pre-fill password
       isActive: company.isActive,
     });
+
+    // Set the business sector selection state
+    if (isCustomSector) {
+      setSelectedBusinessSector("Otro");
+      setCustomBusinessSector(businessSector);
+    } else {
+      setSelectedBusinessSector(businessSector);
+      setCustomBusinessSector("");
+    }
+
     setValidationErrors({});
   };
 
@@ -588,9 +885,8 @@ export default function CompaniesPage() {
                   <Input
                     id="name"
                     value={formData.name}
-                    onChange={(e) =>
-                      setFormData({ ...formData, name: e.target.value })
-                    }
+                    onChange={(e) => handleFieldChange("name", e.target.value)}
+                    onKeyPress={(e) => handleKeyPress(e, "name")}
                     placeholder="Ingrese el nombre de la empresa"
                     className={validationErrors.name ? "border-red-500" : ""}
                     disabled={createCompanyMutation.isPending}
@@ -608,9 +904,7 @@ export default function CompaniesPage() {
                     id="email"
                     type="email"
                     value={formData.email}
-                    onChange={(e) =>
-                      setFormData({ ...formData, email: e.target.value })
-                    }
+                    onChange={(e) => handleFieldChange("email", e.target.value)}
                     placeholder="contacto@empresa.com"
                     className={validationErrors.email ? "border-red-500" : ""}
                     disabled={createCompanyMutation.isPending}
@@ -657,17 +951,32 @@ export default function CompaniesPage() {
 
                 <div className="space-y-2">
                   <Label htmlFor="businessSector">Sector de Negocio</Label>
-                  <Input
-                    id="businessSector"
-                    value={formData.businessSector}
-                    onChange={(e) =>
-                      setFormData({
-                        ...formData,
-                        businessSector: e.target.value,
-                      })
-                    }
-                    placeholder="Ej: Tecnología, Salud, Educación"
-                  />
+                  <div className="space-y-2">
+                    <Select
+                      value={selectedBusinessSector}
+                      onValueChange={handleBusinessSectorChange}
+                    >
+                      <SelectTrigger>
+                        <SelectValue placeholder="Selecciona un sector de negocio" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {BUSINESS_SECTORS.map((sector) => (
+                          <SelectItem key={sector} value={sector}>
+                            {sector}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                    {selectedBusinessSector === "Otro" && (
+                      <Input
+                        placeholder="Especifica el sector de negocio"
+                        value={customBusinessSector}
+                        onChange={(e) =>
+                          handleCustomBusinessSectorChange(e.target.value)
+                        }
+                      />
+                    )}
+                  </div>
                 </div>
 
                 <div className="space-y-2">
@@ -703,16 +1012,22 @@ export default function CompaniesPage() {
                   <Input
                     id="foundedYear"
                     type="number"
-                    value={formData.foundedYear}
+                    value={formData.foundedYear || ""}
                     onChange={(e) =>
-                      setFormData({
-                        ...formData,
-                        foundedYear: parseInt(e.target.value),
-                      })
+                      handleFieldChange("foundedYear", e.target.value)
                     }
+                    onKeyPress={(e) => handleKeyPress(e, "foundedYear")}
                     min="1900"
                     max={new Date().getFullYear()}
+                    className={
+                      validationErrors.foundedYear ? "border-red-500" : ""
+                    }
                   />
+                  {validationErrors.foundedYear && (
+                    <p className="text-sm text-red-500">
+                      {validationErrors.foundedYear}
+                    </p>
+                  )}
                 </div>
 
                 <div className="space-y-2">
@@ -720,11 +1035,16 @@ export default function CompaniesPage() {
                   <Input
                     id="phone"
                     value={formData.phone}
-                    onChange={(e) =>
-                      setFormData({ ...formData, phone: e.target.value })
-                    }
+                    onChange={(e) => handleFieldChange("phone", e.target.value)}
+                    onKeyPress={(e) => handleKeyPress(e, "phone")}
                     placeholder="+591 12345678"
+                    className={validationErrors.phone ? "border-red-500" : ""}
                   />
+                  {validationErrors.phone && (
+                    <p className="text-sm text-red-500">
+                      {validationErrors.phone}
+                    </p>
+                  )}
                 </div>
 
                 <div className="space-y-2">
@@ -733,10 +1053,16 @@ export default function CompaniesPage() {
                     id="website"
                     value={formData.website}
                     onChange={(e) =>
-                      setFormData({ ...formData, website: e.target.value })
+                      handleFieldChange("website", e.target.value)
                     }
                     placeholder="https://www.empresa.com"
+                    className={validationErrors.website ? "border-red-500" : ""}
                   />
+                  {validationErrors.website && (
+                    <p className="text-sm text-red-500">
+                      {validationErrors.website}
+                    </p>
+                  )}
                 </div>
 
                 <div className="space-y-2 col-span-2">
@@ -745,10 +1071,16 @@ export default function CompaniesPage() {
                     id="address"
                     value={formData.address}
                     onChange={(e) =>
-                      setFormData({ ...formData, address: e.target.value })
+                      handleFieldChange("address", e.target.value)
                     }
                     placeholder="Dirección completa de la empresa"
+                    className={validationErrors.address ? "border-red-500" : ""}
                   />
+                  {validationErrors.address && (
+                    <p className="text-sm text-red-500">
+                      {validationErrors.address}
+                    </p>
+                  )}
                 </div>
 
                 <div className="space-y-2 col-span-2">
@@ -757,11 +1089,19 @@ export default function CompaniesPage() {
                     id="description"
                     value={formData.description}
                     onChange={(e) =>
-                      setFormData({ ...formData, description: e.target.value })
+                      handleFieldChange("description", e.target.value)
                     }
                     placeholder="Descripción de la empresa y sus actividades"
                     rows={3}
+                    className={
+                      validationErrors.description ? "border-red-500" : ""
+                    }
                   />
+                  {validationErrors.description && (
+                    <p className="text-sm text-red-500">
+                      {validationErrors.description}
+                    </p>
+                  )}
                 </div>
 
                 {/* Login Credentials Section */}
@@ -793,8 +1133,9 @@ export default function CompaniesPage() {
                     id="username"
                     value={formData.username}
                     onChange={(e) =>
-                      setFormData({ ...formData, username: e.target.value })
+                      handleFieldChange("username", e.target.value)
                     }
+                    onKeyPress={(e) => handleKeyPress(e, "username")}
                     placeholder="usuario_empresa"
                     className={
                       validationErrors.username ? "border-red-500" : ""
@@ -815,7 +1156,7 @@ export default function CompaniesPage() {
                       type={showPassword ? "text" : "password"}
                       value={formData.password}
                       onChange={(e) =>
-                        setFormData({ ...formData, password: e.target.value })
+                        handleFieldChange("password", e.target.value)
                       }
                       placeholder="Contraseña segura"
                       className={
@@ -1191,14 +1532,32 @@ export default function CompaniesPage() {
 
             <div className="space-y-2">
               <Label htmlFor="edit-businessSector">Sector de Negocio</Label>
-              <Input
-                id="edit-businessSector"
-                value={formData.businessSector}
-                onChange={(e) =>
-                  setFormData({ ...formData, businessSector: e.target.value })
-                }
-                placeholder="Ej: Tecnología, Salud, Educación"
-              />
+              <div className="space-y-2">
+                <Select
+                  value={selectedBusinessSector}
+                  onValueChange={handleBusinessSectorChange}
+                >
+                  <SelectTrigger>
+                    <SelectValue placeholder="Selecciona un sector de negocio" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {BUSINESS_SECTORS.map((sector) => (
+                      <SelectItem key={sector} value={sector}>
+                        {sector}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+                {selectedBusinessSector === "Otro" && (
+                  <Input
+                    placeholder="Especifica el sector de negocio"
+                    value={customBusinessSector}
+                    onChange={(e) =>
+                      handleCustomBusinessSectorChange(e.target.value)
+                    }
+                  />
+                )}
+              </div>
             </div>
 
             <div className="space-y-2">
@@ -1481,48 +1840,60 @@ export default function CompaniesPage() {
               <>
                 <div className="space-y-2">
                   <Label>Usuario</Label>
-                  <div className="flex items-center gap-2">
-                    <Input
-                      value={generatedCredentials.username}
-                      readOnly
-                      className="font-mono"
-                    />
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      onClick={() =>
-                        copyToClipboardHandler(
-                          generatedCredentials.username,
-                          "Usuario"
-                        )
-                      }
-                    >
-                      <Copy className="h-4 w-4" />
-                    </Button>
-                  </div>
+                  <Input
+                    value={generatedCredentials.username}
+                    readOnly
+                    className="font-mono"
+                  />
                 </div>
 
                 <div className="space-y-2">
                   <Label>Contraseña</Label>
-                  <div className="flex items-center gap-2">
-                    <Input
-                      value={generatedCredentials.password}
-                      readOnly
-                      className="font-mono"
-                    />
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      onClick={() =>
-                        copyToClipboardHandler(
-                          generatedCredentials.password,
-                          "Contraseña"
-                        )
+                  <Input
+                    value={generatedCredentials.password}
+                    readOnly
+                    className="font-mono"
+                  />
+                </div>
+
+                <div className="flex justify-center pt-2">
+                  <Button
+                    variant="outline"
+                    onClick={async () => {
+                      if (!generatedCredentials) {
+                        toast({
+                          title: "Error",
+                          description: "No hay credenciales para copiar",
+                          variant: "destructive",
+                        });
+                        return;
                       }
-                    >
-                      <Copy className="h-4 w-4" />
-                    </Button>
-                  </div>
+
+                      const credentialsText = `Usuario: ${generatedCredentials.username}\nContraseña: ${generatedCredentials.password}`;
+
+                      const success = await copyToClipboard(
+                        credentialsText,
+                        () => {
+                          toast({
+                            title: "Copiado",
+                            description:
+                              "Credenciales copiadas al portapapeles",
+                          });
+                        },
+                        (errorMessage) => {
+                          toast({
+                            title: "Error",
+                            description: errorMessage,
+                            variant: "destructive",
+                          });
+                        }
+                      );
+                    }}
+                    className="flex items-center gap-2"
+                  >
+                    <Copy className="h-4 w-4" />
+                    Copiar Credenciales
+                  </Button>
                 </div>
               </>
             )}

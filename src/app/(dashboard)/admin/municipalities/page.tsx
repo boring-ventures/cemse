@@ -62,10 +62,15 @@ export default function MunicipalitiesPage() {
   const deleteMunicipality = useDeleteMunicipality();
   const { toast } = useToast();
 
-  // Filter municipalities based on search term
+  // Filter municipalities based on search term and institution type
   const filteredMunicipalities = (municipalities || []).filter(
     (municipality) => {
       if (!municipality) return false;
+
+      // Filter out municipalities (institution type MUNICIPALITY) for municipal government users
+      if (municipality.institutionType === "MUNICIPALITY") {
+        return false;
+      }
 
       const searchLower = (searchTerm || "").toLowerCase();
       const municipalityName = (municipality.name || "").toLowerCase();
@@ -82,12 +87,16 @@ export default function MunicipalitiesPage() {
     }
   );
 
-  // Calculate statistics
+  // Calculate statistics (excluding municipalities with type MUNICIPALITY)
+  const nonMunicipalityInstitutions = municipalities.filter(
+    (m) => m.institutionType !== "MUNICIPALITY"
+  );
+
   const stats = {
-    total: municipalities.length,
-    active: municipalities.filter((m) => m.isActive).length,
-    inactive: municipalities.filter((m) => !m.isActive).length,
-    totalCompanies: municipalities.reduce(
+    total: nonMunicipalityInstitutions.length,
+    active: nonMunicipalityInstitutions.filter((m) => m.isActive).length,
+    inactive: nonMunicipalityInstitutions.filter((m) => !m.isActive).length,
+    totalCompanies: nonMunicipalityInstitutions.reduce(
       (sum, m) => sum + (m.companies?.length || 0),
       0
     ),
@@ -97,15 +106,15 @@ export default function MunicipalitiesPage() {
     // Show confirmation dialog with cascade deletion warning
     const confirmDelete = window.confirm(
       `⚠️ ADVERTENCIA: Eliminación Completa\n\n` +
-      `Esta acción eliminará permanentemente:\n` +
-      `• La institución "${municipality.name}"\n` +
-      `• Su cuenta de usuario y credenciales\n` +
-      `• Todas las empresas asociadas (${municipality.companies?.length || 0})\n` +
-      `• Todas las ofertas de trabajo de estas empresas\n` +
-      `• Todas las noticias publicadas por la institución\n` +
-      `• Todos los datos relacionados\n\n` +
-      `Esta acción NO se puede deshacer.\n\n` +
-      `¿Estás seguro de que deseas continuar?`
+        `Esta acción eliminará permanentemente:\n` +
+        `• La institución "${municipality.name}"\n` +
+        `• Su cuenta de usuario y credenciales\n` +
+        `• Todas las empresas asociadas (${municipality.companies?.length || 0})\n` +
+        `• Todas las ofertas de trabajo de estas empresas\n` +
+        `• Todas las noticias publicadas por la institución\n` +
+        `• Todos los datos relacionados\n\n` +
+        `Esta acción NO se puede deshacer.\n\n` +
+        `¿Estás seguro de que deseas continuar?`
     );
 
     if (!confirmDelete) {
@@ -115,20 +124,24 @@ export default function MunicipalitiesPage() {
     try {
       toast({
         title: "Eliminando institución...",
-        description: "Por favor espera mientras se eliminan todos los datos relacionados.",
+        description:
+          "Por favor espera mientras se eliminan todos los datos relacionados.",
       });
 
       await deleteMunicipality.mutateAsync(municipality.id);
-      
+
       toast({
         title: "Institución eliminada",
-        description: "La institución y todos sus datos relacionados han sido eliminados exitosamente.",
+        description:
+          "La institución y todos sus datos relacionados han sido eliminados exitosamente.",
       });
     } catch (error: any) {
       console.error("Error deleting municipality:", error);
       toast({
         title: "Error al eliminar",
-        description: error?.message || "No se pudo eliminar la institución. Intenta nuevamente.",
+        description:
+          error?.message ||
+          "No se pudo eliminar la institución. Intenta nuevamente.",
         variant: "destructive",
       });
     }
@@ -141,7 +154,8 @@ export default function MunicipalitiesPage() {
           <div className="space-y-1">
             <h1 className="text-3xl font-bold">Gestión de Instituciones</h1>
             <p className="text-muted-foreground">
-              Administra todas las instituciones registradas en la plataforma
+              Administra las instituciones registradas en la plataforma (ONGs,
+              Fundaciones y otras)
             </p>
           </div>
         </div>
@@ -187,7 +201,8 @@ export default function MunicipalitiesPage() {
           <div className="space-y-1">
             <h1 className="text-3xl font-bold">Gestión de Instituciones</h1>
             <p className="text-muted-foreground">
-              Administra todas las instituciones registradas en la plataforma
+              Administra las instituciones registradas en la plataforma (ONGs,
+              Fundaciones y otras)
             </p>
           </div>
         </div>
@@ -215,7 +230,8 @@ export default function MunicipalitiesPage() {
         <div className="space-y-1">
           <h1 className="text-3xl font-bold">Gestión de Instituciones</h1>
           <p className="text-muted-foreground">
-            Administra todas las instituciones registradas en la plataforma
+            Administra las instituciones registradas en la plataforma (ONGs,
+            Fundaciones y otras)
           </p>
         </div>
         <Dialog open={isCreateDialogOpen} onOpenChange={setIsCreateDialogOpen}>

@@ -13,7 +13,7 @@ import jwt from "jsonwebtoken";
 
 // Configure runtime for finalizing uploads
 export const runtime = "nodejs";
-export const maxDuration = 300; // 5 minutes timeout
+export const maxDuration = 300; // 5 minutes timeout for finalization (increased for large files)
 export const dynamic = "force-dynamic";
 export const revalidate = 0;
 

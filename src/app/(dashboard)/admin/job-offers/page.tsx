@@ -145,13 +145,13 @@ export default function JobOffersPage() {
         headers: await getAuthHeaders(),
       });
       if (!response.ok) {
-        throw new Error("Failed to fetch job offers");
+        throw new Error("Error al cargar las ofertas de empleo");
       }
       const jobOffers = await response.json();
 
-      console.log("🔍 Job offers response:", jobOffers);
-      console.log("🔍 Response type:", typeof jobOffers);
-      console.log("🔍 Is array:", Array.isArray(jobOffers));
+      console.log("🔍 Respuesta de ofertas de empleo:", jobOffers);
+      console.log("🔍 Tipo de respuesta:", typeof jobOffers);
+      console.log("🔍 Es array:", Array.isArray(jobOffers));
 
       // Transform the response to match our expected structure
       // Handle different possible response formats
@@ -171,7 +171,7 @@ export default function JobOffersPage() {
       ) {
         jobOffersArray = jobOffers.data;
       } else {
-        console.warn("⚠️ Unexpected job offers response format:", jobOffers);
+        console.warn("⚠️ Formato de respuesta de ofertas de empleo inesperado:", jobOffers);
         jobOffersArray = [];
       }
 
@@ -195,7 +195,7 @@ export default function JobOffersPage() {
         headers: await getAuthHeaders(),
       });
       if (!response.ok) {
-        throw new Error("Failed to delete job offer");
+        throw new Error("Error al eliminar la oferta de empleo");
       }
       return response.json();
     },
@@ -205,7 +205,7 @@ export default function JobOffersPage() {
     },
     onError: (error) => {
       toast.error("Error al eliminar la oferta de empleo");
-      console.error("Delete error:", error);
+      console.error("Error de eliminación:", error);
     },
   });
 
@@ -219,7 +219,7 @@ export default function JobOffersPage() {
       });
       if (!response.ok) {
         const error = await response.json();
-        throw new Error(error.error || "Failed to create job offer");
+        throw new Error(error.error || "Error al crear la oferta de empleo");
       }
       return response.json();
     },
@@ -243,7 +243,7 @@ export default function JobOffersPage() {
       });
       if (!response.ok) {
         const error = await response.json();
-        throw new Error(error.error || "Failed to update job offer");
+        throw new Error(error.error || "Error al actualizar la oferta de empleo");
       }
       return response.json();
     },
@@ -296,12 +296,12 @@ export default function JobOffersPage() {
   };
 
   const formatSalary = (min?: number, max?: number, currency = "BOB") => {
-    if (!min && !max) return "Not specified";
+    if (!min && !max) return "No especificado";
     if (min && max)
       return `${min.toLocaleString()} - ${max.toLocaleString()} ${currency}`;
     if (min) return `${min.toLocaleString()} ${currency}`;
     if (max) return `${max.toLocaleString()} ${currency}`;
-    return "Not specified";
+    return "No especificado";
   };
 
   if (error) {

@@ -5,6 +5,7 @@ import {
   Plus,
   MoreVertical,
   Eye,
+  EyeOff,
   Edit,
   Trash2,
   Users,
@@ -13,6 +14,9 @@ import {
   Download,
   X,
   GraduationCap,
+  Building,
+  Copy,
+  Check,
 } from "lucide-react";
 import {
   Card,
@@ -70,6 +74,272 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useUserManagement, UserData, User } from "@/hooks/useUserManagement";
 import { useToast } from "@/components/ui/use-toast";
 
+// Bolivian departments and municipalities data
+const BOLIVIA_LOCATIONS = {
+  Cochabamba: [
+    "Cochabamba",
+    "Aiquile",
+    "Anzaldo",
+    "Arani",
+    "Arque",
+    "Bolívar",
+    "Campero",
+    "Capinota",
+    "Carrasco",
+    "Chapare",
+    "Chimoré",
+    "Cliza",
+    "Colcapirhua",
+    "Colomi",
+    "Cuchumuela",
+    "Entre Ríos",
+    "Esteban Arze",
+    "Independencia",
+    "Jordán",
+    "Mizque",
+    "Morochata",
+    "Omereque",
+    "Pasorapa",
+    "Pocona",
+    "Punata",
+    "Quillacollo",
+    "Sacaba",
+    "San Benito",
+    "Shinahota",
+    "Sipe Sipe",
+    "Tacopaya",
+    "Tapacarí",
+    "Tiquipaya",
+    "Tiraque",
+    "Tolata",
+    "Totora",
+    "Valle Hermoso",
+    "Vila Vila",
+    "Vinto",
+  ],
+  "La Paz": [
+    "La Paz",
+    "Achacachi",
+    "Ancoraimes",
+    "Batallas",
+    "Calamarca",
+    "Caranavi",
+    "Colquencha",
+    "Copacabana",
+    "Desaguadero",
+    "El Alto",
+    "Guaqui",
+    "Huatajata",
+    "Irupana",
+    "La Asunta",
+    "Laja",
+    "Luribay",
+    "Malla",
+    "Mecapaca",
+    "Mocomoco",
+    "Palca",
+    "Palos Blancos",
+    "Pedro Domingo Murillo",
+    "Puerto Acosta",
+    "Puerto Carabuco",
+    "Pucarani",
+    "Sapahaqui",
+    "Sorata",
+    "Teoponte",
+    "Tiahuanacu",
+    "Umala",
+    "Viacha",
+    "Yanacachi",
+  ],
+  "Santa Cruz": [
+    "Santa Cruz de la Sierra",
+    "Ascensión de Guarayos",
+    "Boyuibe",
+    "Cabezas",
+    "Camiri",
+    "Charagua",
+    "Colpa Bélgica",
+    "Comarapa",
+    "Concepción",
+    "Cotoca",
+    "Cuevo",
+    "El Puente",
+    "El Torno",
+    "Fernández Alonso",
+    "General Saavedra",
+    "Gutiérrez",
+    "Hardeman",
+    "Lagunillas",
+    "La Guardia",
+    "Las Mercedes",
+    "Mairana",
+    "Mineros",
+    "Montero",
+    "Moro Moro",
+    "Okinawa Uno",
+    "Pailón",
+    "Pampa Grande",
+    "Portachuelo",
+    "Postrer Valle",
+    "Puerto Quijarro",
+    "Puerto Suárez",
+    "Quirusillas",
+    "Roboré",
+    "Saipina",
+    "San Antonio del Lomerío",
+    "San Carlos",
+    "San Ignacio",
+    "San Javier",
+    "San José de Chiquitos",
+    "San Juan",
+    "San Lorenzo",
+    "San Matías",
+    "San Miguel",
+    "San Pedro",
+    "San Rafael",
+    "San Ramón",
+    "Santa Rosa del Sara",
+    "Samaipata",
+    "Urubichá",
+    "Vallegrande",
+    "Warnes",
+    "Yapacaní",
+  ],
+  Potosí: [
+    "Potosí",
+    "Acasio",
+    "Arampampa",
+    "Belén de Urmiri",
+    "Betanzos",
+    "Caiza",
+    "Caripuyo",
+    "Colcha",
+    "Colquechaca",
+    "Cotagaita",
+    "Llallagua",
+    "Llica",
+    "Mojinete",
+    "Ocurí",
+    "Pocoata",
+    "Puna",
+    "Sacaca",
+    "San Agustín",
+    "San Antonio de Esmoruco",
+    "San Pablo de Lípez",
+    "Tinguipaya",
+    "Tomave",
+    "Tupiza",
+    "Uyuni",
+    "Villazón",
+    "Vitichi",
+  ],
+  Chuquisaca: [
+    "Sucre",
+    "Azurduy",
+    "Boeto",
+    "Camargo",
+    "Culpina",
+    "El Villar",
+    "Huacaya",
+    "Huacareta",
+    "Icla",
+    "Incahuasi",
+    "Macharetí",
+    "Monteagudo",
+    "Padilla",
+    "Poroma",
+    "Presto",
+    "San Lucas",
+    "Sopachuy",
+    "Tarabuco",
+    "Tarvita",
+    "Tomina",
+    "Villa Abecia",
+    "Villa Charcas",
+    "Villa Serrano",
+    "Villa Vaca Guzmán",
+    "Yamparáez",
+    "Zudáñez",
+  ],
+  Oruro: [
+    "Oruro",
+    "Antequera",
+    "Belén de Andamarca",
+    "Caracollo",
+    "Challapata",
+    "Chipaya",
+    "Choque Cota",
+    "Corque",
+    "Cruz de Machacamarca",
+    "Escara",
+    "Esmeralda",
+    "Eucaliptus",
+    "Huayllamarca",
+    "Huanuni",
+    "La Rivera",
+    "Machacamarca",
+    "Nor Carangas",
+    "Pampa Aullagas",
+    "Pazña",
+    "Poopó",
+    "Sabaya",
+    "Salinas de Garci Mendoza",
+    "Santiago de Andamarca",
+    "Santiago de Huari",
+    "Sur Carangas",
+    "Toledo",
+    "Turco",
+    "Villa Huanuni",
+  ],
+  Tarija: [
+    "Tarija",
+    "Bermejo",
+    "Caraparí",
+    "Entre Ríos",
+    "Padcaya",
+    "San Lorenzo",
+    "Uriondo",
+    "Villa Montes",
+    "Villamontes",
+    "Yacuiba",
+  ],
+  Beni: [
+    "Trinidad",
+    "Baures",
+    "Exaltación",
+    "Guayaramerín",
+    "Huacaraje",
+    "Iténez",
+    "Loreto",
+    "Magdalena",
+    "Reyes",
+    "Riberalta",
+    "Rurrenabaque",
+    "San Andrés",
+    "San Borja",
+    "San Ignacio",
+    "San Javier",
+    "San Joaquín",
+    "San Ramón",
+    "Santa Ana",
+    "Santa Rosa",
+  ],
+  Pando: [
+    "Cobija",
+    "Bella Flor",
+    "Bolpebra",
+    "Filadelfia",
+    "Nueva Esperanza",
+    "Porvenir",
+    "Puerto Gonzalo Moreno",
+    "Puerto Rico",
+    "San Lorenzo",
+    "Santos Mercado",
+    "Sena",
+    "Villa Nueva",
+  ],
+};
+
 export default function UsersManagementPage() {
   const { createUser, updateUser, deleteUser, getUsers, loading, error } =
     useUserManagement();
@@ -83,6 +353,26 @@ export default function UsersManagementPage() {
   const [showDeleteDialog, setShowDeleteDialog] = useState(false);
   const [selectedUser, setSelectedUser] = useState<User | null>(null);
   const [successDialogOpen, setSuccessDialogOpen] = useState(false);
+  const [credentialsModalOpen, setCredentialsModalOpen] = useState(false);
+  const [createdUserCredentials, setCreatedUserCredentials] = useState<{
+    username: string;
+    password: string;
+  } | null>(null);
+  const [copiedField, setCopiedField] = useState<string | null>(null);
+  const [emailValidation, setEmailValidation] = useState<{
+    isValid: boolean;
+    message: string;
+    isChecking: boolean;
+  }>({ isValid: true, message: "", isChecking: false });
+
+  // Form validation state
+  const [formErrors, setFormErrors] = useState<{
+    [key: string]: string;
+  }>({});
+  const [skillInput, setSkillInput] = useState("");
+  const [interestInput, setInterestInput] = useState("");
+  const [showPassword, setShowPassword] = useState(false);
+  const [showCredentialsPassword, setShowCredentialsPassword] = useState(false);
 
   // Load users on component mount
   useEffect(() => {
@@ -162,25 +452,551 @@ export default function UsersManagementPage() {
     status: "ACTIVE",
   });
 
-  const [avatarFile, setAvatarFile] = useState<File | null>(null);
-  const [avatarPreview, setAvatarPreview] = useState("");
+  const [availableMunicipalities, setAvailableMunicipalities] = useState<
+    string[]
+  >([]);
 
-  const handleAvatarUpload = (event: React.ChangeEvent<HTMLInputElement>) => {
-    const file = event.target.files?.[0];
-    if (file) {
-      setAvatarFile(file);
-      const reader = new FileReader();
-      reader.onload = () => {
-        const result = reader.result as string;
-        setAvatarPreview(result);
-      };
-      reader.readAsDataURL(file);
+  // Update available municipalities when department changes
+  useEffect(() => {
+    if (
+      formData.department &&
+      BOLIVIA_LOCATIONS[formData.department as keyof typeof BOLIVIA_LOCATIONS]
+    ) {
+      setAvailableMunicipalities(
+        BOLIVIA_LOCATIONS[formData.department as keyof typeof BOLIVIA_LOCATIONS]
+      );
+      // Reset municipality if it's not in the new department's municipalities
+      if (
+        formData.municipality &&
+        !BOLIVIA_LOCATIONS[
+          formData.department as keyof typeof BOLIVIA_LOCATIONS
+        ].includes(formData.municipality)
+      ) {
+        setFormData((prev) => ({ ...prev, municipality: "" }));
+      }
+    } else {
+      setAvailableMunicipalities([]);
+    }
+  }, [formData.department]);
+
+  // Email validation with debounce
+  useEffect(() => {
+    if (!formData.email) {
+      setEmailValidation({ isValid: true, message: "", isChecking: false });
+      return;
+    }
+
+    // Basic email format validation
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!emailRegex.test(formData.email)) {
+      setEmailValidation({
+        isValid: false,
+        message: "Formato de email inválido",
+        isChecking: false,
+      });
+      return;
+    }
+
+    setEmailValidation({ isValid: true, message: "", isChecking: true });
+
+    // Debounce email availability check
+    const timeoutId = setTimeout(async () => {
+      try {
+        const response = await fetch(
+          `/api/admin/users?search=${formData.email}`
+        );
+        if (response.ok) {
+          const users = await response.json();
+          const emailExists = users.some(
+            (user: any) =>
+              user.profile?.email?.toLowerCase() ===
+              formData.email?.toLowerCase()
+          );
+
+          if (emailExists) {
+            setEmailValidation({
+              isValid: false,
+              message: "Este email ya está registrado",
+              isChecking: false,
+            });
+          } else {
+            setEmailValidation({
+              isValid: true,
+              message: "Email disponible",
+              isChecking: false,
+            });
+          }
+        }
+      } catch (error) {
+        console.error("Error validating email:", error);
+        setEmailValidation({
+          isValid: true,
+          message: "",
+          isChecking: false,
+        });
+      }
+    }, 500);
+
+    return () => clearTimeout(timeoutId);
+  }, [formData.email]);
+
+  // Validation functions
+  const validateField = (field: string, value: any): string => {
+    switch (field) {
+      case "username":
+        if (!value || value.trim().length === 0) {
+          return "El nombre de usuario es requerido";
+        }
+        if (value.length < 3) {
+          return "El nombre de usuario debe tener al menos 3 caracteres";
+        }
+        if (!/^[a-zA-Z0-9_]+$/.test(value)) {
+          return "El nombre de usuario solo puede contener letras, números y guiones bajos";
+        }
+        return "";
+
+      case "password":
+        if (!value || value.length === 0) {
+          return "La contraseña es requerida";
+        }
+        if (value.length < 6) {
+          return "La contraseña debe tener al menos 6 caracteres";
+        }
+        if (value.length > 50) {
+          return "La contraseña no puede tener más de 50 caracteres";
+        }
+        return "";
+
+      case "firstName":
+        if (!value || value.trim().length === 0) {
+          return "El nombre es requerido";
+        }
+        if (value.length < 2) {
+          return "El nombre debe tener al menos 2 caracteres";
+        }
+        if (!/^[a-zA-ZáéíóúÁÉÍÓÚñÑ\s]+$/.test(value)) {
+          return "El nombre solo puede contener letras y espacios";
+        }
+        return "";
+
+      case "lastName":
+        if (!value || value.trim().length === 0) {
+          return "El apellido es requerido";
+        }
+        if (value.length < 2) {
+          return "El apellido debe tener al menos 2 caracteres";
+        }
+        if (!/^[a-zA-ZáéíóúÁÉÍÓÚñÑ\s]+$/.test(value)) {
+          return "El apellido solo puede contener letras y espacios";
+        }
+        return "";
+
+      case "email":
+        if (value && value.trim().length > 0) {
+          const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+          if (!emailRegex.test(value)) {
+            return "Formato de email inválido";
+          }
+        }
+        return "";
+
+      case "phone":
+        if (value && value.trim().length > 0) {
+          // Bolivian phone number validation (supports +591, 591, or local format)
+          const phoneRegex = /^(\+591|591)?[0-9\s-]{7,10}$/;
+          if (!phoneRegex.test(value.replace(/\s/g, ""))) {
+            return "Formato de teléfono inválido. Use: +591 700 123 456";
+          }
+        }
+        return "";
+
+      case "graduationYear":
+        if (value && value !== "") {
+          const year = parseInt(value);
+          const currentYear = new Date().getFullYear();
+          if (isNaN(year) || year < 1950 || year > currentYear + 10) {
+            return `El año debe estar entre 1950 y ${currentYear + 10}`;
+          }
+        }
+        return "";
+
+      case "birthDate":
+        if (value && value.trim().length > 0) {
+          const date = new Date(value);
+          const currentDate = new Date();
+          const minDate = new Date(currentDate.getFullYear() - 100, 0, 1);
+          const maxDate = new Date(currentDate.getFullYear() - 13, 11, 31);
+
+          if (isNaN(date.getTime())) {
+            return "Fecha de nacimiento inválida";
+          }
+          if (date < minDate || date > maxDate) {
+            return "La edad debe estar entre 13 y 100 años";
+          }
+        }
+        return "";
+
+      case "address":
+        if (value && value.length > 200) {
+          return "La dirección no puede tener más de 200 caracteres";
+        }
+        return "";
+
+      case "currentInstitution":
+        if (value && value.length > 100) {
+          return "El nombre de la institución no puede tener más de 100 caracteres";
+        }
+        return "";
+
+      default:
+        return "";
     }
   };
 
-  const removeAvatar = () => {
-    setAvatarFile(null);
-    setAvatarPreview("");
+  const validateForm = (): boolean => {
+    const errors: { [key: string]: string } = {};
+    let isValid = true;
+
+    // Required fields
+    const requiredFields = ["username", "password", "firstName", "lastName"];
+
+    requiredFields.forEach((field) => {
+      const error = validateField(field, formData[field as keyof UserData]);
+      if (error) {
+        errors[field] = error;
+        isValid = false;
+      }
+    });
+
+    // Optional fields
+    const optionalFields = [
+      "email",
+      "phone",
+      "graduationYear",
+      "birthDate",
+      "address",
+      "currentInstitution",
+    ];
+
+    optionalFields.forEach((field) => {
+      const error = validateField(field, formData[field as keyof UserData]);
+      if (error) {
+        errors[field] = error;
+        isValid = false;
+      }
+    });
+
+    setFormErrors(errors);
+    return isValid;
+  };
+
+  const handleFieldChange = (field: string, value: any) => {
+    let processedValue = value;
+
+    // Special handling for different field types
+    if (field === "phone") {
+      // Only allow numbers, +, -, and spaces
+      processedValue = String(value || "").replace(/[^0-9+\-\s]/g, "");
+
+      // Format phone number as user types
+      if (processedValue.length > 0) {
+        // Remove all non-digits except + at the beginning
+        const digits = processedValue.replace(/[^\d]/g, "");
+        const hasPlus = processedValue.startsWith("+");
+
+        if (hasPlus && digits.length > 0) {
+          // Format: +591 700 123 456
+          if (digits.length <= 3) {
+            processedValue = `+${digits}`;
+          } else if (digits.length <= 6) {
+            processedValue = `+${digits.slice(0, 3)} ${digits.slice(3)}`;
+          } else if (digits.length <= 9) {
+            processedValue = `+${digits.slice(0, 3)} ${digits.slice(3, 6)} ${digits.slice(6)}`;
+          } else {
+            processedValue = `+${digits.slice(0, 3)} ${digits.slice(3, 6)} ${digits.slice(6, 9)} ${digits.slice(9, 12)}`;
+          }
+        } else if (!hasPlus && digits.length > 0) {
+          // Format: 591 700 123 456 or 700 123 456
+          if (digits.length <= 3) {
+            processedValue = digits;
+          } else if (digits.length <= 6) {
+            processedValue = `${digits.slice(0, 3)} ${digits.slice(3)}`;
+          } else if (digits.length <= 9) {
+            processedValue = `${digits.slice(0, 3)} ${digits.slice(3, 6)} ${digits.slice(6)}`;
+          } else {
+            processedValue = `${digits.slice(0, 3)} ${digits.slice(3, 6)} ${digits.slice(6, 9)} ${digits.slice(9, 12)}`;
+          }
+        }
+      }
+    } else if (field === "username") {
+      // Only allow alphanumeric characters and underscores
+      processedValue = String(value || "").replace(/[^a-zA-Z0-9_]/g, "");
+    } else if (field === "graduationYear") {
+      // Only allow numbers - convert to string first if it's a number
+      const stringValue = String(value || "");
+      const cleanedValue = stringValue.replace(/[^0-9]/g, "");
+      // Convert back to number if it's not empty, otherwise keep as empty string
+      processedValue = cleanedValue ? parseInt(cleanedValue, 10) : undefined;
+    } else if (field === "firstName" || field === "lastName") {
+      // Only allow letters, spaces, and Spanish characters
+      processedValue = String(value || "").replace(
+        /[^a-zA-ZáéíóúÁÉÍÓÚñÑ\s]/g,
+        ""
+      );
+    }
+
+    setFormData((prev) => ({ ...prev, [field]: processedValue }));
+
+    // Clear error when user starts typing
+    if (formErrors[field]) {
+      setFormErrors((prev) => {
+        const newErrors = { ...prev };
+        delete newErrors[field];
+        return newErrors;
+      });
+    }
+  };
+
+  const copyToClipboard = async (text: string, field: string) => {
+    try {
+      // Check if clipboard API is available
+      if (navigator?.clipboard?.writeText) {
+        await navigator.clipboard.writeText(text);
+      } else {
+        // Fallback for older browsers or when clipboard API is not available
+        const textArea = document.createElement("textarea");
+        textArea.value = text;
+        textArea.style.position = "fixed";
+        textArea.style.left = "-999999px";
+        textArea.style.top = "-999999px";
+        document.body.appendChild(textArea);
+        textArea.focus();
+        textArea.select();
+        document.execCommand("copy");
+        textArea.remove();
+      }
+
+      setCopiedField(field);
+      toast({
+        title: "Copiado",
+        description: `${field} copiado al portapapeles`,
+      });
+      // Reset copied state after 2 seconds
+      setTimeout(() => setCopiedField(null), 2000);
+    } catch (err) {
+      console.error("Failed to copy:", err);
+      toast({
+        title: "Error",
+        description: "No se pudo copiar al portapapeles",
+        variant: "destructive",
+      });
+    }
+  };
+
+  const generateRandomString = (length: number): string => {
+    const chars = "abcdefghijklmnopqrstuvwxyz0123456789";
+    let result = "";
+    for (let i = 0; i < length; i++) {
+      result += chars.charAt(Math.floor(Math.random() * chars.length));
+    }
+    return result;
+  };
+
+  const generatePassword = (): string => {
+    const length = 8;
+    const uppercase = "ABCDEFGHIJKLMNOPQRSTUVWXYZ";
+    const lowercase = "abcdefghijklmnopqrstuvwxyz";
+    const numbers = "0123456789";
+    const symbols = "!@#$%&*";
+
+    let password = "";
+    password += uppercase.charAt(Math.floor(Math.random() * uppercase.length));
+    password += lowercase.charAt(Math.floor(Math.random() * lowercase.length));
+    password += numbers.charAt(Math.floor(Math.random() * numbers.length));
+    password += symbols.charAt(Math.floor(Math.random() * symbols.length));
+
+    const allChars = uppercase + lowercase + numbers + symbols;
+    for (let i = 4; i < length; i++) {
+      password += allChars.charAt(Math.floor(Math.random() * allChars.length));
+    }
+
+    // Shuffle the password
+    return password
+      .split("")
+      .sort(() => Math.random() - 0.5)
+      .join("");
+  };
+
+  const checkUsernameAvailability = async (
+    username: string
+  ): Promise<boolean> => {
+    try {
+      const response = await fetch(`/api/admin/users?search=${username}`);
+      if (response.ok) {
+        const users = await response.json();
+        return !users.some((user: any) => user.username === username);
+      }
+      return false;
+    } catch (error) {
+      console.error("Error checking username availability:", error);
+      return false;
+    }
+  };
+
+  const generateCredentials = async () => {
+    let username = "";
+    let attempts = 0;
+    const maxAttempts = 10;
+
+    // Generate unique username
+    do {
+      const randomPart = generateRandomString(5);
+      username = `joven_${randomPart}`;
+      attempts++;
+    } while (
+      !(await checkUsernameAvailability(username)) &&
+      attempts < maxAttempts
+    );
+
+    if (attempts >= maxAttempts) {
+      toast({
+        title: "Error",
+        description:
+          "No se pudo generar un nombre de usuario único. Intenta manualmente.",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    const password = generatePassword();
+
+    setFormData((prev) => ({
+      ...prev,
+      username,
+      password,
+    }));
+
+    toast({
+      title: "Credenciales generadas",
+      description: "Se han generado credenciales automáticamente",
+    });
+  };
+
+  const addSkill = () => {
+    const skill = skillInput.trim();
+    if (skill && !formData.skills?.includes(skill)) {
+      setFormData((prev) => ({
+        ...prev,
+        skills: [...(prev.skills || []), skill],
+      }));
+      setSkillInput("");
+    }
+  };
+
+  const removeSkill = (skillToRemove: string) => {
+    setFormData((prev) => ({
+      ...prev,
+      skills: prev.skills?.filter((skill) => skill !== skillToRemove) || [],
+    }));
+  };
+
+  const addInterest = () => {
+    const interest = interestInput.trim();
+    if (interest && !formData.interests?.includes(interest)) {
+      setFormData((prev) => ({
+        ...prev,
+        interests: [...(prev.interests || []), interest],
+      }));
+      setInterestInput("");
+    }
+  };
+
+  const removeInterest = (interestToRemove: string) => {
+    setFormData((prev) => ({
+      ...prev,
+      interests:
+        prev.interests?.filter((interest) => interest !== interestToRemove) ||
+        [],
+    }));
+  };
+
+  const handleSkillKeyPress = (e: React.KeyboardEvent) => {
+    if (e.key === "Enter") {
+      e.preventDefault();
+      addSkill();
+    }
+  };
+
+  const handleInterestKeyPress = (e: React.KeyboardEvent) => {
+    if (e.key === "Enter") {
+      e.preventDefault();
+      addInterest();
+    }
+  };
+
+  const handleKeyPress = (e: React.KeyboardEvent, field: string) => {
+    // Prevent invalid characters from being typed
+    if (field === "phone") {
+      // Allow: numbers, +, -, space, backspace, delete, arrow keys, etc.
+      if (
+        !/[0-9+\-\s]/.test(e.key) &&
+        ![
+          "Backspace",
+          "Delete",
+          "ArrowLeft",
+          "ArrowRight",
+          "Tab",
+          "Enter",
+        ].includes(e.key)
+      ) {
+        e.preventDefault();
+      }
+    } else if (field === "username") {
+      // Allow: alphanumeric, underscore, backspace, delete, arrow keys, etc.
+      if (
+        !/[a-zA-Z0-9_]/.test(e.key) &&
+        ![
+          "Backspace",
+          "Delete",
+          "ArrowLeft",
+          "ArrowRight",
+          "Tab",
+          "Enter",
+        ].includes(e.key)
+      ) {
+        e.preventDefault();
+      }
+    } else if (field === "graduationYear") {
+      // Allow: numbers only, backspace, delete, arrow keys, etc.
+      if (
+        !/[0-9]/.test(e.key) &&
+        ![
+          "Backspace",
+          "Delete",
+          "ArrowLeft",
+          "ArrowRight",
+          "Tab",
+          "Enter",
+        ].includes(e.key)
+      ) {
+        e.preventDefault();
+      }
+    } else if (field === "firstName" || field === "lastName") {
+      // Allow: letters, spaces, Spanish characters, backspace, delete, arrow keys, etc.
+      if (
+        !/[a-zA-ZáéíóúÁÉÍÓÚñÑ\s]/.test(e.key) &&
+        ![
+          "Backspace",
+          "Delete",
+          "ArrowLeft",
+          "ArrowRight",
+          "Tab",
+          "Enter",
+        ].includes(e.key)
+      ) {
+        e.preventDefault();
+      }
+    }
   };
 
   const resetForm = () => {
@@ -206,46 +1022,47 @@ export default function UsersManagementPage() {
       interests: [],
       status: "ACTIVE",
     });
-    setAvatarFile(null);
-    setAvatarPreview("");
+    setSkillInput("");
+    setInterestInput("");
+    setEmailValidation({ isValid: true, message: "", isChecking: false });
+    setFormErrors({});
+    setShowPassword(false);
   };
 
   const handleCreate = async () => {
     try {
-      if (
-        !formData.username ||
-        !formData.password ||
-        !formData.role ||
-        !formData.firstName ||
-        !formData.lastName
-      ) {
+      // Validate form using comprehensive validation
+      if (!validateForm()) {
         toast({
-          title: "Error",
-          description: "Por favor complete todos los campos requeridos",
+          title: "Error de validación",
+          description: "Por favor corrige los errores en el formulario",
           variant: "destructive",
         });
         return;
       }
 
-      // Validate password strength
-      if (!formData.password || formData.password.length < 6) {
+      // Additional email validation check
+      if (formData.email && !emailValidation.isValid) {
         toast({
           title: "Error",
-          description: "La contraseña debe tener al menos 6 caracteres",
+          description: "Por favor corrige el email antes de continuar",
           variant: "destructive",
         });
         return;
       }
 
+      // Create user
       await createUser(formData);
+
+      // Store credentials for the modal
+      setCreatedUserCredentials({
+        username: formData.username,
+        password: formData.password || "",
+      });
 
       setShowCreateDialog(false);
       resetForm();
-      setSuccessDialogOpen(true);
-      toast({
-        title: "Éxito",
-        description: "Usuario creado exitosamente",
-      });
+      setCredentialsModalOpen(true);
 
       // Reload users
       loadUsers();
@@ -283,13 +1100,32 @@ export default function UsersManagementPage() {
       interests: user.profile?.interests || [],
       status: user.profile?.status || "ACTIVE",
     });
-    setAvatarPreview(user.profile?.avatarUrl || "");
     setShowEditDialog(true);
   };
 
   const handleUpdate = async () => {
     try {
       if (!selectedUser?.id) return;
+
+      // Validate form using comprehensive validation
+      if (!validateForm()) {
+        toast({
+          title: "Error de validación",
+          description: "Por favor corrige los errores en el formulario",
+          variant: "destructive",
+        });
+        return;
+      }
+
+      // Additional email validation check
+      if (formData.email && !emailValidation.isValid) {
+        toast({
+          title: "Error",
+          description: "Por favor corrige el email antes de continuar",
+          variant: "destructive",
+        });
+        return;
+      }
 
       const updateData = { ...formData };
       // Only include password if it was changed and not empty
@@ -487,6 +1323,21 @@ export default function UsersManagementPage() {
                 </TabsList>
 
                 <TabsContent value="credentials" className="space-y-4">
+                  <div className="flex justify-between items-center">
+                    <h3 className="text-lg font-medium">
+                      Credenciales de Acceso
+                    </h3>
+                    <Button
+                      type="button"
+                      variant="outline"
+                      size="sm"
+                      onClick={generateCredentials}
+                    >
+                      <Plus className="w-4 h-4 mr-2" />
+                      Generar Automáticamente
+                    </Button>
+                  </div>
+
                   <div className="grid grid-cols-2 gap-4">
                     <div className="grid gap-2">
                       <Label htmlFor="username">Nombre de Usuario *</Label>
@@ -494,102 +1345,62 @@ export default function UsersManagementPage() {
                         id="username"
                         value={formData.username}
                         onChange={(e) =>
-                          setFormData({
-                            ...formData,
-                            username: e.target.value,
-                          })
+                          handleFieldChange("username", e.target.value)
                         }
-                        placeholder="juan.perez"
+                        onKeyPress={(e) => handleKeyPress(e, "username")}
+                        placeholder="joven_abc12"
+                        className={formErrors.username ? "border-red-500" : ""}
                       />
+                      {formErrors.username && (
+                        <p className="text-sm text-red-500 mt-1">
+                          {formErrors.username}
+                        </p>
+                      )}
+                      <p className="text-xs text-muted-foreground">
+                        Formato sugerido: joven_XXXXX (5 caracteres aleatorios)
+                      </p>
                     </div>
                     <div className="grid gap-2">
                       <Label htmlFor="password">Contraseña *</Label>
-                      <Input
-                        id="password"
-                        type="password"
-                        value={formData.password}
-                        onChange={(e) =>
-                          setFormData({ ...formData, password: e.target.value })
-                        }
-                        placeholder="••••••••"
-                      />
+                      <div className="relative">
+                        <Input
+                          id="password"
+                          type={showPassword ? "text" : "password"}
+                          value={formData.password}
+                          onChange={(e) =>
+                            handleFieldChange("password", e.target.value)
+                          }
+                          placeholder="••••••••"
+                          className={`pr-10 ${formErrors.password ? "border-red-500" : ""}`}
+                        />
+                        <Button
+                          type="button"
+                          variant="ghost"
+                          size="sm"
+                          className="absolute right-0 top-0 h-full px-3 py-2 hover:bg-transparent"
+                          onClick={() => setShowPassword(!showPassword)}
+                        >
+                          {showPassword ? (
+                            <EyeOff className="h-4 w-4 text-gray-500" />
+                          ) : (
+                            <Eye className="h-4 w-4 text-gray-500" />
+                          )}
+                        </Button>
+                      </div>
+                      {formErrors.password && (
+                        <p className="text-sm text-red-500 mt-1">
+                          {formErrors.password}
+                        </p>
+                      )}
+                      <p className="text-xs text-muted-foreground">
+                        Mínimo 6 caracteres, se recomienda usar la generación
+                        automática
+                      </p>
                     </div>
-                  </div>
-
-                  <div className="grid gap-2">
-                    <Label htmlFor="role">Rol *</Label>
-                    <Select
-                      value={formData.role}
-                      onValueChange={(value) =>
-                        setFormData({ ...formData, role: value })
-                      }
-                    >
-                      <SelectTrigger>
-                        <SelectValue />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="YOUTH">Joven</SelectItem>
-                        <SelectItem value="ADOLESCENTS">Adolescente</SelectItem>
-                        <SelectItem value="COMPANIES">Empresa</SelectItem>
-                        <SelectItem value="MUNICIPAL_GOVERNMENTS">
-                          Gobierno Municipal
-                        </SelectItem>
-                        <SelectItem value="TRAINING_CENTERS">
-                          Centro de Entrenamiento
-                        </SelectItem>
-                        <SelectItem value="NGOS_AND_FOUNDATIONS">
-                          ONG/Fundación
-                        </SelectItem>
-                        <SelectItem value="INSTRUCTOR">Instructor</SelectItem>
-                      </SelectContent>
-                    </Select>
                   </div>
                 </TabsContent>
 
                 <TabsContent value="basic" className="space-y-4">
-                  {/* Avatar Upload */}
-                  <div className="grid gap-2">
-                    <Label>Foto de Perfil</Label>
-                    {avatarPreview ? (
-                      <div className="relative w-24 h-24">
-                        <Avatar className="w-24 h-24">
-                          <AvatarImage
-                            src={avatarPreview || "/placeholder.svg"}
-                            alt="Avatar preview"
-                          />
-                          <AvatarFallback>
-                            <Users className="w-8 h-8" />
-                          </AvatarFallback>
-                        </Avatar>
-                        <Button
-                          size="sm"
-                          variant="destructive"
-                          className="absolute -top-2 -right-2 h-6 w-6 rounded-full p-0"
-                          onClick={removeAvatar}
-                        >
-                          <X className="w-3 h-3" />
-                        </Button>
-                      </div>
-                    ) : (
-                      <div className="border-2 border-dashed border-gray-300 rounded-lg p-6 text-center w-32">
-                        <Users className="w-8 h-8 text-gray-400 mx-auto mb-2" />
-                        <Input
-                          type="file"
-                          accept="image/*"
-                          onChange={handleAvatarUpload}
-                          className="hidden"
-                          id="avatar-upload"
-                        />
-                        <Label
-                          htmlFor="avatar-upload"
-                          className="cursor-pointer text-sm text-blue-600 hover:text-blue-800"
-                        >
-                          Subir Foto
-                        </Label>
-                      </div>
-                    )}
-                  </div>
-
                   <div className="grid grid-cols-2 gap-4">
                     <div className="grid gap-2">
                       <Label htmlFor="firstName">Nombre *</Label>
@@ -597,13 +1408,17 @@ export default function UsersManagementPage() {
                         id="firstName"
                         value={formData.firstName}
                         onChange={(e) =>
-                          setFormData({
-                            ...formData,
-                            firstName: e.target.value,
-                          })
+                          handleFieldChange("firstName", e.target.value)
                         }
+                        onKeyPress={(e) => handleKeyPress(e, "firstName")}
                         placeholder="Juan Carlos"
+                        className={formErrors.firstName ? "border-red-500" : ""}
                       />
+                      {formErrors.firstName && (
+                        <p className="text-sm text-red-500 mt-1">
+                          {formErrors.firstName}
+                        </p>
+                      )}
                     </div>
                     <div className="grid gap-2">
                       <Label htmlFor="lastName">Apellido *</Label>
@@ -611,27 +1426,57 @@ export default function UsersManagementPage() {
                         id="lastName"
                         value={formData.lastName}
                         onChange={(e) =>
-                          setFormData({ ...formData, lastName: e.target.value })
+                          handleFieldChange("lastName", e.target.value)
                         }
+                        onKeyPress={(e) => handleKeyPress(e, "lastName")}
                         placeholder="Pérez"
+                        className={formErrors.lastName ? "border-red-500" : ""}
                       />
+                      {formErrors.lastName && (
+                        <p className="text-sm text-red-500 mt-1">
+                          {formErrors.lastName}
+                        </p>
+                      )}
                     </div>
                   </div>
 
                   <div className="grid gap-2">
                     <Label htmlFor="email">Email</Label>
-                    <Input
-                      id="email"
-                      type="email"
-                      value={formData.email}
-                      onChange={(e) =>
-                        setFormData({
-                          ...formData,
-                          email: e.target.value,
-                        })
-                      }
-                      placeholder="juan.perez@email.com"
-                    />
+                    <div className="relative">
+                      <Input
+                        id="email"
+                        type="email"
+                        value={formData.email}
+                        onChange={(e) =>
+                          setFormData({
+                            ...formData,
+                            email: e.target.value,
+                          })
+                        }
+                        placeholder="juan.perez@email.com"
+                        className={
+                          emailValidation.isValid
+                            ? ""
+                            : "border-red-500 focus:border-red-500"
+                        }
+                      />
+                      {emailValidation.isChecking && (
+                        <div className="absolute right-3 top-1/2 transform -translate-y-1/2">
+                          <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-blue-600"></div>
+                        </div>
+                      )}
+                    </div>
+                    {emailValidation.message && (
+                      <p
+                        className={`text-xs ${
+                          emailValidation.isValid
+                            ? "text-green-600"
+                            : "text-red-600"
+                        }`}
+                      >
+                        {emailValidation.message}
+                      </p>
+                    )}
                   </div>
 
                   <div className="grid grid-cols-2 gap-4">
@@ -641,10 +1486,17 @@ export default function UsersManagementPage() {
                         id="phone"
                         value={formData.phone}
                         onChange={(e) =>
-                          setFormData({ ...formData, phone: e.target.value })
+                          handleFieldChange("phone", e.target.value)
                         }
+                        onKeyPress={(e) => handleKeyPress(e, "phone")}
                         placeholder="+591 700 123 456"
+                        className={formErrors.phone ? "border-red-500" : ""}
                       />
+                      {formErrors.phone && (
+                        <p className="text-sm text-red-500 mt-1">
+                          {formErrors.phone}
+                        </p>
+                      )}
                     </div>
                     <div className="grid gap-2">
                       <Label htmlFor="gender">Género</Label>
@@ -728,14 +1580,19 @@ export default function UsersManagementPage() {
                         type="number"
                         value={formData.graduationYear || ""}
                         onChange={(e) =>
-                          setFormData({
-                            ...formData,
-                            graduationYear:
-                              Number.parseInt(e.target.value) || undefined,
-                          })
+                          handleFieldChange("graduationYear", e.target.value)
                         }
+                        onKeyPress={(e) => handleKeyPress(e, "graduationYear")}
                         placeholder="2024"
+                        className={
+                          formErrors.graduationYear ? "border-red-500" : ""
+                        }
                       />
+                      {formErrors.graduationYear && (
+                        <p className="text-sm text-red-500 mt-1">
+                          {formErrors.graduationYear}
+                        </p>
+                      )}
                     </div>
                   </div>
 
@@ -747,13 +1604,18 @@ export default function UsersManagementPage() {
                       id="currentInstitution"
                       value={formData.currentInstitution}
                       onChange={(e) =>
-                        setFormData({
-                          ...formData,
-                          currentInstitution: e.target.value,
-                        })
+                        handleFieldChange("currentInstitution", e.target.value)
                       }
                       placeholder="Universidad Mayor de San Simón"
+                      className={
+                        formErrors.currentInstitution ? "border-red-500" : ""
+                      }
                     />
+                    {formErrors.currentInstitution && (
+                      <p className="text-sm text-red-500 mt-1">
+                        {formErrors.currentInstitution}
+                      </p>
+                    )}
                   </div>
 
                   <div className="grid gap-2">
@@ -762,13 +1624,46 @@ export default function UsersManagementPage() {
                       id="address"
                       value={formData.address}
                       onChange={(e) =>
-                        setFormData({ ...formData, address: e.target.value })
+                        handleFieldChange("address", e.target.value)
                       }
                       placeholder="Av. Principal 123"
+                      className={formErrors.address ? "border-red-500" : ""}
                     />
+                    {formErrors.address && (
+                      <p className="text-sm text-red-500 mt-1">
+                        {formErrors.address}
+                      </p>
+                    )}
                   </div>
 
                   <div className="grid grid-cols-2 gap-4">
+                    <div className="grid gap-2">
+                      <Label htmlFor="department">Departamento</Label>
+                      <Select
+                        value={formData.department || ""}
+                        onValueChange={(value) =>
+                          setFormData({
+                            ...formData,
+                            department: value,
+                            municipality: "",
+                          })
+                        }
+                      >
+                        <SelectTrigger>
+                          <SelectValue placeholder="Seleccionar departamento" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          {Object.keys(BOLIVIA_LOCATIONS).map((department) => (
+                            <SelectItem key={department} value={department}>
+                              <div className="flex items-center gap-2">
+                                <Building className="h-4 w-4" />
+                                {department}
+                              </div>
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                    </div>
                     <div className="grid gap-2">
                       <Label htmlFor="municipality">Municipio</Label>
                       <Select
@@ -776,91 +1671,148 @@ export default function UsersManagementPage() {
                         onValueChange={(value) =>
                           setFormData({ ...formData, municipality: value })
                         }
+                        disabled={!formData.department}
                       >
                         <SelectTrigger>
-                          <SelectValue placeholder="Seleccionar municipio" />
+                          <SelectValue
+                            placeholder={
+                              formData.department
+                                ? "Seleccionar municipio"
+                                : "Primero selecciona un departamento"
+                            }
+                          />
                         </SelectTrigger>
                         <SelectContent>
-                          <SelectItem value="La Paz">La Paz</SelectItem>
-                          <SelectItem value="Santa Cruz">Santa Cruz</SelectItem>
-                          <SelectItem value="Cochabamba">Cochabamba</SelectItem>
-                          <SelectItem value="Sucre">Sucre</SelectItem>
-                          <SelectItem value="Potosí">Potosí</SelectItem>
-                          <SelectItem value="Oruro">Oruro</SelectItem>
-                          <SelectItem value="Tarija">Tarija</SelectItem>
-                          <SelectItem value="Beni">Beni</SelectItem>
-                          <SelectItem value="Pando">Pando</SelectItem>
-                        </SelectContent>
-                      </Select>
-                    </div>
-                    <div className="grid gap-2">
-                      <Label htmlFor="department">Departamento</Label>
-                      <Select
-                        value={formData.department || ""}
-                        onValueChange={(value) =>
-                          setFormData({ ...formData, department: value })
-                        }
-                      >
-                        <SelectTrigger>
-                          <SelectValue placeholder="Seleccionar departamento" />
-                        </SelectTrigger>
-                        <SelectContent>
-                          <SelectItem value="La Paz">La Paz</SelectItem>
-                          <SelectItem value="Santa Cruz">Santa Cruz</SelectItem>
-                          <SelectItem value="Cochabamba">Cochabamba</SelectItem>
-                          <SelectItem value="Chuquisaca">Chuquisaca</SelectItem>
-                          <SelectItem value="Potosí">Potosí</SelectItem>
-                          <SelectItem value="Oruro">Oruro</SelectItem>
-                          <SelectItem value="Tarija">Tarija</SelectItem>
-                          <SelectItem value="Beni">Beni</SelectItem>
-                          <SelectItem value="Pando">Pando</SelectItem>
+                          {availableMunicipalities.map((municipality) => (
+                            <SelectItem key={municipality} value={municipality}>
+                              <div className="flex items-center gap-2">
+                                <MapPin className="h-4 w-4" />
+                                {municipality}
+                              </div>
+                            </SelectItem>
+                          ))}
                         </SelectContent>
                       </Select>
                     </div>
                   </div>
                 </TabsContent>
 
-                <TabsContent value="skills" className="space-y-4">
-                  <div className="grid gap-2">
-                    <Label htmlFor="skills">
-                      Habilidades (separadas por comas)
-                    </Label>
-                    <Input
-                      id="skills"
-                      value={formData.skills?.join(", ") || ""}
-                      onChange={(e) =>
-                        setFormData({
-                          ...formData,
-                          skills: e.target.value
-                            .split(",")
-                            .map((s) => s.trim())
-                            .filter((s) => s),
-                        })
-                      }
-                      placeholder="JavaScript, React, HTML, CSS, Excel"
-                    />
+                <TabsContent value="skills" className="space-y-6">
+                  {/* Skills Section */}
+                  <div className="space-y-4">
+                    <div className="space-y-2">
+                      <Label htmlFor="skills">Habilidades</Label>
+                      <div className="flex gap-2">
+                        <Input
+                          id="skills"
+                          value={skillInput}
+                          onChange={(e) => setSkillInput(e.target.value)}
+                          onKeyPress={handleSkillKeyPress}
+                          placeholder="Escribe una habilidad y presiona Enter"
+                        />
+                        <Button
+                          type="button"
+                          variant="outline"
+                          onClick={addSkill}
+                          disabled={!skillInput.trim()}
+                        >
+                          <Plus className="w-4 h-4" />
+                        </Button>
+                      </div>
+                      <p className="text-xs text-muted-foreground">
+                        Escribe una habilidad y presiona Enter o haz clic en el
+                        botón +
+                      </p>
+                    </div>
+
+                    {/* Skills Tags */}
+                    {formData.skills && formData.skills.length > 0 && (
+                      <div className="space-y-2">
+                        <Label className="text-sm font-medium">
+                          Habilidades agregadas:
+                        </Label>
+                        <div className="flex flex-wrap gap-2">
+                          {formData.skills.map((skill, index) => (
+                            <Badge
+                              key={index}
+                              variant="secondary"
+                              className="flex items-center gap-1 px-3 py-1"
+                            >
+                              {skill}
+                              <Button
+                                type="button"
+                                variant="ghost"
+                                size="sm"
+                                className="h-auto p-0 ml-1 hover:bg-transparent"
+                                onClick={() => removeSkill(skill)}
+                              >
+                                <X className="w-3 h-3" />
+                              </Button>
+                            </Badge>
+                          ))}
+                        </div>
+                      </div>
+                    )}
                   </div>
 
-                  <div className="grid gap-2">
-                    <Label htmlFor="interests">
-                      Intereses (separados por comas)
-                    </Label>
-                    <Input
-                      id="interests"
-                      value={formData.interests?.join(", ") || ""}
-                      onChange={(e) =>
-                        setFormData({
-                          ...formData,
-                          interests: e.target.value
-                            .split(",")
-                            .map((s) => s.trim())
-                            .filter((s) => s),
-                        })
-                      }
-                      placeholder="Programación, Tecnología, Música, Deportes"
-                    />
+                  {/* Interests Section */}
+                  <div className="space-y-4">
+                    <div className="space-y-2">
+                      <Label htmlFor="interests">Intereses</Label>
+                      <div className="flex gap-2">
+                        <Input
+                          id="interests"
+                          value={interestInput}
+                          onChange={(e) => setInterestInput(e.target.value)}
+                          onKeyPress={handleInterestKeyPress}
+                          placeholder="Escribe un interés y presiona Enter"
+                        />
+                        <Button
+                          type="button"
+                          variant="outline"
+                          onClick={addInterest}
+                          disabled={!interestInput.trim()}
+                        >
+                          <Plus className="w-4 h-4" />
+                        </Button>
+                      </div>
+                      <p className="text-xs text-muted-foreground">
+                        Escribe un interés y presiona Enter o haz clic en el
+                        botón +
+                      </p>
+                    </div>
+
+                    {/* Interests Tags */}
+                    {formData.interests && formData.interests.length > 0 && (
+                      <div className="space-y-2">
+                        <Label className="text-sm font-medium">
+                          Intereses agregados:
+                        </Label>
+                        <div className="flex flex-wrap gap-2">
+                          {formData.interests.map((interest, index) => (
+                            <Badge
+                              key={index}
+                              variant="outline"
+                              className="flex items-center gap-1 px-3 py-1"
+                            >
+                              {interest}
+                              <Button
+                                type="button"
+                                variant="ghost"
+                                size="sm"
+                                className="h-auto p-0 ml-1 hover:bg-transparent"
+                                onClick={() => removeInterest(interest)}
+                              >
+                                <X className="w-3 h-3" />
+                              </Button>
+                            </Badge>
+                          ))}
+                        </div>
+                      </div>
+                    )}
                   </div>
 
+                  {/* Study Status */}
                   <div className="grid gap-2">
                     <Label htmlFor="isStudying">
                       ¿Está estudiando actualmente?
@@ -1305,6 +2257,134 @@ export default function UsersManagementPage() {
           </DialogHeader>
           <div className="flex justify-end">
             <Button onClick={() => setSuccessDialogOpen(false)}>Cerrar</Button>
+          </div>
+        </DialogContent>
+      </Dialog>
+
+      {/* Credentials Modal */}
+      <Dialog
+        open={credentialsModalOpen}
+        onOpenChange={setCredentialsModalOpen}
+      >
+        <DialogContent className="max-w-md">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <Users className="w-5 h-5 text-green-600" />
+              Usuario Creado Exitosamente
+            </DialogTitle>
+            <DialogDescription>
+              Guarda estas credenciales de acceso de forma segura. No podrás ver
+              la contraseña nuevamente.
+            </DialogDescription>
+          </DialogHeader>
+
+          <div className="space-y-4">
+            {/* Username */}
+            <div className="space-y-2">
+              <Label htmlFor="created-username">Nombre de Usuario</Label>
+              <div className="flex items-center gap-2">
+                <Input
+                  id="created-username"
+                  value={createdUserCredentials?.username || ""}
+                  readOnly
+                  className="bg-gray-50"
+                />
+                <Button
+                  size="sm"
+                  variant="outline"
+                  onClick={() =>
+                    copyToClipboard(
+                      createdUserCredentials?.username || "",
+                      "Usuario"
+                    )
+                  }
+                >
+                  {copiedField === "Usuario" ? (
+                    <Check className="w-4 h-4 text-green-600" />
+                  ) : (
+                    <Copy className="w-4 h-4" />
+                  )}
+                </Button>
+              </div>
+            </div>
+
+            {/* Password */}
+            <div className="space-y-2">
+              <Label htmlFor="created-password">Contraseña</Label>
+              <div className="flex items-center gap-2">
+                <div className="relative flex-1">
+                  <Input
+                    id="created-password"
+                    value={createdUserCredentials?.password || ""}
+                    readOnly
+                    type={showCredentialsPassword ? "text" : "password"}
+                    className="bg-gray-50 pr-10"
+                  />
+                  <Button
+                    type="button"
+                    variant="ghost"
+                    size="sm"
+                    className="absolute right-0 top-0 h-full px-3 py-2 hover:bg-transparent"
+                    onClick={() =>
+                      setShowCredentialsPassword(!showCredentialsPassword)
+                    }
+                  >
+                    {showCredentialsPassword ? (
+                      <EyeOff className="h-4 w-4 text-gray-500" />
+                    ) : (
+                      <Eye className="h-4 w-4 text-gray-500" />
+                    )}
+                  </Button>
+                </div>
+                <Button
+                  size="sm"
+                  variant="outline"
+                  onClick={() =>
+                    copyToClipboard(
+                      createdUserCredentials?.password || "",
+                      "Contraseña"
+                    )
+                  }
+                >
+                  {copiedField === "Contraseña" ? (
+                    <Check className="w-4 h-4 text-green-600" />
+                  ) : (
+                    <Copy className="w-4 h-4" />
+                  )}
+                </Button>
+              </div>
+            </div>
+
+            {/* Copy Both Button */}
+            <div className="pt-2">
+              <Button
+                variant="outline"
+                className="w-full"
+                onClick={() => {
+                  if (createdUserCredentials) {
+                    const credentials = `Usuario: ${createdUserCredentials.username}\nContraseña: ${createdUserCredentials.password}`;
+                    copyToClipboard(credentials, "Credenciales");
+                  }
+                }}
+              >
+                <Copy className="w-4 h-4 mr-2" />
+                Copiar Ambas Credenciales
+              </Button>
+            </div>
+          </div>
+
+          <div className="flex justify-end gap-2 pt-4">
+            <Button
+              variant="outline"
+              onClick={() => {
+                setCredentialsModalOpen(false);
+                setCreatedUserCredentials(null);
+                setCopiedField(null);
+                setShowCredentialsPassword(false);
+              }}
+            >
+              Cerrar
+            </Button>
           </div>
         </DialogContent>
       </Dialog>

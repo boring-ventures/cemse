@@ -11,8 +11,6 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import {
-  Download,
-  Star,
   FileText,
   Video,
   Music,
@@ -26,29 +24,37 @@ import {
   MoreVertical,
 } from "lucide-react";
 import { Resource } from "@/types/api";
+import { useCurrentUser } from "@/hooks/use-current-user";
+import { ResourceDetailsModal } from "./ResourceDetailsModal";
 
 interface ResourceCardProps {
   resource: Resource;
-  onDownload?: (resource: Resource) => void;
   onRate?: (resource: Resource, rating: number) => void;
   onEdit?: (resource: Resource) => void;
   onDelete?: (resource: Resource) => void;
   showActions?: boolean;
-  showDownloadActions?: boolean;
 }
 
 export function ResourceCard({
   resource,
-  onDownload,
   onRate,
   onEdit,
   onDelete,
   showActions = false,
-  showDownloadActions = true,
 }: ResourceCardProps) {
-  const [rating, setRating] = useState(resource.rating || 0);
-  const [userRating, setUserRating] = useState(0);
+  const { user } = useCurrentUser();
+  const [showDetailsModal, setShowDetailsModal] = useState(false);
 
+  // Check if user can edit/delete this resource
+  const canEditResource = (resource: Resource, currentUser: any) => {
+    // Superadmin can edit all resources
+    if (currentUser?.role === "SUPERADMIN") return true;
+
+    // Users can only edit their own resources
+    return resource.createdByUserId === currentUser?.id;
+  };
+
+  const canEdit = canEditResource(resource, user);
   const getTypeIcon = (type: string) => {
     switch (type) {
       case "DOCUMENT":
@@ -76,19 +82,6 @@ export function ResourceCard({
     });
   };
 
-  const handleDownload = () => {
-    if (onDownload) {
-      onDownload(resource);
-    }
-  };
-
-  const handleRate = (newRating: number) => {
-    setUserRating(newRating);
-    if (onRate) {
-      onRate(resource, newRating);
-    }
-  };
-
   return (
     <Card className="h-full flex flex-col hover:shadow-lg transition-shadow">
       <CardHeader className="pb-3">
@@ -103,7 +96,7 @@ export function ResourceCard({
             <Badge variant="secondary" className="text-xs">
               {resource.category}
             </Badge>
-            {showActions && (
+            {showActions && canEdit && (
               <DropdownMenu>
                 <DropdownMenuTrigger asChild>
                   <Button variant="ghost" size="sm" className="h-8 w-8 p-0">
@@ -146,28 +139,13 @@ export function ResourceCard({
               {formatDate(resource.publishedDate || resource.createdAt)}
             </span>
           </div>
-          <div className="flex items-center gap-2 text-xs text-muted-foreground">
-            <Download className="h-3 w-3" />
-            <span>{resource.downloads || 0} descargas</span>
-          </div>
-        </div>
-
-        {/* Rating */}
-        <div className="flex items-center gap-1 mb-4">
-          {[1, 2, 3, 4, 5].map((star) => (
-            <button
-              key={star}
-              onClick={() => handleRate(star)}
-              className="text-yellow-400 hover:text-yellow-500 transition-colors"
-            >
-              <Star
-                className={`h-4 w-4 ${star <= (userRating || rating) ? "fill-current" : ""}`}
-              />
-            </button>
-          ))}
-          <span className="text-xs text-muted-foreground ml-2">
-            ({rating.toFixed(1)})
-          </span>
+          {/* Ownership indicator */}
+          {canEdit && (
+            <div className="flex items-center gap-2 text-xs text-blue-600 bg-blue-50 px-2 py-1 rounded-md">
+              <User className="h-3 w-3" />
+              <span>Tu recurso</span>
+            </div>
+          )}
         </div>
 
         {/* Tags */}
@@ -187,35 +165,26 @@ export function ResourceCard({
         )}
 
         {/* Actions */}
-        {showDownloadActions ? (
-          <div className="mt-auto flex gap-2">
-            <Button onClick={handleDownload} size="sm" className="flex-1">
-              <Download className="h-4 w-4 mr-2" />
-              Descargar
-            </Button>
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={() =>
-                window.open(
-                  resource.downloadUrl || resource.externalUrl,
-                  "_blank"
-                )
-              }
-              disabled={!resource.downloadUrl && !resource.externalUrl}
-            >
-              <Eye className="h-4 w-4" />
-            </Button>
-          </div>
-        ) : (
-          <div className="mt-auto p-3 bg-blue-50 border border-blue-200 rounded-md">
-            <p className="text-xs text-blue-700 text-center">
-              Solo los jóvenes pueden descargar recursos. Inicia sesión con una
-              cuenta de joven para acceder a las descargas.
-            </p>
-          </div>
-        )}
+        <div className="mt-auto flex gap-2">
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={() => setShowDetailsModal(true)}
+            className="flex-1"
+          >
+            <Eye className="h-4 w-4 mr-2" />
+            Ver
+          </Button>
+        </div>
       </CardContent>
+
+      {/* Resource Details Modal */}
+      <ResourceDetailsModal
+        resource={resource}
+        open={showDetailsModal}
+        onOpenChange={setShowDetailsModal}
+        onRate={onRate}
+      />
     </Card>
   );
 }

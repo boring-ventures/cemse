@@ -25,9 +25,9 @@ import { getAuthHeaders } from "@/lib/api";
 import MapPicker from "@/components/dashboard/MapPicker";
 
 const jobOfferSchema = z.object({
-  title: z.string().min(1, "Title is required"),
-  description: z.string().min(1, "Description is required"),
-  requirements: z.string().min(1, "Requirements are required"),
+  title: z.string().min(1, "El título es requerido"),
+  description: z.string().min(1, "La descripción es requerida"),
+  requirements: z.string().min(1, "Los requisitos son requeridos"),
   benefits: z.string().optional(),
   salaryMin: z.string().optional(),
   salaryMax: z.string().optional(),
@@ -39,10 +39,10 @@ const jobOfferSchema = z.object({
     "VOLUNTEER",
     "FREELANCE",
   ]),
-  workSchedule: z.string().min(1, "Work schedule is required"),
+  workSchedule: z.string().min(1, "El horario de trabajo es requerido"),
   workModality: z.enum(["ON_SITE", "REMOTE", "HYBRID"]),
-  location: z.string().min(1, "Location is required"),
-  municipality: z.string().min(1, "Municipality is required"),
+  location: z.string().min(1, "La ubicación es requerida"),
+  municipality: z.string().min(1, "El municipio es requerido"),
   department: z.string().default("Cochabamba"),
   experienceLevel: z.enum([
     "NO_EXPERIENCE",
@@ -63,7 +63,7 @@ const jobOfferSchema = z.object({
   skillsRequired: z.array(z.string()).default([]),
   desiredSkills: z.array(z.string()).default([]),
   applicationDeadline: z.string().optional(),
-  companyId: z.string().min(1, "Company is required"),
+  companyId: z.string().min(1, "La empresa es requerida"),
   status: z.enum(["ACTIVE", "PAUSED", "CLOSED", "DRAFT"]).default("ACTIVE"),
   featured: z.boolean().default(false),
   expiresAt: z.string().optional(),
@@ -147,7 +147,7 @@ export function JobOfferForm({
         headers: await getAuthHeaders(),
       });
       if (!response.ok) {
-        throw new Error("Failed to fetch companies");
+        throw new Error("Error al cargar las empresas");
       }
       return response.json();
     },
@@ -217,16 +217,16 @@ export function JobOfferForm({
       {/* Basic Information */}
       <Card>
         <CardHeader>
-          <CardTitle>Basic Information</CardTitle>
+          <CardTitle>Información Básica</CardTitle>
         </CardHeader>
         <CardContent className="space-y-4">
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div className="space-y-2">
-              <Label htmlFor="title">Job Title *</Label>
+              <Label htmlFor="title">Título del Empleo *</Label>
               <Input
                 id="title"
                 {...register("title")}
-                placeholder="e.g., Frontend Developer"
+                placeholder="ej., Desarrollador Frontend"
               />
               {errors.title && (
                 <p className="text-sm text-red-600">{errors.title.message}</p>
@@ -234,13 +234,13 @@ export function JobOfferForm({
             </div>
 
             <div className="space-y-2">
-              <Label htmlFor="companyId">Company *</Label>
+              <Label htmlFor="companyId">Empresa *</Label>
               <Select
                 value={watch("companyId")}
                 onValueChange={(value) => setValue("companyId", value)}
               >
                 <SelectTrigger>
-                  <SelectValue placeholder="Select a company" />
+                  <SelectValue placeholder="Selecciona una empresa" />
                 </SelectTrigger>
                 <SelectContent>
                   {companies?.map((company) => (
@@ -259,11 +259,11 @@ export function JobOfferForm({
           </div>
 
           <div className="space-y-2">
-            <Label htmlFor="description">Job Description *</Label>
+            <Label htmlFor="description">Descripción del Empleo *</Label>
             <Textarea
               id="description"
               {...register("description")}
-              placeholder="Describe the role, responsibilities, and what makes this position exciting..."
+              placeholder="Describe el rol, responsabilidades y qué hace emocionante esta posición..."
               rows={4}
             />
             {errors.description && (
@@ -274,11 +274,11 @@ export function JobOfferForm({
           </div>
 
           <div className="space-y-2">
-            <Label htmlFor="requirements">Requirements *</Label>
+            <Label htmlFor="requirements">Requisitos *</Label>
             <Textarea
               id="requirements"
               {...register("requirements")}
-              placeholder="List the requirements for this position..."
+              placeholder="Lista los requisitos para esta posición..."
               rows={3}
             />
             {errors.requirements && (
@@ -289,11 +289,11 @@ export function JobOfferForm({
           </div>
 
           <div className="space-y-2">
-            <Label htmlFor="benefits">Benefits (Optional)</Label>
+            <Label htmlFor="benefits">Beneficios (Opcional)</Label>
             <Textarea
               id="benefits"
               {...register("benefits")}
-              placeholder="List the benefits and perks offered..."
+              placeholder="Lista los beneficios y ventajas ofrecidas..."
               rows={3}
             />
           </div>
@@ -303,12 +303,12 @@ export function JobOfferForm({
       {/* Job Details */}
       <Card>
         <CardHeader>
-          <CardTitle>Job Details</CardTitle>
+          <CardTitle>Detalles del Empleo</CardTitle>
         </CardHeader>
         <CardContent className="space-y-4">
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
             <div className="space-y-2">
-              <Label htmlFor="contractType">Contract Type *</Label>
+              <Label htmlFor="contractType">Tipo de Contrato *</Label>
               <Select
                 value={watch("contractType")}
                 onValueChange={(value) =>
@@ -319,10 +319,10 @@ export function JobOfferForm({
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="FULL_TIME">Full Time</SelectItem>
-                  <SelectItem value="PART_TIME">Part Time</SelectItem>
-                  <SelectItem value="INTERNSHIP">Internship</SelectItem>
-                  <SelectItem value="VOLUNTEER">Volunteer</SelectItem>
+                  <SelectItem value="FULL_TIME">Tiempo Completo</SelectItem>
+                  <SelectItem value="PART_TIME">Medio Tiempo</SelectItem>
+                  <SelectItem value="INTERNSHIP">Pasantía</SelectItem>
+                  <SelectItem value="VOLUNTEER">Voluntario</SelectItem>
                   <SelectItem value="FREELANCE">Freelance</SelectItem>
                 </SelectContent>
               </Select>
@@ -334,7 +334,7 @@ export function JobOfferForm({
             </div>
 
             <div className="space-y-2">
-              <Label htmlFor="workModality">Work Modality *</Label>
+              <Label htmlFor="workModality">Modalidad de Trabajo *</Label>
               <Select
                 value={watch("workModality")}
                 onValueChange={(value) =>
@@ -345,9 +345,9 @@ export function JobOfferForm({
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="ON_SITE">On Site</SelectItem>
-                  <SelectItem value="REMOTE">Remote</SelectItem>
-                  <SelectItem value="HYBRID">Hybrid</SelectItem>
+                  <SelectItem value="ON_SITE">Presencial</SelectItem>
+                  <SelectItem value="REMOTE">Remoto</SelectItem>
+                  <SelectItem value="HYBRID">Híbrido</SelectItem>
                 </SelectContent>
               </Select>
               {errors.workModality && (
@@ -358,7 +358,7 @@ export function JobOfferForm({
             </div>
 
             <div className="space-y-2">
-              <Label htmlFor="experienceLevel">Experience Level *</Label>
+              <Label htmlFor="experienceLevel">Nivel de Experiencia *</Label>
               <Select
                 value={watch("experienceLevel")}
                 onValueChange={(value) =>
@@ -369,10 +369,10 @@ export function JobOfferForm({
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="NO_EXPERIENCE">No Experience</SelectItem>
-                  <SelectItem value="ENTRY_LEVEL">Entry Level</SelectItem>
-                  <SelectItem value="MID_LEVEL">Mid Level</SelectItem>
-                  <SelectItem value="SENIOR_LEVEL">Senior Level</SelectItem>
+                  <SelectItem value="NO_EXPERIENCE">Sin Experiencia</SelectItem>
+                  <SelectItem value="ENTRY_LEVEL">Nivel Inicial</SelectItem>
+                  <SelectItem value="MID_LEVEL">Nivel Intermedio</SelectItem>
+                  <SelectItem value="SENIOR_LEVEL">Nivel Senior</SelectItem>
                 </SelectContent>
               </Select>
               {errors.experienceLevel && (
@@ -385,11 +385,11 @@ export function JobOfferForm({
 
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div className="space-y-2">
-              <Label htmlFor="workSchedule">Work Schedule *</Label>
+              <Label htmlFor="workSchedule">Horario de Trabajo *</Label>
               <Input
                 id="workSchedule"
                 {...register("workSchedule")}
-                placeholder="e.g., Monday to Friday, 9 AM - 6 PM"
+                placeholder="ej., Lunes a Viernes, 9 AM - 6 PM"
               />
               {errors.workSchedule && (
                 <p className="text-sm text-red-600">
@@ -399,7 +399,7 @@ export function JobOfferForm({
             </div>
 
             <div className="space-y-2">
-              <Label htmlFor="educationRequired">Education Required</Label>
+              <Label htmlFor="educationRequired">Educación Requerida</Label>
               <Select
                 value={watch("educationRequired")}
                 onValueChange={(value) =>
@@ -407,15 +407,15 @@ export function JobOfferForm({
                 }
               >
                 <SelectTrigger>
-                  <SelectValue placeholder="Select education level" />
+                  <SelectValue placeholder="Selecciona nivel educativo" />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="PRIMARY">Primary</SelectItem>
-                  <SelectItem value="SECONDARY">Secondary</SelectItem>
-                  <SelectItem value="TECHNICAL">Technical</SelectItem>
-                  <SelectItem value="UNIVERSITY">University</SelectItem>
-                  <SelectItem value="POSTGRADUATE">Postgraduate</SelectItem>
-                  <SelectItem value="OTHER">Other</SelectItem>
+                  <SelectItem value="PRIMARY">Primaria</SelectItem>
+                  <SelectItem value="SECONDARY">Secundaria</SelectItem>
+                  <SelectItem value="TECHNICAL">Técnico</SelectItem>
+                  <SelectItem value="UNIVERSITY">Universitario</SelectItem>
+                  <SelectItem value="POSTGRADUATE">Postgrado</SelectItem>
+                  <SelectItem value="OTHER">Otro</SelectItem>
                 </SelectContent>
               </Select>
             </div>
@@ -426,16 +426,16 @@ export function JobOfferForm({
       {/* Location */}
       <Card>
         <CardHeader>
-          <CardTitle>Location</CardTitle>
+          <CardTitle>Ubicación</CardTitle>
         </CardHeader>
         <CardContent className="space-y-4">
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
             <div className="space-y-2">
-              <Label htmlFor="location">Location *</Label>
+              <Label htmlFor="location">Ubicación *</Label>
               <Input
                 id="location"
                 {...register("location")}
-                placeholder="e.g., Cochabamba, Bolivia"
+                placeholder="ej., Cochabamba, Bolivia"
               />
               {errors.location && (
                 <p className="text-sm text-red-600">
@@ -445,11 +445,11 @@ export function JobOfferForm({
             </div>
 
             <div className="space-y-2">
-              <Label htmlFor="municipality">Municipality *</Label>
+              <Label htmlFor="municipality">Municipio *</Label>
               <Input
                 id="municipality"
                 {...register("municipality")}
-                placeholder="e.g., Cochabamba"
+                placeholder="ej., Cochabamba"
               />
               {errors.municipality && (
                 <p className="text-sm text-red-600">
@@ -459,11 +459,11 @@ export function JobOfferForm({
             </div>
 
             <div className="space-y-2">
-              <Label htmlFor="department">Department</Label>
+              <Label htmlFor="department">Departamento</Label>
               <Input
                 id="department"
                 {...register("department")}
-                placeholder="e.g., Cochabamba"
+                placeholder="ej., Cochabamba"
                 defaultValue="Cochabamba"
               />
             </div>
@@ -489,32 +489,32 @@ export function JobOfferForm({
       {/* Salary */}
       <Card>
         <CardHeader>
-          <CardTitle>Salary Information</CardTitle>
+          <CardTitle>Información Salarial</CardTitle>
         </CardHeader>
         <CardContent className="space-y-4">
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
             <div className="space-y-2">
-              <Label htmlFor="salaryMin">Minimum Salary</Label>
+              <Label htmlFor="salaryMin">Salario Mínimo</Label>
               <Input
                 id="salaryMin"
                 type="number"
                 {...register("salaryMin")}
-                placeholder="e.g., 3000"
+                placeholder="ej., 3000"
               />
             </div>
 
             <div className="space-y-2">
-              <Label htmlFor="salaryMax">Maximum Salary</Label>
+              <Label htmlFor="salaryMax">Salario Máximo</Label>
               <Input
                 id="salaryMax"
                 type="number"
                 {...register("salaryMax")}
-                placeholder="e.g., 5000"
+                placeholder="ej., 5000"
               />
             </div>
 
             <div className="space-y-2">
-              <Label htmlFor="salaryCurrency">Currency</Label>
+              <Label htmlFor="salaryCurrency">Moneda</Label>
               <Select
                 value={watch("salaryCurrency")}
                 onValueChange={(value) => setValue("salaryCurrency", value)}
@@ -524,7 +524,7 @@ export function JobOfferForm({
                 </SelectTrigger>
                 <SelectContent>
                   <SelectItem value="BOB">BOB (Boliviano)</SelectItem>
-                  <SelectItem value="USD">USD (US Dollar)</SelectItem>
+                  <SelectItem value="USD">USD (Dólar Americano)</SelectItem>
                 </SelectContent>
               </Select>
             </div>
@@ -535,17 +535,17 @@ export function JobOfferForm({
       {/* Skills */}
       <Card>
         <CardHeader>
-          <CardTitle>Skills</CardTitle>
+          <CardTitle>Habilidades</CardTitle>
         </CardHeader>
         <CardContent className="space-y-6">
           {/* Required Skills */}
           <div className="space-y-3">
-            <Label>Required Skills</Label>
+            <Label>Habilidades Requeridas</Label>
             <div className="flex gap-2">
               <Input
                 value={newSkillRequired}
                 onChange={(e) => setNewSkillRequired(e.target.value)}
-                placeholder="Add a required skill"
+                placeholder="Agregar habilidad requerida"
                 onKeyPress={(e) =>
                   e.key === "Enter" && (e.preventDefault(), addSkillRequired())
                 }
@@ -578,12 +578,12 @@ export function JobOfferForm({
 
           {/* Desired Skills */}
           <div className="space-y-3">
-            <Label>Desired Skills (Optional)</Label>
+            <Label>Habilidades Deseadas (Opcional)</Label>
             <div className="flex gap-2">
               <Input
                 value={newDesiredSkill}
                 onChange={(e) => setNewDesiredSkill(e.target.value)}
-                placeholder="Add a desired skill"
+                placeholder="Agregar habilidad deseada"
                 onKeyPress={(e) =>
                   e.key === "Enter" && (e.preventDefault(), addDesiredSkill())
                 }
@@ -617,12 +617,12 @@ export function JobOfferForm({
       {/* Dates and Status */}
       <Card>
         <CardHeader>
-          <CardTitle>Dates and Status</CardTitle>
+          <CardTitle>Fechas y Estado</CardTitle>
         </CardHeader>
         <CardContent className="space-y-4">
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div className="space-y-2">
-              <Label htmlFor="applicationDeadline">Application Deadline</Label>
+              <Label htmlFor="applicationDeadline">Fecha Límite de Aplicación</Label>
               <Input
                 id="applicationDeadline"
                 type="date"
@@ -631,14 +631,14 @@ export function JobOfferForm({
             </div>
 
             <div className="space-y-2">
-              <Label htmlFor="expiresAt">Expiration Date</Label>
+              <Label htmlFor="expiresAt">Fecha de Expiración</Label>
               <Input id="expiresAt" type="date" {...register("expiresAt")} />
             </div>
           </div>
 
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div className="space-y-2">
-              <Label htmlFor="status">Status</Label>
+              <Label htmlFor="status">Estado</Label>
               <Select
                 value={watch("status")}
                 onValueChange={(value) => setValue("status", value as any)}
@@ -647,10 +647,10 @@ export function JobOfferForm({
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="ACTIVE">Active</SelectItem>
-                  <SelectItem value="PAUSED">Paused</SelectItem>
-                  <SelectItem value="CLOSED">Closed</SelectItem>
-                  <SelectItem value="DRAFT">Draft</SelectItem>
+                  <SelectItem value="ACTIVE">Activo</SelectItem>
+                  <SelectItem value="PAUSED">Pausado</SelectItem>
+                  <SelectItem value="CLOSED">Cerrado</SelectItem>
+                  <SelectItem value="DRAFT">Borrador</SelectItem>
                 </SelectContent>
               </Select>
             </div>
@@ -663,7 +663,7 @@ export function JobOfferForm({
                   setValue("featured", checked as boolean)
                 }
               />
-              <Label htmlFor="featured">Featured Job Offer</Label>
+              <Label htmlFor="featured">Oferta de Empleo Destacada</Label>
             </div>
           </div>
         </CardContent>

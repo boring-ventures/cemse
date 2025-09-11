@@ -9,9 +9,6 @@ import {
   Users,
   Eye,
   Star,
-  Share,
-  Bookmark,
-  BookmarkCheck,
   Building,
   Globe,
   Calendar,
@@ -39,10 +36,8 @@ import { JobApplicationService } from "@/services/job-application.service";
 import { useToast } from "@/hooks/use-toast";
 import { useJobOffer } from "@/hooks/useJobOfferApi";
 import { CheckCircle, XCircle, Loader2 } from "lucide-react";
-import { copyToClipboard } from "@/lib/utils";
 
 export default function JobDetailPage() {
-  const [isSaved, setIsSaved] = useState(false);
   const [showApplicationModal, setShowApplicationModal] = useState(false);
   const [applicationStatus, setApplicationStatus] = useState<{
     hasApplied: boolean;
@@ -205,11 +200,6 @@ export default function JobDetailPage() {
     }
   };
 
-  const handleSaveJob = () => {
-    setIsSaved(!isSaved);
-    // TODO: Implementar funcionalidad de guardar/quitar guardado del empleo
-  };
-
   const handleCancelApplication = async () => {
     if (!applicationStatus.application?.id) {
       toast({
@@ -280,50 +270,92 @@ export default function JobDetailPage() {
     }
   };
 
-  const handleShare = () => {
-    if (navigator.share) {
-      navigator.share({
-        title: job?.title,
-        text: `Mira esta oportunidad laboral: ${job?.title} en ${job?.company?.name || "Empresa"}`,
-        url: window.location.href,
-      });
-    } else {
-      copyToClipboard(
-        window.location.href,
-        () => {
-          // Success callback - could add toast here if needed
-        },
-        (errorMessage) => {
-          console.error("Failed to copy job URL:", errorMessage);
-        }
-      );
-      // TODO: Mostrar notificación toast
-    }
-  };
-
   if (loading || authLoading) {
     return (
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4 sm:py-6">
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 sm:gap-6">
-          <div className="lg:col-span-2 space-y-4 sm:space-y-6">
-            <Skeleton className="h-6 sm:h-8 w-24 sm:w-32" />
-            <Card>
-              <CardHeader className="pb-3 sm:pb-6">
-                <Skeleton className="h-5 sm:h-6 w-3/4" />
-                <Skeleton className="h-3 sm:h-4 w-1/2" />
-              </CardHeader>
-              <CardContent>
-                <div className="space-y-3 sm:space-y-4">
-                  <Skeleton className="h-16 sm:h-20 w-full" />
-                  <Skeleton className="h-3 sm:h-4 w-full" />
-                  <Skeleton className="h-3 sm:h-4 w-3/4" />
-                </div>
-              </CardContent>
-            </Card>
-          </div>
-          <div className="space-y-4 sm:space-y-6">
-            <Skeleton className="h-32 sm:h-40 w-full" />
-            <Skeleton className="h-48 sm:h-60 w-full" />
+      <div className="min-h-screen bg-gray-50">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6 sm:py-8">
+          <div className="space-y-8">
+            {/* Back Button Skeleton */}
+            <Skeleton className="h-8 w-32" />
+
+            <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 lg:gap-8">
+              <div className="lg:col-span-2 space-y-6">
+                {/* Job Header Skeleton */}
+                <Card className="bg-white shadow-sm border-0">
+                  <CardHeader className="pb-4">
+                    <div className="flex items-start gap-4">
+                      <Skeleton className="w-16 h-16 rounded-full" />
+                      <div className="flex-1 space-y-3">
+                        <Skeleton className="h-8 w-3/4" />
+                        <Skeleton className="h-6 w-1/2" />
+                        <div className="flex gap-4">
+                          <Skeleton className="h-4 w-24" />
+                          <Skeleton className="h-4 w-20" />
+                          <Skeleton className="h-4 w-28" />
+                        </div>
+                      </div>
+                    </div>
+                  </CardHeader>
+                  <CardContent>
+                    <div className="flex gap-2 mb-4">
+                      <Skeleton className="h-6 w-20" />
+                      <Skeleton className="h-6 w-16" />
+                      <Skeleton className="h-6 w-24" />
+                    </div>
+                    <div className="flex gap-4">
+                      <Skeleton className="h-4 w-32" />
+                      <Skeleton className="h-4 w-28" />
+                    </div>
+                  </CardContent>
+                </Card>
+
+                {/* Content Cards Skeleton */}
+                {[...Array(4)].map((_, i) => (
+                  <Card key={i} className="bg-white shadow-sm border-0">
+                    <CardHeader className="pb-4">
+                      <Skeleton className="h-6 w-48" />
+                    </CardHeader>
+                    <CardContent>
+                      <div className="space-y-3">
+                        <Skeleton className="h-4 w-full" />
+                        <Skeleton className="h-4 w-5/6" />
+                        <Skeleton className="h-4 w-4/6" />
+                      </div>
+                    </CardContent>
+                  </Card>
+                ))}
+              </div>
+
+              <div className="space-y-6">
+                {/* Application Card Skeleton */}
+                <Card className="bg-white shadow-sm border-0">
+                  <CardContent className="p-6">
+                    <Skeleton className="h-12 w-full mb-4" />
+                    <Skeleton className="h-4 w-32 mx-auto" />
+                  </CardContent>
+                </Card>
+
+                {/* Company Card Skeleton */}
+                <Card className="bg-white shadow-sm border-0">
+                  <CardHeader className="pb-4">
+                    <Skeleton className="h-6 w-32" />
+                  </CardHeader>
+                  <CardContent>
+                    <div className="flex items-center gap-3 mb-4">
+                      <Skeleton className="w-12 h-12 rounded-full" />
+                      <div className="space-y-2">
+                        <Skeleton className="h-4 w-24" />
+                        <Skeleton className="h-3 w-16" />
+                      </div>
+                    </div>
+                    <Skeleton className="h-16 w-full" />
+                  </CardContent>
+                </Card>
+
+                {/* Map Skeleton */}
+                <Skeleton className="h-64 w-full rounded-lg" />
+              </div>
+            </div>
           </div>
         </div>
       </div>
@@ -332,479 +364,506 @@ export default function JobDetailPage() {
 
   if (error) {
     return (
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 sm:py-12 text-center">
-        <h1 className="text-xl sm:text-2xl font-bold text-gray-900 mb-4">
-          Error al cargar el empleo
-        </h1>
-        <p className="text-sm sm:text-base text-gray-600 mb-6">
-          Lo sentimos, no pudimos cargar la información del empleo.
-        </p>
-        <Button onClick={() => router.push("/jobs")} size="sm">
-          Volver a la búsqueda
-        </Button>
+      <div className="min-h-screen bg-gray-50">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6 sm:py-8">
+          <div className="flex flex-col items-center justify-center py-16 text-center">
+            <div className="bg-red-100 rounded-full p-6 mb-6">
+              <AlertCircle className="w-16 h-16 text-red-500" />
+            </div>
+            <h1 className="text-2xl font-semibold text-gray-900 mb-3">
+              Error al cargar el empleo
+            </h1>
+            <p className="text-gray-600 mb-8 max-w-md text-lg leading-relaxed">
+              Lo sentimos, no pudimos cargar la información del empleo. Por
+              favor, intenta nuevamente.
+            </p>
+            <Button
+              onClick={() => router.push("/jobs")}
+              className="bg-blue-600 hover:bg-blue-700 text-white shadow-lg hover:shadow-xl transition-all duration-200"
+              size="lg"
+            >
+              <ArrowLeft className="w-5 h-5 mr-2" />
+              Volver a la búsqueda
+            </Button>
+          </div>
+        </div>
       </div>
     );
   }
 
   if (!job) {
     return (
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 sm:py-12 text-center">
-        <h1 className="text-xl sm:text-2xl font-bold text-gray-900 mb-4">
-          Empleo no encontrado
-        </h1>
-        <p className="text-sm sm:text-base text-gray-600 mb-6">
-          Lo sentimos, no pudimos encontrar el empleo que buscas.
-        </p>
-        <Button onClick={() => router.push("/jobs")} size="sm">
-          Volver a la búsqueda
-        </Button>
+      <div className="min-h-screen bg-gray-50">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6 sm:py-8">
+          <div className="flex flex-col items-center justify-center py-16 text-center">
+            <div className="bg-gray-100 rounded-full p-6 mb-6">
+              <Info className="w-16 h-16 text-gray-400" />
+            </div>
+            <h1 className="text-2xl font-semibold text-gray-900 mb-3">
+              Empleo no encontrado
+            </h1>
+            <p className="text-gray-600 mb-8 max-w-md text-lg leading-relaxed">
+              Lo sentimos, no pudimos encontrar el empleo que buscas. Puede que
+              haya sido eliminado o no exista.
+            </p>
+            <Button
+              onClick={() => router.push("/jobs")}
+              className="bg-blue-600 hover:bg-blue-700 text-white shadow-lg hover:shadow-xl transition-all duration-200"
+              size="lg"
+            >
+              <ArrowLeft className="w-5 h-5 mr-2" />
+              Volver a la búsqueda
+            </Button>
+          </div>
+        </div>
       </div>
     );
   }
 
   return (
-    <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4 sm:py-6">
-      {/* Botón de Volver */}
-      <Button
-        variant="ghost"
-        onClick={() => router.back()}
-        className="mb-4 sm:mb-6 text-sm sm:text-base"
-      >
-        <ArrowLeft className="w-3 sm:w-4 h-3 sm:h-4 mr-2" />
-        Volver a los resultados
-      </Button>
+    <div className="min-h-screen bg-gray-50">
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6 sm:py-8">
+        {/* Botón de Volver */}
+        <Button
+          variant="ghost"
+          onClick={() => router.back()}
+          className="mb-6 text-gray-600 hover:text-gray-900 hover:bg-gray-100"
+        >
+          <ArrowLeft className="w-4 h-4 mr-2" />
+          Volver a los resultados
+        </Button>
 
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 sm:gap-6">
-        {/* Contenido Principal */}
-        <div className="lg:col-span-2 space-y-4 sm:space-y-6">
-          {/* Encabezado del Empleo */}
-          <Card>
-            <CardHeader className="pb-3 sm:pb-6 p-4 sm:p-6">
-              <div className="flex flex-col lg:flex-row lg:items-start lg:justify-between gap-4">
-                <div className="flex flex-col sm:flex-row items-center sm:items-start gap-3 sm:gap-4 flex-1">
-                  <Avatar className="w-12 sm:w-16 h-12 sm:h-16 flex-shrink-0">
-                    <AvatarImage
-                      src={job.logo}
-                      alt={job.company?.name || "Empresa"}
-                    />
-                    <AvatarFallback className="text-sm sm:text-base">
-                      {job.company?.name?.charAt(0) || "E"}
-                    </AvatarFallback>
-                  </Avatar>
-                  <div className="flex-1 text-center sm:text-left">
-                    <h1 className="text-xl sm:text-2xl font-bold text-gray-900 mb-2">
-                      {job.title}
-                      {job.featured && (
-                        <Star className="inline-block w-4 sm:w-5 h-4 sm:h-5 text-yellow-500 ml-1 sm:ml-2" />
-                      )}
-                    </h1>
-                    <div className="flex flex-col sm:flex-row sm:items-center gap-2 sm:gap-4 text-gray-600 mb-3">
-                      <span className="font-medium text-base sm:text-lg">
-                        {job.company?.name || "Empresa"}
-                      </span>
-                      {job.company?.businessSector && (
-                        <div className="flex items-center justify-center sm:justify-start gap-1">
-                          <Building className="w-3 sm:w-4 h-3 sm:h-4 text-blue-400" />
-                          <span className="text-sm sm:text-base">
-                            {job.company.businessSector}
-                          </span>
-                          <span className="text-sm sm:text-base">
-                            •{" "}
-                            {job.company.companySize ||
-                              "Tamaño no especificado"}
-                          </span>
-                        </div>
-                      )}
-                    </div>
-                    <div className="grid grid-cols-2 sm:flex sm:items-center sm:flex-wrap gap-2 sm:gap-4 text-xs sm:text-sm text-gray-600">
-                      <div className="flex items-center justify-center sm:justify-start gap-1">
-                        <MapPin className="w-3 sm:w-4 h-3 sm:h-4" />
-                        <span className="truncate">{job.location}</span>
-                      </div>
-                      <div className="flex items-center justify-center sm:justify-start gap-1">
-                        <Clock className="w-3 sm:w-4 h-3 sm:h-4" />
-                        <span>{getModalityLabel(job.workModality)}</span>
-                      </div>
-                      <div className="flex items-center justify-center sm:justify-start gap-1">
-                        <Users className="w-3 sm:w-4 h-3 sm:h-4" />
-                        <span>{job.applicationsCount} aplicaciones</span>
-                      </div>
-                      <div className="flex items-center justify-center sm:justify-start gap-1">
-                        <Eye className="w-3 sm:w-4 h-3 sm:h-4" />
-                        <span>{job.viewsCount} vistas</span>
-                      </div>
-                    </div>
-                  </div>
-                </div>
-                <div className="flex justify-center sm:justify-end gap-2 flex-shrink-0">
-                  <Button variant="outline" size="sm" onClick={handleShare}>
-                    <Share className="w-3 sm:w-4 h-3 sm:h-4" />
-                    <span className="ml-1 sm:hidden">Compartir</span>
-                  </Button>
-                  <Button variant="outline" size="sm" onClick={handleSaveJob}>
-                    {isSaved ? (
-                      <BookmarkCheck className="w-3 sm:w-4 h-3 sm:h-4 text-blue-600" />
-                    ) : (
-                      <Bookmark className="w-3 sm:w-4 h-3 sm:h-4" />
-                    )}
-                    <span className="ml-1 sm:hidden">Guardar</span>
-                  </Button>
-                </div>
-              </div>
-            </CardHeader>
-            <CardContent className="p-4 sm:p-6">
-              <div className="flex flex-wrap gap-1 sm:gap-2 mb-3 sm:mb-4">
-                <Badge variant="secondary" className="text-xs">
-                  {getContractTypeLabel(job.contractType)}
-                </Badge>
-                <Badge variant="outline" className="text-xs">
-                  {getExperienceLabel(job.experienceLevel)}
-                </Badge>
-                <Badge variant="outline" className="text-xs">
-                  {formatSalary(job.salaryMin, job.salaryMax)}
-                </Badge>
-              </div>
-              <div className="flex flex-col sm:flex-row sm:items-center gap-2 sm:gap-4 text-xs sm:text-sm text-gray-600">
-                <div className="flex items-center justify-center sm:justify-start gap-1">
-                  <Calendar className="w-3 sm:w-4 h-3 sm:h-4" />
-                  <span>Publicado el {formatDate(job.publishedAt)}</span>
-                </div>
-                {job.applicationDeadline && (
-                  <div className="flex items-center justify-center sm:justify-start gap-1">
-                    <Calendar className="w-3 sm:w-4 h-3 sm:h-4" />
-                    <span>Cierra el {formatDate(job.applicationDeadline)}</span>
-                  </div>
-                )}
-              </div>
-            </CardContent>
-          </Card>
-
-          {/* Descripción del Empleo */}
-          <Card>
-            <CardHeader className="pb-3 sm:pb-6 p-4 sm:p-6">
-              <CardTitle className="text-base sm:text-lg">
-                Descripción del puesto
-              </CardTitle>
-            </CardHeader>
-            <CardContent className="p-4 sm:p-6">
-              <div className="prose prose-sm sm:prose max-w-none">
-                {job.description &&
-                  job.description.split("\n").map((paragraph, index) => (
-                    <p
-                      key={index}
-                      className="mb-3 sm:mb-4 text-sm sm:text-base text-gray-700"
-                    >
-                      {paragraph}
-                    </p>
-                  ))}
-              </div>
-            </CardContent>
-          </Card>
-
-          {/* Requisitos */}
-          {job.requirements && (
-            <Card>
-              <CardHeader className="pb-3 sm:pb-6 p-4 sm:p-6">
-                <CardTitle className="text-base sm:text-lg">
-                  Requisitos
-                </CardTitle>
-              </CardHeader>
-              <CardContent className="p-4 sm:p-6">
-                <div className="prose prose-sm sm:prose max-w-none">
-                  {job.requirements?.split("\n").map((requirement, index) => (
-                    <p
-                      key={index}
-                      className="mb-3 sm:mb-4 text-sm sm:text-base text-gray-700"
-                    >
-                      {requirement}
-                    </p>
-                  ))}
-                </div>
-              </CardContent>
-            </Card>
-          )}
-
-          {/* Habilidades */}
-          <Card>
-            <CardHeader className="pb-3 sm:pb-6 p-4 sm:p-6">
-              <CardTitle className="text-base sm:text-lg">
-                Habilidades requeridas
-              </CardTitle>
-            </CardHeader>
-            <CardContent className="p-4 sm:p-6">
-              <div className="space-y-3 sm:space-y-4">
-                <div>
-                  <h4 className="font-medium text-sm sm:text-base text-gray-900 mb-2">
-                    Habilidades esenciales
-                  </h4>
-                  <div className="flex flex-wrap gap-1 sm:gap-2">
-                    {job.skillsRequired &&
-                      job.skillsRequired.map((skill) => (
-                        <Badge
-                          key={skill}
-                          variant="default"
-                          className="text-xs"
-                        >
-                          {skill}
-                        </Badge>
-                      ))}
-                  </div>
-                </div>
-                {job.desiredSkills && job.desiredSkills.length > 0 && (
-                  <div>
-                    <h4 className="font-medium text-sm sm:text-base text-gray-900 mb-2">
-                      Habilidades deseables
-                    </h4>
-                    <div className="flex flex-wrap gap-1 sm:gap-2">
-                      {job.desiredSkills.map((skill) => (
-                        <Badge
-                          key={skill}
-                          variant="outline"
-                          className="text-xs"
-                        >
-                          {skill}
-                        </Badge>
-                      ))}
-                    </div>
-                  </div>
-                )}
-              </div>
-            </CardContent>
-          </Card>
-
-          {/* Beneficios */}
-          {job.benefits && (
-            <Card>
-              <CardHeader className="pb-3 sm:pb-6 p-4 sm:p-6">
-                <CardTitle className="text-base sm:text-lg">
-                  Beneficios
-                </CardTitle>
-              </CardHeader>
-              <CardContent className="p-4 sm:p-6">
-                <div className="prose prose-sm sm:prose max-w-none">
-                  {job.benefits.split("\n").map((benefit, index) => (
-                    <p
-                      key={index}
-                      className="mb-3 sm:mb-4 text-sm sm:text-base text-gray-700"
-                    >
-                      {benefit}
-                    </p>
-                  ))}
-                </div>
-              </CardContent>
-            </Card>
-          )}
-
-          {/* Horario del Empleo e Información Adicional */}
-          <Card>
-            <CardHeader className="pb-3 sm:pb-6 p-4 sm:p-6">
-              <CardTitle className="text-base sm:text-lg">
-                Horario y Información Adicional
-              </CardTitle>
-            </CardHeader>
-            <CardContent className="p-4 sm:p-6">
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                <div>
-                  <h4 className="font-medium text-sm text-gray-900 mb-2">
-                    Horario de trabajo
-                  </h4>
-                  <p className="text-sm text-gray-600">
-                    {job.workSchedule || "No especificado"}
-                  </p>
-                </div>
-                <div>
-                  <h4 className="font-medium text-sm text-gray-900 mb-2">
-                    Educación requerida
-                  </h4>
-                  <p className="text-sm text-gray-600">
-                    {job.educationRequired
-                      ? getEducationLabel(job.educationRequired)
-                      : "No especificada"}
-                  </p>
-                </div>
-                <div>
-                  <h4 className="font-medium text-sm text-gray-900 mb-2">
-                    Municipio
-                  </h4>
-                  <p className="text-sm text-gray-600">
-                    {job.municipality || "No especificado"}
-                  </p>
-                </div>
-                <div>
-                  <h4 className="font-medium text-sm text-gray-900 mb-2">
-                    Departamento
-                  </h4>
-                  <p className="text-sm text-gray-600">
-                    {job.department || "No especificado"}
-                  </p>
-                </div>
-              </div>
-            </CardContent>
-          </Card>
-        </div>
-
-        {/* Barra Lateral */}
-        <div className="space-y-4 sm:space-y-6">
-          {/* Botón de Aplicar - Solo mostrar si el usuario no es el propietario del empleo */}
-          {!isJobOwner && (
-            <Card>
-              <CardContent className="p-4 sm:p-6">
-                {applicationStatus.loading ? (
-                  <Button className="w-full mb-3 sm:mb-4" size="lg" disabled>
-                    <Loader2 className="w-4 sm:w-5 h-4 sm:h-5 animate-spin mr-2" />
-                    <span className="text-sm sm:text-base">
-                      Verificando aplicación...
-                    </span>
-                  </Button>
-                ) : applicationStatus.hasApplied ? (
-                  <div className="space-y-3 sm:space-y-4">
-                    <div className="text-center">
-                      <Badge
-                        className={`text-xs sm:text-sm ${getApplicationStatusColor(applicationStatus.application?.status || "")}`}
-                      >
-                        <CheckCircle className="w-3 sm:w-4 h-3 sm:h-4 mr-1" />
-                        {getApplicationStatusLabel(
-                          applicationStatus.application?.status || ""
-                        )}
-                      </Badge>
-                      <p className="text-xs sm:text-sm text-gray-600 mt-2">
-                        Aplicaste el{" "}
-                        {applicationStatus.application?.appliedAt
-                          ? new Date(
-                              applicationStatus.application.appliedAt
-                            ).toLocaleDateString("es-ES")
-                          : "Fecha no disponible"}
-                      </p>
-                    </div>
-                    <Button
-                      onClick={handleCancelApplication}
-                      className="w-full text-sm sm:text-base"
-                      size="lg"
-                      variant="outline"
-                    >
-                      <XCircle className="w-4 sm:w-5 h-4 sm:h-5 mr-2" />
-                      Cancelar Aplicación
-                    </Button>
-                  </div>
-                ) : (
-                  <Button
-                    onClick={() => setShowApplicationModal(true)}
-                    className="w-full mb-3 sm:mb-4 text-sm sm:text-base"
-                    size="lg"
-                  >
-                    Aplicar a este empleo
-                  </Button>
-                )}
-                <div className="text-center">
-                  <p className="text-xs sm:text-sm text-gray-600">
-                    {job.applicationsCount} personas ya aplicaron
-                  </p>
-                </div>
-              </CardContent>
-            </Card>
-          )}
-
-          {/* Acciones del Propietario del Empleo */}
-          {isJobOwner && (
-            <Card>
-              <CardContent className="p-4 sm:p-6">
-                <div className="space-y-2 sm:space-y-3">
-                  <Button
-                    onClick={() => router.push(`/jobs/${jobId}/edit`)}
-                    className="w-full text-sm sm:text-base"
-                    variant="outline"
-                  >
-                    Editar Empleo
-                  </Button>
-                  <Button
-                    onClick={() => router.push(`/jobs/${jobId}/candidates`)}
-                    className="w-full text-sm sm:text-base"
-                  >
-                    Ver Candidatos
-                  </Button>
-                  <Button
-                    onClick={() => router.push(`/jobs/${jobId}/questions`)}
-                    className="w-full text-sm sm:text-base"
-                    variant="outline"
-                  >
-                    Gestionar Preguntas
-                  </Button>
-                  <div className="text-center">
-                    <p className="text-xs sm:text-sm text-gray-600">
-                      {job.applicationsCount} aplicaciones recibidas
-                    </p>
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
-          )}
-
-          {/* Información de la Empresa */}
-          {job.company && (
-            <Card>
-              <CardHeader className="pb-3 sm:pb-6 p-4 sm:p-6">
-                <CardTitle className="flex items-center gap-2 text-base sm:text-lg">
-                  <Building className="w-4 sm:w-5 h-4 sm:h-5" />
-                  <span>Sobre la empresa</span>
-                </CardTitle>
-              </CardHeader>
-              <CardContent className="p-4 sm:p-6">
-                <div className="space-y-3 sm:space-y-4">
-                  <div className="flex flex-col sm:flex-row items-center sm:items-start gap-3">
-                    <Avatar className="w-10 sm:w-12 h-10 sm:h-12 flex-shrink-0">
-                      <AvatarImage src={job.logo} alt={job.company.name} />
-                      <AvatarFallback className="text-sm">
-                        {job.company.name.charAt(0)}
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 lg:gap-8">
+          {/* Contenido Principal */}
+          <div className="lg:col-span-2 space-y-6">
+            {/* Encabezado del Empleo */}
+            <Card className="bg-white shadow-sm border-0">
+              <CardHeader className="pb-4 p-6">
+                <div className="flex flex-col lg:flex-row lg:items-start lg:justify-between gap-6">
+                  <div className="flex items-start gap-4 flex-1">
+                    <Avatar className="w-16 h-16 bg-blue-100 flex-shrink-0">
+                      <AvatarImage
+                        src={job.logo}
+                        alt={job.company?.name || "Empresa"}
+                      />
+                      <AvatarFallback className="text-blue-600 font-semibold text-lg">
+                        {job.company?.name?.charAt(0) || "E"}
                       </AvatarFallback>
                     </Avatar>
-                    <div className="text-center sm:text-left">
-                      <h3 className="font-medium text-sm sm:text-base">
-                        {job.company.name}
-                      </h3>
-                      <p className="text-xs sm:text-sm text-gray-600">
-                        {job.company.companySize}
-                      </p>
+                    <div className="flex-1">
+                      <div className="flex items-start gap-2 mb-3">
+                        <h1 className="text-2xl sm:text-3xl font-bold text-gray-900">
+                          {job.title}
+                        </h1>
+                        {job.featured && (
+                          <Star className="w-6 h-6 text-yellow-500 mt-1" />
+                        )}
+                      </div>
+                      <div className="space-y-2 mb-4">
+                        <div className="flex items-center gap-2">
+                          <span className="font-semibold text-lg text-gray-900">
+                            {job.company?.name || "Empresa"}
+                          </span>
+                          {job.company?.businessSector && (
+                            <Badge variant="outline" className="text-xs">
+                              {job.company.businessSector}
+                            </Badge>
+                          )}
+                        </div>
+                        {job.company?.companySize && (
+                          <p className="text-sm text-gray-600">
+                            {job.company.companySize}
+                          </p>
+                        )}
+                      </div>
+                      <div className="grid grid-cols-2 sm:flex sm:items-center sm:flex-wrap gap-3 text-sm text-gray-600">
+                        <div className="flex items-center gap-2">
+                          <MapPin className="w-4 h-4 text-gray-400" />
+                          <span className="truncate">{job.location}</span>
+                        </div>
+                        <div className="flex items-center gap-2">
+                          <Clock className="w-4 h-4 text-gray-400" />
+                          <span>{getModalityLabel(job.workModality)}</span>
+                        </div>
+                        <div className="flex items-center gap-2">
+                          <Users className="w-4 h-4 text-gray-400" />
+                          <span>{job.applicationsCount} aplicaciones</span>
+                        </div>
+                        <div className="flex items-center gap-2">
+                          <Eye className="w-4 h-4 text-gray-400" />
+                          <span>{job.viewsCount} vistas</span>
+                        </div>
+                      </div>
                     </div>
                   </div>
-
-                  {job.images && job.images.length > 0 && (
-                    <div className="mt-3 sm:mt-4">
-                      <CompanyGallery images={job.images} />
-                    </div>
-                  )}
-
-                  <div className="mt-3 sm:mt-4">
-                    <p className="text-xs sm:text-sm text-gray-700 text-center sm:text-left">
-                      {job.company.description}
-                    </p>
+                </div>
+              </CardHeader>
+              <CardContent className="p-6 pt-0">
+                <div className="flex flex-wrap gap-2 mb-4">
+                  <Badge className="bg-blue-100 text-blue-800 border-blue-200 px-3 py-1">
+                    {getContractTypeLabel(job.contractType)}
+                  </Badge>
+                  <Badge variant="outline" className="px-3 py-1">
+                    {getExperienceLabel(job.experienceLevel)}
+                  </Badge>
+                  <Badge variant="outline" className="px-3 py-1">
+                    {formatSalary(job.salaryMin, job.salaryMax)}
+                  </Badge>
+                </div>
+                <div className="flex flex-col sm:flex-row sm:items-center gap-3 text-sm text-gray-600">
+                  <div className="flex items-center gap-2">
+                    <Calendar className="w-4 h-4 text-gray-400" />
+                    <span>Publicado el {formatDate(job.publishedAt)}</span>
                   </div>
-
-                  {job.company.website && (
-                    <div className="flex items-center justify-center sm:justify-start gap-2 text-xs sm:text-sm">
-                      <Globe className="w-3 sm:w-4 h-3 sm:h-4" />
-                      <a
-                        href={job.company.website}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        className="text-blue-600 hover:underline break-all"
-                      >
-                        {job.company.website.replace(/^https?:\/\//, "")}
-                      </a>
+                  {job.applicationDeadline && (
+                    <div className="flex items-center gap-2">
+                      <Calendar className="w-4 h-4 text-gray-400" />
+                      <span>
+                        Cierra el {formatDate(job.applicationDeadline)}
+                      </span>
                     </div>
                   )}
                 </div>
               </CardContent>
             </Card>
-          )}
 
-          {/* Mapa de Ubicación */}
-          <div className="w-full">
-            <LocationMap
-              latitude={job.latitude}
-              longitude={job.longitude}
-              location={job.location}
-              companyName={job.company?.name}
-            />
+            {/* Descripción del Empleo */}
+            <Card className="bg-white shadow-sm border-0">
+              <CardHeader className="pb-4 p-6">
+                <CardTitle className="text-xl font-semibold text-gray-900 flex items-center gap-2">
+                  <Info className="w-5 h-5 text-blue-600" />
+                  Descripción del puesto
+                </CardTitle>
+              </CardHeader>
+              <CardContent className="p-6 pt-0">
+                <div className="prose prose-gray max-w-none">
+                  {job.description &&
+                    job.description.split("\n").map((paragraph, index) => (
+                      <p
+                        key={index}
+                        className="mb-4 text-base text-gray-700 leading-relaxed"
+                      >
+                        {paragraph}
+                      </p>
+                    ))}
+                </div>
+              </CardContent>
+            </Card>
+
+            {/* Requisitos */}
+            {job.requirements && (
+              <Card className="bg-white shadow-sm border-0">
+                <CardHeader className="pb-4 p-6">
+                  <CardTitle className="text-xl font-semibold text-gray-900 flex items-center gap-2">
+                    <AlertCircle className="w-5 h-5 text-orange-600" />
+                    Requisitos
+                  </CardTitle>
+                </CardHeader>
+                <CardContent className="p-6 pt-0">
+                  <div className="prose prose-gray max-w-none">
+                    {job.requirements?.split("\n").map((requirement, index) => (
+                      <p
+                        key={index}
+                        className="mb-4 text-base text-gray-700 leading-relaxed"
+                      >
+                        {requirement}
+                      </p>
+                    ))}
+                  </div>
+                </CardContent>
+              </Card>
+            )}
+
+            {/* Habilidades */}
+            <Card className="bg-white shadow-sm border-0">
+              <CardHeader className="pb-4 p-6">
+                <CardTitle className="text-xl font-semibold text-gray-900 flex items-center gap-2">
+                  <Users className="w-5 h-5 text-green-600" />
+                  Habilidades requeridas
+                </CardTitle>
+              </CardHeader>
+              <CardContent className="p-6 pt-0">
+                <div className="space-y-6">
+                  <div>
+                    <h4 className="font-semibold text-base text-gray-900 mb-3">
+                      Habilidades esenciales
+                    </h4>
+                    <div className="flex flex-wrap gap-2">
+                      {job.skillsRequired &&
+                        job.skillsRequired.map((skill) => (
+                          <Badge
+                            key={skill}
+                            className="bg-blue-100 text-blue-800 border-blue-200 px-3 py-1 text-sm"
+                          >
+                            {skill}
+                          </Badge>
+                        ))}
+                    </div>
+                  </div>
+                  {job.desiredSkills && job.desiredSkills.length > 0 && (
+                    <div>
+                      <h4 className="font-semibold text-base text-gray-900 mb-3">
+                        Habilidades deseables
+                      </h4>
+                      <div className="flex flex-wrap gap-2">
+                        {job.desiredSkills.map((skill) => (
+                          <Badge
+                            key={skill}
+                            variant="outline"
+                            className="px-3 py-1 text-sm border-gray-200 text-gray-700"
+                          >
+                            {skill}
+                          </Badge>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+                </div>
+              </CardContent>
+            </Card>
+
+            {/* Beneficios */}
+            {job.benefits && (
+              <Card className="bg-white shadow-sm border-0">
+                <CardHeader className="pb-4 p-6">
+                  <CardTitle className="text-xl font-semibold text-gray-900 flex items-center gap-2">
+                    <Star className="w-5 h-5 text-yellow-600" />
+                    Beneficios
+                  </CardTitle>
+                </CardHeader>
+                <CardContent className="p-6 pt-0">
+                  <div className="prose prose-gray max-w-none">
+                    {job.benefits.split("\n").map((benefit, index) => (
+                      <p
+                        key={index}
+                        className="mb-4 text-base text-gray-700 leading-relaxed"
+                      >
+                        {benefit}
+                      </p>
+                    ))}
+                  </div>
+                </CardContent>
+              </Card>
+            )}
+
+            {/* Horario del Empleo e Información Adicional */}
+            <Card className="bg-white shadow-sm border-0">
+              <CardHeader className="pb-4 p-6">
+                <CardTitle className="text-xl font-semibold text-gray-900 flex items-center gap-2">
+                  <Clock className="w-5 h-5 text-purple-600" />
+                  Horario y Información Adicional
+                </CardTitle>
+              </CardHeader>
+              <CardContent className="p-6 pt-0">
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
+                  <div className="p-4 bg-gray-50 rounded-lg">
+                    <h4 className="font-semibold text-sm text-gray-900 mb-2">
+                      Horario de trabajo
+                    </h4>
+                    <p className="text-sm text-gray-600">
+                      {job.workSchedule || "No especificado"}
+                    </p>
+                  </div>
+                  <div className="p-4 bg-gray-50 rounded-lg">
+                    <h4 className="font-semibold text-sm text-gray-900 mb-2">
+                      Educación requerida
+                    </h4>
+                    <p className="text-sm text-gray-600">
+                      {job.educationRequired
+                        ? getEducationLabel(job.educationRequired)
+                        : "No especificada"}
+                    </p>
+                  </div>
+                  <div className="p-4 bg-gray-50 rounded-lg">
+                    <h4 className="font-semibold text-sm text-gray-900 mb-2">
+                      Municipio
+                    </h4>
+                    <p className="text-sm text-gray-600">
+                      {job.municipality || "No especificado"}
+                    </p>
+                  </div>
+                  <div className="p-4 bg-gray-50 rounded-lg">
+                    <h4 className="font-semibold text-sm text-gray-900 mb-2">
+                      Departamento
+                    </h4>
+                    <p className="text-sm text-gray-600">
+                      {job.department || "No especificado"}
+                    </p>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+          </div>
+
+          {/* Barra Lateral */}
+          <div className="space-y-6">
+            {/* Botón de Aplicar - Solo mostrar si el usuario no es el propietario del empleo */}
+            {!isJobOwner && (
+              <Card className="bg-white shadow-sm border-0">
+                <CardContent className="p-6">
+                  {applicationStatus.loading ? (
+                    <Button className="w-full mb-4" size="lg" disabled>
+                      <Loader2 className="w-5 h-5 animate-spin mr-2" />
+                      <span className="text-base">
+                        Verificando aplicación...
+                      </span>
+                    </Button>
+                  ) : applicationStatus.hasApplied ? (
+                    <div className="space-y-4">
+                      <div className="text-center">
+                        <Badge
+                          className={`text-sm px-4 py-2 ${getApplicationStatusColor(applicationStatus.application?.status || "")}`}
+                        >
+                          <CheckCircle className="w-4 h-4 mr-2" />
+                          {getApplicationStatusLabel(
+                            applicationStatus.application?.status || ""
+                          )}
+                        </Badge>
+                        <p className="text-sm text-gray-600 mt-3">
+                          Aplicaste el{" "}
+                          {applicationStatus.application?.appliedAt
+                            ? new Date(
+                                applicationStatus.application.appliedAt
+                              ).toLocaleDateString("es-ES")
+                            : "Fecha no disponible"}
+                        </p>
+                      </div>
+                      <Button
+                        onClick={handleCancelApplication}
+                        className="w-full text-base"
+                        size="lg"
+                        variant="outline"
+                      >
+                        <XCircle className="w-5 h-5 mr-2" />
+                        Cancelar Aplicación
+                      </Button>
+                    </div>
+                  ) : (
+                    <Button
+                      onClick={() => setShowApplicationModal(true)}
+                      className="w-full mb-4 text-base bg-blue-600 hover:bg-blue-700 text-white shadow-sm hover:shadow-md transition-all duration-200"
+                      size="lg"
+                    >
+                      Aplicar a este empleo
+                    </Button>
+                  )}
+                  <div className="text-center">
+                    <p className="text-sm text-gray-600">
+                      {job.applicationsCount} personas ya aplicaron
+                    </p>
+                  </div>
+                </CardContent>
+              </Card>
+            )}
+
+            {/* Acciones del Propietario del Empleo */}
+            {isJobOwner && (
+              <Card className="bg-white shadow-sm border-0">
+                <CardHeader className="pb-4 p-6">
+                  <CardTitle className="text-lg font-semibold text-gray-900 flex items-center gap-2">
+                    <Users className="w-5 h-5 text-blue-600" />
+                    Gestionar Empleo
+                  </CardTitle>
+                </CardHeader>
+                <CardContent className="p-6 pt-0">
+                  <div className="space-y-3">
+                    <Button
+                      onClick={() => router.push(`/jobs/${jobId}/edit`)}
+                      className="w-full text-base"
+                      variant="outline"
+                    >
+                      Editar Empleo
+                    </Button>
+                    <Button
+                      onClick={() => router.push(`/jobs/${jobId}/candidates`)}
+                      className="w-full text-base bg-blue-600 hover:bg-blue-700 text-white"
+                    >
+                      Ver Candidatos
+                    </Button>
+                    <Button
+                      onClick={() => router.push(`/jobs/${jobId}/questions`)}
+                      className="w-full text-base"
+                      variant="outline"
+                    >
+                      Gestionar Preguntas
+                    </Button>
+                    <div className="text-center pt-2">
+                      <p className="text-sm text-gray-600">
+                        {job.applicationsCount} aplicaciones recibidas
+                      </p>
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
+            )}
+
+            {/* Información de la Empresa */}
+            {job.company && (
+              <Card className="bg-white shadow-sm border-0">
+                <CardHeader className="pb-4 p-6">
+                  <CardTitle className="text-lg font-semibold text-gray-900 flex items-center gap-2">
+                    <Building className="w-5 h-5 text-blue-600" />
+                    Sobre la empresa
+                  </CardTitle>
+                </CardHeader>
+                <CardContent className="p-6 pt-0">
+                  <div className="space-y-4">
+                    <div className="flex items-center gap-4">
+                      <Avatar className="w-12 h-12 bg-blue-100 flex-shrink-0">
+                        <AvatarImage src={job.logo} alt={job.company.name} />
+                        <AvatarFallback className="text-blue-600 font-semibold">
+                          {job.company.name.charAt(0)}
+                        </AvatarFallback>
+                      </Avatar>
+                      <div>
+                        <h3 className="font-semibold text-base text-gray-900">
+                          {job.company.name}
+                        </h3>
+                        <p className="text-sm text-gray-600">
+                          {job.company.companySize}
+                        </p>
+                      </div>
+                    </div>
+
+                    {job.images && job.images.length > 0 && (
+                      <div className="mt-4">
+                        <CompanyGallery images={job.images} />
+                      </div>
+                    )}
+
+                    <div className="mt-4">
+                      <p className="text-sm text-gray-700 leading-relaxed">
+                        {job.company.description}
+                      </p>
+                    </div>
+
+                    {job.company.website && (
+                      <div className="flex items-center gap-2 text-sm">
+                        <Globe className="w-4 h-4 text-gray-400" />
+                        <a
+                          href={job.company.website}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="text-blue-600 hover:underline break-all"
+                        >
+                          {job.company.website.replace(/^https?:\/\//, "")}
+                        </a>
+                      </div>
+                    )}
+                  </div>
+                </CardContent>
+              </Card>
+            )}
+
+            {/* Mapa de Ubicación */}
+            <div className="w-full">
+              <LocationMap
+                latitude={job.latitude}
+                longitude={job.longitude}
+                location={job.location}
+                companyName={job.company?.name}
+              />
+            </div>
           </div>
         </div>
       </div>

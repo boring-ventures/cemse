@@ -5,6 +5,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Progress } from "@/components/ui/progress";
+import { AlertModal } from "@/components/ui/alert-modal";
 import {
   Upload,
   CheckCircle,
@@ -36,32 +37,73 @@ export const CourseFileUpload: React.FC<CourseFileUploadProps> = ({
     thumbnail?: string;
     videoPreview?: string;
   }>({});
+  const [alertModal, setAlertModal] = useState<{
+    isOpen: boolean;
+    title: string;
+    message: string;
+    variant: "default" | "destructive" | "warning" | "info" | "success";
+  }>({
+    isOpen: false,
+    title: "",
+    message: "",
+    variant: "default",
+  });
 
   const thumbnailInputRef = useRef<HTMLInputElement>(null);
   const videoInputRef = useRef<HTMLInputElement>(null);
 
+  const showAlert = (
+    title: string,
+    message: string,
+    variant:
+      | "default"
+      | "destructive"
+      | "warning"
+      | "info"
+      | "success" = "warning"
+  ) => {
+    setAlertModal({
+      isOpen: true,
+      title,
+      message,
+      variant,
+    });
+  };
+
   const handleFileSelect = (file: File, type: "thumbnail" | "videoPreview") => {
     // Validate file type
     if (type === "thumbnail" && !file.type.startsWith("image/")) {
-      alert(
-        "Por favor selecciona un archivo de imagen válido para el thumbnail"
+      showAlert(
+        "Tipo de archivo inválido",
+        "Por favor selecciona un archivo de imagen válido para el thumbnail",
+        "warning"
       );
       return;
     }
     if (type === "videoPreview" && !file.type.startsWith("video/")) {
-      alert(
-        "Por favor selecciona un archivo de video válido para el video preview"
+      showAlert(
+        "Tipo de archivo inválido",
+        "Por favor selecciona un archivo de video válido para el video preview",
+        "warning"
       );
       return;
     }
 
     // Validate file size
     if (type === "thumbnail" && file.size > 5 * 1024 * 1024) {
-      alert("El archivo de imagen es demasiado grande. Máximo 5MB");
+      showAlert(
+        "Archivo demasiado grande",
+        "El archivo de imagen es demasiado grande. Máximo 5MB",
+        "warning"
+      );
       return;
     }
     if (type === "videoPreview" && file.size > 2 * 1024 * 1024 * 1024) {
-      alert("El archivo de video es demasiado grande. Máximo 2GB");
+      showAlert(
+        "Archivo demasiado grande",
+        "El archivo de video es demasiado grande. Máximo 2GB",
+        "warning"
+      );
       return;
     }
 
@@ -354,6 +396,15 @@ export const CourseFileUpload: React.FC<CourseFileUploadProps> = ({
           className="hidden"
         />
       </div>
+
+      {/* Alert Modal */}
+      <AlertModal
+        isOpen={alertModal.isOpen}
+        onClose={() => setAlertModal((prev) => ({ ...prev, isOpen: false }))}
+        title={alertModal.title}
+        message={alertModal.message}
+        variant={alertModal.variant}
+      />
     </div>
   );
 };

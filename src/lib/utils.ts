@@ -246,38 +246,53 @@ export async function copyToClipboard(
   onSuccess?: () => void,
   onError?: (error: string) => void
 ): Promise<boolean> {
+  if (!text || text.trim() === "") {
+    const errorMessage = "No hay texto para copiar";
+    onError?.(errorMessage);
+    return false;
+  }
+
   try {
     // Check if clipboard API is available and we're in a secure context
     if (navigator.clipboard && window.isSecureContext) {
-      await navigator.clipboard.writeText(text);
-      onSuccess?.();
-      return true;
-    } else {
-      // Fallback for older browsers or non-secure contexts
-      const textArea = document.createElement("textarea");
-      textArea.value = text;
-      textArea.style.position = "fixed";
-      textArea.style.left = "-999999px";
-      textArea.style.top = "-999999px";
-      textArea.style.opacity = "0";
-      textArea.style.pointerEvents = "none";
-      document.body.appendChild(textArea);
-      textArea.focus();
-      textArea.select();
-
       try {
-        const successful = document.execCommand("copy");
-        if (successful) {
-          onSuccess?.();
-          return true;
-        } else {
-          throw new Error("execCommand copy failed");
-        }
-      } catch (err) {
-        throw new Error("Fallback copy failed");
-      } finally {
-        document.body.removeChild(textArea);
+        await navigator.clipboard.writeText(text);
+        onSuccess?.();
+        return true;
+      } catch (clipboardError) {
+        // Fall through to fallback method
       }
+    }
+    
+    // Fallback for older browsers or non-secure contexts
+    const textArea = document.createElement("textarea");
+    textArea.value = text;
+    textArea.style.position = "fixed";
+    textArea.style.left = "-999999px";
+    textArea.style.top = "-999999px";
+    textArea.style.opacity = "0";
+    textArea.style.pointerEvents = "none";
+    textArea.style.zIndex = "-1000";
+    textArea.setAttribute("readonly", "");
+    document.body.appendChild(textArea);
+    
+    // Focus and select the text
+    textArea.focus();
+    textArea.select();
+    textArea.setSelectionRange(0, 99999); // For mobile devices
+
+    try {
+      const successful = document.execCommand("copy");
+      if (successful) {
+        onSuccess?.();
+        return true;
+      } else {
+        throw new Error("execCommand copy failed");
+      }
+    } catch (err) {
+      throw new Error("Fallback copy failed");
+    } finally {
+      document.body.removeChild(textArea);
     }
   } catch (error) {
     console.error("Copy to clipboard failed:", error);

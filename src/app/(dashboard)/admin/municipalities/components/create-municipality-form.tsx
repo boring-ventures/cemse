@@ -23,6 +23,7 @@ import { useToast } from "@/hooks/use-toast";
 import { Loader2, RefreshCw, Eye, EyeOff } from "lucide-react";
 import { generateMunicipalityCredentials } from "@/lib/utils/generate-credentials";
 import { CredentialsModal } from "./credentials-modal";
+import { useAuthContext } from "@/hooks/use-auth";
 
 interface Credentials {
   username: string;
@@ -31,20 +32,64 @@ interface Credentials {
   institutionName: string;
 }
 
-const createMunicipalitySchema = z.object({
-  name: z.string().min(2, "El nombre debe tener al menos 2 caracteres"),
+// Base schema without institution type
+const baseMunicipalitySchema = z.object({
+  name: z
+    .string()
+    .min(2, "El nombre debe tener al menos 2 caracteres")
+    .max(100, "El nombre no puede tener más de 100 caracteres")
+    .regex(
+      /^[a-zA-ZáéíóúÁÉÍÓÚñÑ\s\d\-\.]+$/,
+      "El nombre solo puede contener letras, números, espacios, guiones y puntos"
+    ),
   department: z
     .string()
     .min(2, "El departamento debe tener al menos 2 caracteres"),
-  region: z.string().optional(),
-  address: z.string().optional(),
+  region: z
+    .string()
+    .max(50, "La región no puede tener más de 50 caracteres")
+    .regex(
+      /^[a-zA-ZáéíóúÁÉÍÓÚñÑ\s]*$/,
+      "La región solo puede contener letras y espacios"
+    )
+    .optional(),
+  address: z
+    .string()
+    .max(200, "La dirección no puede tener más de 200 caracteres")
+    .optional(),
   website: z.string().url("URL inválida").optional().or(z.literal("")),
-  username: z.string().min(3, "El usuario debe tener al menos 3 caracteres"),
-  password: z.string().min(6, "La contraseña debe tener al menos 6 caracteres"),
-  email: z.string().email("Email inválido"),
-  phone: z.string().optional(),
-  institutionType: z.enum(["MUNICIPALITY", "NGO", "FOUNDATION", "OTHER"]),
-  customType: z.string().optional(),
+  username: z
+    .string()
+    .min(3, "El usuario debe tener al menos 3 caracteres")
+    .max(30, "El usuario no puede tener más de 30 caracteres")
+    .regex(
+      /^[a-zA-Z0-9_]+$/,
+      "El usuario solo puede contener letras, números y guiones bajos"
+    ),
+  password: z
+    .string()
+    .min(6, "La contraseña debe tener al menos 6 caracteres")
+    .max(50, "La contraseña no puede tener más de 50 caracteres"),
+  email: z
+    .string()
+    .email("Email inválido")
+    .max(100, "El email no puede tener más de 100 caracteres"),
+  phone: z
+    .string()
+    .regex(
+      /^(\+591|591)?[0-9\s-]{7,10}$/,
+      "Formato de teléfono inválido. Use: +591 4 4222222"
+    )
+    .optional()
+    .or(z.literal("")),
+  customType: z
+    .string()
+    .max(50, "El tipo personalizado no puede tener más de 50 caracteres")
+    .regex(
+      /^[a-zA-ZáéíóúÁÉÍÓÚñÑ\s]*$/,
+      "El tipo personalizado solo puede contener letras y espacios"
+    )
+    .optional(),
   primaryColor: z
     .string()
     .regex(/^#[0-9A-F]{6}$/i, "Color inválido")
@@ -55,7 +100,21 @@ const createMunicipalitySchema = z.object({
     .optional(),
 });
 
-type CreateMunicipalityFormData = z.infer<typeof createMunicipalitySchema>;
+// Function to create schema based on user role
+const createMunicipalitySchema = (userRole?: string) => {
+  const institutionTypeEnum =
+    userRole === "MUNICIPAL_GOVERNMENTS"
+      ? z.enum(["NGO", "FOUNDATION", "OTHER"])
+      : z.enum(["MUNICIPALITY", "NGO", "FOUNDATION", "OTHER"]);
+
+  return baseMunicipalitySchema.extend({
+    institutionType: institutionTypeEnum,
+  });
+};
+
+type CreateMunicipalityFormData = z.infer<
+  ReturnType<typeof createMunicipalitySchema>
+>;
 
 interface CreateMunicipalityFormProps {
   onSuccess: () => void;
@@ -73,6 +132,7 @@ export function CreateMunicipalityForm({
   const { data: existingMunicipalities } = useMunicipalities();
   const { toast } = useToast();
   const [emailError, setEmailError] = useState<string | null>(null);
+  const { user } = useAuthContext();
 
   const {
     register,
@@ -82,10 +142,11 @@ export function CreateMunicipalityForm({
     setValue,
     watch,
   } = useForm<CreateMunicipalityFormData>({
-    resolver: zodResolver(createMunicipalitySchema),
+    resolver: zodResolver(createMunicipalitySchema(user?.role)),
     defaultValues: {
       department: "Cochabamba",
-      institutionType: "MUNICIPALITY",
+      institutionType:
+        user?.role === "MUNICIPAL_GOVERNMENTS" ? "NGO" : "MUNICIPALITY",
       primaryColor: "#1E40AF",
       secondaryColor: "#F59E0B",
     },
@@ -110,6 +171,113 @@ export function CreateMunicipalityForm({
     return existingMunicipalities.some(
       (m) => m.username?.toLowerCase() === username.toLowerCase()
     );
+  };
+
+  // Input formatting and restriction functions
+  const formatPhoneNumber = (value: string) => {
+    // Only allow numbers, +, -, and spaces
+    let cleaned = value.replace(/[^0-9+\-\s]/g, "");
+
+    if (cleaned.length > 0) {
+      // Remove all non-digits except + at the beginning
+      const digits = cleaned.replace(/[^\d]/g, "");
+      const hasPlus = cleaned.startsWith("+");
+
+      if (hasPlus && digits.length > 0) {
+        // Format: +591 4 4222222
+        if (digits.length <= 3) {
+          cleaned = `+${digits}`;
+        } else if (digits.length <= 6) {
+          cleaned = `+${digits.slice(0, 3)} ${digits.slice(3)}`;
+        } else {
+          cleaned = `+${digits.slice(0, 3)} ${digits.slice(3, 4)} ${digits.slice(4, 10)}`;
+        }
+      } else if (!hasPlus && digits.length > 0) {
+        // Format: 591 4 4222222 or 4 4222222
+        if (digits.length <= 3) {
+          cleaned = digits;
+        } else if (digits.length <= 6) {
+          cleaned = `${digits.slice(0, 3)} ${digits.slice(3)}`;
+        } else {
+          cleaned = `${digits.slice(0, 3)} ${digits.slice(3, 4)} ${digits.slice(4, 10)}`;
+        }
+      }
+    }
+
+    return cleaned;
+  };
+
+  const restrictToAlphanumericUnderscore = (value: string) => {
+    return value.replace(/[^a-zA-Z0-9_]/g, "");
+  };
+
+  const restrictToLettersAndSpaces = (value: string) => {
+    return value.replace(/[^a-zA-ZáéíóúÁÉÍÓÚñÑ\s]/g, "");
+  };
+
+  const restrictToNameCharacters = (value: string) => {
+    return value.replace(/[^a-zA-ZáéíóúÁÉÍÓÚñÑ\s\d\-\.]/g, "");
+  };
+
+  const handleKeyPress = (e: React.KeyboardEvent, field: string) => {
+    // Prevent invalid characters from being typed
+    if (field === "phone") {
+      if (
+        !/[0-9+\-\s]/.test(e.key) &&
+        ![
+          "Backspace",
+          "Delete",
+          "ArrowLeft",
+          "ArrowRight",
+          "Tab",
+          "Enter",
+        ].includes(e.key)
+      ) {
+        e.preventDefault();
+      }
+    } else if (field === "username") {
+      if (
+        !/[a-zA-Z0-9_]/.test(e.key) &&
+        ![
+          "Backspace",
+          "Delete",
+          "ArrowLeft",
+          "ArrowRight",
+          "Tab",
+          "Enter",
+        ].includes(e.key)
+      ) {
+        e.preventDefault();
+      }
+    } else if (field === "name") {
+      if (
+        !/[a-zA-ZáéíóúÁÉÍÓÚñÑ\s\d\-\.]/.test(e.key) &&
+        ![
+          "Backspace",
+          "Delete",
+          "ArrowLeft",
+          "ArrowRight",
+          "Tab",
+          "Enter",
+        ].includes(e.key)
+      ) {
+        e.preventDefault();
+      }
+    } else if (field === "region" || field === "customType") {
+      if (
+        !/[a-zA-ZáéíóúÁÉÍÓÚñÑ\s]/.test(e.key) &&
+        ![
+          "Backspace",
+          "Delete",
+          "ArrowLeft",
+          "ArrowRight",
+          "Tab",
+          "Enter",
+        ].includes(e.key)
+      ) {
+        e.preventDefault();
+      }
+    }
   };
 
   const handleGenerateCredentials = () => {
@@ -209,6 +377,16 @@ export function CreateMunicipalityForm({
                   id="name"
                   {...register("name")}
                   placeholder="Ej: Municipio de Cochabamba"
+                  onKeyPress={(e) => handleKeyPress(e, "name")}
+                  onChange={(e) => {
+                    const restrictedValue = restrictToNameCharacters(
+                      e.target.value
+                    );
+                    if (restrictedValue !== e.target.value) {
+                      e.target.value = restrictedValue;
+                    }
+                    register("name").onChange(e);
+                  }}
                 />
                 {errors.name && (
                   <p className="text-sm text-red-600">{errors.name.message}</p>
@@ -237,6 +415,16 @@ export function CreateMunicipalityForm({
                 id="region"
                 {...register("region")}
                 placeholder="Ej: Valle Alto"
+                onKeyPress={(e) => handleKeyPress(e, "region")}
+                onChange={(e) => {
+                  const restrictedValue = restrictToLettersAndSpaces(
+                    e.target.value
+                  );
+                  if (restrictedValue !== e.target.value) {
+                    e.target.value = restrictedValue;
+                  }
+                  register("region").onChange(e);
+                }}
               />
               {errors.region && (
                 <p className="text-sm text-red-600">{errors.region.message}</p>
@@ -258,10 +446,12 @@ export function CreateMunicipalityForm({
                   <SelectValue placeholder="Seleccionar tipo" />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="MUNICIPALITY">Municipio</SelectItem>
+                  {user?.role !== "MUNICIPAL_GOVERNMENTS" && (
+                    <SelectItem value="MUNICIPALITY">Municipio</SelectItem>
+                  )}
                   <SelectItem value="NGO">ONG</SelectItem>
                   <SelectItem value="FOUNDATION">Fundación</SelectItem>
-                  <SelectItem value="OTHER">Otro</SelectItem>
+                  <SelectItem value="OTHER">Centro de Capacitación</SelectItem>
                 </SelectContent>
               </Select>
               {errors.institutionType && (
@@ -278,6 +468,16 @@ export function CreateMunicipalityForm({
                   id="customType"
                   {...register("customType")}
                   placeholder="Especificar tipo de institución"
+                  onKeyPress={(e) => handleKeyPress(e, "customType")}
+                  onChange={(e) => {
+                    const restrictedValue = restrictToLettersAndSpaces(
+                      e.target.value
+                    );
+                    if (restrictedValue !== e.target.value) {
+                      e.target.value = restrictedValue;
+                    }
+                    register("customType").onChange(e);
+                  }}
                 />
                 {errors.customType && (
                   <p className="text-sm text-red-600">
@@ -357,6 +557,14 @@ export function CreateMunicipalityForm({
                 id="phone"
                 {...register("phone")}
                 placeholder="Ej: +591 4 4222222"
+                onKeyPress={(e) => handleKeyPress(e, "phone")}
+                onChange={(e) => {
+                  const formattedValue = formatPhoneNumber(e.target.value);
+                  if (formattedValue !== e.target.value) {
+                    e.target.value = formattedValue;
+                  }
+                  register("phone").onChange(e);
+                }}
               />
               {errors.phone && (
                 <p className="text-sm text-red-600">{errors.phone.message}</p>
@@ -393,6 +601,16 @@ export function CreateMunicipalityForm({
                     ? "border-red-500 focus:border-red-500"
                     : ""
                 }
+                onKeyPress={(e) => handleKeyPress(e, "username")}
+                onChange={(e) => {
+                  const restrictedValue = restrictToAlphanumericUnderscore(
+                    e.target.value
+                  );
+                  if (restrictedValue !== e.target.value) {
+                    e.target.value = restrictedValue;
+                  }
+                  register("username").onChange(e);
+                }}
               />
               {errors.username && (
                 <p className="text-sm text-red-600">

@@ -74,6 +74,7 @@ import { useQueryClient } from "@tanstack/react-query";
 import { useLessonResources } from "@/hooks/useLessonResourceApi";
 import { toast } from "sonner";
 import { getAuthHeaders, API_BASE } from "@/lib/api";
+import { useLessonVideoChunkedUpload } from "@/hooks/useLessonVideoChunkedUpload";
 
 export default function ModuleLessonsPage() {
   const params = useParams();
@@ -95,6 +96,11 @@ export default function ModuleLessonsPage() {
   const queryClient = useQueryClient();
   const { data: lessonsData, isLoading: lessonsLoading } = useLessons(moduleId);
   const lessons = (lessonsData as any)?.lessons || [];
+  const { uploadVideoInChunks: uploadVideoChunked, isUploading: isChunkedUploading, uploadProgress: chunkedProgress } = useLessonVideoChunkedUpload();
+  
+  // Use chunked upload progress when available
+  const currentUploadProgress = isChunkedUploading ? chunkedProgress : uploadProgress;
+  const currentIsUploading = isUploadingVideo || isChunkedUploading;
 
   // Calculate next order index
   const getNextOrderIndex = () => {
@@ -212,7 +218,7 @@ export default function ModuleLessonsPage() {
   const validateVideoFile = (
     file: File
   ): { valid: boolean; error?: string } => {
-    const maxSize = 500 * 1024 * 1024; // 500MB
+    const maxSize = 2 * 1024 * 1024 * 1024; // 2GB
     const allowedTypes = [
       "video/mp4",
       "video/webm",
@@ -232,7 +238,7 @@ export default function ModuleLessonsPage() {
     if (file.size > maxSize) {
       return {
         valid: false,
-        error: "El archivo es demasiado grande. Máximo 500MB.",
+        error: "El archivo es demasiado grande. Máximo 2GB.",
       };
     }
 
@@ -249,6 +255,14 @@ export default function ModuleLessonsPage() {
     if (!validation.valid) {
       toast.error(validation.error);
       return;
+    }
+
+    // Show file size information
+    const fileSizeMB = (file.size / 1024 / 1024).toFixed(1);
+    if (file.size > 100 * 1024 * 1024) { // 100MB
+      toast.info(`Archivo seleccionado: ${file.name} (${fileSizeMB}MB). La subida puede tomar varios minutos.`);
+    } else {
+      toast.success(`Archivo seleccionado: ${file.name} (${fileSizeMB}MB)`);
     }
 
     setSelectedVideoFile(file);
@@ -355,13 +369,16 @@ export default function ModuleLessonsPage() {
 
         const xhr = new XMLHttpRequest();
 
+        // Set timeout for large files (15 minutes)
+        xhr.timeout = 15 * 60 * 1000; // 15 minutes
+
         xhr.upload.addEventListener("progress", (event) => {
           if (event.lengthComputable) {
             const percentComplete = Math.round(
               (event.loaded / event.total) * 100
             );
             setUploadProgress(percentComplete);
-            console.log(`📤 Upload progress: ${percentComplete}%`);
+            console.log(`📤 Upload progress: ${percentComplete}% (${(event.loaded / 1024 / 1024).toFixed(1)}MB / ${(event.total / 1024 / 1024).toFixed(1)}MB)`);
           }
         });
 
@@ -375,12 +392,23 @@ export default function ModuleLessonsPage() {
               reject(new Error("Error parsing server response"));
             }
           } else {
-            reject(new Error(`Upload failed with status ${xhr.status}`));
+            const errorMessage = xhr.responseText ? 
+              JSON.parse(xhr.responseText).message || `Upload failed with status ${xhr.status}` :
+              `Upload failed with status ${xhr.status}`;
+            reject(new Error(errorMessage));
           }
         });
 
         xhr.addEventListener("error", () => {
-          reject(new Error("Network error during upload"));
+          reject(new Error("Network error during upload. Please check your connection and try again."));
+        });
+
+        xhr.addEventListener("timeout", () => {
+          reject(new Error("Upload timeout. The file might be too large or your connection is slow. Please try again."));
+        });
+
+        xhr.addEventListener("abort", () => {
+          reject(new Error("Upload was cancelled"));
         });
 
         xhr.open("POST", `${API_BASE}/lesson/with-video`);
@@ -412,6 +440,18 @@ export default function ModuleLessonsPage() {
       return;
     }
 
+    // Validate file size (2GB limit)
+    if (selectedVideoFile.size > 2 * 1024 * 1024 * 1024) {
+      toast.error("El archivo de video es demasiado grande. Máximo 2GB");
+      return;
+    }
+
+    // Show warning for large files
+    if (selectedVideoFile.size > 100 * 1024 * 1024) { // 100MB
+      const fileSizeMB = (selectedVideoFile.size / 1024 / 1024).toFixed(1);
+      toast.info(`Archivo grande detectado (${fileSizeMB}MB). La subida puede tomar varios minutos.`);
+    }
+
     try {
       setIsUploadingVideo(true);
       setUploadProgress(0);
@@ -426,11 +466,56 @@ export default function ModuleLessonsPage() {
         setUploadProgress(50); // Conversion takes about 50% of the process
       }
 
-      // Upload the video
-      const result = await uploadVideoWithProgress(fileToUpload, formData);
+      // Use chunked upload for large files (>50MB) or if regular upload fails
+      const isLargeFile = fileToUpload.size > 50 * 1024 * 1024; // 50MB threshold
+      
+      if (isLargeFile) {
+        console.log("🎥 Large video detected, using chunked upload...");
+        setUploadStage("Subiendo por fragmentos...");
+        
+        const lessonData = {
+          title: formData.title,
+          description: formData.description || "",
+          content: formData.content || "",
+          moduleId: moduleId,
+          duration: formData.duration,
+          orderIndex: formData.orderIndex,
+          isRequired: formData.isRequired,
+          isPreview: formData.isPreview,
+        };
 
-      setUploadStage("Completando...");
-      setUploadProgress(100);
+        const result = await uploadVideoChunked(fileToUpload, lessonData);
+        setUploadProgress(100);
+        setUploadStage("Completando...");
+      } else {
+        console.log("🎥 Small video detected, trying regular upload first...");
+        
+        try {
+          // Try regular upload first for small files
+          const result = await uploadVideoWithProgress(fileToUpload, formData);
+          setUploadStage("Completando...");
+          setUploadProgress(100);
+        } catch (error) {
+          // If regular upload fails, fallback to chunked upload
+          console.log("🎥 Regular upload failed, falling back to chunked upload...", error);
+          setUploadStage("Subiendo por fragmentos...");
+          
+          const lessonData = {
+            title: formData.title,
+            description: formData.description || "",
+            content: formData.content || "",
+            moduleId: moduleId,
+            duration: formData.duration,
+            orderIndex: formData.orderIndex,
+            isRequired: formData.isRequired,
+            isPreview: formData.isPreview,
+          };
+
+          const result = await uploadVideoChunked(fileToUpload, lessonData);
+          setUploadProgress(100);
+          setUploadStage("Completando...");
+        }
+      }
 
       // Success!
       toast.success("¡Lección de video creada exitosamente!");
@@ -1014,7 +1099,7 @@ export default function ModuleLessonsPage() {
                   variant="ghost"
                   size="sm"
                   onClick={handleVideoUploadCancel}
-                  disabled={isUploadingVideo}
+                  disabled={currentIsUploading}
                 >
                   ✕
                 </Button>
@@ -1045,21 +1130,21 @@ export default function ModuleLessonsPage() {
                         }}
                         className="hidden"
                         id="video-file-input"
-                        disabled={isUploadingVideo}
+                        disabled={currentIsUploading}
                       />
                       <Button
                         variant="outline"
                         onClick={() =>
                           document.getElementById("video-file-input")?.click()
                         }
-                        disabled={isUploadingVideo}
+                        disabled={currentIsUploading}
                         className="bg-gradient-to-r from-blue-50 to-purple-50 hover:from-blue-100 hover:to-purple-100 border-blue-200"
                       >
                         <Video className="h-4 w-4 mr-2" />
                         Seleccionar Video
                       </Button>
                       <p className="text-xs text-gray-500 mt-4">
-                        Formatos soportados: MP4, WebM, MOV, AVI • Máximo 500MB
+                        Formatos soportados: MP4, WebM, MOV, AVI • Máximo 2GB
                         <br />
                         <span className="text-blue-600 font-medium">
                           ⚡ Se subirá a MinIO y se convertirá automáticamente a
@@ -1114,7 +1199,7 @@ export default function ModuleLessonsPage() {
                               setVideoPreviewUrl(null);
                             }
                           }}
-                          disabled={isUploadingVideo}
+                          disabled={currentIsUploading}
                         >
                           Cambiar
                         </Button>
@@ -1141,7 +1226,7 @@ export default function ModuleLessonsPage() {
                             setFormData({ ...formData, title: e.target.value })
                           }
                           placeholder="Ej: Introducción a React Hooks"
-                          disabled={isUploadingVideo}
+                          disabled={currentIsUploading}
                           required
                         />
                       </div>
@@ -1159,7 +1244,7 @@ export default function ModuleLessonsPage() {
                             })
                           }
                           placeholder="Describe el contenido de la lección..."
-                          disabled={isUploadingVideo}
+                          disabled={currentIsUploading}
                           rows={3}
                         />
                       </div>
@@ -1179,7 +1264,7 @@ export default function ModuleLessonsPage() {
                           }
                           min="1"
                           max="300"
-                          disabled={isUploadingVideo}
+                          disabled={currentIsUploading}
                         />
                       </div>
 
@@ -1197,7 +1282,7 @@ export default function ModuleLessonsPage() {
                             })
                           }
                           min="1"
-                          disabled={isUploadingVideo}
+                          disabled={currentIsUploading}
                         />
                       </div>
 
@@ -1214,7 +1299,7 @@ export default function ModuleLessonsPage() {
                             })
                           }
                           placeholder="Contenido adicional, notas o instrucciones..."
-                          disabled={isUploadingVideo}
+                          disabled={currentIsUploading}
                           rows={3}
                         />
                       </div>
@@ -1231,7 +1316,7 @@ export default function ModuleLessonsPage() {
                                 isRequired: e.target.checked,
                               })
                             }
-                            disabled={isUploadingVideo}
+                            disabled={currentIsUploading}
                           />
                           <label
                             htmlFor="video-required"
@@ -1251,7 +1336,7 @@ export default function ModuleLessonsPage() {
                                 isPreview: e.target.checked,
                               })
                             }
-                            disabled={isUploadingVideo}
+                            disabled={currentIsUploading}
                           />
                           <label
                             htmlFor="video-preview"
@@ -1266,7 +1351,7 @@ export default function ModuleLessonsPage() {
                 )}
 
                 {/* Upload Progress */}
-                {isUploadingVideo && (
+                {currentIsUploading && (
                   <div className="bg-blue-50 border border-blue-200 rounded-xl p-6">
                     <div className="flex items-center gap-3 mb-4">
                       <div className="w-8 h-8 bg-blue-500 rounded-full flex items-center justify-center">
@@ -1274,20 +1359,22 @@ export default function ModuleLessonsPage() {
                       </div>
                       <div>
                         <h3 className="font-semibold text-blue-900">
-                          Procesando Video
+                          {isChunkedUploading ? "Subiendo por Fragmentos" : "Procesando Video"}
                         </h3>
-                        <p className="text-sm text-blue-700">{uploadStage}</p>
+                        <p className="text-sm text-blue-700">
+                          {isChunkedUploading ? "Carga optimizada para archivos grandes" : uploadStage}
+                        </p>
                       </div>
                     </div>
                     <div className="space-y-2">
                       <div className="flex justify-between text-sm text-blue-700">
                         <span>Progreso</span>
-                        <span>{uploadProgress}%</span>
+                        <span>{Math.round(currentUploadProgress)}%</span>
                       </div>
                       <div className="w-full bg-blue-200 rounded-full h-2">
                         <div
                           className="bg-gradient-to-r from-blue-500 to-blue-600 h-2 rounded-full transition-all duration-300"
-                          style={{ width: `${uploadProgress}%` }}
+                          style={{ width: `${currentUploadProgress}%` }}
                         ></div>
                       </div>
                     </div>
@@ -1299,7 +1386,7 @@ export default function ModuleLessonsPage() {
                   <Button
                     variant="outline"
                     onClick={handleVideoUploadCancel}
-                    disabled={isUploadingVideo}
+                    disabled={currentIsUploading}
                   >
                     Cancelar
                   </Button>
@@ -1308,14 +1395,14 @@ export default function ModuleLessonsPage() {
                     disabled={
                       !selectedVideoFile ||
                       !formData.title.trim() ||
-                      isUploadingVideo
+                      currentIsUploading
                     }
                     className="bg-gradient-to-r from-blue-500 to-purple-600 hover:from-blue-600 hover:to-purple-700 text-white min-w-[140px]"
                   >
-                    {isUploadingVideo ? (
+                    {currentIsUploading ? (
                       <>
                         <Settings className="h-4 w-4 mr-2 animate-spin" />
-                        Procesando...
+                        {isChunkedUploading ? "Subiendo por fragmentos..." : "Procesando..."}
                       </>
                     ) : (
                       <>

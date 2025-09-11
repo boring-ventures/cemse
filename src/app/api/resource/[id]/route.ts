@@ -1,6 +1,6 @@
-import { NextRequest, NextResponse } from 'next/server';
-import { authenticateToken } from '@/lib/auth-middleware';
-import { prisma } from '@/lib/prisma';
+import { NextRequest, NextResponse } from "next/server";
+import { authenticateToken } from "@/lib/auth-middleware";
+import { prisma } from "@/lib/prisma";
 
 // GET /api/resource/[id] - Obtener un recurso específico
 export async function GET(
@@ -9,22 +9,21 @@ export async function GET(
 ) {
   try {
     const resource = await prisma.resource.findUnique({
-      where: { id: params.id }
+      where: { id: params.id },
     });
 
     if (!resource) {
       return NextResponse.json(
-        { success: false, message: 'Resource not found' },
+        { success: false, message: "Resource not found" },
         { status: 404 }
       );
     }
 
     return NextResponse.json({ success: true, resource });
-
   } catch (error) {
-    console.error('Error getting resource:', error);
+    console.error("Error getting resource:", error);
     return NextResponse.json(
-      { success: false, message: 'Error retrieving resource' },
+      { success: false, message: "Error retrieving resource" },
       { status: 500 }
     );
   }
@@ -39,7 +38,7 @@ export async function PUT(
     const authResult = await authenticateToken(request);
     if (!authResult.success) {
       return NextResponse.json(
-        { success: false, message: 'Authentication required' },
+        { success: false, message: "Authentication required" },
         { status: 401 }
       );
     }
@@ -48,13 +47,27 @@ export async function PUT(
 
     // Check if resource exists
     const existingResource = await prisma.resource.findUnique({
-      where: { id: params.id }
+      where: { id: params.id },
     });
 
     if (!existingResource) {
       return NextResponse.json(
-        { success: false, message: 'Resource not found' },
+        { success: false, message: "Resource not found" },
         { status: 404 }
+      );
+    }
+
+    // Check ownership - only the creator or superadmin can update
+    if (
+      existingResource.createdByUserId !== authResult.user?.id &&
+      authResult.user?.role !== "SUPERADMIN"
+    ) {
+      return NextResponse.json(
+        {
+          success: false,
+          message: "You don't have permission to update this resource",
+        },
+        { status: 403 }
       );
     }
 
@@ -63,16 +76,15 @@ export async function PUT(
       where: { id: params.id },
       data: {
         ...body,
-        updatedAt: new Date()
-      }
+        updatedAt: new Date(),
+      },
     });
 
     return NextResponse.json({ success: true, resource });
-
   } catch (error) {
-    console.error('Error updating resource:', error);
+    console.error("Error updating resource:", error);
     return NextResponse.json(
-      { success: false, message: 'Error updating resource' },
+      { success: false, message: "Error updating resource" },
       { status: 500 }
     );
   }
@@ -87,34 +99,50 @@ export async function DELETE(
     const authResult = await authenticateToken(request);
     if (!authResult.success) {
       return NextResponse.json(
-        { success: false, message: 'Authentication required' },
+        { success: false, message: "Authentication required" },
         { status: 401 }
       );
     }
 
     // Check if resource exists
     const existingResource = await prisma.resource.findUnique({
-      where: { id: params.id }
+      where: { id: params.id },
     });
 
     if (!existingResource) {
       return NextResponse.json(
-        { success: false, message: 'Resource not found' },
+        { success: false, message: "Resource not found" },
         { status: 404 }
+      );
+    }
+
+    // Check ownership - only the creator or superadmin can delete
+    if (
+      existingResource.createdByUserId !== authResult.user?.id &&
+      authResult.user?.role !== "SUPERADMIN"
+    ) {
+      return NextResponse.json(
+        {
+          success: false,
+          message: "You don't have permission to delete this resource",
+        },
+        { status: 403 }
       );
     }
 
     // Delete resource
     await prisma.resource.delete({
-      where: { id: params.id }
+      where: { id: params.id },
     });
 
-    return NextResponse.json({ success: true, message: 'Resource deleted successfully' });
-
+    return NextResponse.json({
+      success: true,
+      message: "Resource deleted successfully",
+    });
   } catch (error) {
-    console.error('Error deleting resource:', error);
+    console.error("Error deleting resource:", error);
     return NextResponse.json(
-      { success: false, message: 'Error deleting resource' },
+      { success: false, message: "Error deleting resource" },
       { status: 500 }
     );
   }

@@ -445,402 +445,527 @@ export default function CandidatesPage() {
 
   if (loading) {
     return (
-      <div className="space-y-6">
-        <div className="flex items-center justify-between">
-          <div>
-            <Skeleton className="h-8 w-64 mb-2" />
-            <Skeleton className="h-4 w-96" />
-          </div>
-          <Skeleton className="h-10 w-32" />
-        </div>
+      <div className="min-h-screen bg-gray-50">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6 sm:py-8">
+          <div className="space-y-8">
+            {/* Header Skeleton */}
+            <div className="flex items-center justify-between">
+              <div>
+                <Skeleton className="h-8 w-64 mb-2" />
+                <Skeleton className="h-4 w-96" />
+              </div>
+              <Skeleton className="h-10 w-48" />
+            </div>
 
-        <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-5">
-          {[...Array(5)].map((_, i) => (
-            <Card key={i}>
-              <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                <Skeleton className="h-4 w-20" />
-                <Skeleton className="h-4 w-4" />
-              </CardHeader>
-              <CardContent>
-                <Skeleton className="h-8 w-16 mb-2" />
-                <Skeleton className="h-3 w-32" />
-              </CardContent>
-            </Card>
-          ))}
-        </div>
-
-        <Card>
-          <CardHeader>
-            <Skeleton className="h-6 w-32" />
-          </CardHeader>
-          <CardContent>
-            <div className="space-y-4">
+            {/* Stats Cards Skeleton */}
+            <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-5">
               {[...Array(5)].map((_, i) => (
-                <div key={i} className="flex items-center space-x-4">
-                  <Skeleton className="h-10 w-10 rounded-full" />
-                  <div className="space-y-2">
-                    <Skeleton className="h-4 w-40" />
-                    <Skeleton className="h-3 w-24" />
-                  </div>
-                </div>
+                <Card key={i} className="bg-white shadow-sm border-0">
+                  <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-4">
+                    <Skeleton className="h-4 w-20" />
+                    <Skeleton className="h-4 w-4" />
+                  </CardHeader>
+                  <CardContent>
+                    <Skeleton className="h-8 w-16 mb-2" />
+                    <Skeleton className="h-3 w-32" />
+                  </CardContent>
+                </Card>
               ))}
             </div>
-          </CardContent>
-        </Card>
+
+            {/* Filters Skeleton */}
+            <Card className="bg-white shadow-sm border-0">
+              <CardHeader>
+                <Skeleton className="h-6 w-32" />
+              </CardHeader>
+              <CardContent>
+                <div className="flex flex-col md:flex-row gap-4">
+                  <Skeleton className="h-10 flex-1" />
+                  <Skeleton className="h-10 w-40" />
+                  <Skeleton className="h-10 w-40" />
+                </div>
+              </CardContent>
+            </Card>
+
+            {/* Table Skeleton */}
+            <Card className="bg-white shadow-sm border-0">
+              <CardHeader>
+                <Skeleton className="h-6 w-48" />
+                <Skeleton className="h-4 w-32" />
+              </CardHeader>
+              <CardContent>
+                <div className="space-y-4">
+                  {[...Array(5)].map((_, i) => (
+                    <div
+                      key={i}
+                      className="flex items-center space-x-4 p-4 border rounded-lg"
+                    >
+                      <Skeleton className="h-4 w-4" />
+                      <Skeleton className="h-10 w-10 rounded-full" />
+                      <div className="space-y-2 flex-1">
+                        <Skeleton className="h-4 w-40" />
+                        <Skeleton className="h-3 w-24" />
+                      </div>
+                      <Skeleton className="h-4 w-32" />
+                      <Skeleton className="h-6 w-16" />
+                      <Skeleton className="h-4 w-20" />
+                      <Skeleton className="h-8 w-8" />
+                    </div>
+                  ))}
+                </div>
+              </CardContent>
+            </Card>
+          </div>
+        </div>
       </div>
     );
   }
 
   if (!candidatesData) {
-    return <div>Error al cargar los datos</div>;
+    return (
+      <div className="min-h-screen bg-gray-50">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6 sm:py-8">
+          <div className="flex flex-col items-center justify-center py-16 text-center">
+            <div className="bg-red-100 rounded-full p-6 mb-6">
+              <AlertCircle className="w-16 h-16 text-red-500" />
+            </div>
+            <h1 className="text-2xl font-semibold text-gray-900 mb-3">
+              Error al cargar los datos
+            </h1>
+            <p className="text-gray-600 mb-8 max-w-md text-lg leading-relaxed">
+              No se pudieron cargar las postulaciones de jóvenes. Por favor,
+              intenta de nuevo.
+            </p>
+            <Button
+              onClick={() => window.location.reload()}
+              className="bg-blue-600 hover:bg-blue-700 text-white"
+            >
+              <RefreshCw className="w-4 h-4 mr-2" />
+              Recargar página
+            </Button>
+          </div>
+        </div>
+      </div>
+    );
   }
 
   return (
-    <div className="space-y-6">
-      <div className="flex items-center justify-between">
-        <div>
-          <h1 className="text-3xl font-bold tracking-tight">
-            Postulaciones de Jóvenes
-          </h1>
-          <p className="text-muted-foreground">
-            Revisa y gestiona las postulaciones de jóvenes emprendedores
-          </p>
-        </div>
-        <Button
-          disabled={selectedCVs.length === 0}
-          onClick={() => {
-            selectedCVs.forEach((url) => {
-              const link = document.createElement("a");
-              link.href = url;
-              link.download = "";
-              link.target = "_blank";
-              document.body.appendChild(link);
-              link.click();
-              document.body.removeChild(link);
-            });
-          }}
-        >
-          <Download className="mr-2 h-4 w-4" />
-          Descargar CVs Seleccionados
-        </Button>
-      </div>
-
-      {/* Statistics Cards */}
-      <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-5">
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">
-              Total Candidatos
-            </CardTitle>
-            <UserCheck className="h-4 w-4 text-muted-foreground" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">
-              {candidatesData.stats.total}
+    <div className="min-h-screen bg-gray-50">
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6 sm:py-8">
+        <div className="space-y-8">
+          {/* Header Section */}
+          <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+            <div>
+              <h1 className="text-3xl sm:text-4xl font-bold text-gray-900 mb-2">
+                Postulaciones de Jóvenes
+              </h1>
+              <p className="text-gray-600 text-lg">
+                Revisa y gestiona las postulaciones de jóvenes emprendedores
+              </p>
             </div>
-            <p className="text-xs text-muted-foreground">
-              {candidatesData.stats.averageRating.toFixed(1)} ⭐ promedio
-            </p>
-          </CardContent>
-        </Card>
-
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">En Revisión</CardTitle>
-            <Eye className="h-4 w-4 text-blue-500" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold text-blue-600">
-              {candidatesData.stats.byStatus.underReview}
-            </div>
-            <p className="text-xs text-muted-foreground">Requieren atención</p>
-          </CardContent>
-        </Card>
-
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">
-              Preseleccionados
-            </CardTitle>
-            <CheckCircle className="h-4 w-4 text-green-500" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold text-green-600">
-              {candidatesData.stats.byStatus.preSelected}
-            </div>
-            <p className="text-xs text-muted-foreground">
-              Listos para entrevista
-            </p>
-          </CardContent>
-        </Card>
-
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Contratados</CardTitle>
-            <UserCheck className="h-4 w-4 text-purple-500" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold text-purple-600">
-              {candidatesData.stats.byStatus.hired}
-            </div>
-            <p className="text-xs text-muted-foreground">Proceso exitoso</p>
-          </CardContent>
-        </Card>
-
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Nuevos</CardTitle>
-            <Clock className="h-4 w-4 text-orange-500" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold text-orange-600">
-              {candidatesData.stats.byStatus.sent}
-            </div>
-            <p className="text-xs text-muted-foreground">
-              Pendientes de revisar
-            </p>
-          </CardContent>
-        </Card>
-      </div>
-
-      {/* Filters */}
-      <Card>
-        <CardHeader>
-          <CardTitle>Filtros y Búsqueda</CardTitle>
-        </CardHeader>
-        <CardContent>
-          <div className="flex flex-col md:flex-row gap-4">
-            <div className="flex-1">
-              <div className="relative">
-                <Search className="absolute left-2 top-2.5 h-4 w-4 text-muted-foreground" />
-                <Input
-                  placeholder="Buscar por título, descripción o nombre..."
-                  value={searchTerm}
-                  onChange={(e) => setSearchTerm(e.target.value)}
-                  className="pl-8"
-                />
-              </div>
-            </div>
-
-            <Select value={statusFilter} onValueChange={setStatusFilter}>
-              <SelectTrigger className="w-full md:w-40">
-                <SelectValue placeholder="Estado" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="all">Todos</SelectItem>
-                <SelectItem value="SENT">Enviado</SelectItem>
-                <SelectItem value="UNDER_REVIEW">En Revisión</SelectItem>
-                <SelectItem value="PRE_SELECTED">Preseleccionado</SelectItem>
-                <SelectItem value="REJECTED">Rechazado</SelectItem>
-                <SelectItem value="HIRED">Contratado</SelectItem>
-              </SelectContent>
-            </Select>
-            <Select value={sortBy} onValueChange={setSortBy}>
-              <SelectTrigger className="w-full md:w-40">
-                <SelectValue placeholder="Ordenar por" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="createdAt">Fecha creación</SelectItem>
-                <SelectItem value="title">Título</SelectItem>
-                <SelectItem value="status">Estado</SelectItem>
-              </SelectContent>
-            </Select>
+            <Button
+              disabled={selectedCVs.length === 0}
+              onClick={() => {
+                selectedCVs.forEach((url) => {
+                  const link = document.createElement("a");
+                  link.href = url;
+                  link.download = "";
+                  link.target = "_blank";
+                  document.body.appendChild(link);
+                  link.click();
+                  document.body.removeChild(link);
+                });
+              }}
+              className="bg-blue-600 hover:bg-blue-700 text-white disabled:bg-gray-300 disabled:cursor-not-allowed"
+            >
+              <Download className="mr-2 h-4 w-4" />
+              Descargar CVs Seleccionados
+              {selectedCVs.length > 0 && (
+                <Badge variant="secondary" className="ml-2 text-xs">
+                  {selectedCVs.length}
+                </Badge>
+              )}
+            </Button>
           </div>
-        </CardContent>
-      </Card>
 
-      {/* Candidates Table */}
-      <Card>
-        <CardHeader>
-          <CardTitle>Lista de Postulaciones</CardTitle>
-          <CardDescription>
-            {candidatesData.candidates.length} de{" "}
-            {candidatesData.pagination.total} postulaciones
-          </CardDescription>
-        </CardHeader>
-        <CardContent>
-          <Table>
-            <TableHeader>
-              <TableRow>
-                <TableHead>
-                  <div className="flex items-center gap-2">
-                    <Checkbox
-                      checked={
-                        selectedCVs.length === candidatesData.candidates.length
-                      }
-                      onCheckedChange={(checked) => {
-                        if (checked) {
-                          setSelectedCVs(
-                            candidatesData.candidates
-                              .filter((c) => c.cvFile)
-                              .map((c) => c.cvFile!)
-                          );
-                        } else {
-                          setSelectedCVs([]);
-                        }
-                      }}
+          {/* Statistics Cards */}
+          <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-5">
+            <Card className="bg-white shadow-sm border-0 hover:shadow-md transition-shadow">
+              <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-4">
+                <CardTitle className="text-sm font-medium text-gray-900">
+                  Total Candidatos
+                </CardTitle>
+                <div className="bg-blue-100 rounded-full p-2">
+                  <UserCheck className="h-4 w-4 text-blue-600" />
+                </div>
+              </CardHeader>
+              <CardContent>
+                <div className="text-3xl font-bold text-gray-900 mb-1">
+                  {candidatesData.stats.total}
+                </div>
+                <p className="text-sm text-gray-600">
+                  {candidatesData.stats.averageRating.toFixed(1)} ⭐ promedio
+                </p>
+              </CardContent>
+            </Card>
+
+            <Card className="bg-white shadow-sm border-0 hover:shadow-md transition-shadow">
+              <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-4">
+                <CardTitle className="text-sm font-medium text-gray-900">
+                  En Revisión
+                </CardTitle>
+                <div className="bg-blue-100 rounded-full p-2">
+                  <Eye className="h-4 w-4 text-blue-600" />
+                </div>
+              </CardHeader>
+              <CardContent>
+                <div className="text-3xl font-bold text-blue-600 mb-1">
+                  {candidatesData.stats.byStatus.underReview}
+                </div>
+                <p className="text-sm text-gray-600">Requieren atención</p>
+              </CardContent>
+            </Card>
+
+            <Card className="bg-white shadow-sm border-0 hover:shadow-md transition-shadow">
+              <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-4">
+                <CardTitle className="text-sm font-medium text-gray-900">
+                  Preseleccionados
+                </CardTitle>
+                <div className="bg-green-100 rounded-full p-2">
+                  <CheckCircle className="h-4 w-4 text-green-600" />
+                </div>
+              </CardHeader>
+              <CardContent>
+                <div className="text-3xl font-bold text-green-600 mb-1">
+                  {candidatesData.stats.byStatus.preSelected}
+                </div>
+                <p className="text-sm text-gray-600">Listos para entrevista</p>
+              </CardContent>
+            </Card>
+
+            <Card className="bg-white shadow-sm border-0 hover:shadow-md transition-shadow">
+              <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-4">
+                <CardTitle className="text-sm font-medium text-gray-900">
+                  Contratados
+                </CardTitle>
+                <div className="bg-purple-100 rounded-full p-2">
+                  <UserCheck className="h-4 w-4 text-purple-600" />
+                </div>
+              </CardHeader>
+              <CardContent>
+                <div className="text-3xl font-bold text-purple-600 mb-1">
+                  {candidatesData.stats.byStatus.hired}
+                </div>
+                <p className="text-sm text-gray-600">Proceso exitoso</p>
+              </CardContent>
+            </Card>
+
+            <Card className="bg-white shadow-sm border-0 hover:shadow-md transition-shadow">
+              <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-4">
+                <CardTitle className="text-sm font-medium text-gray-900">
+                  Nuevos
+                </CardTitle>
+                <div className="bg-orange-100 rounded-full p-2">
+                  <Clock className="h-4 w-4 text-orange-600" />
+                </div>
+              </CardHeader>
+              <CardContent>
+                <div className="text-3xl font-bold text-orange-600 mb-1">
+                  {candidatesData.stats.byStatus.sent}
+                </div>
+                <p className="text-sm text-gray-600">Pendientes de revisar</p>
+              </CardContent>
+            </Card>
+          </div>
+
+          {/* Filters */}
+          <Card className="bg-white shadow-sm border-0">
+            <CardHeader className="pb-4">
+              <CardTitle className="text-lg font-semibold text-gray-900 flex items-center gap-2">
+                <Filter className="w-5 h-5 text-blue-600" />
+                Filtros y Búsqueda
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="flex flex-col md:flex-row gap-4">
+                <div className="flex-1">
+                  <div className="relative">
+                    <Search className="absolute left-3 top-3 h-4 w-4 text-gray-400" />
+                    <Input
+                      placeholder="Buscar por título, descripción o nombre..."
+                      value={searchTerm}
+                      onChange={(e) => setSearchTerm(e.target.value)}
+                      className="pl-10 h-12 border-gray-200 focus:border-blue-500 focus:ring-blue-500"
                     />
                   </div>
-                </TableHead>
+                </div>
 
-                <TableHead>Joven</TableHead>
-                <TableHead>Postulación</TableHead>
-                <TableHead>Estado</TableHead>
-                <TableHead>Vistas</TableHead>
-                <TableHead>Fecha Creación</TableHead>
-                <TableHead className="text-right">Acciones</TableHead>
-              </TableRow>
-            </TableHeader>
-            <TableBody>
-              {candidatesData.candidates.map((candidate) => (
-                <TableRow key={candidate.id}>
-                  <TableCell>
-                    <Checkbox
-                      checked={selectedCVs.includes(candidate.cvFile || "")}
-                      onCheckedChange={(checked) => {
-                        if (checked) {
-                          setSelectedCVs([...selectedCVs, candidate.cvFile!]);
-                        } else {
-                          setSelectedCVs(
-                            selectedCVs.filter(
-                              (url) => url !== candidate.cvFile
-                            )
-                          );
-                        }
-                      }}
-                      disabled={!candidate.cvFile}
-                    />
-                  </TableCell>
+                <Select value={statusFilter} onValueChange={setStatusFilter}>
+                  <SelectTrigger className="w-full md:w-48 h-12 border-gray-200 focus:border-blue-500 focus:ring-blue-500">
+                    <SelectValue placeholder="Filtrar por estado" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="all">Todos los estados</SelectItem>
+                    <SelectItem value="SENT">Enviado</SelectItem>
+                    <SelectItem value="UNDER_REVIEW">En Revisión</SelectItem>
+                    <SelectItem value="PRE_SELECTED">
+                      Preseleccionado
+                    </SelectItem>
+                    <SelectItem value="REJECTED">Rechazado</SelectItem>
+                    <SelectItem value="HIRED">Contratado</SelectItem>
+                  </SelectContent>
+                </Select>
 
-                  <TableCell>
-                    <div className="flex items-center space-x-3">
-                      <Avatar>
-                        <AvatarImage
-                          src="/api/placeholder/40/40"
-                          alt={`${candidate.applicant.firstName} ${candidate.applicant.lastName}`}
-                        />
-                        <AvatarFallback>
-                          {`${candidate.applicant.firstName} ${candidate.applicant.lastName}`
-                            .split(" ")
-                            .map((n: string) => n[0])
-                            .join("")}
-                        </AvatarFallback>
-                      </Avatar>
-                      <div>
-                        <div className="font-medium">
-                          {`${candidate.applicant.firstName} ${candidate.applicant.lastName}`}
+                <Select value={sortBy} onValueChange={setSortBy}>
+                  <SelectTrigger className="w-full md:w-48 h-12 border-gray-200 focus:border-blue-500 focus:ring-blue-500">
+                    <SelectValue placeholder="Ordenar por" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="createdAt">Fecha de creación</SelectItem>
+                    <SelectItem value="title">Título</SelectItem>
+                    <SelectItem value="status">Estado</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+            </CardContent>
+          </Card>
+
+          {/* Candidates Table */}
+          <Card className="bg-white shadow-sm border-0">
+            <CardHeader className="pb-4">
+              <div className="flex items-center justify-between">
+                <div>
+                  <CardTitle className="text-lg font-semibold text-gray-900 flex items-center gap-2">
+                    <UserCheck className="w-5 h-5 text-blue-600" />
+                    Lista de Postulaciones
+                  </CardTitle>
+                  <CardDescription className="text-gray-600 mt-1">
+                    {candidatesData.candidates.length} de{" "}
+                    {candidatesData.pagination.total} postulaciones
+                  </CardDescription>
+                </div>
+                <div className="flex items-center gap-2">
+                  <Badge variant="outline" className="text-sm">
+                    {candidatesData.candidates.length} resultados
+                  </Badge>
+                </div>
+              </div>
+            </CardHeader>
+            <CardContent>
+              <div className="overflow-x-auto">
+                <Table>
+                  <TableHeader>
+                    <TableRow className="border-gray-200">
+                      <TableHead className="w-12">
+                        <div className="flex items-center gap-2">
+                          <Checkbox
+                            checked={
+                              selectedCVs.length ===
+                              candidatesData.candidates.length
+                            }
+                            onCheckedChange={(checked) => {
+                              if (checked) {
+                                setSelectedCVs(
+                                  candidatesData.candidates
+                                    .filter((c) => c.cvFile)
+                                    .map((c) => c.cvFile!)
+                                );
+                              } else {
+                                setSelectedCVs([]);
+                              }
+                            }}
+                          />
                         </div>
-                        <div className="text-sm text-muted-foreground">
-                          {candidate.applicant.email}
-                        </div>
-                      </div>
-                    </div>
-                  </TableCell>
-                  <TableCell>
-                    <div className="font-medium">
-                      {candidate.jobOffer.title}
-                    </div>
-                    <div className="text-sm text-muted-foreground line-clamp-2">
-                      {candidate.coverLetter}
-                    </div>
-                  </TableCell>
-                  <TableCell>{getStatusBadge(candidate.status)}</TableCell>
-                  <TableCell>
-                    <div className="flex items-center gap-1">
-                      <Eye className="h-4 w-4 text-muted-foreground" />
-                      <span className="text-sm">0</span>
-                    </div>
-                  </TableCell>
-                  <TableCell>
-                    <div className="text-sm">
-                      {formatDate(candidate.appliedAt)}
-                    </div>
-                  </TableCell>
-                  <TableCell className="text-right">
-                    <DropdownMenu>
-                      <DropdownMenuTrigger asChild>
-                        <Button variant="ghost" className="h-8 w-8 p-0">
-                          <MoreHorizontal className="h-4 w-4" />
-                        </Button>
-                      </DropdownMenuTrigger>
-                      <DropdownMenuContent align="end">
-                        <DropdownMenuLabel>Acciones</DropdownMenuLabel>
-                        <DropdownMenuSeparator />
-                        <Dialog>
-                          <DialogTrigger asChild>
-                            <DropdownMenuItem
-                              onSelect={(e) => {
-                                e.preventDefault();
-                                setSelectedCandidate(candidate);
-                              }}
-                            >
-                              <Eye className="mr-2 h-4 w-4" />
-                              Ver Detalles
-                            </DropdownMenuItem>
-                          </DialogTrigger>
-                        </Dialog>
-                        <DropdownMenuItem
-                          onClick={() => handleOpenChat(candidate)}
-                        >
-                          <MessageSquare className="mr-2 h-4 w-4" />
-                          Chat
-                        </DropdownMenuItem>
-                        {candidate.cvFile && (
-                          <DropdownMenuItem>
-                            <FileText className="mr-2 h-4 w-4" />
-                            Descargar CV
-                          </DropdownMenuItem>
-                        )}
-                        <DropdownMenuSeparator />
-                        <DropdownMenuItem
-                          onClick={() =>
-                            handleStatusChange(candidate, "PRE_SELECTED")
-                          }
-                          disabled={candidate.status === "PRE_SELECTED"}
-                        >
-                          <CheckCircle className="mr-2 h-4 w-4" />
-                          Preseleccionar
-                        </DropdownMenuItem>
-                        <DropdownMenuItem
-                          onClick={() => handleRejectClick(candidate)}
-                          disabled={candidate.status === "REJECTED"}
-                        >
-                          <XCircle className="mr-2 h-4 w-4" />
-                          Rechazar
-                        </DropdownMenuItem>
-                      </DropdownMenuContent>
-                    </DropdownMenu>
-                  </TableCell>
-                </TableRow>
-              ))}
-            </TableBody>
-          </Table>
-          <div className="flex justify-between items-center mt-4">
-            <span className="text-sm text-muted-foreground">
-              Página {candidatesData.pagination.page} de{" "}
-              {candidatesData.pagination.totalPages}
-            </span>
-            <div className="space-x-2">
-              <Button
-                variant="outline"
-                size="sm"
-                disabled={page === 1}
-                onClick={() => setPage(page - 1)}
-              >
-                Anterior
-              </Button>
-              <Button
-                variant="outline"
-                size="sm"
-                disabled={page === candidatesData.pagination.totalPages}
-                onClick={() => setPage(page + 1)}
-              >
-                Siguiente
-              </Button>
-            </div>
-          </div>
-        </CardContent>
-      </Card>
+                      </TableHead>
+
+                      <TableHead className="font-semibold text-gray-900">
+                        Joven
+                      </TableHead>
+                      <TableHead className="font-semibold text-gray-900">
+                        Postulación
+                      </TableHead>
+                      <TableHead className="font-semibold text-gray-900">
+                        Estado
+                      </TableHead>
+                      <TableHead className="font-semibold text-gray-900">
+                        Vistas
+                      </TableHead>
+                      <TableHead className="font-semibold text-gray-900">
+                        Fecha Creación
+                      </TableHead>
+                      <TableHead className="text-right font-semibold text-gray-900">
+                        Acciones
+                      </TableHead>
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody>
+                    {candidatesData.candidates.map((candidate) => (
+                      <TableRow
+                        key={candidate.id}
+                        className="hover:bg-gray-50 border-gray-200"
+                      >
+                        <TableCell>
+                          <Checkbox
+                            checked={selectedCVs.includes(
+                              candidate.cvFile || ""
+                            )}
+                            onCheckedChange={(checked) => {
+                              if (checked) {
+                                setSelectedCVs([
+                                  ...selectedCVs,
+                                  candidate.cvFile!,
+                                ]);
+                              } else {
+                                setSelectedCVs(
+                                  selectedCVs.filter(
+                                    (url) => url !== candidate.cvFile
+                                  )
+                                );
+                              }
+                            }}
+                            disabled={!candidate.cvFile}
+                          />
+                        </TableCell>
+
+                        <TableCell>
+                          <div className="flex items-center space-x-3">
+                            <Avatar className="h-10 w-10">
+                              <AvatarImage
+                                src="/api/placeholder/40/40"
+                                alt={`${candidate.applicant.firstName} ${candidate.applicant.lastName}`}
+                              />
+                              <AvatarFallback className="bg-blue-100 text-blue-600 font-medium">
+                                {`${candidate.applicant.firstName} ${candidate.applicant.lastName}`
+                                  .split(" ")
+                                  .map((n: string) => n[0])
+                                  .join("")}
+                              </AvatarFallback>
+                            </Avatar>
+                            <div>
+                              <div className="font-medium text-gray-900">
+                                {`${candidate.applicant.firstName} ${candidate.applicant.lastName}`}
+                              </div>
+                              <div className="text-sm text-gray-600">
+                                {candidate.applicant.email}
+                              </div>
+                            </div>
+                          </div>
+                        </TableCell>
+                        <TableCell>
+                          <div className="font-medium text-gray-900">
+                            {candidate.jobOffer.title}
+                          </div>
+                          <div className="text-sm text-gray-600 line-clamp-2 max-w-xs">
+                            {candidate.coverLetter}
+                          </div>
+                        </TableCell>
+                        <TableCell>
+                          {getStatusBadge(candidate.status)}
+                        </TableCell>
+                        <TableCell>
+                          <div className="flex items-center gap-1">
+                            <Eye className="h-4 w-4 text-gray-400" />
+                            <span className="text-sm text-gray-600">0</span>
+                          </div>
+                        </TableCell>
+                        <TableCell>
+                          <div className="text-sm text-gray-600">
+                            {formatDate(candidate.appliedAt)}
+                          </div>
+                        </TableCell>
+                        <TableCell className="text-right">
+                          <DropdownMenu>
+                            <DropdownMenuTrigger asChild>
+                              <Button
+                                variant="ghost"
+                                className="h-8 w-8 p-0 hover:bg-gray-100"
+                              >
+                                <MoreHorizontal className="h-4 w-4" />
+                              </Button>
+                            </DropdownMenuTrigger>
+                            <DropdownMenuContent align="end">
+                              <DropdownMenuLabel>Acciones</DropdownMenuLabel>
+                              <DropdownMenuSeparator />
+                              <Dialog>
+                                <DialogTrigger asChild>
+                                  <DropdownMenuItem
+                                    onSelect={(e) => {
+                                      e.preventDefault();
+                                      setSelectedCandidate(candidate);
+                                    }}
+                                  >
+                                    <Eye className="mr-2 h-4 w-4" />
+                                    Ver Detalles
+                                  </DropdownMenuItem>
+                                </DialogTrigger>
+                              </Dialog>
+                              <DropdownMenuItem
+                                onClick={() => handleOpenChat(candidate)}
+                              >
+                                <MessageSquare className="mr-2 h-4 w-4" />
+                                Chat
+                              </DropdownMenuItem>
+                              {candidate.cvFile && (
+                                <DropdownMenuItem>
+                                  <FileText className="mr-2 h-4 w-4" />
+                                  Descargar CV
+                                </DropdownMenuItem>
+                              )}
+                              <DropdownMenuSeparator />
+                              <DropdownMenuItem
+                                onClick={() =>
+                                  handleStatusChange(candidate, "PRE_SELECTED")
+                                }
+                                disabled={candidate.status === "PRE_SELECTED"}
+                              >
+                                <CheckCircle className="mr-2 h-4 w-4" />
+                                Preseleccionar
+                              </DropdownMenuItem>
+                              <DropdownMenuItem
+                                onClick={() => handleRejectClick(candidate)}
+                                disabled={candidate.status === "REJECTED"}
+                              >
+                                <XCircle className="mr-2 h-4 w-4" />
+                                Rechazar
+                              </DropdownMenuItem>
+                            </DropdownMenuContent>
+                          </DropdownMenu>
+                        </TableCell>
+                      </TableRow>
+                    ))}
+                  </TableBody>
+                </Table>
+              </div>
+              <div className="flex justify-between items-center mt-6 pt-4 border-t border-gray-200">
+                <span className="text-sm text-gray-600">
+                  Página {candidatesData.pagination.page} de{" "}
+                  {candidatesData.pagination.totalPages}
+                </span>
+                <div className="flex gap-2">
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    disabled={page === 1}
+                    onClick={() => setPage(page - 1)}
+                    className="border-gray-200 hover:border-blue-500 hover:text-blue-600"
+                  >
+                    Anterior
+                  </Button>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    disabled={page === candidatesData.pagination.totalPages}
+                    onClick={() => setPage(page + 1)}
+                    className="border-gray-200 hover:border-blue-500 hover:text-blue-600"
+                  >
+                    Siguiente
+                  </Button>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+        </div>
+      </div>
 
       {/* Candidate Details Dialog */}
       {selectedCandidate && (

@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -18,6 +18,7 @@ import {
   Plus,
   Trash2,
   Trophy,
+  Award,
   GraduationCap,
   Briefcase,
   User,
@@ -27,6 +28,8 @@ import {
   Globe,
   Calendar,
   Code,
+  Eye,
+  Loader2,
 } from "lucide-react";
 import { useCV } from "@/hooks/useCV";
 import { CVData } from "@/hooks/useCV";
@@ -37,6 +40,7 @@ import {
   View,
   StyleSheet,
   pdf,
+  PDFViewer,
 } from "@react-pdf/renderer";
 
 // Estilos para el PDF del CV - Template Modern Professional
@@ -84,6 +88,59 @@ const modernCVStyles = StyleSheet.create({
   },
   rightColumn: {
     width: "70%",
+  },
+  singleColumn: {
+    padding: 20,
+    flex: 1,
+  },
+  subsectionTitle: {
+    fontSize: 14,
+    fontWeight: "bold",
+    color: "#1e40af",
+    marginBottom: 8,
+    marginTop: 12,
+  },
+  educationHistoryItem: {
+    marginBottom: 12,
+    padding: 8,
+    backgroundColor: "#f8fafc",
+    borderRadius: 4,
+  },
+  achievementItem: {
+    marginBottom: 8,
+  },
+  projectItem: {
+    marginBottom: 12,
+    padding: 8,
+    backgroundColor: "#f8fafc",
+    borderRadius: 4,
+  },
+  modernProjectTitle: {
+    fontSize: 12,
+    fontWeight: "bold",
+    color: "#1f2937",
+    marginBottom: 2,
+  },
+  projectLocation: {
+    fontSize: 10,
+    color: "#6b7280",
+    marginBottom: 2,
+  },
+  interestTag: {
+    fontSize: 10,
+    color: "#374151",
+    backgroundColor: "#f3f4f6",
+    padding: "4px 8px",
+    borderRadius: 12,
+    margin: "2px 4px 2px 0",
+  },
+  relevantSkillTag: {
+    fontSize: 10,
+    color: "#065f46",
+    backgroundColor: "#d1fae5",
+    padding: "4px 8px",
+    borderRadius: 12,
+    margin: "2px 4px 2px 0",
   },
   section: {
     marginBottom: 25,
@@ -174,7 +231,7 @@ const modernCVStyles = StyleSheet.create({
     paddingLeft: 15,
     marginBottom: 18,
   },
-  projectTitle: {
+  modernProjectsTitle: {
     fontSize: 12,
     fontWeight: "bold",
     color: "#1f2937",
@@ -191,6 +248,48 @@ const modernCVStyles = StyleSheet.create({
   languageLevel: {
     fontSize: 10,
     color: "#6b7280",
+  },
+  socialLinkItem: {
+    marginBottom: 6,
+  },
+  socialPlatform: {
+    fontSize: 10,
+    fontWeight: "bold",
+    color: "#1f2937",
+  },
+  socialUrl: {
+    fontSize: 9,
+    color: "#6b7280",
+  },
+  interestsText: {
+    fontSize: 10,
+    color: "#374151",
+    fontStyle: "italic",
+  },
+  activityItem: {
+    marginBottom: 8,
+  },
+  activityTitle: {
+    fontSize: 11,
+    fontWeight: "bold",
+    color: "#1f2937",
+  },
+  activityDescription: {
+    fontSize: 10,
+    color: "#6b7280",
+  },
+  relevantSkillsText: {
+    fontSize: 10,
+    color: "#374151",
+  },
+  targetText: {
+    fontSize: 10,
+    color: "#374151",
+    marginBottom: 4,
+  },
+  targetLabel: {
+    fontWeight: "bold",
+    color: "#1f2937",
   },
 });
 
@@ -333,7 +432,7 @@ const creativeCVStyles = StyleSheet.create({
     paddingLeft: 15,
     marginBottom: 18,
   },
-  projectTitle: {
+  creativeProjectTitle: {
     fontSize: 12,
     fontWeight: "bold",
     color: "#1f2937",
@@ -350,6 +449,58 @@ const creativeCVStyles = StyleSheet.create({
   languageLevel: {
     fontSize: 10,
     color: "#6b7280",
+  },
+  socialLinkItem: {
+    marginBottom: 6,
+  },
+  socialPlatform: {
+    fontSize: 10,
+    fontWeight: "bold",
+    color: "#1f2937",
+  },
+  socialUrl: {
+    fontSize: 9,
+    color: "#6b7280",
+  },
+  interestsText: {
+    fontSize: 10,
+    color: "#6b7280",
+    lineHeight: 1.4,
+  },
+  activityItem: {
+    marginBottom: 8,
+  },
+  activityTitle: {
+    fontSize: 10,
+    fontWeight: "bold",
+    color: "#1f2937",
+  },
+  activityDescription: {
+    fontSize: 9,
+    color: "#6b7280",
+    marginTop: 2,
+  },
+  relevantSkillsText: {
+    fontSize: 10,
+    color: "#6b7280",
+    lineHeight: 1.4,
+  },
+  targetText: {
+    fontSize: 10,
+    color: "#6b7280",
+    marginBottom: 4,
+  },
+  targetLabel: {
+    fontSize: 9,
+    fontWeight: "bold",
+    color: "#1f2937",
+    marginBottom: 2,
+  },
+  projectHeader: {
+    fontSize: 11,
+    fontWeight: "bold",
+    color: "#1f2937",
+    marginBottom: 4,
   },
 });
 
@@ -480,7 +631,7 @@ const minimalistCVStyles = StyleSheet.create({
   projectsItem: {
     marginBottom: 20,
   },
-  projectTitle: {
+  minimalistProjectTitle: {
     fontSize: 14,
     fontWeight: "400",
     color: "#111827",
@@ -498,6 +649,58 @@ const minimalistCVStyles = StyleSheet.create({
     fontSize: 11,
     color: "#6b7280",
   },
+  socialLinkItem: {
+    marginBottom: 6,
+  },
+  socialPlatform: {
+    fontSize: 11,
+    fontWeight: "bold",
+    color: "#111827",
+  },
+  socialUrl: {
+    fontSize: 10,
+    color: "#6b7280",
+  },
+  interestsText: {
+    fontSize: 11,
+    color: "#6b7280",
+    lineHeight: 1.4,
+  },
+  activityItem: {
+    marginBottom: 8,
+  },
+  activityTitle: {
+    fontSize: 11,
+    fontWeight: "bold",
+    color: "#111827",
+  },
+  activityDescription: {
+    fontSize: 10,
+    color: "#6b7280",
+    marginTop: 2,
+  },
+  relevantSkillsText: {
+    fontSize: 11,
+    color: "#6b7280",
+    lineHeight: 1.4,
+  },
+  targetText: {
+    fontSize: 11,
+    color: "#6b7280",
+    marginBottom: 4,
+  },
+  targetLabel: {
+    fontSize: 10,
+    fontWeight: "bold",
+    color: "#111827",
+    marginBottom: 2,
+  },
+  projectHeader: {
+    fontSize: 12,
+    fontWeight: "bold",
+    color: "#111827",
+    marginBottom: 4,
+  },
 });
 
 // Componente PDF del CV - Template Modern Professional
@@ -510,202 +713,301 @@ const ModernProfessionalPDF = ({ cvData }: { cvData: CVData }) => (
           {cvData.personalInfo?.firstName} {cvData.personalInfo?.lastName}
         </Text>
         <Text style={modernCVStyles.title}>
-          {cvData.targetPosition || "Desarrollador Frontend"}
+          {cvData.jobTitle || cvData.targetPosition || "Profesional"}
         </Text>
         <View style={modernCVStyles.contactGrid}>
-          <Text style={modernCVStyles.contactItem}>
-            {cvData.personalInfo?.email}
-          </Text>
-          <Text style={modernCVStyles.contactItem}>
-            {cvData.personalInfo?.phone}
-          </Text>
-          <Text style={modernCVStyles.contactItem}>
-            {cvData.personalInfo?.municipality},{" "}
-            {cvData.personalInfo?.department}
-          </Text>
-          <Text style={modernCVStyles.contactItem}>
-            {cvData.personalInfo?.country}
-          </Text>
+          {cvData.personalInfo?.email && (
+            <Text style={modernCVStyles.contactItem}>
+              {cvData.personalInfo.email}
+            </Text>
+          )}
+          {cvData.personalInfo?.phone && (
+            <Text style={modernCVStyles.contactItem}>
+              {cvData.personalInfo.phone}
+            </Text>
+          )}
+          {[
+            cvData.personalInfo?.addressLine,
+            cvData.personalInfo?.city,
+            cvData.personalInfo?.municipality,
+            cvData.personalInfo?.department,
+          ].filter(Boolean).length > 0 && (
+            <Text style={modernCVStyles.contactItem}>
+              {[
+                cvData.personalInfo?.addressLine,
+                cvData.personalInfo?.city,
+                cvData.personalInfo?.municipality,
+                cvData.personalInfo?.department,
+              ]
+                .filter(Boolean)
+                .join(", ")}
+            </Text>
+          )}
+          {cvData.personalInfo?.country && (
+            <Text style={modernCVStyles.contactItem}>
+              {cvData.personalInfo.country}
+            </Text>
+          )}
         </View>
       </View>
 
-      <View style={modernCVStyles.content}>
-        {/* Left Column */}
-        <View style={modernCVStyles.leftColumn}>
-          {/* Education */}
+      {/* Single Column Content - Matching HTML Preview */}
+      <View style={modernCVStyles.singleColumn}>
+        {/* Professional Summary */}
+        {cvData.professionalSummary && (
+          <View style={modernCVStyles.section}>
+            <Text style={modernCVStyles.sectionTitle}>Resumen Profesional</Text>
+            <Text style={modernCVStyles.summary}>
+              {cvData.professionalSummary}
+            </Text>
+          </View>
+        )}
+
+        {/* Education */}
+        {cvData.education && (
           <View style={modernCVStyles.section}>
             <Text style={modernCVStyles.sectionTitle}>Educación</Text>
 
             {/* Current Education */}
-            <View style={modernCVStyles.educationItem}>
-              <Text style={modernCVStyles.institution}>
-                {cvData.education?.currentInstitution}
-              </Text>
-              <Text style={modernCVStyles.degree}>
-                {cvData.education?.currentDegree}
-              </Text>
-              <Text style={modernCVStyles.date}>
-                {cvData.education?.universityStartDate} -{" "}
-                {cvData.education?.universityEndDate || "Presente"}
-              </Text>
-              {cvData.education?.gpa && (
-                <Text style={modernCVStyles.date}>
-                  GPA: {cvData.education.gpa}
-                </Text>
-              )}
-            </View>
-
-            {/* Education History */}
-            {cvData.education?.educationHistory?.map((item, index) => (
-              <View key={index} style={modernCVStyles.educationItem}>
+            {(cvData.education.currentDegree ||
+              cvData.education.level ||
+              cvData.education.universityName ||
+              cvData.education.currentInstitution) && (
+              <View style={modernCVStyles.educationItem}>
                 <Text style={modernCVStyles.institution}>
-                  {item.institution}
+                  {cvData.education.currentDegree || cvData.education.level}
                 </Text>
-                <Text style={modernCVStyles.degree}>{item.degree}</Text>
-                <Text style={modernCVStyles.date}>
-                  {item.startDate} - {item.endDate || "Presente"}
+                <Text style={modernCVStyles.degree}>
+                  {cvData.education.universityName ||
+                    cvData.education.currentInstitution}
                 </Text>
-                <Text style={modernCVStyles.date}>Estado: {item.status}</Text>
-                {item.gpa && (
-                  <Text style={modernCVStyles.date}>GPA: {item.gpa}</Text>
+                {cvData.education.graduationYear && (
+                  <Text style={modernCVStyles.date}>
+                    Año de graduación: {cvData.education.graduationYear}
+                  </Text>
+                )}
+                {cvData.education.universityStatus && (
+                  <Text style={modernCVStyles.date}>
+                    Estado: {cvData.education.universityStatus}
+                  </Text>
+                )}
+                {cvData.education.gpa && (
+                  <Text style={modernCVStyles.date}>
+                    GPA: {cvData.education.gpa}
+                  </Text>
                 )}
               </View>
-            ))}
+            )}
+
+            {/* Education History */}
+            {cvData.education.educationHistory &&
+              cvData.education.educationHistory.length > 0 && (
+                <View style={modernCVStyles.section}>
+                  <Text style={modernCVStyles.subsectionTitle}>
+                    Historial Educativo
+                  </Text>
+                  {cvData.education.educationHistory.map((edu, index) => (
+                    <View
+                      key={index}
+                      style={modernCVStyles.educationHistoryItem}
+                    >
+                      <Text style={modernCVStyles.institution}>
+                        {edu.degree}
+                      </Text>
+                      <Text style={modernCVStyles.degree}>
+                        {edu.institution}
+                      </Text>
+                      <Text style={modernCVStyles.date}>
+                        {edu.startDate} - {edu.endDate || "En curso"}
+                      </Text>
+                      {edu.status && (
+                        <Text style={modernCVStyles.date}>
+                          Estado: {edu.status}
+                        </Text>
+                      )}
+                    </View>
+                  ))}
+                </View>
+              )}
 
             {/* Academic Achievements */}
-            {cvData.education?.academicAchievements &&
+            {cvData.education.academicAchievements &&
               cvData.education.academicAchievements.length > 0 && (
                 <View style={modernCVStyles.section}>
-                  <Text style={modernCVStyles.sectionTitle}>
+                  <Text style={modernCVStyles.subsectionTitle}>
                     Logros Académicos
                   </Text>
                   {cvData.education.academicAchievements.map(
                     (achievement, index) => (
-                      <View key={index} style={modernCVStyles.achievementsItem}>
+                      <View key={index} style={modernCVStyles.achievementItem}>
                         <Text style={modernCVStyles.achievementTitle}>
                           {achievement.title}
                         </Text>
-                        <Text style={modernCVStyles.achievementDescription}>
-                          {achievement.description}
-                        </Text>
-                        <Text style={modernCVStyles.date}>
-                          {achievement.date} - {achievement.type}
-                        </Text>
+                        {achievement.date && (
+                          <Text style={modernCVStyles.date}>
+                            {achievement.date}
+                          </Text>
+                        )}
+                        {achievement.description && (
+                          <Text style={modernCVStyles.achievementDescription}>
+                            {achievement.description}
+                          </Text>
+                        )}
                       </View>
                     )
                   )}
                 </View>
               )}
           </View>
+        )}
 
-          {/* Skills */}
-          <View style={modernCVStyles.section}>
-            <Text style={modernCVStyles.sectionTitle}>Habilidades</Text>
-            <View style={modernCVStyles.skillsContainer}>
-              {cvData.skills?.map((skill, index) => (
-                <Text key={index} style={modernCVStyles.skill}>
-                  {skill.name}
-                  {skill.experienceLevel && ` (${skill.experienceLevel})`}
-                </Text>
-              ))}
-            </View>
-          </View>
-
-          {/* Languages */}
-          <View style={modernCVStyles.section}>
-            <Text style={modernCVStyles.sectionTitle}>Idiomas</Text>
-            {cvData.languages?.map((language, index) => (
-              <View key={index} style={modernCVStyles.languagesItem}>
-                <Text style={modernCVStyles.languageName}>{language.name}</Text>
-                <Text style={modernCVStyles.languageLevel}>
-                  {language.proficiency}
-                </Text>
-              </View>
-            ))}
-          </View>
-        </View>
-
-        {/* Right Column */}
-        <View style={modernCVStyles.rightColumn}>
-          {/* Professional Summary */}
-          <View style={modernCVStyles.section}>
-            <Text style={modernCVStyles.sectionTitle}>Resumen Profesional</Text>
-            <Text style={modernCVStyles.summary}>
-              {cvData.professionalSummary ||
-                "Joven profesional con sólidos conocimientos en desarrollo web y tecnologías modernas. Comprometido con el aprendizaje continuo y el desarrollo de soluciones innovadoras."}
-            </Text>
-          </View>
-
-          {/* Work Experience */}
+        {/* Work Experience */}
+        {cvData.workExperience && cvData.workExperience.length > 0 && (
           <View style={modernCVStyles.section}>
             <Text style={modernCVStyles.sectionTitle}>Experiencia Laboral</Text>
-            {cvData.workExperience?.map((exp, index) => (
+            {cvData.workExperience.map((exp, index) => (
               <View key={index} style={modernCVStyles.experienceItem}>
                 <Text style={modernCVStyles.jobTitle}>{exp.jobTitle}</Text>
                 <Text style={modernCVStyles.company}>{exp.company}</Text>
                 <Text style={modernCVStyles.date}>
-                  {exp.startDate && exp.endDate
-                    ? `${new Date(exp.startDate).toLocaleDateString("es-ES", { month: "short", year: "numeric" })} - ${new Date(exp.endDate).toLocaleDateString("es-ES", { month: "short", year: "numeric" })}`
-                    : exp.startDate
-                      ? `${new Date(exp.startDate).toLocaleDateString("es-ES", { month: "short", year: "numeric" })} - Presente`
-                      : "Fecha no especificada"}
+                  {exp.startDate} - {exp.endDate || "Presente"}
                 </Text>
-                <Text style={modernCVStyles.description}>
-                  {exp.description}
-                </Text>
+                {exp.description && (
+                  <Text style={modernCVStyles.description}>
+                    {exp.description}
+                  </Text>
+                )}
               </View>
             ))}
-            {(!cvData.workExperience || cvData.workExperience.length === 0) && (
-              <Text style={modernCVStyles.description}>
-                Sin experiencia laboral registrada
-              </Text>
-            )}
           </View>
+        )}
 
-          {/* Achievements */}
+        {/* Skills */}
+        {cvData.skills && cvData.skills.length > 0 && (
           <View style={modernCVStyles.section}>
-            <Text style={modernCVStyles.sectionTitle}>Logros</Text>
-            {cvData.achievements?.map((achievement, index) => (
-              <View key={index} style={modernCVStyles.achievementsItem}>
-                <Text style={modernCVStyles.achievementTitle}>
-                  {achievement.title}
+            <Text style={modernCVStyles.sectionTitle}>Habilidades</Text>
+            <View style={modernCVStyles.skillsContainer}>
+              {cvData.skills.map((skill, index) => (
+                <Text key={index} style={modernCVStyles.skill}>
+                  {typeof skill === "string" ? skill : (skill as any).name}
                 </Text>
-                <Text style={modernCVStyles.achievementDescription}>
-                  {achievement.description}
+              ))}
+            </View>
+          </View>
+        )}
+
+        {/* Languages */}
+        {cvData.languages && cvData.languages.length > 0 && (
+          <View style={modernCVStyles.section}>
+            <Text style={modernCVStyles.sectionTitle}>Idiomas</Text>
+            {cvData.languages.map((lang, index) => (
+              <View key={index} style={modernCVStyles.languagesItem}>
+                <Text style={modernCVStyles.languageName}>{lang.name}</Text>
+                <Text style={modernCVStyles.languageLevel}>
+                  {lang.proficiency}
                 </Text>
-                <Text style={modernCVStyles.date}>{achievement.date}</Text>
               </View>
             ))}
           </View>
+        )}
 
-          {/* Projects */}
+        {/* Projects */}
+        {cvData.projects && cvData.projects.length > 0 && (
           <View style={modernCVStyles.section}>
             <Text style={modernCVStyles.sectionTitle}>Proyectos</Text>
-            {cvData.projects?.map((project, index) => (
-              <View key={index} style={modernCVStyles.projectsItem}>
-                <Text style={modernCVStyles.projectTitle}>{project.title}</Text>
+            {cvData.projects.map((project, index) => (
+              <View key={index} style={modernCVStyles.projectItem}>
+                <Text style={modernCVStyles.modernProjectTitle}>
+                  {project.title}
+                </Text>
                 {project.location && (
-                  <Text style={modernCVStyles.company}>{project.location}</Text>
+                  <Text style={modernCVStyles.projectLocation}>
+                    Ubicación: {project.location}
+                  </Text>
                 )}
                 <Text style={modernCVStyles.date}>
-                  {project.startDate && project.endDate
-                    ? `${new Date(project.startDate).toLocaleDateString("es-ES", { month: "short", year: "numeric" })} - ${new Date(project.endDate).toLocaleDateString("es-ES", { month: "short", year: "numeric" })}`
-                    : project.startDate
-                      ? `${new Date(project.startDate).toLocaleDateString("es-ES", { month: "short", year: "numeric" })} - Presente`
-                      : "Fecha no especificada"}
+                  {project.startDate} - {project.endDate || "En curso"}
                 </Text>
-                <Text style={modernCVStyles.description}>
-                  {project.description}
-                </Text>
+                {project.description && (
+                  <Text style={modernCVStyles.description}>
+                    {project.description}
+                  </Text>
+                )}
               </View>
             ))}
-            {(!cvData.projects || cvData.projects.length === 0) && (
-              <Text style={modernCVStyles.description}>
-                Sin proyectos registrados
-              </Text>
-            )}
           </View>
-        </View>
+        )}
+
+        {/* Social Links */}
+        {cvData.socialLinks && cvData.socialLinks.length > 0 && (
+          <View style={modernCVStyles.section}>
+            <Text style={modernCVStyles.sectionTitle}>Enlaces Web</Text>
+            {cvData.socialLinks.map((link, index) => (
+              <View key={index} style={modernCVStyles.socialLinkItem}>
+                <Text style={modernCVStyles.socialPlatform}>
+                  {link.platform}:
+                </Text>
+                <Text style={modernCVStyles.socialUrl}>{link.url}</Text>
+              </View>
+            ))}
+          </View>
+        )}
+
+        {/* Interests */}
+        {cvData.interests && cvData.interests.length > 0 && (
+          <View style={modernCVStyles.section}>
+            <Text style={modernCVStyles.sectionTitle}>Intereses</Text>
+            <View style={modernCVStyles.skillsContainer}>
+              {cvData.interests.map((interest, index) => (
+                <Text key={index} style={modernCVStyles.interestTag}>
+                  {interest}
+                </Text>
+              ))}
+            </View>
+          </View>
+        )}
+
+        {/* Activities */}
+        {cvData.activities && cvData.activities.length > 0 && (
+          <View style={modernCVStyles.section}>
+            <Text style={modernCVStyles.sectionTitle}>
+              Actividades Extracurriculares
+            </Text>
+            {cvData.activities.map((activity, index) => (
+              <View key={index} style={modernCVStyles.activityItem}>
+                <Text style={modernCVStyles.activityTitle}>
+                  {activity.title}
+                </Text>
+                {activity.description && (
+                  <Text style={modernCVStyles.activityDescription}>
+                    {activity.description}
+                  </Text>
+                )}
+                {activity.startDate && (
+                  <Text style={modernCVStyles.date}>
+                    {activity.startDate} - {activity.endDate}
+                  </Text>
+                )}
+              </View>
+            ))}
+          </View>
+        )}
+
+        {/* Relevant Skills */}
+        {cvData.relevantSkills && cvData.relevantSkills.length > 0 && (
+          <View style={modernCVStyles.section}>
+            <Text style={modernCVStyles.sectionTitle}>
+              Habilidades Relevantes
+            </Text>
+            <View style={modernCVStyles.skillsContainer}>
+              {cvData.relevantSkills.map((skill, index) => (
+                <Text key={index} style={modernCVStyles.relevantSkillTag}>
+                  {typeof skill === "string" ? skill : (skill as any).name}
+                </Text>
+              ))}
+            </View>
+          </View>
+        )}
       </View>
     </Page>
   </Document>
@@ -809,7 +1111,7 @@ const CreativePortfolioPDF = ({ cvData }: { cvData: CVData }) => (
                           {achievement.description}
                         </Text>
                         <Text style={creativeCVStyles.date}>
-                          {achievement.date} - {achievement.type}
+                          {achievement.date}
                         </Text>
                       </View>
                     )
@@ -830,6 +1132,84 @@ const CreativePortfolioPDF = ({ cvData }: { cvData: CVData }) => (
               ))}
             </View>
           </View>
+
+          {/* Languages */}
+          {cvData.languages && cvData.languages.length > 0 && (
+            <View style={creativeCVStyles.card}>
+              <Text style={creativeCVStyles.sectionTitle}>Idiomas</Text>
+              {cvData.languages.map((language, index) => (
+                <View key={index} style={creativeCVStyles.languagesItem}>
+                  <Text style={creativeCVStyles.languageName}>
+                    {language.name}
+                  </Text>
+                  <Text style={creativeCVStyles.languageLevel}>
+                    {language.proficiency}
+                  </Text>
+                </View>
+              ))}
+            </View>
+          )}
+
+          {/* Social Links */}
+          {cvData.socialLinks && cvData.socialLinks.length > 0 && (
+            <View style={creativeCVStyles.card}>
+              <Text style={creativeCVStyles.sectionTitle}>Enlaces Web</Text>
+              {cvData.socialLinks.map((link, index) => (
+                <View key={index} style={creativeCVStyles.socialLinkItem}>
+                  <Text style={creativeCVStyles.socialPlatform}>
+                    {link.platform}:
+                  </Text>
+                  <Text style={creativeCVStyles.socialUrl}>{link.url}</Text>
+                </View>
+              ))}
+            </View>
+          )}
+
+          {/* Interests */}
+          {cvData.interests && cvData.interests.length > 0 && (
+            <View style={creativeCVStyles.card}>
+              <Text style={creativeCVStyles.sectionTitle}>Intereses</Text>
+              <Text style={creativeCVStyles.interestsText}>
+                {cvData.interests.join(", ")}
+              </Text>
+            </View>
+          )}
+
+          {/* Activities */}
+          {cvData.activities && cvData.activities.length > 0 && (
+            <View style={creativeCVStyles.card}>
+              <Text style={creativeCVStyles.sectionTitle}>Actividades</Text>
+              {cvData.activities.map((activity, index) => (
+                <View key={index} style={creativeCVStyles.activityItem}>
+                  <Text style={creativeCVStyles.activityTitle}>
+                    {activity.title}
+                  </Text>
+                  {activity.description && (
+                    <Text style={creativeCVStyles.activityDescription}>
+                      {activity.description}
+                    </Text>
+                  )}
+                  {activity.startDate && (
+                    <Text style={creativeCVStyles.date}>
+                      {activity.startDate} - {activity.endDate}
+                    </Text>
+                  )}
+                </View>
+              ))}
+            </View>
+          )}
+
+          {/* Relevant Skills */}
+          {cvData.relevantSkills && cvData.relevantSkills.length > 0 && (
+            <View style={creativeCVStyles.card}>
+              <Text style={creativeCVStyles.sectionTitle}>
+                Habilidades Relevantes
+              </Text>
+              <Text style={creativeCVStyles.relevantSkillsText}>
+                {cvData.relevantSkills.join(", ")}
+              </Text>
+            </View>
+          )}
         </View>
 
         {/* Right Column */}
@@ -844,6 +1224,31 @@ const CreativePortfolioPDF = ({ cvData }: { cvData: CVData }) => (
                 "Joven profesional con sólidos conocimientos en desarrollo web y tecnologías modernas. Comprometido con el aprendizaje continuo y el desarrollo de soluciones innovadoras."}
             </Text>
           </View>
+
+          {/* Target Position & Company */}
+          {(cvData.targetPosition || cvData.targetCompany) && (
+            <View style={creativeCVStyles.card}>
+              <Text style={creativeCVStyles.sectionTitle}>
+                Objetivos Profesionales
+              </Text>
+              {cvData.targetPosition && (
+                <Text style={creativeCVStyles.targetText}>
+                  <Text style={creativeCVStyles.targetLabel}>
+                    Posición objetivo:{" "}
+                  </Text>
+                  {cvData.targetPosition}
+                </Text>
+              )}
+              {cvData.targetCompany && (
+                <Text style={creativeCVStyles.targetText}>
+                  <Text style={creativeCVStyles.targetLabel}>
+                    Empresa objetivo:{" "}
+                  </Text>
+                  {cvData.targetCompany}
+                </Text>
+              )}
+            </View>
+          )}
 
           {/* Experience */}
           <View style={creativeCVStyles.card}>
@@ -870,6 +1275,35 @@ const CreativePortfolioPDF = ({ cvData }: { cvData: CVData }) => (
               </Text>
             )}
           </View>
+
+          {/* Projects */}
+          {cvData.projects && cvData.projects.length > 0 && (
+            <View style={creativeCVStyles.card}>
+              <Text style={creativeCVStyles.sectionTitle}>Proyectos</Text>
+              {cvData.projects.map((project, index) => (
+                <View key={index} style={creativeCVStyles.projectsItem}>
+                  <Text style={creativeCVStyles.creativeProjectTitle}>
+                    {project.title}
+                  </Text>
+                  {project.location && (
+                    <Text style={creativeCVStyles.company}>
+                      {project.location}
+                    </Text>
+                  )}
+                  <Text style={creativeCVStyles.date}>
+                    {project.startDate && project.endDate
+                      ? `${new Date(project.startDate).toLocaleDateString("es-ES", { month: "short", year: "numeric" })} - ${new Date(project.endDate).toLocaleDateString("es-ES", { month: "short", year: "numeric" })}`
+                      : project.startDate
+                        ? `${new Date(project.startDate).toLocaleDateString("es-ES", { month: "short", year: "numeric" })} - Presente`
+                        : "Fecha no especificada"}
+                  </Text>
+                  <Text style={creativeCVStyles.description}>
+                    {project.description}
+                  </Text>
+                </View>
+              ))}
+            </View>
+          )}
 
           {/* Achievements */}
           <View style={creativeCVStyles.card}>
@@ -1041,6 +1475,140 @@ const MinimalistPDF = ({ cvData }: { cvData: CVData }) => (
         </View>
       </View>
 
+      {/* Languages */}
+      {cvData.languages && cvData.languages.length > 0 && (
+        <View style={minimalistCVStyles.section}>
+          <Text style={minimalistCVStyles.sectionTitle}>Idiomas</Text>
+          {cvData.languages.map((language, index) => (
+            <View key={index} style={minimalistCVStyles.languagesItem}>
+              <Text style={minimalistCVStyles.languageName}>
+                {language.name}
+              </Text>
+              <Text style={minimalistCVStyles.languageLevel}>
+                {language.proficiency}
+              </Text>
+            </View>
+          ))}
+        </View>
+      )}
+
+      {/* Projects */}
+      {cvData.projects && cvData.projects.length > 0 && (
+        <View style={minimalistCVStyles.section}>
+          <Text style={minimalistCVStyles.sectionTitle}>Proyectos</Text>
+          {cvData.projects.map((project, index) => (
+            <View key={index} style={minimalistCVStyles.projectsItem}>
+              <View style={minimalistCVStyles.projectHeader}>
+                <Text style={minimalistCVStyles.minimalistProjectTitle}>
+                  {project.title}
+                </Text>
+                <Text style={minimalistCVStyles.date}>
+                  {project.startDate && project.endDate
+                    ? `${new Date(project.startDate).toLocaleDateString("es-ES", { month: "short", year: "numeric" })} - ${new Date(project.endDate).toLocaleDateString("es-ES", { month: "short", year: "numeric" })}`
+                    : project.startDate
+                      ? `${new Date(project.startDate).toLocaleDateString("es-ES", { month: "short", year: "numeric" })} - Presente`
+                      : "Fecha no especificada"}
+                </Text>
+              </View>
+              {project.location && (
+                <Text style={minimalistCVStyles.company}>
+                  {project.location}
+                </Text>
+              )}
+              <Text style={minimalistCVStyles.description}>
+                {project.description}
+              </Text>
+            </View>
+          ))}
+        </View>
+      )}
+
+      {/* Social Links */}
+      {cvData.socialLinks && cvData.socialLinks.length > 0 && (
+        <View style={minimalistCVStyles.section}>
+          <Text style={minimalistCVStyles.sectionTitle}>Enlaces Web</Text>
+          {cvData.socialLinks.map((link, index) => (
+            <View key={index} style={minimalistCVStyles.socialLinkItem}>
+              <Text style={minimalistCVStyles.socialPlatform}>
+                {link.platform}:
+              </Text>
+              <Text style={minimalistCVStyles.socialUrl}>{link.url}</Text>
+            </View>
+          ))}
+        </View>
+      )}
+
+      {/* Interests */}
+      {cvData.interests && cvData.interests.length > 0 && (
+        <View style={minimalistCVStyles.section}>
+          <Text style={minimalistCVStyles.sectionTitle}>Intereses</Text>
+          <Text style={minimalistCVStyles.interestsText}>
+            {cvData.interests.join(", ")}
+          </Text>
+        </View>
+      )}
+
+      {/* Activities */}
+      {cvData.activities && cvData.activities.length > 0 && (
+        <View style={minimalistCVStyles.section}>
+          <Text style={minimalistCVStyles.sectionTitle}>Actividades</Text>
+          {cvData.activities.map((activity, index) => (
+            <View key={index} style={minimalistCVStyles.activityItem}>
+              <Text style={minimalistCVStyles.activityTitle}>
+                {activity.title}
+              </Text>
+              {activity.description && (
+                <Text style={minimalistCVStyles.activityDescription}>
+                  {activity.description}
+                </Text>
+              )}
+              {activity.startDate && (
+                <Text style={minimalistCVStyles.date}>
+                  {activity.startDate} - {activity.endDate}
+                </Text>
+              )}
+            </View>
+          ))}
+        </View>
+      )}
+
+      {/* Relevant Skills */}
+      {cvData.relevantSkills && cvData.relevantSkills.length > 0 && (
+        <View style={minimalistCVStyles.section}>
+          <Text style={minimalistCVStyles.sectionTitle}>
+            Habilidades Relevantes
+          </Text>
+          <Text style={minimalistCVStyles.relevantSkillsText}>
+            {cvData.relevantSkills.join(", ")}
+          </Text>
+        </View>
+      )}
+
+      {/* Target Position & Company */}
+      {(cvData.targetPosition || cvData.targetCompany) && (
+        <View style={minimalistCVStyles.section}>
+          <Text style={minimalistCVStyles.sectionTitle}>
+            Objetivos Profesionales
+          </Text>
+          {cvData.targetPosition && (
+            <Text style={minimalistCVStyles.targetText}>
+              <Text style={minimalistCVStyles.targetLabel}>
+                Posición objetivo:{" "}
+              </Text>
+              {cvData.targetPosition}
+            </Text>
+          )}
+          {cvData.targetCompany && (
+            <Text style={minimalistCVStyles.targetText}>
+              <Text style={minimalistCVStyles.targetLabel}>
+                Empresa objetivo:{" "}
+              </Text>
+              {cvData.targetCompany}
+            </Text>
+          )}
+        </View>
+      )}
+
       {/* Achievements */}
       <View style={minimalistCVStyles.section}>
         <Text style={minimalistCVStyles.sectionTitle}>Logros</Text>
@@ -1071,7 +1639,10 @@ function ModernProfessionalTemplate({
   isEditing?: boolean;
 }) {
   return (
-    <div className="bg-white shadow-lg max-w-4xl mx-auto">
+    <div
+      className="bg-white w-full"
+      style={{ minWidth: "800px", maxWidth: "1000px", margin: "0 auto" }}
+    >
       {/* Header */}
       <div className="bg-gradient-to-r from-blue-600 to-blue-800 text-white p-8">
         <div className="flex items-center gap-6">
@@ -1089,9 +1660,11 @@ function ModernProfessionalTemplate({
               {cvData.personalInfo?.firstName} {cvData.personalInfo?.lastName}
             </h1>
             <p className="text-xl text-blue-100 mb-4">
-              {cvData.targetPosition || "Desarrollador Frontend"}
+              {cvData.jobTitle ||
+                cvData.targetPosition ||
+                "Desarrollador Frontend"}
             </p>
-            <div className="grid grid-cols-2 gap-4 text-sm">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-3 text-sm">
               <div className="flex items-center gap-2">
                 <Mail className="h-4 w-4" />
                 {cvData.personalInfo?.email}
@@ -1102,8 +1675,13 @@ function ModernProfessionalTemplate({
               </div>
               <div className="flex items-center gap-2">
                 <MapPin className="h-4 w-4" />
-                {cvData.personalInfo?.municipality},{" "}
-                {cvData.personalInfo?.department}
+                {cvData.personalInfo?.addressLine ||
+                  cvData.personalInfo?.address}
+                {cvData.personalInfo?.city && `, ${cvData.personalInfo.city}`}
+                {cvData.personalInfo?.municipality &&
+                  `, ${cvData.personalInfo.municipality}`}
+                {cvData.personalInfo?.department &&
+                  `, ${cvData.personalInfo.department}`}
               </div>
               <div className="flex items-center gap-2">
                 <Globe className="h-4 w-4" />
@@ -1114,10 +1692,10 @@ function ModernProfessionalTemplate({
         </div>
       </div>
 
-      <div className="p-8">
-        <div className="grid grid-cols-3 gap-8">
+      <div className="p-6">
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
           {/* Left Column */}
-          <div className="col-span-1 space-y-6">
+          <div className="lg:col-span-1 space-y-4">
             {/* Education */}
             <div>
               <h3 className="text-lg font-semibold text-blue-800 mb-3 flex items-center gap-2">
@@ -1176,7 +1754,7 @@ function ModernProfessionalTemplate({
                               {achievement.description}
                             </p>
                             <p className="text-xs text-gray-500">
-                              {achievement.date} - {achievement.type}
+                              {achievement.date}
                             </p>
                           </div>
                         )
@@ -1188,7 +1766,7 @@ function ModernProfessionalTemplate({
 
             {/* Skills */}
             <div>
-              <h3 className="text-lg font-semibold text-blue-800 mb-3">
+              <h3 className="text-base font-semibold text-blue-800 mb-2">
                 Habilidades
               </h3>
               <div className="flex flex-wrap gap-2">
@@ -1211,7 +1789,7 @@ function ModernProfessionalTemplate({
 
             {/* Languages */}
             <div>
-              <h3 className="text-lg font-semibold text-blue-800 mb-3">
+              <h3 className="text-base font-semibold text-blue-800 mb-2">
                 Idiomas
               </h3>
               <div className="space-y-2">
@@ -1231,7 +1809,7 @@ function ModernProfessionalTemplate({
 
             {/* Social Links */}
             <div>
-              <h3 className="text-lg font-semibold text-blue-800 mb-3">
+              <h3 className="text-base font-semibold text-blue-800 mb-2">
                 Enlaces
               </h3>
               <div className="space-y-2">
@@ -1253,7 +1831,7 @@ function ModernProfessionalTemplate({
 
             {/* Interests */}
             <div>
-              <h3 className="text-lg font-semibold text-blue-800 mb-3">
+              <h3 className="text-base font-semibold text-blue-800 mb-2">
                 Intereses
               </h3>
               <div className="flex flex-wrap gap-2">
@@ -1267,10 +1845,10 @@ function ModernProfessionalTemplate({
           </div>
 
           {/* Right Column */}
-          <div className="col-span-2 space-y-6">
+          <div className="lg:col-span-2 space-y-4">
             {/* Professional Summary */}
             <div>
-              <h3 className="text-lg font-semibold text-blue-800 mb-3">
+              <h3 className="text-base font-semibold text-blue-800 mb-2">
                 Resumen Profesional
               </h3>
               <p className="text-gray-700 leading-relaxed">
@@ -1386,8 +1964,16 @@ function CreativePortfolioTemplate({
   isEditing?: boolean;
 }) {
   return (
-    <div className="bg-gradient-to-br from-purple-50 to-pink-50 min-h-screen">
-      <div className="max-w-4xl mx-auto p-8">
+    <div
+      className="bg-gradient-to-br from-purple-50 to-pink-50 w-full"
+      style={{
+        minWidth: "800px",
+        maxWidth: "1000px",
+        margin: "0 auto",
+        minHeight: "auto",
+      }}
+    >
+      <div className="p-6">
         {/* Header */}
         <div className="bg-white rounded-2xl shadow-xl p-8 mb-8">
           <div className="text-center">
@@ -1511,7 +2097,7 @@ function CreativePortfolioTemplate({
                                 {achievement.description}
                               </p>
                               <p className="text-sm text-gray-500">
-                                {achievement.date} - {achievement.type}
+                                {achievement.date}
                               </p>
                             </div>
                           )
@@ -1828,238 +2414,515 @@ function MinimalistTemplate({
   );
 }
 
-// Template 4: Modern Tech (for developers/tech professionals)
-function ModernTechTemplate({
-  cvData,
-  isEditing = false,
-}: {
-  cvData: CVData;
-  isEditing?: boolean;
-}) {
+// PDF Components for new templates
+
+// HTML Preview Components for CV Templates
+function ModernProfessionalHTML({ cvData }: { cvData: CVData }) {
   return (
-    <div className="bg-gray-50 min-h-screen">
-      <div className="max-w-4xl mx-auto bg-white shadow-lg">
-        {/* Header with gradient */}
-        <div className="bg-gradient-to-r from-blue-600 via-purple-600 to-indigo-600 text-white p-10">
+    <div
+      className="bg-white w-full shadow-lg"
+      style={{ minWidth: "800px", maxWidth: "1000px", margin: "0 auto" }}
+    >
+      {/* Header */}
+      <div className="bg-gradient-to-r from-blue-600 to-blue-800 text-white p-8">
+        <div className="flex items-center gap-6">
+          {cvData.personalInfo?.profileImage && (
+            <img
+              src={cvData.personalInfo.profileImage}
+              alt="Profile"
+              className="w-24 h-24 rounded-full object-cover border-4 border-white shadow-lg"
+            />
+          )}
+          <div className="flex-1">
+            <h1 className="text-3xl font-bold mb-2">
+              {cvData.personalInfo?.firstName} {cvData.personalInfo?.lastName}
+            </h1>
+            <p className="text-xl text-blue-100 mb-4">
+              {cvData.jobTitle || cvData.targetPosition || "Profesional"}
+            </p>
+            <div className="grid grid-cols-2 gap-4 text-sm">
+              {cvData.personalInfo?.email && (
+                <div className="flex items-center gap-2">
+                  <Mail className="w-4 h-4" />
+                  {cvData.personalInfo.email}
+                </div>
+              )}
+              {cvData.personalInfo?.phone && (
+                <div className="flex items-center gap-2">
+                  <Phone className="w-4 h-4" />
+                  {cvData.personalInfo.phone}
+                </div>
+              )}
+              {cvData.personalInfo?.city && (
+                <div className="flex items-center gap-2">
+                  <MapPin className="w-4 h-4" />
+                  {cvData.personalInfo.city}, {cvData.personalInfo?.department}
+                </div>
+              )}
+              {cvData.personalInfo?.country && (
+                <div className="flex items-center gap-2">
+                  <Globe className="w-4 h-4" />
+                  {cvData.personalInfo.country}
+                </div>
+              )}
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div className="p-8 space-y-8">
+        {/* Professional Summary */}
+        {cvData.professionalSummary && (
+          <div>
+            <h2 className="text-xl font-bold text-blue-800 mb-4 border-b-2 border-blue-200 pb-2">
+              Resumen Profesional
+            </h2>
+            <p className="text-gray-700 leading-relaxed">
+              {cvData.professionalSummary}
+            </p>
+          </div>
+        )}
+
+        {/* Education */}
+        {cvData.education && (
+          <div>
+            <h2 className="text-xl font-bold text-blue-800 mb-4 border-b-2 border-blue-200 pb-2">
+              Educación
+            </h2>
+            <div className="space-y-4">
+              {/* Current Education */}
+              {(cvData.education.currentDegree ||
+                cvData.education.level ||
+                cvData.education.universityName ||
+                cvData.education.currentInstitution) && (
+                <div>
+                  <h3 className="font-semibold text-gray-800">
+                    {cvData.education.currentDegree || cvData.education.level}
+                  </h3>
+                  <p className="text-gray-600">
+                    {cvData.education.universityName ||
+                      cvData.education.currentInstitution}
+                  </p>
+                  {cvData.education.graduationYear && (
+                    <p className="text-sm text-gray-500">
+                      Año de graduación: {cvData.education.graduationYear}
+                    </p>
+                  )}
+                  {cvData.education.universityStatus && (
+                    <p className="text-sm text-gray-500">
+                      Estado: {cvData.education.universityStatus}
+                    </p>
+                  )}
+                  {cvData.education.gpa && (
+                    <p className="text-sm text-gray-500">
+                      GPA: {cvData.education.gpa}
+                    </p>
+                  )}
+                </div>
+              )}
+
+              {/* Education History */}
+              {cvData.education.educationHistory &&
+                cvData.education.educationHistory.length > 0 && (
+                  <div>
+                    <h4 className="font-medium text-gray-700 mb-2">
+                      Historial Educativo
+                    </h4>
+                    {cvData.education.educationHistory.map((edu, index) => (
+                      <div key={index} className="mb-3 p-3 bg-gray-50 rounded">
+                        <h5 className="font-medium text-gray-800">
+                          {edu.degree}
+                        </h5>
+                        <p className="text-gray-600">{edu.institution}</p>
+                        <p className="text-sm text-gray-500">
+                          {edu.startDate} - {edu.endDate || "En curso"}
+                        </p>
+                        {edu.status && (
+                          <p className="text-sm text-gray-500">
+                            Estado: {edu.status}
+                          </p>
+                        )}
+                      </div>
+                    ))}
+                  </div>
+                )}
+
+              {/* Academic Achievements */}
+              {cvData.education.academicAchievements &&
+                cvData.education.academicAchievements.length > 0 && (
+                  <div>
+                    <h4 className="font-medium text-gray-700 mb-2">
+                      Logros Académicos
+                    </h4>
+                    {cvData.education.academicAchievements.map(
+                      (achievement, index) => (
+                        <div key={index} className="mb-2">
+                          <h5 className="font-medium text-gray-800">
+                            {achievement.title}
+                          </h5>
+                          {achievement.date && (
+                            <p className="text-sm text-gray-500">
+                              {achievement.date}
+                            </p>
+                          )}
+                          {achievement.description && (
+                            <p className="text-sm text-gray-600">
+                              {achievement.description}
+                            </p>
+                          )}
+                        </div>
+                      )
+                    )}
+                  </div>
+                )}
+            </div>
+          </div>
+        )}
+
+        {/* Work Experience */}
+        {cvData.workExperience && cvData.workExperience.length > 0 && (
+          <div>
+            <h2 className="text-xl font-bold text-blue-800 mb-4 border-b-2 border-blue-200 pb-2">
+              Experiencia Laboral
+            </h2>
+            <div className="space-y-4">
+              {cvData.workExperience.map((exp, index) => (
+                <div key={index}>
+                  <h3 className="font-semibold text-gray-800">
+                    {exp.jobTitle}
+                  </h3>
+                  <p className="text-gray-600">{exp.company}</p>
+                  <p className="text-sm text-gray-500">
+                    {exp.startDate} - {exp.endDate || "Presente"}
+                  </p>
+                  {exp.description && (
+                    <p className="text-gray-700 mt-2">{exp.description}</p>
+                  )}
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
+
+        {/* Skills */}
+        {cvData.skills && cvData.skills.length > 0 && (
+          <div>
+            <h2 className="text-xl font-bold text-blue-800 mb-4 border-b-2 border-blue-200 pb-2">
+              Habilidades
+            </h2>
+            <div className="flex flex-wrap gap-2">
+              {cvData.skills.map((skill, index) => (
+                <span
+                  key={index}
+                  className="bg-blue-100 text-blue-800 px-3 py-1 rounded-full text-sm"
+                >
+                  {typeof skill === "string" ? skill : (skill as any).name}
+                </span>
+              ))}
+            </div>
+          </div>
+        )}
+
+        {/* Languages */}
+        {cvData.languages && cvData.languages.length > 0 && (
+          <div>
+            <h2 className="text-xl font-bold text-blue-800 mb-4 border-b-2 border-blue-200 pb-2">
+              Idiomas
+            </h2>
+            <div className="space-y-2">
+              {cvData.languages.map((lang, index) => (
+                <div key={index} className="flex justify-between">
+                  <span className="font-medium">{lang.name}</span>
+                  <span className="text-gray-600">{lang.proficiency}</span>
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
+
+        {/* Projects */}
+        {cvData.projects && cvData.projects.length > 0 && (
+          <div>
+            <h2 className="text-xl font-bold text-blue-800 mb-4 border-b-2 border-blue-200 pb-2">
+              Proyectos
+            </h2>
+            <div className="space-y-4">
+              {cvData.projects.map((project, index) => (
+                <div key={index} className="p-4 bg-gray-50 rounded-lg">
+                  <h3 className="font-semibold text-gray-800">
+                    {project.title}
+                  </h3>
+                  {project.location && (
+                    <p className="text-gray-600 text-sm">
+                      Ubicación: {project.location}
+                    </p>
+                  )}
+                  <p className="text-sm text-gray-500">
+                    {project.startDate} - {project.endDate || "En curso"}
+                  </p>
+                  {project.description && (
+                    <p className="text-gray-700 mt-2">{project.description}</p>
+                  )}
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
+
+        {/* Social Links */}
+        {cvData.socialLinks && cvData.socialLinks.length > 0 && (
+          <div>
+            <h2 className="text-xl font-bold text-blue-800 mb-4 border-b-2 border-blue-200 pb-2">
+              Enlaces Web
+            </h2>
+            <div className="space-y-2">
+              {cvData.socialLinks.map((link, index) => (
+                <div key={index} className="flex items-center gap-2">
+                  <span className="font-medium text-gray-800">
+                    {link.platform}:
+                  </span>
+                  <a
+                    href={link.url}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="text-blue-600 hover:text-blue-800 underline"
+                  >
+                    {link.url}
+                  </a>
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
+
+        {/* Interests */}
+        {cvData.interests && cvData.interests.length > 0 && (
+          <div>
+            <h2 className="text-xl font-bold text-blue-800 mb-4 border-b-2 border-blue-200 pb-2">
+              Intereses
+            </h2>
+            <div className="flex flex-wrap gap-2">
+              {cvData.interests.map((interest, index) => (
+                <span
+                  key={index}
+                  className="bg-gray-100 text-gray-800 px-3 py-1 rounded-full text-sm"
+                >
+                  {interest}
+                </span>
+              ))}
+            </div>
+          </div>
+        )}
+
+        {/* Activities */}
+        {cvData.activities && cvData.activities.length > 0 && (
+          <div>
+            <h2 className="text-xl font-bold text-blue-800 mb-4 border-b-2 border-blue-200 pb-2">
+              Actividades Extracurriculares
+            </h2>
+            <div className="space-y-3">
+              {cvData.activities.map((activity, index) => (
+                <div key={index}>
+                  <h3 className="font-semibold text-gray-800">
+                    {activity.title}
+                  </h3>
+                  {activity.description && (
+                    <p className="text-gray-600 text-sm">
+                      {activity.description}
+                    </p>
+                  )}
+                  {activity.startDate && (
+                    <p className="text-sm text-gray-500">
+                      {activity.startDate} - {activity.endDate}
+                    </p>
+                  )}
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
+
+        {/* Achievements */}
+        {cvData.achievements && cvData.achievements.length > 0 && (
+          <div>
+            <h2 className="text-xl font-bold text-blue-800 mb-4 border-b-2 border-blue-200 pb-2">
+              Logros
+            </h2>
+            <div className="space-y-3">
+              {cvData.achievements.map((achievement, index) => (
+                <div key={index}>
+                  <h3 className="font-semibold text-gray-800">
+                    {achievement.title}
+                  </h3>
+                  {achievement.description && (
+                    <p className="text-gray-600 text-sm">
+                      {achievement.description}
+                    </p>
+                  )}
+                  {achievement.date && (
+                    <p className="text-sm text-gray-500">{achievement.date}</p>
+                  )}
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
+
+        {/* Target Position & Company */}
+        {(cvData.targetPosition || cvData.targetCompany) && (
+          <div>
+            <h2 className="text-xl font-bold text-blue-800 mb-4 border-b-2 border-blue-200 pb-2">
+              Objetivos Profesionales
+            </h2>
+            <div className="space-y-2">
+              {cvData.targetPosition && (
+                <p>
+                  <span className="font-medium">Posición objetivo:</span>{" "}
+                  {cvData.targetPosition}
+                </p>
+              )}
+              {cvData.targetCompany && (
+                <p>
+                  <span className="font-medium">Empresa objetivo:</span>{" "}
+                  {cvData.targetCompany}
+                </p>
+              )}
+            </div>
+          </div>
+        )}
+
+        {/* Relevant Skills */}
+        {cvData.relevantSkills && cvData.relevantSkills.length > 0 && (
+          <div>
+            <h2 className="text-xl font-bold text-blue-800 mb-4 border-b-2 border-blue-200 pb-2">
+              Habilidades Relevantes
+            </h2>
+            <div className="flex flex-wrap gap-2">
+              {cvData.relevantSkills.map((skill, index) => (
+                <span
+                  key={index}
+                  className="bg-green-100 text-green-800 px-3 py-1 rounded-full text-sm"
+                >
+                  {typeof skill === "string" ? skill : (skill as any).name}
+                </span>
+              ))}
+            </div>
+          </div>
+        )}
+      </div>
+    </div>
+  );
+}
+
+function CreativePortfolioHTML({ cvData }: { cvData: CVData }) {
+  return (
+    <div
+      className="bg-gradient-to-br from-purple-50 to-pink-50 w-full shadow-lg"
+      style={{
+        minWidth: "800px",
+        maxWidth: "1000px",
+        margin: "0 auto",
+        minHeight: "auto",
+      }}
+    >
+      <div className="p-6">
+        {/* Header */}
+        <div className="bg-white rounded-2xl shadow-lg p-8 mb-6">
           <div className="flex items-center gap-6">
             {cvData.personalInfo?.profileImage && (
-              <div className="w-24 h-24 rounded-full overflow-hidden border-4 border-white/20">
-                <img
-                  src={cvData.personalInfo.profileImage}
-                  alt="Profile"
-                  className="w-full h-full object-cover"
-                />
-              </div>
+              <img
+                src={cvData.personalInfo.profileImage}
+                alt="Profile"
+                className="w-20 h-20 rounded-full object-cover border-4 border-purple-200 shadow-md"
+              />
             )}
             <div className="flex-1">
-              <h1 className="text-4xl font-bold mb-2">
+              <h1 className="text-3xl font-bold text-purple-800 mb-2">
                 {cvData.personalInfo?.firstName} {cvData.personalInfo?.lastName}
               </h1>
-              <p className="text-xl text-blue-100 mb-4">
-                {cvData.jobTitle || "Desarrollador Full-Stack"}
+              <p className="text-xl text-purple-600 mb-4">
+                {cvData.jobTitle ||
+                  cvData.targetPosition ||
+                  "Profesional Creativo"}
               </p>
-              <div className="grid grid-cols-2 gap-4 text-sm text-blue-100">
-                <div className="flex items-center gap-2">
-                  <Mail className="h-4 w-4" />
-                  {cvData.personalInfo?.email}
-                </div>
-                <div className="flex items-center gap-2">
-                  <Phone className="h-4 w-4" />
-                  {cvData.personalInfo?.phone}
-                </div>
-                <div className="flex items-center gap-2">
-                  <MapPin className="h-4 w-4" />
-                  {cvData.personalInfo?.city}, {cvData.personalInfo?.department}
-                </div>
-                <div className="flex items-center gap-2">
-                  <Globe className="h-4 w-4" />
-                  {cvData.personalInfo?.country}
-                </div>
+              <div className="grid grid-cols-2 gap-4 text-sm text-gray-600">
+                {cvData.personalInfo?.email && (
+                  <div className="flex items-center gap-2">
+                    <Mail className="w-4 h-4" />
+                    {cvData.personalInfo.email}
+                  </div>
+                )}
+                {cvData.personalInfo?.phone && (
+                  <div className="flex items-center gap-2">
+                    <Phone className="w-4 h-4" />
+                    {cvData.personalInfo.phone}
+                  </div>
+                )}
+                {cvData.personalInfo?.city && (
+                  <div className="flex items-center gap-2">
+                    <MapPin className="w-4 h-4" />
+                    {cvData.personalInfo.city},{" "}
+                    {cvData.personalInfo?.department}
+                  </div>
+                )}
+                {cvData.personalInfo?.country && (
+                  <div className="flex items-center gap-2">
+                    <Globe className="w-4 h-4" />
+                    {cvData.personalInfo.country}
+                  </div>
+                )}
               </div>
             </div>
           </div>
         </div>
 
-        <div className="p-10">
+        <div className="space-y-6">
           {/* Professional Summary */}
-          <div className="mb-8">
-            <h2 className="text-2xl font-bold text-gray-800 mb-4 border-b-2 border-blue-600 pb-2">
-              Resumen Profesional
-            </h2>
-            <p className="text-gray-700 leading-relaxed text-lg">
-              {cvData.professionalSummary ||
-                "Desarrollador apasionado por crear soluciones tecnológicas innovadoras. Experiencia en desarrollo full-stack con tecnologías modernas y metodologías ágiles."}
-            </p>
-          </div>
-
-          <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-            {/* Left Column */}
-            <div className="lg:col-span-1 space-y-6">
-              {/* Skills */}
-              <div>
-                <h3 className="text-xl font-bold text-gray-800 mb-4 border-l-4 border-blue-600 pl-3">
-                  Habilidades Técnicas
-                </h3>
-                <div className="space-y-3">
-                  {cvData.skills?.map((skill, index) => (
-                    <div key={index} className="text-sm text-gray-700">
-                      • {skill.name}
-                      {skill.experienceLevel && (
-                        <span className="text-gray-500 ml-2">
-                          ({skill.experienceLevel})
-                        </span>
-                      )}
-                    </div>
-                  ))}
-                </div>
-              </div>
-
-              {/* Languages */}
-              {cvData.languages && cvData.languages.length > 0 && (
-                <div>
-                  <h3 className="text-xl font-bold text-gray-800 mb-4 border-l-4 border-blue-600 pl-3">
-                    Idiomas
-                  </h3>
-                  <div className="space-y-2">
-                    {cvData.languages.map((language, index) => (
-                      <div key={index} className="text-sm">
-                        <span className="font-medium text-gray-800">
-                          {language.name}
-                        </span>
-                        <span className="text-gray-500 ml-2">
-                          - {language.proficiency}
-                        </span>
-                      </div>
-                    ))}
-                  </div>
-                </div>
-              )}
-
-              {/* Social Links */}
-              {cvData.socialLinks && cvData.socialLinks.length > 0 && (
-                <div>
-                  <h3 className="text-xl font-bold text-gray-800 mb-4 border-l-4 border-blue-600 pl-3">
-                    Enlaces Profesionales
-                  </h3>
-                  <div className="space-y-2">
-                    {cvData.socialLinks.map((link, index) => (
-                      <div key={index} className="bg-gray-50 p-3 rounded-lg">
-                        <div className="font-medium text-gray-800 mb-1">
-                          {link.platform}
-                        </div>
-                        <a
-                          href={link.url}
-                          target="_blank"
-                          rel="noopener noreferrer"
-                          className="text-sm text-blue-600 hover:underline break-all"
-                        >
-                          {link.url}
-                        </a>
-                      </div>
-                    ))}
-                  </div>
-                </div>
-              )}
+          {cvData.professionalSummary && (
+            <div className="bg-white rounded-xl shadow-md p-6">
+              <h2 className="text-xl font-bold text-purple-800 mb-4 flex items-center gap-2">
+                <User className="w-5 h-5" />
+                Sobre Mí
+              </h2>
+              <p className="text-gray-700 leading-relaxed">
+                {cvData.professionalSummary}
+              </p>
             </div>
+          )}
 
-            {/* Right Column */}
-            <div className="lg:col-span-2 space-y-6">
-              {/* Work Experience */}
-              <div>
-                <h3 className="text-xl font-bold text-gray-800 mb-4 border-l-4 border-blue-600 pl-3">
-                  Experiencia Laboral
-                </h3>
-                <div className="space-y-6">
-                  {cvData.workExperience?.map((exp, index) => (
-                    <div
-                      key={index}
-                      className="border-l-4 border-blue-200 pl-4"
-                    >
-                      <div className="flex justify-between items-start mb-2">
-                        <h4 className="text-lg font-bold text-gray-800">
-                          {exp.jobTitle}
-                        </h4>
-                        <span className="text-sm text-gray-500 bg-gray-100 px-3 py-1 rounded">
-                          {exp.startDate && exp.endDate
-                            ? `${new Date(exp.startDate).toLocaleDateString("es-ES", { month: "short", year: "numeric" })} - ${new Date(exp.endDate).toLocaleDateString("es-ES", { month: "short", year: "numeric" })}`
-                            : exp.startDate
-                              ? `${new Date(exp.startDate).toLocaleDateString("es-ES", { month: "short", year: "numeric" })} - Presente`
-                              : "Fecha no especificada"}
-                        </span>
-                      </div>
-                      <p className="text-blue-600 font-medium mb-2">
-                        {exp.company}
-                      </p>
-                      <p className="text-gray-700 leading-relaxed">
-                        {exp.description}
-                      </p>
-                    </div>
-                  ))}
-                  {(!cvData.workExperience ||
-                    cvData.workExperience.length === 0) && (
-                    <p className="text-gray-500 italic">
-                      Sin experiencia laboral registrada
-                    </p>
-                  )}
-                </div>
-              </div>
-
-              {/* Projects */}
-              {cvData.projects && cvData.projects.length > 0 && (
-                <div>
-                  <h3 className="text-xl font-bold text-gray-800 mb-4 border-l-4 border-blue-600 pl-3">
-                    Proyectos Destacados
-                  </h3>
-                  <div className="space-y-4">
-                    {cvData.projects.map((project, index) => (
-                      <div key={index} className="bg-gray-50 p-6 rounded-lg">
-                        <div className="flex justify-between items-start mb-3">
-                          <h3 className="text-xl font-bold text-gray-800">
-                            {project.title}
-                          </h3>
-                          <span className="text-sm text-gray-500">
-                            {project.startDate && project.endDate
-                              ? `${new Date(project.startDate).toLocaleDateString("es-ES", { month: "short", year: "numeric" })} - ${new Date(project.endDate).toLocaleDateString("es-ES", { month: "short", year: "numeric" })}`
-                              : "Fecha no especificada"}
-                          </span>
-                        </div>
-                        {project.location && (
-                          <p className="text-gray-600 font-medium mb-2">
-                            {project.location}
-                          </p>
-                        )}
-                        <p className="text-gray-700 leading-relaxed">
-                          {project.description}
-                        </p>
-                      </div>
-                    ))}
-                  </div>
-                </div>
-              )}
-
-              {/* Education */}
-              <div>
-                <h3 className="text-xl font-bold text-gray-800 mb-4 border-l-4 border-blue-600 pl-3">
-                  Educación
-                </h3>
-
+          {/* Education */}
+          {cvData.education && (
+            <div className="bg-white rounded-xl shadow-md p-6">
+              <h2 className="text-xl font-bold text-purple-800 mb-4 flex items-center gap-2">
+                <GraduationCap className="w-5 h-5" />
+                Educación
+              </h2>
+              <div className="space-y-4">
                 {/* Current Education */}
-                {cvData.education?.currentInstitution && (
-                  <div className="bg-gray-50 p-4 rounded-lg mb-4">
-                    <div className="flex justify-between items-start mb-2">
-                      <h4 className="text-lg font-bold text-gray-800">
-                        {cvData.education.currentInstitution}
-                      </h4>
-                      <span className="text-sm text-gray-500 bg-gray-100 px-3 py-1 rounded">
-                        {cvData.education.universityStartDate} -{" "}
-                        {cvData.education.universityEndDate || "Presente"}
-                      </span>
-                    </div>
-                    <p className="text-blue-600 font-medium">
-                      {cvData.education.currentDegree}
+                {(cvData.education.currentDegree ||
+                  cvData.education.level ||
+                  cvData.education.universityName ||
+                  cvData.education.currentInstitution) && (
+                  <div className="p-4 bg-purple-50 rounded-lg">
+                    <h3 className="font-semibold text-gray-800">
+                      {cvData.education.currentDegree || cvData.education.level}
+                    </h3>
+                    <p className="text-gray-600">
+                      {cvData.education.universityName ||
+                        cvData.education.currentInstitution}
                     </p>
+                    {cvData.education.graduationYear && (
+                      <p className="text-sm text-gray-500">
+                        Año de graduación: {cvData.education.graduationYear}
+                      </p>
+                    )}
+                    {cvData.education.universityStatus && (
+                      <p className="text-sm text-gray-500">
+                        Estado: {cvData.education.universityStatus}
+                      </p>
+                    )}
                     {cvData.education.gpa && (
-                      <p className="text-gray-600 mt-1">
+                      <p className="text-sm text-gray-500">
                         GPA: {cvData.education.gpa}
                       </p>
                     )}
@@ -2067,553 +2930,545 @@ function ModernTechTemplate({
                 )}
 
                 {/* Education History */}
-                {cvData.education?.educationHistory?.map((item, index) => (
-                  <div
-                    key={index}
-                    className="border-l-4 border-blue-200 pl-4 mb-4"
-                  >
-                    <div className="flex justify-between items-start mb-2">
-                      <h4 className="text-lg font-bold text-gray-800">
-                        {item.institution}
+                {cvData.education.educationHistory &&
+                  cvData.education.educationHistory.length > 0 && (
+                    <div>
+                      <h4 className="font-medium text-gray-700 mb-3">
+                        Historial Educativo
                       </h4>
-                      <span className="text-sm text-gray-500">
-                        {item.startDate} - {item.endDate || "Presente"}
-                      </span>
+                      {cvData.education.educationHistory.map((edu, index) => (
+                        <div
+                          key={index}
+                          className="mb-3 p-3 bg-gray-50 rounded-lg"
+                        >
+                          <h5 className="font-medium text-gray-800">
+                            {edu.degree}
+                          </h5>
+                          <p className="text-gray-600">{edu.institution}</p>
+                          <p className="text-sm text-gray-500">
+                            {edu.startDate} - {edu.endDate || "En curso"}
+                          </p>
+                          {edu.status && (
+                            <p className="text-sm text-gray-500">
+                              Estado: {edu.status}
+                            </p>
+                          )}
+                        </div>
+                      ))}
                     </div>
-                    <p className="text-blue-600 font-medium">{item.degree}</p>
-                    <p className="text-sm text-gray-600">
-                      Estado: {item.status}
+                  )}
+
+                {/* Academic Achievements */}
+                {cvData.education.academicAchievements &&
+                  cvData.education.academicAchievements.length > 0 && (
+                    <div>
+                      <h4 className="font-medium text-gray-700 mb-3">
+                        Logros Académicos
+                      </h4>
+                      {cvData.education.academicAchievements.map(
+                        (achievement, index) => (
+                          <div
+                            key={index}
+                            className="mb-2 p-3 bg-yellow-50 rounded-lg"
+                          >
+                            <h5 className="font-medium text-gray-800">
+                              {achievement.title}
+                            </h5>
+                            {achievement.date && (
+                              <p className="text-sm text-gray-500">
+                                {achievement.date}
+                              </p>
+                            )}
+                            {achievement.description && (
+                              <p className="text-sm text-gray-600">
+                                {achievement.description}
+                              </p>
+                            )}
+                          </div>
+                        )
+                      )}
+                    </div>
+                  )}
+              </div>
+            </div>
+          )}
+
+          {/* Work Experience */}
+          {cvData.workExperience && cvData.workExperience.length > 0 && (
+            <div className="bg-white rounded-xl shadow-md p-6">
+              <h2 className="text-xl font-bold text-purple-800 mb-4 flex items-center gap-2">
+                <Briefcase className="w-5 h-5" />
+                Experiencia
+              </h2>
+              <div className="space-y-4">
+                {cvData.workExperience.map((exp, index) => (
+                  <div key={index} className="p-4 bg-purple-50 rounded-lg">
+                    <h3 className="font-semibold text-gray-800">
+                      {exp.jobTitle}
+                    </h3>
+                    <p className="text-gray-600">{exp.company}</p>
+                    <p className="text-sm text-gray-500">
+                      {exp.startDate} - {exp.endDate || "Presente"}
                     </p>
-                    {item.gpa && (
-                      <p className="text-sm text-gray-600">GPA: {item.gpa}</p>
+                    {exp.description && (
+                      <p className="text-gray-700 mt-2 text-sm">
+                        {exp.description}
+                      </p>
                     )}
                   </div>
                 ))}
               </div>
             </div>
-          </div>
+          )}
+
+          {/* Skills */}
+          {cvData.skills && cvData.skills.length > 0 && (
+            <div className="bg-white rounded-xl shadow-md p-6">
+              <h2 className="text-xl font-bold text-purple-800 mb-4 flex items-center gap-2">
+                <Code className="w-5 h-5" />
+                Habilidades
+              </h2>
+              <div className="grid grid-cols-2 gap-3">
+                {cvData.skills.map((skill, index) => (
+                  <div
+                    key={index}
+                    className="bg-purple-100 text-purple-800 px-4 py-2 rounded-lg text-center font-medium"
+                  >
+                    {typeof skill === "string" ? skill : (skill as any).name}
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+
+          {/* Projects */}
+          {cvData.projects && cvData.projects.length > 0 && (
+            <div className="bg-white rounded-xl shadow-md p-6">
+              <h2 className="text-xl font-bold text-purple-800 mb-4 flex items-center gap-2">
+                <Code className="w-5 h-5" />
+                Proyectos
+              </h2>
+              <div className="space-y-3">
+                {cvData.projects.map((project, index) => (
+                  <div key={index} className="p-4 bg-purple-50 rounded-lg">
+                    <h3 className="font-semibold text-gray-800">
+                      {project.title}
+                    </h3>
+                    {project.location && (
+                      <p className="text-gray-600 text-sm">
+                        Ubicación: {project.location}
+                      </p>
+                    )}
+                    <p className="text-sm text-gray-500">
+                      {project.startDate} - {project.endDate || "En curso"}
+                    </p>
+                    {project.description && (
+                      <p className="text-gray-600 text-sm mt-2">
+                        {project.description}
+                      </p>
+                    )}
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+
+          {/* Languages */}
+          {cvData.languages && cvData.languages.length > 0 && (
+            <div className="bg-white rounded-xl shadow-md p-6">
+              <h2 className="text-xl font-bold text-purple-800 mb-4 flex items-center gap-2">
+                <Globe className="w-5 h-5" />
+                Idiomas
+              </h2>
+              <div className="space-y-2">
+                {cvData.languages.map((lang, index) => (
+                  <div
+                    key={index}
+                    className="flex justify-between p-2 bg-purple-50 rounded"
+                  >
+                    <span className="font-medium">{lang.name}</span>
+                    <span className="text-gray-600">{lang.proficiency}</span>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+
+          {/* Social Links */}
+          {cvData.socialLinks && cvData.socialLinks.length > 0 && (
+            <div className="bg-white rounded-xl shadow-md p-6">
+              <h2 className="text-xl font-bold text-purple-800 mb-4 flex items-center gap-2">
+                <Globe className="w-5 h-5" />
+                Enlaces Web
+              </h2>
+              <div className="space-y-2">
+                {cvData.socialLinks.map((link, index) => (
+                  <div
+                    key={index}
+                    className="flex items-center gap-2 p-2 bg-purple-50 rounded"
+                  >
+                    <span className="font-medium text-gray-800">
+                      {link.platform}:
+                    </span>
+                    <a
+                      href={link.url}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="text-purple-600 hover:text-purple-800 underline"
+                    >
+                      {link.url}
+                    </a>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+
+          {/* Interests */}
+          {cvData.interests && cvData.interests.length > 0 && (
+            <div className="bg-white rounded-xl shadow-md p-6">
+              <h2 className="text-xl font-bold text-purple-800 mb-4 flex items-center gap-2">
+                <Briefcase className="w-5 h-5" />
+                Intereses
+              </h2>
+              <div className="flex flex-wrap gap-2">
+                {cvData.interests.map((interest, index) => (
+                  <span
+                    key={index}
+                    className="bg-purple-100 text-purple-800 px-3 py-1 rounded-full text-sm"
+                  >
+                    {interest}
+                  </span>
+                ))}
+              </div>
+            </div>
+          )}
+
+          {/* Activities */}
+          {cvData.activities && cvData.activities.length > 0 && (
+            <div className="bg-white rounded-xl shadow-md p-6">
+              <h2 className="text-xl font-bold text-purple-800 mb-4 flex items-center gap-2">
+                <Briefcase className="w-5 h-5" />
+                Actividades Extracurriculares
+              </h2>
+              <div className="space-y-3">
+                {cvData.activities.map((activity, index) => (
+                  <div key={index} className="p-3 bg-purple-50 rounded-lg">
+                    <h3 className="font-semibold text-gray-800">
+                      {activity.title}
+                    </h3>
+                    {activity.organization && (
+                      <p className="text-gray-600 text-sm">
+                        {activity.organization}
+                      </p>
+                    )}
+                    {activity.description && (
+                      <p className="text-gray-600 text-sm">
+                        {activity.description}
+                      </p>
+                    )}
+                    {activity.startDate && (
+                      <p className="text-sm text-gray-500">
+                        {activity.startDate} - {activity.endDate}
+                      </p>
+                    )}
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+
+          {/* Achievements */}
+          {cvData.achievements && cvData.achievements.length > 0 && (
+            <div className="bg-white rounded-xl shadow-md p-6">
+              <h2 className="text-xl font-bold text-purple-800 mb-4 flex items-center gap-2">
+                <Award className="w-5 h-5" />
+                Logros
+              </h2>
+              <div className="space-y-3">
+                {cvData.achievements.map((achievement, index) => (
+                  <div key={index} className="p-3 bg-yellow-50 rounded-lg">
+                    <h3 className="font-semibold text-gray-800">
+                      {achievement.title}
+                    </h3>
+                    {achievement.description && (
+                      <p className="text-gray-600 text-sm">
+                        {achievement.description}
+                      </p>
+                    )}
+                    {achievement.date && (
+                      <p className="text-sm text-gray-500">
+                        {achievement.date}
+                      </p>
+                    )}
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+
+          {/* Target Position & Company */}
+          {(cvData.targetPosition || cvData.targetCompany) && (
+            <div className="bg-white rounded-xl shadow-md p-6">
+              <h2 className="text-xl font-bold text-purple-800 mb-4 flex items-center gap-2">
+                <Briefcase className="w-5 h-5" />
+                Objetivos Profesionales
+              </h2>
+              <div className="space-y-2">
+                {cvData.targetPosition && (
+                  <p>
+                    <span className="font-medium">Posición objetivo:</span>{" "}
+                    {cvData.targetPosition}
+                  </p>
+                )}
+                {cvData.targetCompany && (
+                  <p>
+                    <span className="font-medium">Empresa objetivo:</span>{" "}
+                    {cvData.targetCompany}
+                  </p>
+                )}
+              </div>
+            </div>
+          )}
+
+          {/* Relevant Skills */}
+          {cvData.relevantSkills && cvData.relevantSkills.length > 0 && (
+            <div className="bg-white rounded-xl shadow-md p-6">
+              <h2 className="text-xl font-bold text-purple-800 mb-4 flex items-center gap-2">
+                <Code className="w-5 h-5" />
+                Habilidades Relevantes
+              </h2>
+              <div className="flex flex-wrap gap-2">
+                {cvData.relevantSkills.map((skill, index) => (
+                  <span
+                    key={index}
+                    className="bg-green-100 text-green-800 px-3 py-1 rounded-full text-sm"
+                  >
+                    {typeof skill === "string" ? skill : (skill as any).name}
+                  </span>
+                ))}
+              </div>
+            </div>
+          )}
         </div>
       </div>
     </div>
   );
 }
 
-// Template 5: Executive (for senior professionals)
-function ExecutiveTemplate({
-  cvData,
-  isEditing = false,
-}: {
-  cvData: CVData;
-  isEditing?: boolean;
-}) {
+function MinimalistHTML({ cvData }: { cvData: CVData }) {
   return (
-    <div className="bg-white min-h-screen">
-      <div className="max-w-5xl mx-auto">
-        {/* Executive Header */}
-        <div className="bg-gray-900 text-white p-10">
-          <div className="text-center">
-            <h1 className="text-5xl font-light mb-4 tracking-wide">
-              {cvData.personalInfo?.firstName} {cvData.personalInfo?.lastName}
-            </h1>
-            <p className="text-2xl text-gray-300 mb-6 font-light">
-              {cvData.jobTitle || "Director Ejecutivo"}
-            </p>
-            <div className="max-w-2xl mx-auto text-gray-400 leading-relaxed">
-              {cvData.professionalSummary ||
-                "Líder ejecutivo con amplia experiencia en gestión estratégica, desarrollo de negocios y liderazgo de equipos de alto rendimiento."}
-            </div>
+    <div
+      className="bg-white w-full"
+      style={{ minWidth: "800px", maxWidth: "1000px", margin: "0 auto" }}
+    >
+      <div className="p-8">
+        {/* Header */}
+        <div className="text-center mb-8 border-b border-gray-200 pb-8">
+          <h1 className="text-3xl font-light text-gray-800 mb-2">
+            {cvData.personalInfo?.firstName} {cvData.personalInfo?.lastName}
+          </h1>
+          <p className="text-lg text-gray-600 mb-4">
+            {cvData.jobTitle || "Profesional"}
+          </p>
+          <div className="flex justify-center gap-6 text-sm text-gray-500">
+            {cvData.personalInfo?.email && (
+              <span>{cvData.personalInfo.email}</span>
+            )}
+            {cvData.personalInfo?.phone && (
+              <span>{cvData.personalInfo.phone}</span>
+            )}
+            {cvData.personalInfo?.city && (
+              <span>{cvData.personalInfo.city}</span>
+            )}
           </div>
         </div>
 
-        <div className="p-10">
-          {/* Contact Information */}
-          <div className="text-center mb-12 pb-8 border-b border-gray-200">
-            <div className="grid grid-cols-2 lg:grid-cols-4 gap-6 text-gray-600">
-              <div>
-                <Mail className="h-5 w-5 mx-auto mb-2 text-gray-400" />
-                <p className="text-sm">{cvData.personalInfo?.email}</p>
-              </div>
-              <div>
-                <Phone className="h-5 w-5 mx-auto mb-2 text-gray-400" />
-                <p className="text-sm">{cvData.personalInfo?.phone}</p>
-              </div>
-              <div>
-                <MapPin className="h-5 w-5 mx-auto mb-2 text-gray-400" />
-                <p className="text-sm">
-                  {cvData.personalInfo?.city}, {cvData.personalInfo?.department}
-                </p>
-              </div>
-              <div>
-                <Globe className="h-5 w-5 mx-auto mb-2 text-gray-400" />
-                <p className="text-sm">{cvData.personalInfo?.country}</p>
-              </div>
+        <div className="space-y-6">
+          {/* Professional Summary */}
+          {cvData.professionalSummary && (
+            <div>
+              <h2 className="text-lg font-medium text-gray-800 mb-3">
+                Resumen
+              </h2>
+              <p className="text-gray-600 leading-relaxed">
+                {cvData.professionalSummary}
+              </p>
             </div>
-          </div>
+          )}
 
-          <div className="grid grid-cols-1 lg:grid-cols-4 gap-10">
-            {/* Left Sidebar */}
-            <div className="lg:col-span-1 space-y-8">
-              {/* Core Competencies */}
-              <div>
-                <h3 className="text-lg font-bold text-gray-800 mb-4 uppercase tracking-wide">
-                  Competencias Principales
-                </h3>
-                <div className="space-y-3">
-                  {cvData.skills?.slice(0, 8).map((skill, index) => (
-                    <div key={index} className="text-sm text-gray-700">
-                      • {skill.name}
-                      {skill.experienceLevel && (
-                        <span className="text-gray-500 ml-2">
-                          ({skill.experienceLevel})
-                        </span>
-                      )}
-                    </div>
-                  ))}
-                </div>
-              </div>
-
-              {/* Languages */}
-              {cvData.languages && cvData.languages.length > 0 && (
-                <div>
-                  <h3 className="text-lg font-bold text-gray-800 mb-4 uppercase tracking-wide">
-                    Idiomas
-                  </h3>
-                  <div className="space-y-2">
-                    {cvData.languages.map((language, index) => (
-                      <div key={index} className="text-sm">
-                        <span className="font-medium text-gray-800">
-                          {language.name}
-                        </span>
-                        <span className="text-gray-500 ml-2">
-                          - {language.proficiency}
-                        </span>
-                      </div>
-                    ))}
-                  </div>
-                </div>
-              )}
-
-              {/* Education Summary */}
-              <div>
-                <h3 className="text-lg font-bold text-gray-800 mb-4 uppercase tracking-wide">
-                  Educación
-                </h3>
-                {cvData.education?.currentInstitution && (
-                  <div className="text-sm text-gray-700">
-                    <p className="font-medium">
-                      {cvData.education.currentDegree}
+          {/* Education */}
+          {cvData.education && (
+            <div>
+              <h2 className="text-lg font-medium text-gray-800 mb-3">
+                Educación
+              </h2>
+              <div className="space-y-2">
+                {(cvData.education.currentDegree || cvData.education.level) && (
+                  <div>
+                    <h3 className="font-medium text-gray-800">
+                      {cvData.education.currentDegree || cvData.education.level}
+                    </h3>
+                    <p className="text-gray-600 text-sm">
+                      {cvData.education.universityName ||
+                        cvData.education.currentInstitution}
                     </p>
-                    <p className="text-gray-600">
-                      {cvData.education.currentInstitution}
-                    </p>
-                    {cvData.education.gpa && (
-                      <p className="text-gray-500">
-                        GPA: {cvData.education.gpa}
+                    {cvData.education.graduationYear && (
+                      <p className="text-gray-500 text-sm">
+                        {cvData.education.graduationYear}
                       </p>
                     )}
                   </div>
                 )}
               </div>
             </div>
+          )}
 
-            {/* Main Content */}
-            <div className="lg:col-span-3 space-y-8">
-              {/* Professional Experience */}
-              <div>
-                <h2 className="text-2xl font-bold text-gray-800 mb-6 uppercase tracking-wide border-b-2 border-gray-300 pb-2">
-                  Experiencia Profesional
-                </h2>
-                <div className="space-y-8">
-                  {cvData.workExperience?.map((exp, index) => (
-                    <div
-                      key={index}
-                      className="border-l-4 border-gray-300 pl-6"
-                    >
-                      <div className="flex justify-between items-start mb-3">
-                        <h3 className="text-xl font-bold text-gray-800">
-                          {exp.jobTitle}
-                        </h3>
-                        <span className="text-sm text-gray-500 bg-gray-100 px-3 py-1 rounded">
-                          {exp.startDate && exp.endDate
-                            ? `${new Date(exp.startDate).toLocaleDateString("es-ES", { month: "long", year: "numeric" })} - ${new Date(exp.endDate).toLocaleDateString("es-ES", { month: "long", year: "numeric" })}`
-                            : exp.startDate
-                              ? `${new Date(exp.startDate).toLocaleDateString("es-ES", { month: "long", year: "numeric" })} - Presente`
-                              : "Fecha no especificada"}
-                        </span>
-                      </div>
-                      <p className="text-lg text-gray-600 font-medium mb-3">
-                        {exp.company}
-                      </p>
-                      <p className="text-gray-700 leading-relaxed">
-                        {exp.description}
-                      </p>
-                    </div>
-                  ))}
-                  {(!cvData.workExperience ||
-                    cvData.workExperience.length === 0) && (
-                    <p className="text-gray-500 italic">
-                      Sin experiencia laboral registrada
+          {/* Work Experience */}
+          {cvData.workExperience && cvData.workExperience.length > 0 && (
+            <div>
+              <h2 className="text-lg font-medium text-gray-800 mb-3">
+                Experiencia
+              </h2>
+              <div className="space-y-3">
+                {cvData.workExperience.map((exp, index) => (
+                  <div key={index}>
+                    <h3 className="font-medium text-gray-800">
+                      {exp.jobTitle}
+                    </h3>
+                    <p className="text-gray-600 text-sm">{exp.company}</p>
+                    <p className="text-gray-500 text-sm">
+                      {exp.startDate} - {exp.endDate || "Presente"}
                     </p>
-                  )}
-                </div>
+                  </div>
+                ))}
               </div>
-
-              {/* Key Projects */}
-              {cvData.projects && cvData.projects.length > 0 && (
-                <div>
-                  <h2 className="text-2xl font-bold text-gray-800 mb-6 uppercase tracking-wide border-b-2 border-gray-300 pb-2">
-                    Proyectos Clave
-                  </h2>
-                  <div className="space-y-6">
-                    {cvData.projects.map((project, index) => (
-                      <div key={index} className="bg-gray-50 p-6 rounded-lg">
-                        <div className="flex justify-between items-start mb-3">
-                          <h3 className="text-xl font-bold text-gray-800">
-                            {project.title}
-                          </h3>
-                          <span className="text-sm text-gray-500">
-                            {project.startDate && project.endDate
-                              ? `${new Date(project.startDate).toLocaleDateString("es-ES", { month: "short", year: "numeric" })} - ${new Date(project.endDate).toLocaleDateString("es-ES", { month: "short", year: "numeric" })}`
-                              : "Fecha no especificada"}
-                          </span>
-                        </div>
-                        {project.location && (
-                          <p className="text-gray-600 font-medium mb-2">
-                            {project.location}
-                          </p>
-                        )}
-                        <p className="text-gray-700 leading-relaxed">
-                          {project.description}
-                        </p>
-                      </div>
-                    ))}
-                  </div>
-                </div>
-              )}
-
-              {/* Achievements */}
-              {cvData.achievements && cvData.achievements.length > 0 && (
-                <div>
-                  <h2 className="text-2xl font-bold text-gray-800 mb-6 uppercase tracking-wide border-b-2 border-gray-300 pb-2">
-                    Logros Destacados
-                  </h2>
-                  <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-                    {cvData.achievements.map((achievement, index) => (
-                      <div key={index} className="bg-gray-50 p-4 rounded-lg">
-                        <h4 className="font-bold text-gray-800 mb-2">
-                          {achievement.title}
-                        </h4>
-                        <p className="text-sm text-gray-600 mb-2">
-                          {achievement.date}
-                        </p>
-                        <p className="text-gray-700 text-sm">
-                          {achievement.description}
-                        </p>
-                      </div>
-                    ))}
-                  </div>
-                </div>
-              )}
             </div>
-          </div>
+          )}
+
+          {/* Skills */}
+          {cvData.skills && cvData.skills.length > 0 && (
+            <div>
+              <h2 className="text-lg font-medium text-gray-800 mb-3">
+                Habilidades
+              </h2>
+              <div className="flex flex-wrap gap-2">
+                {cvData.skills.map((skill, index) => (
+                  <span
+                    key={index}
+                    className="text-gray-600 border border-gray-300 px-3 py-1 rounded"
+                  >
+                    {typeof skill === "string" ? skill : (skill as any).name}
+                  </span>
+                ))}
+              </div>
+            </div>
+          )}
+
+          {/* Languages */}
+          {cvData.languages && cvData.languages.length > 0 && (
+            <div>
+              <h2 className="text-lg font-medium text-gray-800 mb-3">
+                Idiomas
+              </h2>
+              <div className="space-y-1">
+                {cvData.languages.map((lang, index) => (
+                  <div key={index} className="flex justify-between text-sm">
+                    <span className="text-gray-800">{lang.name}</span>
+                    <span className="text-gray-600">{lang.proficiency}</span>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+
+          {/* Projects */}
+          {cvData.projects && cvData.projects.length > 0 && (
+            <div>
+              <h2 className="text-lg font-medium text-gray-800 mb-3">
+                Proyectos
+              </h2>
+              <div className="space-y-2">
+                {cvData.projects.map((project, index) => (
+                  <div key={index}>
+                    <h3 className="font-medium text-gray-800">
+                      {project.title}
+                    </h3>
+                    {project.description && (
+                      <p className="text-gray-600 text-sm">
+                        {project.description}
+                      </p>
+                    )}
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
         </div>
       </div>
     </div>
   );
 }
 
-// PDF Components for new templates
-function ModernTechPDF({ cvData }: { cvData: CVData }) {
-  return (
-    <Document>
-      <Page size="A4" style={modernCVStyles.page}>
-        {/* Header */}
-        <View style={modernCVStyles.header}>
-          <Text style={modernCVStyles.name}>
-            {cvData.personalInfo?.firstName} {cvData.personalInfo?.lastName}
-          </Text>
-          <Text style={modernCVStyles.title}>
-            {cvData.jobTitle || "Desarrollador Full-Stack"}
-          </Text>
-          <View style={modernCVStyles.contactGrid}>
-            <Text style={modernCVStyles.contactItem}>
-              {cvData.personalInfo?.email}
-            </Text>
-            <Text style={modernCVStyles.contactItem}>
-              {cvData.personalInfo?.phone}
-            </Text>
-            <Text style={modernCVStyles.contactItem}>
-              {cvData.personalInfo?.city}, {cvData.personalInfo?.department}
-            </Text>
-            <Text style={modernCVStyles.contactItem}>
-              {cvData.personalInfo?.country}
-            </Text>
-          </View>
-        </View>
-
-        <View style={modernCVStyles.content}>
-          {/* Left Column */}
-          <View style={modernCVStyles.leftColumn}>
-            {/* Skills */}
-            <View style={modernCVStyles.section}>
-              <Text style={modernCVStyles.sectionTitle}>
-                Habilidades Técnicas
-              </Text>
-              <View style={modernCVStyles.skillsContainer}>
-                {cvData.skills?.map((skill, index) => (
-                  <Text key={index} style={modernCVStyles.skill}>
-                    {skill.name}
-                  </Text>
-                ))}
-              </View>
-            </View>
-
-            {/* Languages */}
-            {cvData.languages && cvData.languages.length > 0 && (
-              <View style={modernCVStyles.section}>
-                <Text style={modernCVStyles.sectionTitle}>Idiomas</Text>
-                {cvData.languages.map((language, index) => (
-                  <View key={index} style={modernCVStyles.languagesItem}>
-                    <Text style={modernCVStyles.languageName}>
-                      {language.name}
-                    </Text>
-                    <Text style={modernCVStyles.languageLevel}>
-                      {language.proficiency}
-                    </Text>
-                  </View>
-                ))}
-              </View>
-            )}
-          </View>
-
-          {/* Right Column */}
-          <View style={modernCVStyles.rightColumn}>
-            {/* Summary */}
-            <View style={modernCVStyles.section}>
-              <Text style={modernCVStyles.sectionTitle}>
-                Resumen Profesional
-              </Text>
-              <Text style={modernCVStyles.summary}>
-                {cvData.professionalSummary ||
-                  "Desarrollador apasionado por crear soluciones tecnológicas innovadoras."}
-              </Text>
-            </View>
-
-            {/* Work Experience */}
-            <View style={modernCVStyles.section}>
-              <Text style={modernCVStyles.sectionTitle}>
-                Experiencia Laboral
-              </Text>
-              {cvData.workExperience?.map((exp, index) => (
-                <View key={index} style={modernCVStyles.experienceItem}>
-                  <Text style={modernCVStyles.jobTitle}>{exp.jobTitle}</Text>
-                  <Text style={modernCVStyles.company}>{exp.company}</Text>
-                  <Text style={modernCVStyles.date}>
-                    {exp.startDate} - {exp.endDate || "Presente"}
-                  </Text>
-                  <Text style={modernCVStyles.description}>
-                    {exp.description}
-                  </Text>
-                </View>
-              ))}
-            </View>
-
-            {/* Projects */}
-            {cvData.projects && cvData.projects.length > 0 && (
-              <View style={modernCVStyles.section}>
-                <Text style={modernCVStyles.sectionTitle}>
-                  Proyectos Destacados
-                </Text>
-                {cvData.projects.map((project, index) => (
-                  <View key={index} style={modernCVStyles.projectsItem}>
-                    <Text style={modernCVStyles.jobTitle}>{project.title}</Text>
-                    <Text style={modernCVStyles.company}>
-                      {project.location}
-                    </Text>
-                    <Text style={modernCVStyles.date}>
-                      {project.startDate} - {project.endDate || "Presente"}
-                    </Text>
-                    <Text style={modernCVStyles.description}>
-                      {project.description}
-                    </Text>
-                  </View>
-                ))}
-              </View>
-            )}
-
-            {/* Education */}
-            <View style={modernCVStyles.section}>
-              <Text style={modernCVStyles.sectionTitle}>Educación</Text>
-              {cvData.education?.currentInstitution && (
-                <View style={modernCVStyles.educationItem}>
-                  <Text style={modernCVStyles.institution}>
-                    {cvData.education.currentInstitution}
-                  </Text>
-                  <Text style={modernCVStyles.degree}>
-                    {cvData.education.currentDegree}
-                  </Text>
-                  <Text style={modernCVStyles.date}>
-                    {cvData.education.universityStartDate} -{" "}
-                    {cvData.education.universityEndDate || "Presente"}
-                  </Text>
-                </View>
-              )}
-            </View>
-          </View>
-        </View>
-      </Page>
-    </Document>
-  );
-}
-
-function ExecutivePDF({ cvData }: { cvData: CVData }) {
-  return (
-    <Document>
-      <Page size="A4" style={modernCVStyles.page}>
-        {/* Header */}
-        <View style={modernCVStyles.header}>
-          <Text style={modernCVStyles.name}>
-            {cvData.personalInfo?.firstName} {cvData.personalInfo?.lastName}
-          </Text>
-          <Text style={modernCVStyles.title}>
-            {cvData.jobTitle || "Director Ejecutivo"}
-          </Text>
-          <View style={modernCVStyles.contactGrid}>
-            <Text style={modernCVStyles.contactItem}>
-              {cvData.personalInfo?.email}
-            </Text>
-            <Text style={modernCVStyles.contactItem}>
-              {cvData.personalInfo?.phone}
-            </Text>
-            <Text style={modernCVStyles.contactItem}>
-              {cvData.personalInfo?.city}, {cvData.personalInfo?.department}
-            </Text>
-            <Text style={modernCVStyles.contactItem}>
-              {cvData.personalInfo?.country}
-            </Text>
-          </View>
-        </View>
-
-        <View style={modernCVStyles.content}>
-          {/* Left Column */}
-          <View style={modernCVStyles.leftColumn}>
-            {/* Core Competencies */}
-            <View style={modernCVStyles.section}>
-              <Text style={modernCVStyles.sectionTitle}>
-                Competencias Principales
-              </Text>
-              <View style={modernCVStyles.skillsContainer}>
-                {cvData.skills?.slice(0, 8).map((skill, index) => (
-                  <Text key={index} style={modernCVStyles.skill}>
-                    {skill.name}
-                  </Text>
-                ))}
-              </View>
-            </View>
-
-            {/* Languages */}
-            {cvData.languages && cvData.languages.length > 0 && (
-              <View style={modernCVStyles.section}>
-                <Text style={modernCVStyles.sectionTitle}>Idiomas</Text>
-                {cvData.languages.map((language, index) => (
-                  <View key={index} style={modernCVStyles.languagesItem}>
-                    <Text style={modernCVStyles.languageName}>
-                      {language.name}
-                    </Text>
-                    <Text style={modernCVStyles.languageLevel}>
-                      {language.proficiency}
-                    </Text>
-                  </View>
-                ))}
-              </View>
-            )}
-          </View>
-
-          {/* Right Column */}
-          <View style={modernCVStyles.rightColumn}>
-            {/* Summary */}
-            <View style={modernCVStyles.section}>
-              <Text style={modernCVStyles.sectionTitle}>Resumen Ejecutivo</Text>
-              <Text style={modernCVStyles.summary}>
-                {cvData.professionalSummary ||
-                  "Líder ejecutivo con amplia experiencia en gestión estratégica."}
-              </Text>
-            </View>
-
-            {/* Work Experience */}
-            <View style={modernCVStyles.section}>
-              <Text style={modernCVStyles.sectionTitle}>
-                Experiencia Profesional
-              </Text>
-              {cvData.workExperience?.map((exp, index) => (
-                <View key={index} style={modernCVStyles.experienceItem}>
-                  <Text style={modernCVStyles.jobTitle}>{exp.jobTitle}</Text>
-                  <Text style={modernCVStyles.company}>{exp.company}</Text>
-                  <Text style={modernCVStyles.date}>
-                    {exp.startDate} - {exp.endDate || "Presente"}
-                  </Text>
-                  <Text style={modernCVStyles.description}>
-                    {exp.description}
-                  </Text>
-                </View>
-              ))}
-            </View>
-
-            {/* Projects */}
-            {cvData.projects && cvData.projects.length > 0 && (
-              <View style={modernCVStyles.section}>
-                <Text style={modernCVStyles.sectionTitle}>Proyectos Clave</Text>
-                {cvData.projects.map((project, index) => (
-                  <View key={index} style={modernCVStyles.projectsItem}>
-                    <Text style={modernCVStyles.jobTitle}>{project.title}</Text>
-                    <Text style={modernCVStyles.company}>
-                      {project.location}
-                    </Text>
-                    <Text style={modernCVStyles.date}>
-                      {project.startDate} - {project.endDate || "Presente"}
-                    </Text>
-                    <Text style={modernCVStyles.description}>
-                      {project.description}
-                    </Text>
-                  </View>
-                ))}
-              </View>
-            )}
-
-            {/* Education */}
-            <View style={modernCVStyles.section}>
-              <Text style={modernCVStyles.sectionTitle}>Educación</Text>
-              {cvData.education?.currentInstitution && (
-                <View style={modernCVStyles.educationItem}>
-                  <Text style={modernCVStyles.institution}>
-                    {cvData.education.currentInstitution}
-                  </Text>
-                  <Text style={modernCVStyles.degree}>
-                    {cvData.education.currentDegree}
-                  </Text>
-                  <Text style={modernCVStyles.date}>
-                    {cvData.education.universityStartDate} -{" "}
-                    {cvData.education.universityEndDate || "Presente"}
-                  </Text>
-                </View>
-              )}
-            </View>
-          </View>
-        </View>
-      </Page>
-    </Document>
-  );
-}
-
 // Main CV Template Selector
+// PDF Preview Component - Using HTML preview instead of PDFViewer
+function PDFPreview({
+  selectedTemplate,
+  cvData,
+}: {
+  selectedTemplate: string;
+  cvData: CVData;
+}) {
+  if (!cvData) {
+    return (
+      <div className="flex items-center justify-center h-[600px] bg-gray-50">
+        <p className="text-gray-600">No hay datos de CV disponibles</p>
+      </div>
+    );
+  }
+
+  // Ensure minimum required data exists
+  if (!cvData.personalInfo?.firstName || !cvData.personalInfo?.lastName) {
+    return (
+      <div className="flex items-center justify-center h-[600px] bg-gray-50">
+        <p className="text-gray-600">
+          Por favor, completa al menos tu nombre y apellido para ver la vista
+          previa
+        </p>
+      </div>
+    );
+  }
+
+  // Render HTML preview based on selected template
+  const renderHTMLPreview = () => {
+    switch (selectedTemplate) {
+      case "modern":
+        return <ModernProfessionalHTML cvData={cvData} />;
+      case "creative":
+        return <CreativePortfolioHTML cvData={cvData} />;
+      case "minimalist":
+        return <MinimalistHTML cvData={cvData} />;
+      default:
+        return <ModernProfessionalHTML cvData={cvData} />;
+    }
+  };
+
+  return (
+    <div className="w-full h-[600px] bg-white border rounded-lg overflow-auto">
+      {renderHTMLPreview()}
+    </div>
+  );
+}
+
 export function CVTemplateSelector() {
   const { cvData, loading, error } = useCV();
   const [selectedTemplate, setSelectedTemplate] = useState("modern");
-  const [isEditing, setIsEditing] = useState(false);
+  const [isGenerating, setIsGenerating] = useState(false);
 
   const handleDownloadPDF = async () => {
     if (!cvData) return;
 
+    setIsGenerating(true);
     try {
       let pdfComponent;
       switch (selectedTemplate) {
@@ -2626,12 +3481,6 @@ export function CVTemplateSelector() {
         case "minimalist":
           pdfComponent = <MinimalistPDF cvData={cvData} />;
           break;
-        case "modern-tech":
-          pdfComponent = <ModernTechPDF cvData={cvData} />;
-          break;
-        case "executive":
-          pdfComponent = <ExecutivePDF cvData={cvData} />;
-          break;
         default:
           pdfComponent = <ModernProfessionalPDF cvData={cvData} />;
       }
@@ -2640,16 +3489,58 @@ export function CVTemplateSelector() {
       const url = URL.createObjectURL(blob);
       const link = document.createElement("a");
       link.href = url;
-      link.download = `CV_${cvData.personalInfo?.firstName}_${cvData.personalInfo?.lastName}_${selectedTemplate}.pdf`;
+      link.download = `CV_${cvData.personalInfo?.firstName || "Usuario"}_${cvData.personalInfo?.lastName || "CEMSE"}_${selectedTemplate}.pdf`;
       link.click();
       URL.revokeObjectURL(url);
     } catch (error) {
       console.error("Error generating PDF:", error);
+      alert("Error al generar el PDF. Por favor, intenta de nuevo.");
+    } finally {
+      setIsGenerating(false);
     }
   };
 
-  const handlePrint = () => {
-    window.print();
+  const handlePrint = async () => {
+    if (!cvData) return;
+
+    setIsGenerating(true);
+    try {
+      let pdfComponent;
+      switch (selectedTemplate) {
+        case "modern":
+          pdfComponent = <ModernProfessionalPDF cvData={cvData} />;
+          break;
+        case "creative":
+          pdfComponent = <CreativePortfolioPDF cvData={cvData} />;
+          break;
+        case "minimalist":
+          pdfComponent = <MinimalistPDF cvData={cvData} />;
+          break;
+        default:
+          pdfComponent = <ModernProfessionalPDF cvData={cvData} />;
+      }
+
+      const blob = await pdf(pdfComponent).toBlob();
+      const url = URL.createObjectURL(blob);
+
+      // Open in new window for printing
+      const printWindow = window.open(url, "_blank");
+      if (printWindow) {
+        printWindow.onload = () => {
+          printWindow.print();
+        };
+      }
+
+      // Clean up
+      setTimeout(() => {
+        URL.revokeObjectURL(url);
+      }, 1000);
+    } catch (error) {
+      console.error("Error generating PDF for printing:", error);
+      alert("Error al preparar la impresión. Por favor, intenta de nuevo.");
+    } finally {
+      setIsGenerating(false);
+    }
   };
 
   if (loading) {
@@ -2663,36 +3554,32 @@ export function CVTemplateSelector() {
     );
   }
 
-  if (error || !cvData) {
+  if (
+    error ||
+    !cvData ||
+    !cvData.personalInfo?.firstName ||
+    !cvData.personalInfo?.lastName
+  ) {
     return (
       <div className="text-center py-8">
-        <p className="text-red-600">Error al cargar el CV</p>
+        <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-6 max-w-md mx-auto">
+          <div className="flex items-center justify-center w-12 h-12 bg-yellow-100 rounded-full mx-auto mb-4">
+            <User className="w-6 h-6 text-yellow-600" />
+          </div>
+          <h3 className="text-lg font-semibold text-yellow-800 mb-2">
+            Completa tu información
+          </h3>
+          <p className="text-yellow-700 mb-3">
+            Para generar tu CV necesitamos al menos tu nombre y apellido.
+          </p>
+          <p className="text-yellow-600 text-sm">
+            Ve a la pestaña "Editar Datos" para completar tu información
+            personal.
+          </p>
+        </div>
       </div>
     );
   }
-
-  const renderTemplate = () => {
-    switch (selectedTemplate) {
-      case "modern":
-        return (
-          <ModernProfessionalTemplate cvData={cvData} isEditing={isEditing} />
-        );
-      case "creative":
-        return (
-          <CreativePortfolioTemplate cvData={cvData} isEditing={isEditing} />
-        );
-      case "minimalist":
-        return <MinimalistTemplate cvData={cvData} isEditing={isEditing} />;
-      case "modern-tech":
-        return <ModernTechTemplate cvData={cvData} isEditing={isEditing} />;
-      case "executive":
-        return <ExecutiveTemplate cvData={cvData} isEditing={isEditing} />;
-      default:
-        return (
-          <ModernProfessionalTemplate cvData={cvData} isEditing={isEditing} />
-        );
-    }
-  };
 
   return (
     <div className="space-y-6">
@@ -2706,12 +3593,10 @@ export function CVTemplateSelector() {
         </CardHeader>
         <CardContent>
           <Tabs value={selectedTemplate} onValueChange={setSelectedTemplate}>
-            <TabsList className="grid w-full grid-cols-5">
+            <TabsList className="grid w-full grid-cols-3">
               <TabsTrigger value="modern">Profesional Moderno</TabsTrigger>
               <TabsTrigger value="creative">Portfolio Creativo</TabsTrigger>
               <TabsTrigger value="minimalist">Minimalista</TabsTrigger>
-              <TabsTrigger value="modern-tech">Modern Tech</TabsTrigger>
-              <TabsTrigger value="executive">Executive</TabsTrigger>
             </TabsList>
           </Tabs>
         </CardContent>
@@ -2725,28 +3610,144 @@ export function CVTemplateSelector() {
             <div className="flex gap-2">
               <Button
                 variant="outline"
-                onClick={() => setIsEditing(!isEditing)}
+                onClick={handlePrint}
+                data-cv-print
+                disabled={isGenerating}
               >
-                <Edit3 className="h-4 w-4 mr-2" />
-                {isEditing ? "Vista Previa" : "Editar"}
+                {isGenerating ? (
+                  <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                ) : (
+                  <Printer className="h-4 w-4 mr-2" />
+                )}
+                {isGenerating ? "Preparando..." : "Imprimir"}
               </Button>
-              <Button variant="outline" onClick={handlePrint}>
-                <Printer className="h-4 w-4 mr-2" />
-                Imprimir
-              </Button>
-              <Button onClick={handleDownloadPDF} data-cv-download>
-                <Download className="h-4 w-4 mr-2" />
-                Descargar PDF
+              <Button
+                onClick={handleDownloadPDF}
+                data-cv-download
+                disabled={isGenerating}
+              >
+                {isGenerating ? (
+                  <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                ) : (
+                  <Download className="h-4 w-4 mr-2" />
+                )}
+                {isGenerating ? "Generando..." : "Descargar PDF"}
               </Button>
             </div>
           </div>
         </CardHeader>
-        <CardContent>
-          <div className="border rounded-lg overflow-hidden">
-            {renderTemplate()}
-          </div>
+        <CardContent className="p-4">
+          <PDFPreview selectedTemplate={selectedTemplate} cvData={cvData} />
         </CardContent>
       </Card>
+
+      {/* Enhanced Print Styles for CV Templates */}
+      <style jsx global>{`
+        @media print {
+          /* Hide non-essential elements when printing */
+          .no-print,
+          button:not([data-cv-print]),
+          [role="tablist"],
+          .card-header,
+          .print\\:hidden {
+            display: none !important;
+          }
+
+          /* Ensure CV template takes full page */
+          body.cv-printing .cv-template,
+          body.cv-printing .print-content,
+          body.cv-printing [class*="Template"] {
+            display: block !important;
+            width: 100% !important;
+            max-width: none !important;
+            margin: 0 !important;
+            padding: 20pt !important;
+            background: white !important;
+            box-shadow: none !important;
+            border: none !important;
+          }
+
+          /* Page settings */
+          @page {
+            margin: 1.5cm;
+            size: A4;
+          }
+
+          /* Typography for print */
+          body.cv-printing {
+            font-size: 10pt !important;
+            line-height: 1.3 !important;
+            color: #000 !important;
+          }
+
+          /* Headers and sections */
+          body.cv-printing h1 {
+            font-size: 18pt !important;
+            font-weight: bold !important;
+            margin-bottom: 8pt !important;
+            page-break-after: avoid;
+          }
+
+          body.cv-printing h2,
+          body.cv-printing h3 {
+            font-size: 12pt !important;
+            font-weight: bold !important;
+            margin-bottom: 6pt !important;
+            page-break-after: avoid;
+          }
+
+          /* Grid layouts */
+          body.cv-printing .grid {
+            display: grid !important;
+          }
+
+          body.cv-printing .grid-cols-1 {
+            grid-template-columns: 1fr !important;
+          }
+
+          body.cv-printing .grid-cols-3 {
+            grid-template-columns: 1fr 2fr 1fr !important;
+          }
+
+          body.cv-printing .lg\\:grid-cols-3 {
+            grid-template-columns: 1fr 2fr !important;
+          }
+
+          /* Spacing */
+          body.cv-printing .space-y-4 > * + * {
+            margin-top: 8pt !important;
+          }
+
+          body.cv-printing .space-y-6 > * + * {
+            margin-top: 12pt !important;
+          }
+
+          /* Colors and backgrounds */
+          body.cv-printing .bg-gradient-to-r {
+            background: #1e40af !important;
+            color: white !important;
+          }
+
+          body.cv-printing .text-blue-800 {
+            color: #1e40af !important;
+          }
+
+          /* Remove overflow issues */
+          body.cv-printing * {
+            overflow: visible !important;
+          }
+
+          /* Ensure content is visible */
+          body.cv-printing .overflow-x-auto {
+            overflow: visible !important;
+          }
+
+          /* Card content */
+          body.cv-printing .card-content {
+            padding: 0 !important;
+          }
+        }
+      `}</style>
     </div>
   );
 }

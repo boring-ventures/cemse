@@ -23,7 +23,6 @@ import {
   isYouTubeVideo,
   getYouTubeThumbnail,
 } from "@/lib/utils/image-utils";
-import { VideoPreview } from "./video-preview";
 import { getCourseUrl, getCourseLearnUrl } from "@/lib/utils/url-utils";
 
 interface CourseCardProps {
@@ -120,19 +119,11 @@ export const CourseCard = ({
                   </div>
                 )}
                 {course.videoPreview && (
-                  <>
-                    {console.log(
-                      "Rendering VideoPreview for course:",
-                      course.title,
-                      "URL:",
-                      course.videoPreview
-                    )}
-                    <VideoPreview
-                      videoUrl={course.videoPreview}
-                      title={course.title}
-                      className="opacity-100 transition-opacity"
-                    />
-                  </>
+                  <div className="absolute inset-0 flex items-center justify-center bg-black bg-opacity-40 hover:bg-opacity-60 transition-all duration-200 cursor-pointer">
+                    <div className="bg-white bg-opacity-30 rounded-full p-4 backdrop-blur-sm border-2 border-white border-opacity-50 shadow-lg">
+                      <Play className="h-12 w-12 text-white fill-current" />
+                    </div>
+                  </div>
                 )}
               </Link>
 
@@ -235,7 +226,8 @@ export const CourseCard = ({
                   <Users className="h-4 w-4" />
                   <span>
                     {(
-                      (course.studentCount ?? course.enrollmentCount ?? 0) || 0
+                      (course.studentCount ?? course.enrollmentCount ?? 0) ||
+                      0
                     ).toLocaleString()}{" "}
                     estudiantes
                   </span>
@@ -315,7 +307,7 @@ export const CourseCard = ({
 
   // Grid View
   return (
-    <Card className="group hover:shadow-lg transition-all duration-200 overflow-hidden">
+    <Card className="group hover:shadow-lg transition-all duration-200 overflow-hidden h-full flex flex-col">
       <div className="relative">
         <Link href={getCourseUrl(course.id)}>
           {!imageError ? (
@@ -323,81 +315,71 @@ export const CourseCard = ({
               src={currentImageSrc}
               alt={course.title}
               width={400}
-              height={250}
-              className="w-full h-48 object-cover group-hover:scale-105 transition-transform duration-200"
+              height={200}
+              className="w-full h-32 sm:h-36 object-cover group-hover:scale-105 transition-transform duration-200"
               onError={() => setImageError(true)}
             />
           ) : (
-            <div className="w-full h-48 bg-gradient-to-br from-blue-100 to-purple-100 flex items-center justify-center">
-              <BookOpen className="h-12 w-12 text-blue-600" />
+            <div className="w-full h-32 sm:h-36 bg-gradient-to-br from-blue-100 to-purple-100 flex items-center justify-center">
+              <BookOpen className="h-8 w-8 sm:h-10 sm:w-10 text-blue-600" />
             </div>
           )}
           {course.videoPreview && (
-            <VideoPreview
-              videoUrl={course.videoPreview}
-              title={course.title}
-              className="opacity-100 transition-opacity"
-            />
+            <div className="absolute inset-0 flex items-center justify-center bg-black bg-opacity-40 hover:bg-opacity-60 transition-all duration-200 cursor-pointer">
+              <div className="bg-white bg-opacity-30 rounded-full p-3 backdrop-blur-sm border-2 border-white border-opacity-50 shadow-lg">
+                <Play className="h-8 w-8 text-white fill-current" />
+              </div>
+            </div>
           )}
         </Link>
 
         {/* Badges */}
-        <div className="absolute top-3 left-3 flex flex-col gap-2">
+        <div className="absolute top-2 left-2 flex flex-col gap-1">
           {course.isMandatory && (
-            <Badge className="bg-red-500 hover:bg-red-600 text-xs">
+            <Badge className="bg-red-500 hover:bg-red-600 text-xs px-1.5 py-0.5">
               Obligatorio
             </Badge>
           )}
           {course.price === 0 && (
-            <Badge className="bg-green-500 hover:bg-green-600 text-xs">
+            <Badge className="bg-green-500 hover:bg-green-600 text-xs px-1.5 py-0.5">
               Gratis
             </Badge>
           )}
         </div>
 
         {/* Price */}
-        <div className="absolute bottom-3 right-3 bg-white px-2 py-1 rounded-md shadow-md">
-          <span className="font-bold text-blue-600">
+        <div className="absolute bottom-2 right-2 bg-white px-2 py-1 rounded-md shadow-md">
+          <span className="font-bold text-blue-600 text-xs sm:text-sm">
             {formatPrice(course.price)}
           </span>
         </div>
       </div>
 
-      <CardContent className="p-4">
-        <div className="flex items-center gap-2 mb-2">
+      <CardContent className="p-3 sm:p-4 flex-1 flex flex-col">
+        <div className="flex items-center gap-1 mb-2">
           <Badge
             variant="outline"
-            className={`text-xs ${getLevelColor(course.level)}`}
+            className={`text-xs px-1.5 py-0.5 ${getLevelColor(course.level)}`}
           >
             {getLevelLabel(course.level)}
           </Badge>
-          <Badge variant="outline" className="text-xs">
+          <Badge
+            variant="outline"
+            className="text-xs px-1.5 py-0.5 hidden sm:inline-flex"
+          >
             {getCategoryLabel(course.category)}
           </Badge>
         </div>
 
         <Link href={getCourseUrl(course.id)}>
-          <h3 className="font-bold mb-2 hover:text-blue-600 transition-colors line-clamp-2">
+          <h3 className="font-bold mb-2 hover:text-blue-600 transition-colors line-clamp-2 text-sm sm:text-base">
             {course.title}
           </h3>
         </Link>
 
-        <p className="text-sm text-muted-foreground mb-3 line-clamp-2">
+        <p className="text-xs sm:text-sm text-muted-foreground mb-3 line-clamp-2 flex-1">
           {course.shortDescription}
         </p>
-
-        {/* Instructor */}
-        {/* <div className="flex items-center gap-2 mb-3">
-          <Avatar className="h-6 w-6">
-            <AvatarImage src={course.instructor.avatar} />
-            <AvatarFallback className="text-xs">
-              {course.instructor.name.charAt(0)}
-            </AvatarFallback>
-          </Avatar>
-          <span className="text-sm font-medium text-muted-foreground">
-            {course.instructor.name}
-          </span>
-        </div> */}
 
         {/* Progress Bar (if enrolled) */}
         {enrollment?.isEnrolled && enrollment.progress !== undefined && (
@@ -412,29 +394,31 @@ export const CourseCard = ({
 
         {/* Course Stats */}
         <div className="flex items-center justify-between text-xs text-muted-foreground mb-3">
-          {/* <div className="flex items-center gap-1">
-            <Star className="h-3 w-3 fill-yellow-400 text-yellow-400" />
-            <span>{course.rating}</span>
-          </div> */}
           <div className="flex items-center gap-1">
             <Users className="h-3 w-3" />
-            <span>{course.studentCount ?? course.enrollmentCount ?? 0}</span>
+            <span className="hidden sm:inline">
+              {course.studentCount ?? course.enrollmentCount ?? 0}
+            </span>
+            <span className="sm:hidden">
+              {(course.studentCount ?? course.enrollmentCount ?? 0) > 999
+                ? "999+"
+                : (course.studentCount ?? course.enrollmentCount ?? 0)}
+            </span>
           </div>
           <div className="flex items-center gap-1">
             <Clock className="h-3 w-3" />
             <span>{formatDuration(course.duration)}</span>
           </div>
-          {/* {course.certification && (
-            <div className="flex items-center gap-1">
-              <Award className="h-3 w-3" />
-            </div>
-          )} */}
         </div>
 
-        {/* Tags */}
-        <div className="flex flex-wrap gap-1 mb-3">
+        {/* Tags - Only show on larger screens */}
+        <div className="hidden sm:flex flex-wrap gap-1 mb-3">
           {course.tags?.slice(0, 2).map((tag) => (
-            <Badge key={tag} variant="secondary" className="text-xs">
+            <Badge
+              key={tag}
+              variant="secondary"
+              className="text-xs px-1.5 py-0.5"
+            >
               {tag}
             </Badge>
           ))}
@@ -447,33 +431,33 @@ export const CourseCard = ({
 
         {/* Action Button */}
         {enrollment?.isEnrolled ? (
-          <Button asChild className="w-full" size="sm">
+          <Button asChild className="w-full" size="sm" className="mt-auto">
             <Link
               href={getCourseLearnUrl(enrollment.enrollmentId || course.id)}
             >
               {enrollment.status === "COMPLETED" ? (
                 <>
-                  <CheckCircle className="h-4 w-4 mr-2" />
-                  Ver Certificado
+                  <CheckCircle className="h-3 w-3 sm:h-4 sm:w-4 mr-1 sm:mr-2" />
+                  <span className="text-xs sm:text-sm">Ver Certificado</span>
                 </>
               ) : enrollment.status === "IN_PROGRESS" ? (
                 <>
-                  <Play className="h-4 w-4 mr-2" />
-                  Continuar
+                  <Play className="h-3 w-3 sm:h-4 sm:w-4 mr-1 sm:mr-2" />
+                  <span className="text-xs sm:text-sm">Continuar</span>
                 </>
               ) : (
                 <>
-                  <BookOpen className="h-4 w-4 mr-2" />
-                  Ir al Curso
+                  <BookOpen className="h-3 w-3 sm:h-4 sm:w-4 mr-1 sm:mr-2" />
+                  <span className="text-xs sm:text-sm">Ir al Curso</span>
                 </>
               )}
             </Link>
           </Button>
         ) : (
-          <Button asChild className="w-full" size="sm">
+          <Button asChild className="w-full" size="sm" className="mt-auto">
             <Link href={getCourseUrl(course.id)} prefetch={false}>
-              <BookOpen className="h-4 w-4 mr-2" />
-              Ver curso
+              <BookOpen className="h-3 w-3 sm:h-4 sm:w-4 mr-1 sm:mr-2" />
+              <span className="text-xs sm:text-sm">Ver curso</span>
             </Link>
           </Button>
         )}

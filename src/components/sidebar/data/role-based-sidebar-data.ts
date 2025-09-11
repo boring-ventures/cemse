@@ -68,6 +68,21 @@ export const youthSidebarData: SidebarData = {
           url: "/my-youth-applications",
           icon: FileText,
         },
+        {
+          title: "Instituciones",
+          url: "/institutions",
+          icon: Building2,
+        },
+        {
+          title: "Mi Perfil",
+          url: "/profile",
+          icon: User,
+        },
+        {
+          title: "CV Builder",
+          url: "/cv-builder",
+          icon: FileText,
+        },
       ],
     },
     {
@@ -96,16 +111,16 @@ export const youthSidebarData: SidebarData = {
         },
       ],
     },
-    {
-      title: "Recursos de Emprendimiento",
-      items: [
-        {
-          title: "Directorio de Instituciones",
-          url: "/entrepreneurship/directory",
-          icon: Building2,
-        },
-      ],
-    },
+    //{
+    //title: "Recursos de Emprendimiento",
+    //items: [
+    //{
+    //title: "Directorio de Instituciones",
+    //url: "/entrepreneurship/directory",
+    //icon: Building2,
+    //},
+    //],
+    //},
     {
       title: "Conectar con Emprendedores",
       items: [
@@ -123,21 +138,6 @@ export const youthSidebarData: SidebarData = {
           title: "Noticias",
           icon: Newspaper,
           url: "/news",
-        },
-      ],
-    },
-    {
-      title: "Personal",
-      items: [
-        {
-          title: "Mi Perfil",
-          url: "/profile",
-          icon: User,
-        },
-        {
-          title: "CV Builder",
-          url: "/cv-builder",
-          icon: FileText,
         },
       ],
     },
@@ -325,6 +325,16 @@ export const municipalGovernmentSidebarData: SidebarData = {
           url: "/admin/companies",
           icon: Building2,
         },
+        {
+          title: "Gestión de Instituciones",
+          url: "/admin/municipalities",
+          icon: Building2,
+        },
+        {
+          title: "Gestión de Jóvenes",
+          url: "/admin/users",
+          icon: UserCog,
+        },
       ],
     },
     {
@@ -507,7 +517,7 @@ export const superAdminSidebarData: SidebarData = {
           icon: LayoutDashboard,
         },
         {
-          title: "Gestión de Usuarios",
+          title: "Gestión de Jóvenes",
           url: "/admin/users",
           icon: UserCog,
         },
@@ -643,6 +653,11 @@ export const youthSidebarItems: SidebarItem[] = [
         title: "Postulaciones",
         icon: FileText,
         href: "/my-applications",
+      },
+      {
+        title: "Instituciones",
+        icon: Building2,
+        href: "/institutions",
       },
     ],
   },

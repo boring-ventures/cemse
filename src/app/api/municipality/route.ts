@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { cookies } from "next/headers";
 import { prisma } from "@/lib/prisma";
-import bcrypt from 'bcrypt';
+import bcrypt from "bcrypt";
 
 // Helper function to decode JWT token
 function decodeToken(token: string) {
@@ -28,8 +28,6 @@ function decodeToken(token: string) {
   }
 }
 
-
-
 export async function POST(request: NextRequest) {
   try {
     console.log("🏛️ POST /api/municipality - Starting municipality creation");
@@ -41,16 +39,21 @@ export async function POST(request: NextRequest) {
     if (!token) {
       console.log("❌ POST /api/municipality - No auth token found in cookies");
       return NextResponse.json(
-        { error: "Acceso denegado. Solo super administradores pueden crear instituciones." },
+        {
+          error:
+            "Acceso denegado. Solo super administradores y gobiernos municipales pueden crear instituciones.",
+        },
         { status: 403 }
       );
     }
 
     // Handle mock development tokens
     let decoded = null;
-    if (token.startsWith('mock-dev-token-')) {
-      console.log("🔐 POST /api/municipality - Mock token detected, allowing access");
-      decoded = { role: 'SUPERADMIN', type: 'SUPERADMIN' };
+    if (token.startsWith("mock-dev-token-")) {
+      console.log(
+        "🔐 POST /api/municipality - Mock token detected, allowing access"
+      );
+      decoded = { role: "SUPERADMIN", type: "SUPERADMIN" };
     } else {
       decoded = decodeToken(token);
       if (!decoded) {
@@ -62,12 +65,17 @@ export async function POST(request: NextRequest) {
       }
     }
 
-    // Check if user has SUPERADMIN role
+    // Check if user has SUPERADMIN or MUNICIPAL_GOVERNMENTS role
     const userRole = decoded.role || decoded.type;
-    if (userRole !== "SUPERADMIN") {
-      console.log(`❌ POST /api/municipality - Insufficient permissions. Role: ${userRole}`);
+    if (userRole !== "SUPERADMIN" && userRole !== "MUNICIPAL_GOVERNMENTS") {
+      console.log(
+        `❌ POST /api/municipality - Insufficient permissions. Role: ${userRole}`
+      );
       return NextResponse.json(
-        { error: "Acceso denegado. Solo super administradores pueden crear instituciones." },
+        {
+          error:
+            "Acceso denegado. Solo super administradores y gobiernos municipales pueden crear instituciones.",
+        },
         { status: 403 }
       );
     }
@@ -88,19 +96,34 @@ export async function POST(request: NextRequest) {
       institutionType,
       customType,
       primaryColor,
-      secondaryColor
+      secondaryColor,
     } = body;
 
     // Validate required fields
-    if (!name || !department || !username || !password || !email || !institutionType) {
+    if (
+      !name ||
+      !department ||
+      !username ||
+      !password ||
+      !email ||
+      !institutionType
+    ) {
       return NextResponse.json(
-        { error: "Nombre, departamento, usuario, contraseña, email e institutionType son campos obligatorios" },
+        {
+          error:
+            "Nombre, departamento, usuario, contraseña, email e institutionType son campos obligatorios",
+        },
         { status: 400 }
       );
     }
 
     // Validate institutionType
-    const validInstitutionTypes = ["MUNICIPALITY", "NGO", "FOUNDATION", "OTHER"];
+    const validInstitutionTypes = [
+      "MUNICIPALITY",
+      "NGO",
+      "FOUNDATION",
+      "OTHER",
+    ];
     if (!validInstitutionTypes.includes(institutionType)) {
       return NextResponse.json(
         { error: "Tipo de institución inválido" },
@@ -112,33 +135,43 @@ export async function POST(request: NextRequest) {
     const creatorUserId = decoded.id || "admin123"; // fallback for mock tokens
 
     // Validate unique constraints before creating
-    console.log("🔍 Checking for existing municipality with:", { name, department, username, email });
-    
+    console.log("🔍 Checking for existing municipality with:", {
+      name,
+      department,
+      username,
+      email,
+    });
+
     // Check for duplicate name + department combination
     const existingNameDept = await prisma.municipality.findFirst({
       where: {
-        AND: [
-          { name: name.trim() },
-          { department: department.trim() }
-        ]
-      }
+        AND: [{ name: name.trim() }, { department: department.trim() }],
+      },
     });
 
     if (existingNameDept) {
-      console.log("❌ Found existing municipality with same name and department:", existingNameDept.name);
+      console.log(
+        "❌ Found existing municipality with same name and department:",
+        existingNameDept.name
+      );
       return NextResponse.json(
-        { error: "Ya existe una institución con este nombre en el departamento" },
+        {
+          error: "Ya existe una institución con este nombre en el departamento",
+        },
         { status: 400 }
       );
     }
 
     // Check for duplicate username
     const existingUsername = await prisma.municipality.findFirst({
-      where: { username: username.trim() }
+      where: { username: username.trim() },
     });
 
     if (existingUsername) {
-      console.log("❌ Found existing municipality with same username:", existingUsername.username);
+      console.log(
+        "❌ Found existing municipality with same username:",
+        existingUsername.username
+      );
       return NextResponse.json(
         { error: "El nombre de usuario ya está en uso" },
         { status: 400 }
@@ -147,11 +180,14 @@ export async function POST(request: NextRequest) {
 
     // Check for duplicate email
     const existingEmail = await prisma.municipality.findFirst({
-      where: { email: email.trim() }
+      where: { email: email.trim() },
     });
 
     if (existingEmail) {
-      console.log("❌ Found existing municipality with same email:", existingEmail.email);
+      console.log(
+        "❌ Found existing municipality with same email:",
+        existingEmail.email
+      );
       return NextResponse.json(
         { error: "El email ya está registrado" },
         { status: 400 }
@@ -183,33 +219,52 @@ export async function POST(request: NextRequest) {
           password: hashedPassword,
           email: email.trim(),
           createdBy: creatorUserId,
-          isActive: true
+          isActive: true,
         },
         include: {
           creator: {
             select: {
               id: true,
               username: true,
-              role: true
-            }
-          }
-        }
+              role: true,
+            },
+          },
+        },
       });
+
+      // Map institution type to user role
+      const getUserRoleFromInstitutionType = (
+        institutionType: string
+      ): string => {
+        switch (institutionType) {
+          case "MUNICIPALITY":
+            return "MUNICIPAL_GOVERNMENTS";
+          case "NGO":
+          case "FOUNDATION":
+            return "NGOS_AND_FOUNDATIONS";
+          case "OTHER":
+            return "TRAINING_CENTERS"; // Default for other types
+          default:
+            return "MUNICIPAL_GOVERNMENTS"; // Fallback
+        }
+      };
 
       // Create a corresponding user account for authentication
       const municipalityUser = await tx.user.create({
         data: {
           username: username.trim(),
           password: hashedPassword,
-          role: "MUNICIPAL_GOVERNMENTS", // Map to the correct role
-          isActive: true
-        }
+          role: getUserRoleFromInstitutionType(institutionType), // Map to the correct role based on institution type
+          isActive: true,
+        },
       });
 
       console.log("🏛️ Municipality and user created successfully:", {
         municipalityId: municipality.id,
         userId: municipalityUser.id,
-        name: municipality.name
+        name: municipality.name,
+        institutionType: institutionType,
+        userRole: municipalityUser.role,
       });
 
       return municipality;
@@ -243,17 +298,16 @@ export async function GET() {
 
     if (!token) {
       console.log("❌ GET /api/municipality - No auth token found in cookies");
-      return NextResponse.json(
-        { error: "Acceso denegado" },
-        { status: 403 }
-      );
+      return NextResponse.json({ error: "Acceso denegado" }, { status: 403 });
     }
 
     // Handle mock development tokens
     let decoded = null;
-    if (token.startsWith('mock-dev-token-')) {
-      console.log("🔐 GET /api/municipality - Mock token detected, allowing access");
-      decoded = { role: 'SUPERADMIN', type: 'SUPERADMIN' };
+    if (token.startsWith("mock-dev-token-")) {
+      console.log(
+        "🔐 GET /api/municipality - Mock token detected, allowing access"
+      );
+      decoded = { role: "SUPERADMIN", type: "SUPERADMIN" };
     } else {
       decoded = decodeToken(token);
       if (!decoded) {
@@ -265,14 +319,13 @@ export async function GET() {
       }
     }
 
-    // Check if user has SUPERADMIN role
+    // Check if user has SUPERADMIN or MUNICIPAL_GOVERNMENTS role
     const userRole = decoded.role || decoded.type;
-    if (userRole !== "SUPERADMIN") {
-      console.log(`❌ GET /api/municipality - Insufficient permissions. Role: ${userRole}`);
-      return NextResponse.json(
-        { error: "Acceso denegado" },
-        { status: 403 }
+    if (userRole !== "SUPERADMIN" && userRole !== "MUNICIPAL_GOVERNMENTS") {
+      console.log(
+        `❌ GET /api/municipality - Insufficient permissions. Role: ${userRole}`
       );
+      return NextResponse.json({ error: "Acceso denegado" }, { status: 403 });
     }
 
     console.log("✅ GET /api/municipality - Authentication successful");
@@ -284,28 +337,25 @@ export async function GET() {
           select: {
             id: true,
             username: true,
-            role: true
-          }
+            role: true,
+          },
         },
         companies: {
           select: {
             id: true,
             name: true,
-            isActive: true
-          }
-        }
+            isActive: true,
+          },
+        },
       },
-      orderBy: [
-        { isActive: 'desc' },
-        { createdAt: 'desc' }
-      ]
+      orderBy: [{ isActive: "desc" }, { createdAt: "desc" }],
     });
 
     console.log("🏛️ GET municipalities - Returning data from database:", {
       total: municipalities.length,
-      active: municipalities.filter(m => m.isActive).length,
-      inactive: municipalities.filter(m => !m.isActive).length,
-      names: municipalities.map(m => `${m.name} (${m.department})`)
+      active: municipalities.filter((m) => m.isActive).length,
+      inactive: municipalities.filter((m) => !m.isActive).length,
+      names: municipalities.map((m) => `${m.name} (${m.department})`),
     });
 
     return NextResponse.json({ municipalities });
@@ -316,4 +366,4 @@ export async function GET() {
       { status: 500 }
     );
   }
-} 
+}

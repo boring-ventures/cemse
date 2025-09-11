@@ -1,12 +1,12 @@
 import { NextRequest, NextResponse } from "next/server";
 import { cookies } from "next/headers";
-import { writeFile, mkdir, existsSync } from "fs/promises";
+import { writeFile, mkdir } from "fs/promises";
 import { join } from "path";
 import jwt from "jsonwebtoken";
 
 // Configure runtime for chunk uploads
 export const runtime = "nodejs";
-export const maxDuration = 300; // 5 minutes timeout
+export const maxDuration = 120; // 2 minutes timeout for individual chunks (increased for AWS EC2)
 export const dynamic = "force-dynamic";
 export const revalidate = 0;
 
@@ -14,7 +14,7 @@ export const revalidate = 0;
 export const config = {
   api: {
     bodyParser: {
-      sizeLimit: "512kb", // 512KB per chunk (with some buffer)
+      sizeLimit: "512kb", // 512KB per chunk (reduced for better compatibility)
     },
   },
 };
@@ -99,10 +99,10 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // Validate chunk size (max 256KB per chunk, but allow smaller chunks)
-    if (chunk.size > 256 * 1024) {
+    // Validate chunk size (max 512KB per chunk, but allow smaller chunks)
+    if (chunk.size > 512 * 1024) {
       return NextResponse.json(
-        { error: "Chunk size too large. Maximum 256KB per chunk" },
+        { error: "Chunk size too large. Maximum 512KB per chunk" },
         { status: 400 }
       );
     }

@@ -1,107 +1,106 @@
 generator client {
-  provider = "prisma-client-js"
+  provider      = "prisma-client-js"
   binaryTargets = ["native", "linux-musl-arm64-openssl-3.0.x", "linux-musl-arm64-openssl-1.1.x"]
 }
 
 datasource db {
   provider = "postgresql"
   url      = env("DATABASE_URL")
-  
 }
 
 model Profile {
-  id                     String             @id @default(cuid())
-  userId                 String             @unique
-  avatarUrl              String?
-  createdAt              DateTime           @default(now())
-  updatedAt              DateTime           @updatedAt
-  active                 Boolean            @default(true)
-  status                 UserStatus         @default(ACTIVE)
-  role                   UserRole           @default(YOUTH)
-  firstName              String?            @map("first_name")
-  lastName               String?            @map("last_name")
-  email                  String?
-  phone                  String?
-  address                String?
-  municipality           String?
-  department             String?            @default("Cochabamba")
-  country                String?            @default("Bolivia")
-  birthDate              DateTime?          @map("birth_date")
-  gender                 String?
-  documentType           String?            @map("document_type")
-  documentNumber         String?            @map("document_number")
-  educationLevel         EducationLevel?    @map("education_level")
-  currentInstitution     String?            @map("current_institution")
-  graduationYear         Int?               @map("graduation_year")
-  isStudying             Boolean?           @map("is_studying")
-  // Educación detallada
-  educationHistory       Json?              @map("education_history") // Array de instituciones educativas
-  currentDegree          String?            @map("current_degree") // Grado actual (ej: "Ingeniería en Sistemas")
-  universityName         String?            @map("university_name") // Nombre de la universidad
-  universityStartDate    DateTime?          @map("university_start_date")
-  universityEndDate      DateTime?          @map("university_end_date")
-  universityStatus       String?            @map("university_status") // "en_curso", "graduado", "pausado", "abandonado"
-  gpa                    Float?             // Promedio académico
-  academicAchievements   Json?              @map("academic_achievements") // Logros académicos
-  // Red de Contactos
-  contacts               Contact[]          @relation("UserContacts")
-  contactOf              Contact[]          @relation("ContactOfUser")
-  
-  // Mensajería
-  sentMessages           Message[]          @relation("MessageSender")
-  receivedMessages       Message[]          @relation("MessageReceiver")
-  skills                 String[]
-  interests              String[]
-  workExperience         Json?              @map("work_experience")
-  companyName            String?            @map("company_name")
-  taxId                  String?            @map("tax_id")
-  legalRepresentative    String?            @map("legal_representative")
-  businessSector         String?            @map("business_sector")
-  companySize            CompanySize?       @map("company_size")
-  companyDescription     String?            @map("company_description")
-  website                String?
-  foundedYear            Int?               @map("founded_year")
-  institutionName        String?            @map("institution_name")
-  institutionType        String?            @map("institution_type")
-  serviceArea            String?            @map("service_area")
-  specialization         String[]
-  institutionDescription String?            @map("institution_description")
-  profileCompletion      Int                @default(0) @map("profile_completion")
-  lastLoginAt            DateTime?          @map("last_login_at")
-  parentalConsent        Boolean            @default(false) @map("parental_consent")
-  parentEmail            String?            @map("parent_email")
-  consentDate            DateTime?          @map("consent_date")
-  achievements           Json?
-  // CV Builder fields
-  jobTitle               String?            @map("job_title")
-  addressLine            String?            @map("address_line")
-  cityState              String?            @map("city_state")
-  languages              Json?              // Array of {language: string, level: string}
-  websites               Json?              // Array of {type: string, url: string, label: string}
-  skillsWithLevel        Json?              @map("skills_with_level") // Array of {skill: string, level: string, years: number}
-  extracurricularActivities Json?          @map("extracurricular_activities") // Array of activities
-  projects               Json?              // Array of projects
-  // Cover Letter fields
-  coverLetterRecipient   Json?              @map("cover_letter_recipient") // {department, companyName, address, city, country}
-  coverLetterSubject     String?            @map("cover_letter_subject")
-  coverLetterContent     String?            @map("cover_letter_content")
-  coverLetterTemplate    String?            @map("cover_letter_template") @default("professional")
-  companyId              String?            @map("company_id")
-  certificates           Certificate[]
-  courseEnrollments      CourseEnrollment[]
-  instructedCourses      Course[]           @relation("CourseInstructor")
-  discussions            Discussion[]
-  entrepreneurships      Entrepreneurship[]
-  jobApplications        JobApplication[]
-  newsArticles           NewsArticle[]
-  newsComments           NewsComment[]
-  company                Company?           @relation("CompanyEmployees", fields: [companyId], references: [id])
-  quizAttempts           QuizAttempt[]
-  studentNotes           StudentNote[]
-  moduleCertificates     ModuleCertificate[] @relation("ModuleCertificateStudent")
-  youthApplications      YouthApplication[] @relation("YouthApplications")
-  user                  User               @relation(fields: [userId], references: [id], onDelete: Cascade)
-
+  id                        String              @id @default(cuid())
+  userId                    String              @unique
+  avatarUrl                 String?
+  createdAt                 DateTime            @default(now())
+  updatedAt                 DateTime            @updatedAt
+  active                    Boolean             @default(true)
+  status                    UserStatus          @default(ACTIVE)
+  role                      UserRole            @default(YOUTH)
+  firstName                 String?             @map("first_name")
+  lastName                  String?             @map("last_name")
+  email                     String?
+  phone                     String?
+  address                   String?
+  municipality              String?
+  department                String?             @default("Cochabamba")
+  country                   String?             @default("Bolivia")
+  birthDate                 DateTime?           @map("birth_date")
+  gender                    String?
+  documentType              String?             @map("document_type")
+  documentNumber            String?             @map("document_number")
+  educationLevel            EducationLevel?     @map("education_level")
+  currentInstitution        String?             @map("current_institution")
+  graduationYear            Int?                @map("graduation_year")
+  isStudying                Boolean?            @map("is_studying")
+  skills                    Json?
+  interests                 Json?
+  socialLinks               Json?               @map("social_links")
+  workExperience            Json?               @map("work_experience")
+  companyName               String?             @map("company_name")
+  taxId                     String?             @map("tax_id")
+  legalRepresentative       String?             @map("legal_representative")
+  businessSector            String?             @map("business_sector")
+  companySize               CompanySize?        @map("company_size")
+  companyDescription        String?             @map("company_description")
+  website                   String?
+  foundedYear               Int?                @map("founded_year")
+  institutionName           String?             @map("institution_name")
+  institutionType           String?             @map("institution_type")
+  serviceArea               String?             @map("service_area")
+  specialization            String[]
+  institutionDescription    String?             @map("institution_description")
+  profileCompletion         Int                 @default(0) @map("profile_completion")
+  lastLoginAt               DateTime?           @map("last_login_at")
+  parentalConsent           Boolean             @default(false) @map("parental_consent")
+  parentEmail               String?             @map("parent_email")
+  consentDate               DateTime?           @map("consent_date")
+  achievements              Json?
+  companyId                 String?             @map("company_id")
+  addressLine               String?             @map("address_line")
+  city                      String?
+  state                     String?
+  cityState                 String?             @map("city_state")
+  professionalSummary       String?             @map("professional_summary")
+  extracurricularActivities Json?               @map("extracurricular_activities")
+  jobTitle                  String?             @map("job_title")
+  languages                 Json?
+  projects                  Json?
+  skillsWithLevel           Json?               @map("skills_with_level")
+  websites                  Json?
+  coverLetterContent        String?             @map("cover_letter_content")
+  coverLetterRecipient      Json?               @map("cover_letter_recipient")
+  coverLetterSubject        String?             @map("cover_letter_subject")
+  coverLetterTemplate       String?             @default("professional") @map("cover_letter_template")
+  academicAchievements      Json?               @map("academic_achievements")
+  currentDegree             String?             @map("current_degree")
+  educationHistory          Json?               @map("education_history")
+  gpa                       Float?
+  universityEndDate         DateTime?           @map("university_end_date")
+  universityName            String?             @map("university_name")
+  universityStartDate       DateTime?           @map("university_start_date")
+  universityStatus          String?             @map("university_status")
+  targetPosition            String?             @map("target_position")
+  targetCompany             String?             @map("target_company")
+  relevantSkills            String[]            @map("relevant_skills")
+  certificates              Certificate[]
+  contactOf                 Contact[]           @relation("ContactOfUser")
+  contacts                  Contact[]           @relation("UserContacts")
+  courseEnrollments         CourseEnrollment[]
+  instructedCourses         Course[]            @relation("CourseInstructor")
+  discussions               Discussion[]
+  entrepreneurships         Entrepreneurship[]
+  jobApplications           JobApplication[]
+  receivedMessages          Message[]           @relation("MessageReceiver")
+  sentMessages              Message[]           @relation("MessageSender")
+  moduleCertificates        ModuleCertificate[] @relation("ModuleCertificateStudent")
+  newsArticles              NewsArticle[]
+  newsComments              NewsComment[]
+  company                   Company?            @relation("CompanyEmployees", fields: [companyId], references: [id])
+  user                      User                @relation(fields: [userId], references: [id], onDelete: Cascade)
+  quizAttempts              QuizAttempt[]
+  studentNotes              StudentNote[]
+  youthApplications         YouthApplication[]  @relation("YouthApplications")
 
   @@index([userId])
   @@index([role])
@@ -123,10 +122,6 @@ model JobOffer {
   workSchedule        String           @map("work_schedule")
   workModality        WorkModality     @map("work_modality")
   location            String
-  latitude            Float?
-  longitude           Float?
-  images              String[]         // Array de URLs de imágenes
-  logo                String?          // Logo de la empresa para la oferta
   municipality        String
   department          String           @default("Cochabamba")
   experienceLevel     ExperienceLevel  @map("experience_level")
@@ -144,6 +139,10 @@ model JobOffer {
   companyId           String           @map("company_id")
   createdAt           DateTime         @default(now()) @map("created_at")
   updatedAt           DateTime         @updatedAt @map("updated_at")
+  latitude            Float?
+  longitude           Float?
+  images              String[]
+  logo                String?
   applications        JobApplication[]
   company             Company          @relation(fields: [companyId], references: [id])
   jobQuestions        JobQuestion[]
@@ -174,24 +173,24 @@ model JobQuestion {
 }
 
 model JobApplication {
-  id              String              @id @default(cuid())
-  applicantId     String              @map("applicant_id")
-  jobOfferId      String              @map("job_offer_id")
-  coverLetter     String?             @map("cover_letter")
-  cvData          Json?               @map("cv_data")
-  cvFile          String?             @map("cv_file")
-  coverLetterFile String?             @map("cover_letter_file")
-  profileImage    String?             @map("profile_image")
-  status          ApplicationStatus   @default(SENT)
-  appliedAt       DateTime            @default(now()) @map("applied_at")
-  reviewedAt      DateTime?           @map("reviewed_at")
+  id              String                  @id @default(cuid())
+  applicantId     String                  @map("applicant_id")
+  jobOfferId      String                  @map("job_offer_id")
+  coverLetter     String?                 @map("cover_letter")
+  status          ApplicationStatus       @default(SENT)
+  appliedAt       DateTime                @default(now()) @map("applied_at")
+  reviewedAt      DateTime?               @map("reviewed_at")
   notes           String?
   rating          Int?
-  decisionReason  String?             @map("decision_reason") // Motivo de aceptación o rechazo
-  applicant       Profile             @relation(fields: [applicantId], references: [userId])
-  jobOffer        JobOffer            @relation(fields: [jobOfferId], references: [id])
-  questionAnswers JobQuestionAnswer[]
+  cvData          Json?                   @map("cv_data")
+  profileImage    String?                 @map("profile_image")
+  coverLetterFile String?                 @map("cover_letter_file")
+  cvFile          String?                 @map("cv_file")
+  decisionReason  String?                 @map("decision_reason")
   messages        JobApplicationMessage[]
+  applicant       Profile                 @relation(fields: [applicantId], references: [userId])
+  jobOffer        JobOffer                @relation(fields: [jobOfferId], references: [id])
+  questionAnswers JobQuestionAnswer[]
 
   @@unique([applicantId, jobOfferId])
   @@index([applicantId])
@@ -215,48 +214,42 @@ model JobQuestionAnswer {
 }
 
 model JobApplicationMessage {
-  id              String            @id @default(cuid())
-  applicationId   String            @map("application_id")
-  senderId        String            @map("sender_id")
-  senderType      SenderType        @map("sender_type")
-  content         String
-  messageType     MessageType       @default(TEXT)
-  status          MessageStatus     @default(SENT)
-  createdAt       DateTime          @default(now()) @map("created_at")
-  readAt          DateTime?         @map("read_at")
-  
-  application     JobApplication    @relation(fields: [applicationId], references: [id], onDelete: Cascade)
-  
+  id            String         @id @default(cuid())
+  applicationId String         @map("application_id")
+  senderId      String         @map("sender_id")
+  senderType    SenderType     @map("sender_type")
+  content       String
+  messageType   MessageType    @default(TEXT)
+  status        MessageStatus  @default(SENT)
+  createdAt     DateTime       @default(now()) @map("created_at")
+  readAt        DateTime?      @map("read_at")
+  application   JobApplication @relation(fields: [applicationId], references: [id], onDelete: Cascade)
+
   @@index([applicationId])
   @@index([senderId])
   @@index([createdAt])
   @@map("job_application_messages")
 }
 
-// Nuevo sistema de postulaciones independiente
 model YouthApplication {
-  id              String                    @id @default(cuid())
-  title           String                    // Título de la postulación
-  description     String                    // Descripción de la postulación
-  cvFile          String?                   @map("cv_file")
-  coverLetterFile String?                   @map("cover_letter_file")
-  cvUrl           String?                   @map("cv_url")
-  coverLetterUrl  String?                   @map("cover_letter_url")
-  status          YouthApplicationStatus    @default(ACTIVE)
-  isPublic        Boolean                   @default(true) @map("is_public")
-  viewsCount      Int                       @default(0) @map("views_count")
-  applicationsCount Int                     @default(0) @map("applications_count")
-  createdAt       DateTime                  @default(now()) @map("created_at")
-  updatedAt       DateTime                  @updatedAt @map("updated_at")
-  
-  // Relación con el perfil del joven
-  youthProfileId  String                    @map("youth_profile_id")
-  youthProfile    Profile                   @relation("YouthApplications", fields: [youthProfileId], references: [userId])
-  
-  // Relaciones
-  messages        YouthApplicationMessage[]
-  companyInterests YouthApplicationCompanyInterest[]
-  
+  id                String                            @id @default(cuid())
+  title             String
+  description       String
+  cvFile            String?                           @map("cv_file")
+  coverLetterFile   String?                           @map("cover_letter_file")
+  cvUrl             String?                           @map("cv_url")
+  coverLetterUrl    String?                           @map("cover_letter_url")
+  status            YouthApplicationStatus            @default(ACTIVE)
+  isPublic          Boolean                           @default(true) @map("is_public")
+  viewsCount        Int                               @default(0) @map("views_count")
+  applicationsCount Int                               @default(0) @map("applications_count")
+  createdAt         DateTime                          @default(now()) @map("created_at")
+  updatedAt         DateTime                          @updatedAt @map("updated_at")
+  youthProfileId    String                            @map("youth_profile_id")
+  companyInterests  YouthApplicationCompanyInterest[]
+  messages          YouthApplicationMessage[]
+  youthProfile      Profile                           @relation("YouthApplications", fields: [youthProfileId], references: [userId])
+
   @@index([youthProfileId])
   @@index([status])
   @@index([isPublic])
@@ -265,18 +258,17 @@ model YouthApplication {
 }
 
 model YouthApplicationMessage {
-  id                String                    @id @default(cuid())
-  applicationId     String                    @map("application_id")
-  senderId          String                    @map("sender_id")
-  senderType        YouthMessageSenderType    @map("sender_type")
-  content           String
-  messageType       MessageType               @default(TEXT)
-  status            MessageStatus             @default(SENT)
-  createdAt         DateTime                  @default(now()) @map("created_at")
-  readAt            DateTime?                 @map("read_at")
-  
-  application       YouthApplication          @relation(fields: [applicationId], references: [id], onDelete: Cascade)
-  
+  id            String                 @id @default(cuid())
+  applicationId String                 @map("application_id")
+  senderId      String                 @map("sender_id")
+  senderType    YouthMessageSenderType @map("sender_type")
+  content       String
+  messageType   MessageType            @default(TEXT)
+  status        MessageStatus          @default(SENT)
+  createdAt     DateTime               @default(now()) @map("created_at")
+  readAt        DateTime?              @map("read_at")
+  application   YouthApplication       @relation(fields: [applicationId], references: [id], onDelete: Cascade)
+
   @@index([applicationId])
   @@index([senderId])
   @@index([createdAt])
@@ -284,29 +276,21 @@ model YouthApplicationMessage {
 }
 
 model YouthApplicationCompanyInterest {
-  id              String            @id @default(cuid())
-  applicationId   String            @map("application_id")
-  companyId       String            @map("company_id")
-  status          CompanyInterestStatus @default(INTERESTED)
-  message         String?
-  createdAt       DateTime          @default(now()) @map("created_at")
-  updatedAt       DateTime          @updatedAt @map("updated_at")
-  
-  application     YouthApplication  @relation(fields: [applicationId], references: [id], onDelete: Cascade)
-  company         Company           @relation(fields: [companyId], references: [id], onDelete: Cascade)
-  
+  id            String                @id @default(cuid())
+  applicationId String                @map("application_id")
+  companyId     String                @map("company_id")
+  status        CompanyInterestStatus @default(INTERESTED)
+  message       String?
+  createdAt     DateTime              @default(now()) @map("created_at")
+  updatedAt     DateTime              @updatedAt @map("updated_at")
+  application   YouthApplication      @relation(fields: [applicationId], references: [id], onDelete: Cascade)
+  company       Company               @relation(fields: [companyId], references: [id], onDelete: Cascade)
+
   @@unique([applicationId, companyId])
   @@index([applicationId])
   @@index([companyId])
   @@index([status])
   @@map("youth_application_company_interests")
-}
-
-
-
-enum SenderType {
-  COMPANY
-  APPLICANT
 }
 
 model Course {
@@ -353,19 +337,19 @@ model Course {
 }
 
 model CourseModule {
-  id                String   @id @default(cuid())
-  courseId          String   @map("course_id")
-  title             String
-  description       String?
-  orderIndex        Int      @map("order_index")
-  estimatedDuration Int      @map("estimated_duration")
-  isLocked          Boolean  @default(false) @map("is_locked")
-  prerequisites     String[]
-  hasCertificate    Boolean  @default(true) @map("has_certificate")
-  certificateTemplate String? @map("certificate_template")
-  course            Course   @relation(fields: [courseId], references: [id], onDelete: Cascade)
-  lessons           Lesson[]
-  moduleCertificates ModuleCertificate[]
+  id                  String              @id @default(cuid())
+  courseId            String              @map("course_id")
+  title               String
+  description         String?
+  orderIndex          Int                 @map("order_index")
+  estimatedDuration   Int                 @map("estimated_duration")
+  isLocked            Boolean             @default(false) @map("is_locked")
+  prerequisites       String[]
+  certificateTemplate String?             @map("certificate_template")
+  hasCertificate      Boolean             @default(true) @map("has_certificate")
+  course              Course              @relation(fields: [courseId], references: [id], onDelete: Cascade)
+  lessons             Lesson[]
+  moduleCertificates  ModuleCertificate[]
 
   @@index([courseId])
   @@index([orderIndex])
@@ -385,9 +369,9 @@ model Lesson {
   isRequired  Boolean          @default(true) @map("is_required")
   isPreview   Boolean          @default(false) @map("is_preview")
   attachments Json?
-  resources   LessonResource[]
   discussions Discussion[]
   progress    LessonProgress[]
+  resources   LessonResource[]
   module      CourseModule     @relation(fields: [moduleId], references: [id], onDelete: Cascade)
   quizzes     Quiz[]
   notes       StudentNote[]
@@ -427,16 +411,16 @@ model CourseEnrollment {
 }
 
 model LessonProgress {
-  id           String           @id @default(cuid())
-  enrollmentId String           @map("enrollment_id")
-  lessonId     String           @map("lesson_id")
-  isCompleted  Boolean          @default(false) @map("is_completed")
-  completedAt  DateTime?        @map("completed_at")
-  timeSpent    Int              @default(0) @map("time_spent")
-  videoProgress Float            @default(0) @map("video_progress") // 0.0 to 1.0 (0% to 100%)
-  lastWatchedAt DateTime?       @map("last_watched_at")
-  enrollment   CourseEnrollment @relation(fields: [enrollmentId], references: [id], onDelete: Cascade)
-  lesson       Lesson           @relation(fields: [lessonId], references: [id], onDelete: Cascade)
+  id            String           @id @default(cuid())
+  enrollmentId  String           @map("enrollment_id")
+  lessonId      String           @map("lesson_id")
+  isCompleted   Boolean          @default(false) @map("is_completed")
+  completedAt   DateTime?        @map("completed_at")
+  timeSpent     Int              @default(0) @map("time_spent")
+  lastWatchedAt DateTime?        @map("last_watched_at")
+  videoProgress Float            @default(0) @map("video_progress")
+  enrollment    CourseEnrollment @relation(fields: [enrollmentId], references: [id], onDelete: Cascade)
+  lesson        Lesson           @relation(fields: [lessonId], references: [id], onDelete: Cascade)
 
   @@unique([enrollmentId, lessonId])
   @@index([enrollmentId])
@@ -614,36 +598,36 @@ model Entrepreneurship {
 }
 
 model BusinessPlan {
-  id                   String           @id @default(cuid())
-  entrepreneurshipId   String           @unique @map("entrepreneurship_id")
-  executiveSummary     String?          @map("executive_summary")
-  missionStatement     String?          @map("mission_statement")
-  visionStatement      String?          @map("vision_statement")
-  marketAnalysis       String?          @map("market_analysis")
-  targetMarket         String?          @map("target_market")
-  competitiveAnalysis  String?          @map("competitive_analysis")
-  businessModelCanvas  Json?            @map("business_model_canvas")
-  revenueStreams       String[]         @map("revenue_streams")
-  costStructure        Json?            @map("cost_structure")
-  marketingStrategy    String?          @map("marketing_strategy")
-  pricingStrategy      String?          @map("pricing_strategy")
-  salesStrategy        String?          @map("sales_strategy")
-  initialInvestment    Decimal?         @map("initial_investment")
-  monthlyExpenses      Decimal?         @map("monthly_expenses")
-  revenueProjection    Json?            @map("revenue_projection")
-  breakEvenPoint       Int?             @map("break_even_point")
-  roi                  Decimal?
-  riskAnalysis         String?          @map("risk_analysis")
-  mitigationStrategies String[]         @map("mitigation_strategies")
-  operationalPlan      String?          @map("operational_plan")
-  managementTeam       Json?            @map("management_team")
-  tripleImpactAssessment Json?          @map("triple_impact_assessment")
-  isCompleted          Boolean          @default(false) @map("is_completed")
-  lastSection          String?          @map("last_section")
-  completionPercentage Int              @default(0) @map("completion_percentage")
-  createdAt            DateTime         @default(now()) @map("created_at")
-  updatedAt            DateTime         @updatedAt @map("updated_at")
-  entrepreneurship     Entrepreneurship @relation(fields: [entrepreneurshipId], references: [id], onDelete: Cascade)
+  id                     String           @id @default(cuid())
+  entrepreneurshipId     String           @unique @map("entrepreneurship_id")
+  executiveSummary       String?          @map("executive_summary")
+  missionStatement       String?          @map("mission_statement")
+  visionStatement        String?          @map("vision_statement")
+  marketAnalysis         String?          @map("market_analysis")
+  targetMarket           String?          @map("target_market")
+  competitiveAnalysis    String?          @map("competitive_analysis")
+  businessModelCanvas    Json?            @map("business_model_canvas")
+  revenueStreams         String[]         @map("revenue_streams")
+  costStructure          Json?            @map("cost_structure")
+  marketingStrategy      String?          @map("marketing_strategy")
+  pricingStrategy        String?          @map("pricing_strategy")
+  salesStrategy          String?          @map("sales_strategy")
+  initialInvestment      Decimal?         @map("initial_investment")
+  monthlyExpenses        Decimal?         @map("monthly_expenses")
+  revenueProjection      Json?            @map("revenue_projection")
+  breakEvenPoint         Int?             @map("break_even_point")
+  roi                    Decimal?
+  riskAnalysis           String?          @map("risk_analysis")
+  mitigationStrategies   String[]         @map("mitigation_strategies")
+  operationalPlan        String?          @map("operational_plan")
+  managementTeam         Json?            @map("management_team")
+  isCompleted            Boolean          @default(false) @map("is_completed")
+  lastSection            String?          @map("last_section")
+  completionPercentage   Int              @default(0) @map("completion_percentage")
+  createdAt              DateTime         @default(now()) @map("created_at")
+  updatedAt              DateTime         @updatedAt @map("updated_at")
+  tripleImpactAssessment Json?            @map("triple_impact_assessment")
+  entrepreneurship       Entrepreneurship @relation(fields: [entrepreneurshipId], references: [id], onDelete: Cascade)
 
   @@map("business_plans")
 }
@@ -708,23 +692,31 @@ model NewsComment {
 }
 
 model Resource {
-  id            String   @id @default(cuid())
-  title         String
-  description   String
-  type          String
-  category      String
-  format        String
-  downloadUrl   String?  @map("download_url")
-  externalUrl   String?  @map("external_url")
-  thumbnail     String
-  author        String
-  publishedDate DateTime @map("published_date")
-  downloads     Int      @default(0)
-  rating        Float    @default(0)
-  tags          String[]
-  isPublic      Boolean  @default(true) @map("is_public")
-  createdAt     DateTime @default(now()) @map("created_at")
-  updatedAt     DateTime @updatedAt @map("updated_at")
+  id              String   @id @default(cuid())
+  title           String
+  description     String
+  type            String
+  category        String
+  format          String
+  downloadUrl     String?  @map("download_url")
+  externalUrl     String?  @map("external_url")
+  thumbnail       String
+  author          String
+  publishedDate   DateTime @map("published_date")
+  downloads       Int      @default(0)
+  rating          Float    @default(0)
+  tags            String[]
+  createdAt       DateTime @default(now()) @map("created_at")
+  updatedAt       DateTime @updatedAt @map("updated_at")
+  isPublic        Boolean  @default(true) @map("is_public")
+  createdByUserId String   @map("created_by_user_id")
+  createdBy       User     @relation("ResourceCreator", fields: [createdByUserId], references: [id], onDelete: Cascade)
+
+  @@index([createdByUserId])
+  @@index([type])
+  @@index([category])
+  @@index([isPublic])
+  @@map("resources")
 }
 
 model User {
@@ -738,8 +730,9 @@ model User {
   createdCompanies      Company[]      @relation("CompanyCreator")
   createdInstitutions   Institution[]  @relation("InstitutionCreator")
   createdMunicipalities Municipality[] @relation("MunicipalityCreator")
-  refreshTokens         RefreshToken[]
   profile               Profile?
+  refreshTokens         RefreshToken[]
+  createdResources      Resource[]     @relation("ResourceCreator")
 
   @@map("users")
 }
@@ -769,29 +762,29 @@ model ExternalApiKey {
 }
 
 model Institution {
-  id                String           @id @default(cuid())
-  name              String
-  department        String
-  region            String?
-  population        Int?
-  mayorName         String?          @map("mayor_name")
-  mayorEmail        String?          @map("mayor_email")
-  mayorPhone        String?          @map("mayor_phone")
-  address           String?
-  website           String?
-  isActive          Boolean          @default(true) @map("is_active")
-  username          String           @unique @map("institution_username")
-  password          String
-  email             String           @unique @map("institution_email")
-  phone             String?
-  institutionType   InstitutionType  @map("institution_type")
-  customType        String?          @map("custom_type") // Para cuando institutionType es OTHER
-  primaryColor      String?          @map("primary_color")
-  secondaryColor    String?          @map("secondary_color")
-  createdBy         String           @map("created_by")
-  createdAt         DateTime         @default(now()) @map("created_at")
-  updatedAt         DateTime         @updatedAt @map("updated_at")
-  creator           User             @relation("InstitutionCreator", fields: [createdBy], references: [id])
+  id              String          @id @default(cuid())
+  name            String
+  department      String
+  region          String?
+  population      Int?
+  mayorName       String?         @map("mayor_name")
+  mayorEmail      String?         @map("mayor_email")
+  mayorPhone      String?         @map("mayor_phone")
+  address         String?
+  website         String?
+  isActive        Boolean         @default(true) @map("is_active")
+  username        String          @unique @map("institution_username")
+  password        String
+  email           String          @unique @map("institution_email")
+  phone           String?
+  institutionType InstitutionType @map("institution_type")
+  customType      String?         @map("custom_type")
+  primaryColor    String?         @map("primary_color")
+  secondaryColor  String?         @map("secondary_color")
+  createdBy       String          @map("created_by")
+  createdAt       DateTime        @default(now()) @map("created_at")
+  updatedAt       DateTime        @updatedAt @map("updated_at")
+  creator         User            @relation("InstitutionCreator", fields: [createdBy], references: [id])
 
   @@unique([name, department])
   @@index([department])
@@ -802,30 +795,30 @@ model Institution {
 }
 
 model Municipality {
-  id                String           @id @default(cuid())
-  name              String
-  department        String
-  region            String?
-  population        Int?
-  mayorName         String?          @map("mayor_name")
-  mayorEmail        String?          @map("mayor_email")
-  mayorPhone        String?          @map("mayor_phone")
-  address           String?
-  website           String?
-  isActive          Boolean          @default(true) @map("is_active")
-  username          String           @unique @map("municipality_username")
-  password          String
-  email             String           @unique @map("municipality_email")
-  phone             String?
-  institutionType   InstitutionType  @map("institution_type") @default(MUNICIPALITY)
-  customType        String?          @map("custom_type") // Para cuando institutionType es OTHER
-  primaryColor      String?          @map("primary_color")
-  secondaryColor    String?          @map("secondary_color")
-  createdBy         String           @map("created_by")
-  createdAt         DateTime         @default(now()) @map("created_at")
-  updatedAt         DateTime         @updatedAt @map("updated_at")
-  companies         Company[]
-  creator           User             @relation("MunicipalityCreator", fields: [createdBy], references: [id])
+  id              String          @id @default(cuid())
+  name            String
+  department      String
+  region          String?
+  population      Int?
+  mayorName       String?         @map("mayor_name")
+  mayorEmail      String?         @map("mayor_email")
+  mayorPhone      String?         @map("mayor_phone")
+  address         String?
+  website         String?
+  isActive        Boolean         @default(true) @map("is_active")
+  username        String          @unique @map("municipality_username")
+  password        String
+  email           String          @unique @map("municipality_email")
+  phone           String?
+  createdBy       String          @map("created_by")
+  createdAt       DateTime        @default(now()) @map("created_at")
+  updatedAt       DateTime        @updatedAt @map("updated_at")
+  customType      String?         @map("custom_type")
+  institutionType InstitutionType @default(MUNICIPALITY) @map("institution_type")
+  primaryColor    String?         @map("primary_color")
+  secondaryColor  String?         @map("secondary_color")
+  companies       Company[]
+  creator         User            @relation("MunicipalityCreator", fields: [createdBy], references: [id])
 
   @@unique([name, department])
   @@index([department])
@@ -836,43 +829,133 @@ model Municipality {
 }
 
 model Company {
-  id                  String       @id @default(cuid())
-  name                String
-  description         String?
-  taxId               String?      @map("tax_id")
-  legalRepresentative String?      @map("legal_representative")
-  businessSector      String?      @map("business_sector")
-  companySize         CompanySize? @map("company_size")
-  website             String?
-  email               String?      // Email de contacto
-  phone               String?
-  address             String?
-  foundedYear         Int?         @map("founded_year")
-  isActive            Boolean      @default(true) @map("is_active")
-  
-  // Credenciales de acceso
-  username            String       @unique @map("company_username")
-  password            String
-  loginEmail          String       @unique @map("company_login_email")
-  
-  municipalityId      String       @map("municipality_id")
-  createdBy           String       @map("created_by")
-  createdAt           DateTime     @default(now()) @map("created_at")
-  updatedAt           DateTime     @updatedAt @map("updated_at")
-  creator             User         @relation("CompanyCreator", fields: [createdBy], references: [id])
-  municipality        Municipality @relation(fields: [municipalityId], references: [id])
-  jobOffers           JobOffer[]
-  profiles            Profile[]    @relation("CompanyEmployees")
+  id                        String                            @id @default(cuid())
+  name                      String
+  description               String?
+  taxId                     String?                           @map("tax_id")
+  legalRepresentative       String?                           @map("legal_representative")
+  businessSector            String?                           @map("business_sector")
+  companySize               CompanySize?                      @map("company_size")
+  website                   String?
+  email                     String?
+  phone                     String?
+  address                   String?
+  foundedYear               Int?                              @map("founded_year")
+  logoUrl                   String?                           @map("logo_url")
+  isActive                  Boolean                           @default(true) @map("is_active")
+  municipalityId            String                            @map("municipality_id")
+  createdBy                 String                            @map("created_by")
+  createdAt                 DateTime                          @default(now()) @map("created_at")
+  updatedAt                 DateTime                          @updatedAt @map("updated_at")
+  loginEmail                String                            @unique @map("company_login_email")
+  username                  String                            @unique @map("company_username")
+  password                  String
+  creator                   User                              @relation("CompanyCreator", fields: [createdBy], references: [id])
+  municipality              Municipality                      @relation(fields: [municipalityId], references: [id])
+  jobOffers                 JobOffer[]
+  profiles                  Profile[]                         @relation("CompanyEmployees")
   youthApplicationInterests YouthApplicationCompanyInterest[]
 
   @@unique([name, municipalityId])
-  @@unique([username], map: "company_username_unique")
-  @@unique([loginEmail], map: "company_login_email_unique")
   @@index([municipalityId])
   @@index([businessSector])
   @@index([isActive])
   @@index([createdBy])
   @@map("companies")
+}
+
+model Contact {
+  id             String        @id @default(cuid())
+  userId         String        @map("user_id")
+  contactId      String        @map("contact_id")
+  status         ContactStatus @default(PENDING)
+  createdAt      DateTime      @default(now()) @map("created_at")
+  updatedAt      DateTime      @updatedAt @map("updated_at")
+  requestMessage String?       @map("request_message")
+  contact        Profile       @relation("ContactOfUser", fields: [contactId], references: [userId], onDelete: Cascade)
+  user           Profile       @relation("UserContacts", fields: [userId], references: [userId], onDelete: Cascade)
+
+  @@unique([userId, contactId])
+  @@index([userId])
+  @@index([contactId])
+  @@index([status])
+  @@map("contacts")
+}
+
+model Conversation {
+  id                 String    @id @default(cuid())
+  participants       String[]  @unique
+  lastMessageContent String?   @map("last_message_content")
+  lastMessageTime    DateTime? @map("last_message_time")
+  unreadCount        Int       @default(0) @map("unread_count")
+  createdAt          DateTime  @default(now()) @map("created_at")
+  updatedAt          DateTime  @updatedAt @map("updated_at")
+  messages           Message[]
+
+  @@index([participants])
+  @@map("conversations")
+}
+
+model Message {
+  id             String        @id @default(cuid())
+  conversationId String        @map("conversation_id")
+  senderId       String        @map("sender_id")
+  receiverId     String        @map("receiver_id")
+  content        String
+  messageType    MessageType   @default(TEXT) @map("message_type")
+  status         MessageStatus @default(SENT) @map("message_status")
+  createdAt      DateTime      @default(now()) @map("created_at")
+  readAt         DateTime?     @map("read_at")
+  conversation   Conversation  @relation(fields: [conversationId], references: [id], onDelete: Cascade)
+  receiver       Profile       @relation("MessageReceiver", fields: [receiverId], references: [userId], onDelete: Cascade)
+  sender         Profile       @relation("MessageSender", fields: [senderId], references: [userId], onDelete: Cascade)
+
+  @@index([conversationId])
+  @@index([senderId])
+  @@index([receiverId])
+  @@index([createdAt])
+  @@map("messages")
+}
+
+model LessonResource {
+  id             String       @id @default(cuid())
+  lessonId       String       @map("lesson_id")
+  title          String
+  description    String?
+  type           ResourceType
+  url            String
+  filePath       String?      @map("file_path")
+  fileSize       Int?         @map("file_size")
+  orderIndex     Int          @map("order_index")
+  isDownloadable Boolean      @default(true) @map("is_downloadable")
+  createdAt      DateTime     @default(now()) @map("created_at")
+  lesson         Lesson       @relation(fields: [lessonId], references: [id], onDelete: Cascade)
+
+  @@index([lessonId])
+  @@index([orderIndex])
+  @@map("lesson_resources")
+}
+
+model ModuleCertificate {
+  id             String       @id @default(cuid())
+  moduleId       String       @map("module_id")
+  studentId      String       @map("student_id")
+  certificateUrl String       @map("certificate_url")
+  issuedAt       DateTime     @default(now()) @map("issued_at")
+  grade          Int?
+  completedAt    DateTime     @map("completed_at")
+  module         CourseModule @relation(fields: [moduleId], references: [id], onDelete: Cascade)
+  student        Profile      @relation("ModuleCertificateStudent", fields: [studentId], references: [userId], onDelete: Cascade)
+
+  @@unique([moduleId, studentId])
+  @@index([moduleId])
+  @@index([studentId])
+  @@map("module_certificates")
+}
+
+enum SenderType {
+  COMPANY
+  APPLICANT
 }
 
 enum UserRole {
@@ -1033,108 +1116,11 @@ enum MessageStatus {
   READ
 }
 
-model Contact {
-  id              String        @id @default(cuid())
-  userId          String        @map("user_id") // Usuario que envía la solicitud
-  contactId       String        @map("contact_id") // Usuario que recibe la solicitud
-  status          ContactStatus @default(PENDING)
-  requestMessage  String?       @map("request_message") // Mensaje opcional al enviar la solicitud
-  createdAt       DateTime      @default(now()) @map("created_at")
-  updatedAt       DateTime      @updatedAt @map("updated_at")
-  
-  user            Profile       @relation("UserContacts", fields: [userId], references: [userId], onDelete: Cascade)
-  contact         Profile       @relation("ContactOfUser", fields: [contactId], references: [userId], onDelete: Cascade)
-  
-  @@unique([userId, contactId])
-  @@index([userId])
-  @@index([contactId])
-  @@index([status])
-  @@map("contacts")
-}
-
-model Conversation {
-  id              String    @id @default(cuid())
-  participants    String[]  // Array de userIds
-  lastMessageContent String? @map("last_message_content")
-  lastMessageTime DateTime? @map("last_message_time")
-  unreadCount     Int       @default(0) @map("unread_count")
-  createdAt       DateTime  @default(now()) @map("created_at")
-  updatedAt       DateTime  @updatedAt @map("updated_at")
-  
-  messages        Message[]
-  
-  @@unique([participants])
-  @@index([participants])
-  @@map("conversations")
-}
-
-model Message {
-  id              String        @id @default(cuid())
-  conversationId  String        @map("conversation_id")
-  senderId        String        @map("sender_id")
-  receiverId      String        @map("receiver_id")
-  content         String
-  messageType     MessageType   @default(TEXT) @map("message_type")
-  status          MessageStatus @default(SENT) @map("message_status")
-  createdAt       DateTime      @default(now()) @map("created_at")
-  readAt          DateTime?     @map("read_at")
-  
-  conversation    Conversation  @relation(fields: [conversationId], references: [id], onDelete: Cascade)
-  sender          Profile       @relation("MessageSender", fields: [senderId], references: [userId], onDelete: Cascade)
-  receiver        Profile       @relation("MessageReceiver", fields: [receiverId], references: [userId], onDelete: Cascade)
-  
-  @@index([conversationId])
-  @@index([senderId])
-  @@index([receiverId])
-  @@index([createdAt])
-  @@map("messages")
-}
-
 enum InstitutionType {
   MUNICIPALITY
   NGO
-  FOUNDATION
   OTHER
-}
-
-// Nuevos modelos para el sistema de cursos tipo Platzi
-
-model LessonResource {
-  id          String   @id @default(cuid())
-  lessonId    String   @map("lesson_id")
-  title       String
-  description String?
-  type        ResourceType
-  url         String
-  filePath    String?  @map("file_path")
-  fileSize    Int?     @map("file_size")
-  orderIndex  Int      @map("order_index")
-  isDownloadable Boolean @default(true) @map("is_downloadable")
-  createdAt   DateTime @default(now()) @map("created_at")
-  
-  lesson      Lesson   @relation(fields: [lessonId], references: [id], onDelete: Cascade)
-  
-  @@index([lessonId])
-  @@index([orderIndex])
-  @@map("lesson_resources")
-}
-
-model ModuleCertificate {
-  id           String   @id @default(cuid())
-  moduleId     String   @map("module_id")
-  studentId    String   @map("student_id")
-  certificateUrl String @map("certificate_url")
-  issuedAt     DateTime @default(now()) @map("issued_at")
-  grade        Int?     // Calificación del módulo (0-100)
-  completedAt  DateTime @map("completed_at")
-  
-  module       CourseModule @relation(fields: [moduleId], references: [id], onDelete: Cascade)
-  student      Profile      @relation("ModuleCertificateStudent", fields: [studentId], references: [userId], onDelete: Cascade)
-  
-  @@unique([moduleId, studentId])
-  @@index([moduleId])
-  @@index([studentId])
-  @@map("module_certificates")
+  FOUNDATION
 }
 
 enum ResourceType {
@@ -1167,7 +1153,3 @@ enum CompanyInterestStatus {
   HIRED
   NOT_INTERESTED
 }
-
-
-
-

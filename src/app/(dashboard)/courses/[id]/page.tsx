@@ -126,24 +126,30 @@ export default function CourseDetailPage() {
   };
 
   const handleStartLearning = () => {
-    router.push(`/development/courses/${courseId}/learn`);
+    if (!enrollmentStatus.enrollmentId) {
+      toast.error("Error: No se encontró la información de inscripción");
+      return;
+    }
+    router.push(`/development/courses/${enrollmentStatus.enrollmentId}/learn`);
   };
 
   if (loading || enrollmentsLoading) {
     return (
-      <div className="container mx-auto p-6">
-        <div className="animate-pulse space-y-6">
-          <div className="h-8 bg-gray-200 rounded w-1/4" />
-          <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-            <div className="lg:col-span-2 space-y-6">
-              <div className="h-64 bg-gray-200 rounded" />
-              <div className="h-6 bg-gray-200 rounded w-3/4" />
-              <div className="h-4 bg-gray-200 rounded w-full" />
-              <div className="h-4 bg-gray-200 rounded w-5/6" />
-            </div>
-            <div className="space-y-4">
-              <div className="h-32 bg-gray-200 rounded" />
-              <div className="h-12 bg-gray-200 rounded" />
+      <div className="min-h-screen bg-gray-50">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6 sm:py-8">
+          <div className="animate-pulse space-y-6">
+            <div className="h-8 bg-gray-200 rounded w-1/4" />
+            <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 lg:gap-8">
+              <div className="lg:col-span-2 space-y-6">
+                <div className="h-48 sm:h-64 bg-gray-200 rounded" />
+                <div className="h-6 bg-gray-200 rounded w-3/4" />
+                <div className="h-4 bg-gray-200 rounded w-full" />
+                <div className="h-4 bg-gray-200 rounded w-5/6" />
+              </div>
+              <div className="space-y-4">
+                <div className="h-32 bg-gray-200 rounded" />
+                <div className="h-12 bg-gray-200 rounded" />
+              </div>
             </div>
           </div>
         </div>
@@ -153,35 +159,39 @@ export default function CourseDetailPage() {
 
   if (!course) {
     return (
-      <div className="container mx-auto p-6 text-center">
-        <h1 className="text-2xl font-bold mb-4">Curso no encontrado</h1>
-        <Button onClick={handleBack}>Volver</Button>
+      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+        <div className="max-w-md mx-auto px-4 text-center">
+          <h1 className="text-2xl font-bold mb-4">Curso no encontrado</h1>
+          <Button onClick={handleBack}>Volver</Button>
+        </div>
       </div>
     );
   }
 
   return (
-    <div className="container mx-auto p-6">
-      {/* Breadcrumb */}
-      <div className="flex items-center gap-2 mb-6 text-sm text-muted-foreground">
-        <button
-          onClick={handleBack}
-          className="flex items-center gap-1 text-sm text-muted-foreground hover:text-foreground transition-colors"
-        >
-          <ArrowLeft className="h-4 w-4" />
-          Volver
-        </button>
-        <span>/</span>
-        <span className="text-foreground">{course.title}</span>
-      </div>
+    <div className="min-h-screen bg-gray-50">
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6 sm:py-8">
+        {/* Breadcrumb */}
+        <div className="flex items-center gap-2 mb-6 text-sm text-muted-foreground">
+          <button
+            onClick={handleBack}
+            className="flex items-center gap-1 text-sm text-muted-foreground hover:text-foreground transition-colors"
+          >
+            <ArrowLeft className="h-4 w-4" />
+            <span className="hidden sm:inline">Volver</span>
+          </button>
+          <span className="hidden sm:inline">/</span>
+          <span className="text-foreground truncate">{course.title}</span>
+        </div>
 
-      <CourseDetail
-        course={course}
-        onEnroll={handleEnroll}
-        onStartLearning={handleStartLearning}
-        enrollment={enrollmentStatus}
-        enrolling={enrolling}
-      />
+        <CourseDetail
+          course={course}
+          onEnroll={handleEnroll}
+          onStartLearning={handleStartLearning}
+          enrollment={enrollmentStatus}
+          enrolling={enrolling}
+        />
+      </div>
     </div>
   );
 }

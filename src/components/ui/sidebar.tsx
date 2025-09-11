@@ -272,27 +272,31 @@ const Sidebar = React.forwardRef<
 Sidebar.displayName = "Sidebar";
 
 const SidebarTrigger = React.forwardRef<
-  React.ElementRef<typeof Button>,
-  React.ComponentProps<typeof Button>
+  HTMLButtonElement,
+  React.ComponentProps<"button">
 >(({ className, onClick, ...props }, ref) => {
   const { toggleSidebar } = useSidebar();
 
   return (
-    <Button
+    <button
       ref={ref}
       data-sidebar="trigger"
-      variant="ghost"
-      size="icon"
-      className={cn("h-7 w-7", className)}
+      type="button"
+      className={cn(
+        "inline-flex items-center justify-center rounded-md border border-input bg-background hover:bg-accent hover:text-accent-foreground h-10 w-10",
+        "focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2",
+        "transition-colors duration-200",
+        className
+      )}
       onClick={(event) => {
         onClick?.(event);
         toggleSidebar();
       }}
       {...props}
     >
-      <PanelLeft />
-      <span className="sr-only">Toggle Sidebar</span>
-    </Button>
+      <PanelLeft className="h-4 w-4" />
+      <span className="sr-only">Alternar barra lateral</span>
+    </button>
   );
 });
 SidebarTrigger.displayName = "SidebarTrigger";
@@ -416,7 +420,7 @@ const SidebarContent = React.forwardRef<
       ref={ref}
       data-sidebar="content"
       className={cn(
-        "flex min-h-0 flex-1 flex-col gap-2 overflow-auto group-data-[collapsible=icon]:overflow-hidden",
+        "flex min-h-0 flex-1 flex-col gap-2 overflow-x-hidden overflow-y-auto group-data-[collapsible=icon]:overflow-hidden",
         className
       )}
       {...props}

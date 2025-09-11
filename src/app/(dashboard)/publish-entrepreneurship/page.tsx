@@ -29,6 +29,7 @@ import {
   ChevronRight,
   ImageIcon,
   Link as LinkIcon,
+  Rocket,
 } from "lucide-react";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useToast } from "@/components/ui/use-toast";
@@ -66,7 +67,6 @@ interface EntrepreneurshipForm {
     contactPerson: string;
     email: string;
     phone: string;
-    whatsapp: string;
     preferredContact: string;
     availableHours: string;
   };
@@ -88,7 +88,7 @@ export default function PublishEntrepreneurshipPage() {
   const { toast } = useToast();
   const { user } = useAuthContext();
   const { create, loading: createLoading } = useCreateEntrepreneurship();
-  
+
   // Move all useState hooks to the top before any conditional returns
   const [currentStep, setCurrentStep] = useState(0);
   const [formData, setFormData] = useState<EntrepreneurshipForm>({
@@ -118,7 +118,6 @@ export default function PublishEntrepreneurshipPage() {
       contactPerson: "",
       email: "",
       phone: "",
-      whatsapp: "",
       preferredContact: "",
       availableHours: "",
     },
@@ -321,7 +320,7 @@ export default function PublishEntrepreneurshipPage() {
       const files = Array.from(event.target.files || []);
       if (files.length > 0) {
         // Validate file sizes
-        const validFiles = files.filter(file => {
+        const validFiles = files.filter((file) => {
           if (file.size > 5 * 1024 * 1024) {
             toast({
               title: "Archivo muy grande",
@@ -344,8 +343,11 @@ export default function PublishEntrepreneurshipPage() {
             });
             return;
           }
-          
-          updateFormData("media", "images", [...formData.media.images, ...validFiles]);
+
+          updateFormData("media", "images", [
+            ...formData.media.images,
+            ...validFiles,
+          ]);
         }
       }
     },
@@ -362,64 +364,70 @@ export default function PublishEntrepreneurshipPage() {
     }
   }, []);
 
-  const handleDrop = useCallback((e: React.DragEvent, type: 'logo' | 'images') => {
-    e.preventDefault();
-    e.stopPropagation();
-    setDragActive(false);
+  const handleDrop = useCallback(
+    (e: React.DragEvent, type: "logo" | "images") => {
+      e.preventDefault();
+      e.stopPropagation();
+      setDragActive(false);
 
-    const files = Array.from(e.dataTransfer.files);
-    const imageFiles = files.filter(file => file.type.startsWith('image/'));
+      const files = Array.from(e.dataTransfer.files);
+      const imageFiles = files.filter((file) => file.type.startsWith("image/"));
 
-    if (imageFiles.length === 0) {
-      toast({
-        title: "Tipo de archivo no válido",
-        description: "Solo se permiten archivos de imagen",
-        variant: "destructive",
-      });
-      return;
-    }
-
-    if (type === 'logo') {
-      const file = imageFiles[0];
-      if (file.size > 5 * 1024 * 1024) {
+      if (imageFiles.length === 0) {
         toast({
-          title: "Archivo muy grande",
-          description: "El logo debe ser menor a 5MB",
+          title: "Tipo de archivo no válido",
+          description: "Solo se permiten archivos de imagen",
           variant: "destructive",
         });
         return;
       }
-      updateFormData("media", "logo", file);
-    } else {
-      // Validate file sizes for multiple images
-      const validFiles = imageFiles.filter(file => {
+
+      if (type === "logo") {
+        const file = imageFiles[0];
         if (file.size > 5 * 1024 * 1024) {
           toast({
             title: "Archivo muy grande",
-            description: `${file.name} es mayor a 5MB`,
-            variant: "destructive",
-          });
-          return false;
-        }
-        return true;
-      });
-
-      if (validFiles.length > 0) {
-        // Limit to 10 images total
-        const totalImages = formData.media.images.length + validFiles.length;
-        if (totalImages > 10) {
-          toast({
-            title: "Demasiadas imágenes",
-            description: "Máximo 10 imágenes permitidas",
+            description: "El logo debe ser menor a 5MB",
             variant: "destructive",
           });
           return;
         }
-        
-        updateFormData("media", "images", [...formData.media.images, ...validFiles]);
+        updateFormData("media", "logo", file);
+      } else {
+        // Validate file sizes for multiple images
+        const validFiles = imageFiles.filter((file) => {
+          if (file.size > 5 * 1024 * 1024) {
+            toast({
+              title: "Archivo muy grande",
+              description: `${file.name} es mayor a 5MB`,
+              variant: "destructive",
+            });
+            return false;
+          }
+          return true;
+        });
+
+        if (validFiles.length > 0) {
+          // Limit to 10 images total
+          const totalImages = formData.media.images.length + validFiles.length;
+          if (totalImages > 10) {
+            toast({
+              title: "Demasiadas imágenes",
+              description: "Máximo 10 imágenes permitidas",
+              variant: "destructive",
+            });
+            return;
+          }
+
+          updateFormData("media", "images", [
+            ...formData.media.images,
+            ...validFiles,
+          ]);
+        }
       }
-    }
-  }, [formData.media.images, toast]);
+    },
+    [formData.media.images, toast]
+  );
 
   const removeImage = (index: number) => {
     const updatedImages = formData.media.images.filter((_, i) => i !== index);
@@ -477,10 +485,12 @@ export default function PublishEntrepreneurshipPage() {
 
       if (formData.media.logo) {
         try {
-          const logoResult = await ImageUploadService.uploadLogo(formData.media.logo);
+          const logoResult = await ImageUploadService.uploadLogo(
+            formData.media.logo
+          );
           logoUrl = logoResult.logoUrl;
         } catch (error) {
-          console.error('Error uploading logo:', error);
+          console.error("Error uploading logo:", error);
           toast({
             title: "Error al subir logo",
             description: "No se pudo subir el logo. Intenta nuevamente.",
@@ -492,13 +502,18 @@ export default function PublishEntrepreneurshipPage() {
 
       if (formData.media.images.length > 0) {
         try {
-          const imagesResult = await ImageUploadService.uploadImages(formData.media.images);
-          imageUrls = imagesResult.map((img: { imageUrl: string; filename: string }) => img.imageUrl);
+          const imagesResult = await ImageUploadService.uploadImages(
+            formData.media.images
+          );
+          imageUrls = imagesResult.map(
+            (img: { imageUrl: string; filename: string }) => img.imageUrl
+          );
         } catch (error) {
-          console.error('Error uploading images:', error);
+          console.error("Error uploading images:", error);
           toast({
             title: "Error al subir imágenes",
-            description: "No se pudieron subir las imágenes. Intenta nuevamente.",
+            description:
+              "No se pudieron subir las imágenes. Intenta nuevamente.",
             variant: "destructive",
           });
           return;
@@ -574,7 +589,6 @@ export default function PublishEntrepreneurshipPage() {
           contactPerson: "",
           email: "",
           phone: "",
-          whatsapp: "",
           preferredContact: "",
           availableHours: "",
         },
@@ -608,1312 +622,1538 @@ export default function PublishEntrepreneurshipPage() {
 
   if (previewMode) {
     return (
-      <div className="container mx-auto p-6 max-w-4xl">
-        <div className="flex items-center justify-between mb-6">
-          <h1 className="text-2xl font-bold">Vista Previa</h1>
-          <Button variant="outline" onClick={() => setPreviewMode(false)}>
-            <ChevronLeft className="h-4 w-4 mr-2" />
-            Volver a Editar
-          </Button>
-        </div>
-
-        <Card className="overflow-hidden">
-          <div className="aspect-video bg-gradient-to-br from-blue-100 to-purple-100 flex items-center justify-center">
-            <div className="text-center">
-              <h2 className="text-2xl font-bold text-gray-700">
-                {formData.basicInfo.businessName}
-              </h2>
-              <p className="text-gray-500">{formData.basicInfo.category}</p>
+      <div className="min-h-screen bg-gray-50">
+        <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-6 sm:py-8">
+          <div className="flex items-center justify-between mb-6">
+            <div className="flex items-center gap-3">
+              <div className="p-2 bg-blue-100 rounded-lg">
+                <Eye className="h-6 w-6 text-blue-600" />
+              </div>
+              <h1 className="text-2xl font-bold text-gray-900">Vista Previa</h1>
             </div>
+            <Button
+              variant="outline"
+              onClick={() => setPreviewMode(false)}
+              className="h-11 px-6"
+            >
+              <ChevronLeft className="h-4 w-4 mr-2" />
+              Volver a Editar
+            </Button>
           </div>
 
-          <CardContent className="p-6">
-            <div className="space-y-6">
-              <div>
-                <h3 className="text-xl font-semibold mb-2">
+          <Card className="overflow-hidden bg-white shadow-sm border-0">
+            <div className="aspect-video bg-gradient-to-br from-blue-100 to-purple-100 flex items-center justify-center">
+              <div className="text-center">
+                <h2 className="text-2xl font-bold text-gray-700">
                   {formData.basicInfo.businessName}
-                </h3>
-                <p className="text-muted-foreground">
-                  {formData.basicInfo.description}
-                </p>
+                </h2>
+                <p className="text-gray-500">{formData.basicInfo.category}</p>
               </div>
-
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                <div>
-                  <h4 className="font-semibold mb-2">Servicios</h4>
-                  <div className="flex flex-wrap gap-2">
-                    {formData.services.services.map((service, index) => (
-                      <Badge key={index} variant="secondary">
-                        {service}
-                      </Badge>
-                    ))}
-                  </div>
-                </div>
-
-                <div>
-                  <h4 className="font-semibold mb-2">Rango de Precios</h4>
-                  <p>
-                    Bs. {formData.basicInfo.priceMin} - Bs.{" "}
-                    {formData.basicInfo.priceMax}
-                  </p>
-                </div>
-
-                <div>
-                  <h4 className="font-semibold mb-2">Ubicación</h4>
-                  <p>{formData.basicInfo.location}</p>
-                </div>
-
-                <div>
-                  <h4 className="font-semibold mb-2">Contacto</h4>
-                  <p>{formData.contact.contactPerson}</p>
-                  <p className="text-sm text-muted-foreground">
-                    {formData.contact.email}
-                  </p>
-                  <p className="text-sm text-muted-foreground">
-                    {formData.contact.phone}
-                  </p>
-                  {formData.contact.availableHours && (
-                    <p className="text-sm text-muted-foreground">
-                      Horarios: {formData.contact.availableHours}
-                    </p>
-                  )}
-                </div>
-              </div>
-
-              {formData.basicInfo.website && (
-                <div>
-                  <h4 className="font-semibold mb-2">Sitio Web</h4>
-                  <a
-                    href={formData.basicInfo.website}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="text-blue-600 hover:underline"
-                  >
-                    {formData.basicInfo.website}
-                  </a>
-                </div>
-              )}
-
-              {Object.values(formData.basicInfo.socialMedia).some(
-                (value) => value
-              ) && (
-                <div>
-                  <h4 className="font-semibold mb-2">Redes Sociales</h4>
-                  <div className="flex gap-4">
-                    {formData.basicInfo.socialMedia.facebook && (
-                      <a
-                        href={`https://facebook.com/${formData.basicInfo.socialMedia.facebook}`}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        className="text-blue-600 hover:underline"
-                      >
-                        Facebook
-                      </a>
-                    )}
-                    {formData.basicInfo.socialMedia.instagram && (
-                      <a
-                        href={`https://instagram.com/${formData.basicInfo.socialMedia.instagram}`}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        className="text-pink-600 hover:underline"
-                      >
-                        Instagram
-                      </a>
-                    )}
-                    {formData.basicInfo.socialMedia.linkedin && (
-                      <a
-                        href={`https://linkedin.com/in/${formData.basicInfo.socialMedia.linkedin}`}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        className="text-blue-700 hover:underline"
-                      >
-                        LinkedIn
-                      </a>
-                    )}
-                  </div>
-                </div>
-              )}
             </div>
-          </CardContent>
-        </Card>
 
-        <div className="flex justify-center mt-6">
-          <Button size="lg">
-            <Send className="h-4 w-4 mr-2" />
-            Publicar Emprendimiento
-          </Button>
+            <CardContent className="p-6">
+              <div className="space-y-6">
+                <div>
+                  <h3 className="text-xl font-semibold mb-2">
+                    {formData.basicInfo.businessName}
+                  </h3>
+                  <p className="text-muted-foreground">
+                    {formData.basicInfo.description}
+                  </p>
+                </div>
+
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                  <div>
+                    <h4 className="font-semibold mb-2">Servicios</h4>
+                    <div className="flex flex-wrap gap-2">
+                      {formData.services.services.map((service, index) => (
+                        <Badge key={index} variant="secondary">
+                          {service}
+                        </Badge>
+                      ))}
+                    </div>
+                  </div>
+
+                  <div>
+                    <h4 className="font-semibold mb-2">Rango de Precios</h4>
+                    <p>
+                      Bs. {formData.basicInfo.priceMin} - Bs.{" "}
+                      {formData.basicInfo.priceMax}
+                    </p>
+                  </div>
+
+                  <div>
+                    <h4 className="font-semibold mb-2">Ubicación</h4>
+                    <p>{formData.basicInfo.location}</p>
+                  </div>
+
+                  <div>
+                    <h4 className="font-semibold mb-2">Contacto</h4>
+                    <p>{formData.contact.contactPerson}</p>
+                    <p className="text-sm text-muted-foreground">
+                      {formData.contact.email}
+                    </p>
+                    <p className="text-sm text-muted-foreground">
+                      {formData.contact.phone}
+                    </p>
+                    {formData.contact.availableHours && (
+                      <p className="text-sm text-muted-foreground">
+                        Horarios: {formData.contact.availableHours}
+                      </p>
+                    )}
+                  </div>
+                </div>
+
+                {formData.basicInfo.website && (
+                  <div>
+                    <h4 className="font-semibold mb-2">Sitio Web</h4>
+                    <a
+                      href={formData.basicInfo.website}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="text-blue-600 hover:underline"
+                    >
+                      {formData.basicInfo.website}
+                    </a>
+                  </div>
+                )}
+
+                {Object.values(formData.basicInfo.socialMedia).some(
+                  (value) => value
+                ) && (
+                  <div>
+                    <h4 className="font-semibold mb-2">Redes Sociales</h4>
+                    <div className="flex gap-4">
+                      {formData.basicInfo.socialMedia.facebook && (
+                        <a
+                          href={`https://facebook.com/${formData.basicInfo.socialMedia.facebook}`}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="text-blue-600 hover:underline"
+                        >
+                          Facebook
+                        </a>
+                      )}
+                      {formData.basicInfo.socialMedia.instagram && (
+                        <a
+                          href={`https://instagram.com/${formData.basicInfo.socialMedia.instagram}`}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="text-pink-600 hover:underline"
+                        >
+                          Instagram
+                        </a>
+                      )}
+                      {formData.basicInfo.socialMedia.linkedin && (
+                        <a
+                          href={`https://linkedin.com/in/${formData.basicInfo.socialMedia.linkedin}`}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="text-blue-700 hover:underline"
+                        >
+                          LinkedIn
+                        </a>
+                      )}
+                    </div>
+                  </div>
+                )}
+              </div>
+            </CardContent>
+          </Card>
+
+          <div className="flex justify-center mt-6">
+            <Button
+              size="lg"
+              className="h-12 px-8 bg-blue-600 hover:bg-blue-700"
+            >
+              <Send className="h-4 w-4 mr-2" />
+              Publicar Emprendimiento
+            </Button>
+          </div>
         </div>
       </div>
     );
   }
 
   return (
-    <div className="container mx-auto p-6 max-w-4xl">
-      <div className="mb-8">
-        <h1 className="text-3xl font-bold mb-2">Publicar mi Emprendimiento</h1>
-        <p className="text-muted-foreground">
-          Comparte tu emprendimiento con la comunidad y conecta con clientes
-          potenciales
-        </p>
-      </div>
-
-      <Card className="mb-6">
-        <CardContent className="p-6">
-          <div className="flex items-center justify-between mb-4">
-            <h3 className="font-semibold">
-              Paso {currentStep + 1} de {steps.length}
-            </h3>
-            <span className="text-sm text-muted-foreground">
-              {Math.round(progress)}% completado
-            </span>
-          </div>
-          <Progress value={progress} className="mb-4" />
-
-          <div className="flex items-center gap-2">
-            {steps[currentStep].icon}
+    <div className="min-h-screen bg-gray-50">
+      <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-6 sm:py-8">
+        {/* Header */}
+        <div className="mb-8">
+          <div className="flex items-center gap-3 mb-4">
+            <div className="p-2 bg-blue-100 rounded-lg">
+              <Rocket className="h-6 w-6 text-blue-600" />
+            </div>
             <div>
-              <h4 className="font-medium">{steps[currentStep].title}</h4>
-              <p className="text-sm text-muted-foreground">
-                {steps[currentStep].description}
+              <h1 className="text-3xl font-bold text-gray-900">
+                Publicar mi Emprendimiento
+              </h1>
+              <p className="text-gray-600 mt-1">
+                Comparte tu emprendimiento con la comunidad y conecta con
+                clientes potenciales
               </p>
             </div>
           </div>
-        </CardContent>
-      </Card>
+        </div>
 
-      <Card>
-        <CardContent className="p-6">
-          {/* Step 1: Basic Information */}
-          {currentStep === 0 && (
-            <div className="space-y-6">
-              <Tabs
-                value={formData.basicInfo.category}
-                onValueChange={(value: string) =>
-                  updateFormData("basicInfo", "category", value)
-                }
-              >
-                <TabsList>
-                  {categories.map((category) => (
-                    <TabsTrigger key={category.value} value={category.value}>
-                      {category.label}
-                    </TabsTrigger>
-                  ))}
-                </TabsList>
-
-                <TabsContent value="tecnologia">
-                  <div className="space-y-6">
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                      <div className="space-y-2">
-                        <Label>Nombre del Emprendimiento *</Label>
-                        <Input
-                          value={formData.basicInfo.businessName}
-                          onChange={(e) =>
-                            updateFormData(
-                              "basicInfo",
-                              "businessName",
-                              e.target.value
-                            )
-                          }
-                          placeholder="Ej: EcoTech Bolivia"
-                        />
-                      </div>
-                      <div className="space-y-2">
-                        <Label>Año de Fundación</Label>
-                        <Input
-                          type="number"
-                          value={formData.basicInfo.foundedYear}
-                          onChange={(e) =>
-                            updateFormData(
-                              "basicInfo",
-                              "foundedYear",
-                              e.target.value
-                            )
-                          }
-                          placeholder="2024"
-                        />
-                      </div>
-                    </div>
-
-                    <div className="space-y-2">
-                      <Label>Descripción *</Label>
-                      <Textarea
-                        value={formData.basicInfo.description}
-                        onChange={(e) =>
-                          updateFormData(
-                            "basicInfo",
-                            "description",
-                            e.target.value
-                          )
-                        }
-                        placeholder="Describe tu emprendimiento, qué hace, cuál es su propósito..."
-                        className="min-h-[120px]"
-                      />
-                    </div>
-
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                      <div className="space-y-2">
-                        <Label>Categoría *</Label>
-                        <Select
-                          value={formData.basicInfo.category}
-                          onValueChange={(value) =>
-                            updateFormData("basicInfo", "category", value)
-                          }
-                        >
-                          <SelectTrigger>
-                            <SelectValue placeholder="Selecciona una categoría" />
-                          </SelectTrigger>
-                          <SelectContent>
-                            {categories.map((category) => (
-                              <SelectItem
-                                key={category.value}
-                                value={category.value}
-                              >
-                                {category.label}
-                              </SelectItem>
-                            ))}
-                          </SelectContent>
-                        </Select>
-                      </div>
-
-                      <div className="space-y-2">
-                        <Label>Subcategoría</Label>
-                        <Select
-                          value={formData.basicInfo.subcategory}
-                          onValueChange={(value) =>
-                            updateFormData("basicInfo", "subcategory", value)
-                          }
-                          disabled={!selectedCategory}
-                        >
-                          <SelectTrigger>
-                            <SelectValue placeholder="Selecciona una subcategoría" />
-                          </SelectTrigger>
-                          <SelectContent>
-                            {selectedCategory?.subcategories.map(
-                              (subcategory) => (
-                                <SelectItem
-                                  key={subcategory}
-                                  value={subcategory}
-                                >
-                                  {subcategory}
-                                </SelectItem>
-                              )
-                            )}
-                          </SelectContent>
-                        </Select>
-                      </div>
-                    </div>
-
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                      <div className="space-y-2">
-                        <Label>Ubicación *</Label>
-                        <Select
-                          value={formData.basicInfo.location}
-                          onValueChange={(value) => {
-                            updateFormData("basicInfo", "location", value);
-                            setSelectedMunicipality("");
-                          }}
-                        >
-                          <SelectTrigger>
-                            <SelectValue placeholder="Selecciona tu ubicación" />
-                          </SelectTrigger>
-                          <SelectContent>
-                            {locations.map((location) => (
-                              <SelectItem key={location} value={location}>
-                                {location}
-                              </SelectItem>
-                            ))}
-                          </SelectContent>
-                        </Select>
-                      </div>
-                      <div className="space-y-2">
-                        <Label>Municipio *</Label>
-                        <Select
-                          value={selectedMunicipality}
-                          onValueChange={(value) => {
-                            setSelectedMunicipality(value);
-                            updateFormData("basicInfo", "municipality", value);
-                          }}
-                          disabled={!formData.basicInfo.location}
-                        >
-                          <SelectTrigger>
-                            <SelectValue placeholder="Selecciona un municipio" />
-                          </SelectTrigger>
-                          <SelectContent>
-                            {(
-                              municipalitiesByCity[
-                                formData.basicInfo.location
-                              ] || []
-                            ).map((muni) => (
-                              <SelectItem key={muni} value={muni}>
-                                {muni}
-                              </SelectItem>
-                            ))}
-                          </SelectContent>
-                        </Select>
-                      </div>
-                    </div>
-
-                    <div className="space-y-2">
-                      <Label>Sitio Web</Label>
-                      <Input
-                        type="url"
-                        value={formData.basicInfo.website}
-                        onChange={(e) =>
-                          updateFormData("basicInfo", "website", e.target.value)
-                        }
-                        placeholder="https://miemprendimiento.com"
-                      />
-                    </div>
-
-                    <div className="space-y-4">
-                      <Label>Redes Sociales</Label>
-                      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                        <div className="space-y-2">
-                          <Label className="text-sm">Facebook</Label>
-                          <Input
-                            value={formData.basicInfo.socialMedia.facebook}
-                            onChange={(e) =>
-                              updateNestedFormData(
-                                "basicInfo",
-                                "socialMedia",
-                                "facebook",
-                                e.target.value
-                              )
-                            }
-                            placeholder="@mi-emprendimiento"
-                          />
-                        </div>
-                        <div className="space-y-2">
-                          <Label className="text-sm">Instagram</Label>
-                          <Input
-                            value={formData.basicInfo.socialMedia.instagram}
-                            onChange={(e) =>
-                              updateNestedFormData(
-                                "basicInfo",
-                                "socialMedia",
-                                "instagram",
-                                e.target.value
-                              )
-                            }
-                            placeholder="@mi-emprendimiento"
-                          />
-                        </div>
-                        <div className="space-y-2">
-                          <Label className="text-sm">LinkedIn</Label>
-                          <Input
-                            value={formData.basicInfo.socialMedia.linkedin}
-                            onChange={(e) =>
-                              updateNestedFormData(
-                                "basicInfo",
-                                "socialMedia",
-                                "linkedin",
-                                e.target.value
-                              )
-                            }
-                            placeholder="mi-emprendimiento"
-                          />
-                        </div>
-                      </div>
-                    </div>
-                  </div>
-                </TabsContent>
-
-                <TabsContent value="ecommerce">
-                  <div className="space-y-6">
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                      <div className="space-y-2">
-                        <Label>Nombre del Emprendimiento *</Label>
-                        <Input
-                          value={formData.basicInfo.businessName}
-                          onChange={(e) =>
-                            updateFormData(
-                              "basicInfo",
-                              "businessName",
-                              e.target.value
-                            )
-                          }
-                          placeholder="Ej: Mi Tienda Online"
-                        />
-                      </div>
-                      <div className="space-y-2">
-                        <Label>Año de Fundación</Label>
-                        <Input
-                          type="number"
-                          value={formData.basicInfo.foundedYear}
-                          onChange={(e) =>
-                            updateFormData(
-                              "basicInfo",
-                              "foundedYear",
-                              e.target.value
-                            )
-                          }
-                          placeholder="2024"
-                        />
-                      </div>
-                    </div>
-
-                    <div className="space-y-2">
-                      <Label>Descripción *</Label>
-                      <Textarea
-                        value={formData.basicInfo.description}
-                        onChange={(e) =>
-                          updateFormData(
-                            "basicInfo",
-                            "description",
-                            e.target.value
-                          )
-                        }
-                        placeholder="Describe tu emprendimiento, qué hace, cuál es su propósito..."
-                        className="min-h-[120px]"
-                      />
-                    </div>
-
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                      <div className="space-y-2">
-                        <Label>Categoría *</Label>
-                        <Select
-                          value={formData.basicInfo.category}
-                          onValueChange={(value) =>
-                            updateFormData("basicInfo", "category", value)
-                          }
-                        >
-                          <SelectTrigger>
-                            <SelectValue placeholder="Selecciona una categoría" />
-                          </SelectTrigger>
-                          <SelectContent>
-                            {categories.map((category) => (
-                              <SelectItem
-                                key={category.value}
-                                value={category.value}
-                              >
-                                {category.label}
-                              </SelectItem>
-                            ))}
-                          </SelectContent>
-                        </Select>
-                      </div>
-
-                      <div className="space-y-2">
-                        <Label>Subcategoría</Label>
-                        <Select
-                          value={formData.basicInfo.subcategory}
-                          onValueChange={(value) =>
-                            updateFormData("basicInfo", "subcategory", value)
-                          }
-                          disabled={!selectedCategory}
-                        >
-                          <SelectTrigger>
-                            <SelectValue placeholder="Selecciona una subcategoría" />
-                          </SelectTrigger>
-                          <SelectContent>
-                            {selectedCategory?.subcategories.map(
-                              (subcategory) => (
-                                <SelectItem
-                                  key={subcategory}
-                                  value={subcategory}
-                                >
-                                  {subcategory}
-                                </SelectItem>
-                              )
-                            )}
-                          </SelectContent>
-                        </Select>
-                      </div>
-                    </div>
-
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                      <div className="space-y-2">
-                        <Label>Ubicación *</Label>
-                        <Select
-                          value={formData.basicInfo.location}
-                          onValueChange={(value) => {
-                            updateFormData("basicInfo", "location", value);
-                            setSelectedMunicipality("");
-                          }}
-                        >
-                          <SelectTrigger>
-                            <SelectValue placeholder="Selecciona tu ubicación" />
-                          </SelectTrigger>
-                          <SelectContent>
-                            {locations.map((location) => (
-                              <SelectItem key={location} value={location}>
-                                {location}
-                              </SelectItem>
-                            ))}
-                          </SelectContent>
-                        </Select>
-                      </div>
-                      <div className="space-y-2">
-                        <Label>Municipio *</Label>
-                        <Select
-                          value={selectedMunicipality}
-                          onValueChange={(value) => {
-                            setSelectedMunicipality(value);
-                            updateFormData("basicInfo", "municipality", value);
-                          }}
-                          disabled={!formData.basicInfo.location}
-                        >
-                          <SelectTrigger>
-                            <SelectValue placeholder="Selecciona un municipio" />
-                          </SelectTrigger>
-                          <SelectContent>
-                            {(
-                              municipalitiesByCity[
-                                formData.basicInfo.location
-                              ] || []
-                            ).map((muni) => (
-                              <SelectItem key={muni} value={muni}>
-                                {muni}
-                              </SelectItem>
-                            ))}
-                          </SelectContent>
-                        </Select>
-                      </div>
-                    </div>
-                  </div>
-                </TabsContent>
-
-                <TabsContent value="alimentacion">
-                  <div className="space-y-6">
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                      <div className="space-y-2">
-                        <Label>Nombre del Emprendimiento *</Label>
-                        <Input
-                          value={formData.basicInfo.businessName}
-                          onChange={(e) =>
-                            updateFormData(
-                              "basicInfo",
-                              "businessName",
-                              e.target.value
-                            )
-                          }
-                          placeholder="Ej: Mi Restaurante"
-                        />
-                      </div>
-                      <div className="space-y-2">
-                        <Label>Año de Fundación</Label>
-                        <Input
-                          type="number"
-                          value={formData.basicInfo.foundedYear}
-                          onChange={(e) =>
-                            updateFormData(
-                              "basicInfo",
-                              "foundedYear",
-                              e.target.value
-                            )
-                          }
-                          placeholder="2024"
-                        />
-                      </div>
-                    </div>
-
-                    <div className="space-y-2">
-                      <Label>Descripción *</Label>
-                      <Textarea
-                        value={formData.basicInfo.description}
-                        onChange={(e) =>
-                          updateFormData(
-                            "basicInfo",
-                            "description",
-                            e.target.value
-                          )
-                        }
-                        placeholder="Describe tu emprendimiento, qué hace, cuál es su propósito..."
-                        className="min-h-[120px]"
-                      />
-                    </div>
-
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                      <div className="space-y-2">
-                        <Label>Categoría *</Label>
-                        <Select
-                          value={formData.basicInfo.category}
-                          onValueChange={(value) =>
-                            updateFormData("basicInfo", "category", value)
-                          }
-                        >
-                          <SelectTrigger>
-                            <SelectValue placeholder="Selecciona una categoría" />
-                          </SelectTrigger>
-                          <SelectContent>
-                            {categories.map((category) => (
-                              <SelectItem
-                                key={category.value}
-                                value={category.value}
-                              >
-                                {category.label}
-                              </SelectItem>
-                            ))}
-                          </SelectContent>
-                        </Select>
-                      </div>
-
-                      <div className="space-y-2">
-                        <Label>Subcategoría</Label>
-                        <Select
-                          value={formData.basicInfo.subcategory}
-                          onValueChange={(value) =>
-                            updateFormData("basicInfo", "subcategory", value)
-                          }
-                          disabled={!selectedCategory}
-                        >
-                          <SelectTrigger>
-                            <SelectValue placeholder="Selecciona una subcategoría" />
-                          </SelectTrigger>
-                          <SelectContent>
-                            {selectedCategory?.subcategories.map(
-                              (subcategory) => (
-                                <SelectItem
-                                  key={subcategory}
-                                  value={subcategory}
-                                >
-                                  {subcategory}
-                                </SelectItem>
-                              )
-                            )}
-                          </SelectContent>
-                        </Select>
-                      </div>
-                    </div>
-
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                      <div className="space-y-2">
-                        <Label>Ubicación *</Label>
-                        <Select
-                          value={formData.basicInfo.location}
-                          onValueChange={(value) => {
-                            updateFormData("basicInfo", "location", value);
-                            setSelectedMunicipality("");
-                          }}
-                        >
-                          <SelectTrigger>
-                            <SelectValue placeholder="Selecciona tu ubicación" />
-                          </SelectTrigger>
-                          <SelectContent>
-                            {locations.map((location) => (
-                              <SelectItem key={location} value={location}>
-                                {location}
-                              </SelectItem>
-                            ))}
-                          </SelectContent>
-                        </Select>
-                      </div>
-                      <div className="space-y-2">
-                        <Label>Municipio *</Label>
-                        <Select
-                          value={selectedMunicipality}
-                          onValueChange={(value) => {
-                            setSelectedMunicipality(value);
-                            updateFormData("basicInfo", "municipality", value);
-                          }}
-                          disabled={!formData.basicInfo.location}
-                        >
-                          <SelectTrigger>
-                            <SelectValue placeholder="Selecciona un municipio" />
-                          </SelectTrigger>
-                          <SelectContent>
-                            {(
-                              municipalitiesByCity[
-                                formData.basicInfo.location
-                              ] || []
-                            ).map((muni) => (
-                              <SelectItem key={muni} value={muni}>
-                                {muni}
-                              </SelectItem>
-                            ))}
-                          </SelectContent>
-                        </Select>
-                      </div>
-                    </div>
-                  </div>
-                </TabsContent>
-
-                <TabsContent value="educacion">
-                  <div className="space-y-6">
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                      <div className="space-y-2">
-                        <Label>Nombre del Emprendimiento *</Label>
-                        <Input
-                          value={formData.basicInfo.businessName}
-                          onChange={(e) =>
-                            updateFormData(
-                              "basicInfo",
-                              "businessName",
-                              e.target.value
-                            )
-                          }
-                          placeholder="Ej: Mi Academia"
-                        />
-                      </div>
-                      <div className="space-y-2">
-                        <Label>Año de Fundación</Label>
-                        <Input
-                          type="number"
-                          value={formData.basicInfo.foundedYear}
-                          onChange={(e) =>
-                            updateFormData(
-                              "basicInfo",
-                              "foundedYear",
-                              e.target.value
-                            )
-                          }
-                          placeholder="2024"
-                        />
-                      </div>
-                    </div>
-
-                    <div className="space-y-2">
-                      <Label>Descripción *</Label>
-                      <Textarea
-                        value={formData.basicInfo.description}
-                        onChange={(e) =>
-                          updateFormData(
-                            "basicInfo",
-                            "description",
-                            e.target.value
-                          )
-                        }
-                        placeholder="Describe tu emprendimiento, qué hace, cuál es su propósito..."
-                        className="min-h-[120px]"
-                      />
-                    </div>
-
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                      <div className="space-y-2">
-                        <Label>Categoría *</Label>
-                        <Select
-                          value={formData.basicInfo.category}
-                          onValueChange={(value) =>
-                            updateFormData("basicInfo", "category", value)
-                          }
-                        >
-                          <SelectTrigger>
-                            <SelectValue placeholder="Selecciona una categoría" />
-                          </SelectTrigger>
-                          <SelectContent>
-                            {categories.map((category) => (
-                              <SelectItem
-                                key={category.value}
-                                value={category.value}
-                              >
-                                {category.label}
-                              </SelectItem>
-                            ))}
-                          </SelectContent>
-                        </Select>
-                      </div>
-
-                      <div className="space-y-2">
-                        <Label>Subcategoría</Label>
-                        <Select
-                          value={formData.basicInfo.subcategory}
-                          onValueChange={(value) =>
-                            updateFormData("basicInfo", "subcategory", value)
-                          }
-                          disabled={!selectedCategory}
-                        >
-                          <SelectTrigger>
-                            <SelectValue placeholder="Selecciona una subcategoría" />
-                          </SelectTrigger>
-                          <SelectContent>
-                            {selectedCategory?.subcategories.map(
-                              (subcategory) => (
-                                <SelectItem
-                                  key={subcategory}
-                                  value={subcategory}
-                                >
-                                  {subcategory}
-                                </SelectItem>
-                              )
-                            )}
-                          </SelectContent>
-                        </Select>
-                      </div>
-                    </div>
-
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                      <div className="space-y-2">
-                        <Label>Ubicación *</Label>
-                        <Select
-                          value={formData.basicInfo.location}
-                          onValueChange={(value) => {
-                            updateFormData("basicInfo", "location", value);
-                            setSelectedMunicipality("");
-                          }}
-                        >
-                          <SelectTrigger>
-                            <SelectValue placeholder="Selecciona tu ubicación" />
-                          </SelectTrigger>
-                          <SelectContent>
-                            {locations.map((location) => (
-                              <SelectItem key={location} value={location}>
-                                {location}
-                              </SelectItem>
-                            ))}
-                          </SelectContent>
-                        </Select>
-                      </div>
-                      <div className="space-y-2">
-                        <Label>Municipio *</Label>
-                        <Select
-                          value={selectedMunicipality}
-                          onValueChange={(value) => {
-                            setSelectedMunicipality(value);
-                            updateFormData("basicInfo", "municipality", value);
-                          }}
-                          disabled={!formData.basicInfo.location}
-                        >
-                          <SelectTrigger>
-                            <SelectValue placeholder="Selecciona un municipio" />
-                          </SelectTrigger>
-                          <SelectContent>
-                            {(
-                              municipalitiesByCity[
-                                formData.basicInfo.location
-                              ] || []
-                            ).map((muni) => (
-                              <SelectItem key={muni} value={muni}>
-                                {muni}
-                              </SelectItem>
-                            ))}
-                          </SelectContent>
-                        </Select>
-                      </div>
-                    </div>
-                  </div>
-                </TabsContent>
-
-                <TabsContent value="servicios">
-                  <div className="space-y-6">
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                      <div className="space-y-2">
-                        <Label>Nombre del Emprendimiento *</Label>
-                        <Input
-                          value={formData.basicInfo.businessName}
-                          onChange={(e) =>
-                            updateFormData(
-                              "basicInfo",
-                              "businessName",
-                              e.target.value
-                            )
-                          }
-                          placeholder="Ej: Mi Consultoría"
-                        />
-                      </div>
-                      <div className="space-y-2">
-                        <Label>Año de Fundación</Label>
-                        <Input
-                          type="number"
-                          value={formData.basicInfo.foundedYear}
-                          onChange={(e) =>
-                            updateFormData(
-                              "basicInfo",
-                              "foundedYear",
-                              e.target.value
-                            )
-                          }
-                          placeholder="2024"
-                        />
-                      </div>
-                    </div>
-
-                    <div className="space-y-2">
-                      <Label>Descripción *</Label>
-                      <Textarea
-                        value={formData.basicInfo.description}
-                        onChange={(e) =>
-                          updateFormData(
-                            "basicInfo",
-                            "description",
-                            e.target.value
-                          )
-                        }
-                        placeholder="Describe tu emprendimiento, qué hace, cuál es su propósito..."
-                        className="min-h-[120px]"
-                      />
-                    </div>
-
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                      <div className="space-y-2">
-                        <Label>Categoría *</Label>
-                        <Select
-                          value={formData.basicInfo.category}
-                          onValueChange={(value) =>
-                            updateFormData("basicInfo", "category", value)
-                          }
-                        >
-                          <SelectTrigger>
-                            <SelectValue placeholder="Selecciona una categoría" />
-                          </SelectTrigger>
-                          <SelectContent>
-                            {categories.map((category) => (
-                              <SelectItem
-                                key={category.value}
-                                value={category.value}
-                              >
-                                {category.label}
-                              </SelectItem>
-                            ))}
-                          </SelectContent>
-                        </Select>
-                      </div>
-
-                      <div className="space-y-2">
-                        <Label>Subcategoría</Label>
-                        <Select
-                          value={formData.basicInfo.subcategory}
-                          onValueChange={(value) =>
-                            updateFormData("basicInfo", "subcategory", value)
-                          }
-                          disabled={!selectedCategory}
-                        >
-                          <SelectTrigger>
-                            <SelectValue placeholder="Selecciona una subcategoría" />
-                          </SelectTrigger>
-                          <SelectContent>
-                            {selectedCategory?.subcategories.map(
-                              (subcategory) => (
-                                <SelectItem
-                                  key={subcategory}
-                                  value={subcategory}
-                                >
-                                  {subcategory}
-                                </SelectItem>
-                              )
-                            )}
-                          </SelectContent>
-                        </Select>
-                      </div>
-                    </div>
-
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                      <div className="space-y-2">
-                        <Label>Ubicación *</Label>
-                        <Select
-                          value={formData.basicInfo.location}
-                          onValueChange={(value) => {
-                            updateFormData("basicInfo", "location", value);
-                            setSelectedMunicipality("");
-                          }}
-                        >
-                          <SelectTrigger>
-                            <SelectValue placeholder="Selecciona tu ubicación" />
-                          </SelectTrigger>
-                          <SelectContent>
-                            {locations.map((location) => (
-                              <SelectItem key={location} value={location}>
-                                {location}
-                              </SelectItem>
-                            ))}
-                          </SelectContent>
-                        </Select>
-                      </div>
-                      <div className="space-y-2">
-                        <Label>Municipio *</Label>
-                        <Select
-                          value={selectedMunicipality}
-                          onValueChange={(value) => {
-                            setSelectedMunicipality(value);
-                            updateFormData("basicInfo", "municipality", value);
-                          }}
-                          disabled={!formData.basicInfo.location}
-                        >
-                          <SelectTrigger>
-                            <SelectValue placeholder="Selecciona un municipio" />
-                          </SelectTrigger>
-                          <SelectContent>
-                            {(
-                              municipalitiesByCity[
-                                formData.basicInfo.location
-                              ] || []
-                            ).map((muni) => (
-                              <SelectItem key={muni} value={muni}>
-                                {muni}
-                              </SelectItem>
-                            ))}
-                          </SelectContent>
-                        </Select>
-                      </div>
-                    </div>
-                  </div>
-                </TabsContent>
-
-                <TabsContent value="manufactura">
-                  <div className="space-y-6">
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                      <div className="space-y-2">
-                        <Label>Nombre del Emprendimiento *</Label>
-                        <Input
-                          value={formData.basicInfo.businessName}
-                          onChange={(e) =>
-                            updateFormData(
-                              "basicInfo",
-                              "businessName",
-                              e.target.value
-                            )
-                          }
-                          placeholder="Ej: Mi Taller"
-                        />
-                      </div>
-                      <div className="space-y-2">
-                        <Label>Año de Fundación</Label>
-                        <Input
-                          type="number"
-                          value={formData.basicInfo.foundedYear}
-                          onChange={(e) =>
-                            updateFormData(
-                              "basicInfo",
-                              "foundedYear",
-                              e.target.value
-                            )
-                          }
-                          placeholder="2024"
-                        />
-                      </div>
-                    </div>
-
-                    <div className="space-y-2">
-                      <Label>Descripción *</Label>
-                      <Textarea
-                        value={formData.basicInfo.description}
-                        onChange={(e) =>
-                          updateFormData(
-                            "basicInfo",
-                            "description",
-                            e.target.value
-                          )
-                        }
-                        placeholder="Describe tu emprendimiento, qué hace, cuál es su propósito..."
-                        className="min-h-[120px]"
-                      />
-                    </div>
-
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                      <div className="space-y-2">
-                        <Label>Categoría *</Label>
-                        <Select
-                          value={formData.basicInfo.category}
-                          onValueChange={(value) =>
-                            updateFormData("basicInfo", "category", value)
-                          }
-                        >
-                          <SelectTrigger>
-                            <SelectValue placeholder="Selecciona una categoría" />
-                          </SelectTrigger>
-                          <SelectContent>
-                            {categories.map((category) => (
-                              <SelectItem
-                                key={category.value}
-                                value={category.value}
-                              >
-                                {category.label}
-                              </SelectItem>
-                            ))}
-                          </SelectContent>
-                        </Select>
-                      </div>
-
-                      <div className="space-y-2">
-                        <Label>Subcategoría</Label>
-                        <Select
-                          value={formData.basicInfo.subcategory}
-                          onValueChange={(value) =>
-                            updateFormData("basicInfo", "subcategory", value)
-                          }
-                          disabled={!selectedCategory}
-                        >
-                          <SelectTrigger>
-                            <SelectValue placeholder="Selecciona una subcategoría" />
-                          </SelectTrigger>
-                          <SelectContent>
-                            {selectedCategory?.subcategories.map(
-                              (subcategory) => (
-                                <SelectItem
-                                  key={subcategory}
-                                  value={subcategory}
-                                >
-                                  {subcategory}
-                                </SelectItem>
-                              )
-                            )}
-                          </SelectContent>
-                        </Select>
-                      </div>
-                    </div>
-
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                      <div className="space-y-2">
-                        <Label>Ubicación *</Label>
-                        <Select
-                          value={formData.basicInfo.location}
-                          onValueChange={(value) => {
-                            updateFormData("basicInfo", "location", value);
-                            setSelectedMunicipality("");
-                          }}
-                        >
-                          <SelectTrigger>
-                            <SelectValue placeholder="Selecciona tu ubicación" />
-                          </SelectTrigger>
-                          <SelectContent>
-                            {locations.map((location) => (
-                              <SelectItem key={location} value={location}>
-                                {location}
-                              </SelectItem>
-                            ))}
-                          </SelectContent>
-                        </Select>
-                      </div>
-                      <div className="space-y-2">
-                        <Label>Municipio *</Label>
-                        <Select
-                          value={selectedMunicipality}
-                          onValueChange={(value) => {
-                            setSelectedMunicipality(value);
-                            updateFormData("basicInfo", "municipality", value);
-                          }}
-                          disabled={!formData.basicInfo.location}
-                        >
-                          <SelectTrigger>
-                            <SelectValue placeholder="Selecciona un municipio" />
-                          </SelectTrigger>
-                          <SelectContent>
-                            {(
-                              municipalitiesByCity[
-                                formData.basicInfo.location
-                              ] || []
-                            ).map((muni) => (
-                              <SelectItem key={muni} value={muni}>
-                                {muni}
-                              </SelectItem>
-                            ))}
-                          </SelectContent>
-                        </Select>
-                      </div>
-                    </div>
-                  </div>
-                </TabsContent>
-              </Tabs>
-            </div>
-          )}
-
-          {/* Step 2: Services */}
-          {currentStep === 1 && (
-            <div className="space-y-6">
-              <div className="space-y-4">
-                <Label>Servicios que Ofreces *</Label>
-                <div className="flex gap-2">
-                  <Input
-                    value={newService}
-                    onChange={(e) => setNewService(e.target.value)}
-                    placeholder="Ej: Desarrollo de sitios web"
-                    onKeyPress={(e) => e.key === "Enter" && addService()}
-                  />
-                  <Button onClick={addService} type="button">
-                    <Plus className="h-4 w-4" />
-                  </Button>
+        {/* Progress Card */}
+        <Card className="mb-6 bg-white shadow-sm border-0">
+          <CardContent className="p-6">
+            <div className="flex items-center justify-between mb-4">
+              <div className="flex items-center gap-3">
+                <div className="p-2 bg-blue-100 rounded-lg">
+                  {steps[currentStep].icon}
                 </div>
-                <div className="flex flex-wrap gap-2">
-                  {formData.services.services.map((service, index) => (
-                    <Badge
-                      key={index}
-                      variant="secondary"
-                      className="flex items-center gap-1"
-                    >
-                      {service}
-                      <X
-                        className="h-3 w-3 cursor-pointer"
-                        onClick={() => removeService(index)}
-                      />
-                    </Badge>
-                  ))}
+                <div>
+                  <h3 className="font-semibold text-gray-900">
+                    Paso {currentStep + 1} de {steps.length}
+                  </h3>
+                  <p className="text-sm text-gray-600">
+                    {steps[currentStep].description}
+                  </p>
                 </div>
               </div>
+              <div className="text-right">
+                <span className="text-sm font-medium text-blue-600">
+                  {Math.round(progress)}% completado
+                </span>
+              </div>
+            </div>
+            <Progress value={progress} className="h-2" />
+          </CardContent>
+        </Card>
 
-              <div className="space-y-2">
-                <Label>Detalles de Servicios</Label>
-                <Textarea
-                  value={formData.services.serviceDetails}
-                  onChange={(e) =>
-                    updateFormData("services", "serviceDetails", e.target.value)
+        {/* Main Form Card */}
+        <Card className="bg-white shadow-sm border-0">
+          <CardContent className="p-6">
+            {/* Step 1: Basic Information */}
+            {currentStep === 0 && (
+              <div className="space-y-6">
+                <Tabs
+                  value={formData.basicInfo.category}
+                  onValueChange={(value: string) =>
+                    updateFormData("basicInfo", "category", value)
                   }
-                  placeholder="Describe en detalle los servicios que ofreces, metodología, tiempos de entrega..."
-                  className="min-h-[120px]"
-                />
-              </div>
-            </div>
-          )}
+                >
+                  <TabsList className="grid w-full grid-cols-3 lg:grid-cols-6 bg-gray-100 p-1 rounded-lg">
+                    {categories.map((category) => (
+                      <TabsTrigger
+                        key={category.value}
+                        value={category.value}
+                        className="text-sm font-medium data-[state=active]:bg-white data-[state=active]:shadow-sm"
+                      >
+                        {category.label}
+                      </TabsTrigger>
+                    ))}
+                  </TabsList>
 
-          {/* Contact Information Step */}
-          {currentStep === 2 && (
-            <div className="space-y-6">
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <div className="space-y-2">
-                  <Label>Persona de Contacto *</Label>
-                  <Input
-                    value={formData.contact.contactPerson}
-                    onChange={(e) =>
-                      updateFormData("contact", "contactPerson", e.target.value)
-                    }
-                    placeholder="Tu nombre completo"
-                  />
+                  <TabsContent value="tecnologia" className="mt-6">
+                    <div className="space-y-6">
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                        <div className="space-y-2">
+                          <Label className="text-sm font-medium text-gray-700">
+                            Nombre del Emprendimiento *
+                          </Label>
+                          <Input
+                            value={formData.basicInfo.businessName}
+                            onChange={(e) =>
+                              updateFormData(
+                                "basicInfo",
+                                "businessName",
+                                e.target.value
+                              )
+                            }
+                            placeholder="Ej: EcoTech Bolivia"
+                            className="h-11"
+                          />
+                        </div>
+                        <div className="space-y-2">
+                          <Label className="text-sm font-medium text-gray-700">
+                            Año de Fundación
+                          </Label>
+                          <Input
+                            type="number"
+                            value={formData.basicInfo.foundedYear}
+                            onChange={(e) => {
+                              const value = e.target.value;
+                              const currentYear = new Date().getFullYear();
+                              if (
+                                value === "" ||
+                                (parseInt(value) >= 1900 &&
+                                  parseInt(value) <= currentYear)
+                              ) {
+                                updateFormData(
+                                  "basicInfo",
+                                  "foundedYear",
+                                  value
+                                );
+                              }
+                            }}
+                            placeholder="2024"
+                            min="1900"
+                            max={new Date().getFullYear()}
+                            className="h-11"
+                          />
+                        </div>
+                      </div>
+
+                      <div className="space-y-2">
+                        <Label className="text-sm font-medium text-gray-700">
+                          Descripción *
+                        </Label>
+                        <Textarea
+                          value={formData.basicInfo.description}
+                          onChange={(e) =>
+                            updateFormData(
+                              "basicInfo",
+                              "description",
+                              e.target.value
+                            )
+                          }
+                          placeholder="Describe tu emprendimiento, qué hace, cuál es su propósito..."
+                          className="min-h-[120px] resize-none"
+                        />
+                      </div>
+
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <div className="space-y-2">
+                          <Label className="text-sm font-medium text-gray-700">
+                            Categoría *
+                          </Label>
+                          <Select
+                            value={formData.basicInfo.category}
+                            onValueChange={(value) =>
+                              updateFormData("basicInfo", "category", value)
+                            }
+                          >
+                            <SelectTrigger className="h-11">
+                              <SelectValue placeholder="Selecciona una categoría" />
+                            </SelectTrigger>
+                            <SelectContent>
+                              {categories.map((category) => (
+                                <SelectItem
+                                  key={category.value}
+                                  value={category.value}
+                                >
+                                  {category.label}
+                                </SelectItem>
+                              ))}
+                            </SelectContent>
+                          </Select>
+                        </div>
+
+                        <div className="space-y-2">
+                          <Label className="text-sm font-medium text-gray-700">
+                            Subcategoría
+                          </Label>
+                          <Select
+                            value={formData.basicInfo.subcategory}
+                            onValueChange={(value) =>
+                              updateFormData("basicInfo", "subcategory", value)
+                            }
+                            disabled={!selectedCategory}
+                          >
+                            <SelectTrigger className="h-11">
+                              <SelectValue placeholder="Selecciona una subcategoría" />
+                            </SelectTrigger>
+                            <SelectContent>
+                              {selectedCategory?.subcategories.map(
+                                (subcategory) => (
+                                  <SelectItem
+                                    key={subcategory}
+                                    value={subcategory}
+                                  >
+                                    {subcategory}
+                                  </SelectItem>
+                                )
+                              )}
+                            </SelectContent>
+                          </Select>
+                        </div>
+                      </div>
+
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <div className="space-y-2">
+                          <Label className="text-sm font-medium text-gray-700">
+                            Ubicación *
+                          </Label>
+                          <Select
+                            value={formData.basicInfo.location}
+                            onValueChange={(value) => {
+                              updateFormData("basicInfo", "location", value);
+                              setSelectedMunicipality("");
+                            }}
+                          >
+                            <SelectTrigger className="h-11">
+                              <SelectValue placeholder="Selecciona tu ubicación" />
+                            </SelectTrigger>
+                            <SelectContent>
+                              {locations.map((location) => (
+                                <SelectItem key={location} value={location}>
+                                  {location}
+                                </SelectItem>
+                              ))}
+                            </SelectContent>
+                          </Select>
+                        </div>
+                        <div className="space-y-2">
+                          <Label className="text-sm font-medium text-gray-700">
+                            Municipio *
+                          </Label>
+                          <Select
+                            value={selectedMunicipality}
+                            onValueChange={(value) => {
+                              setSelectedMunicipality(value);
+                              updateFormData(
+                                "basicInfo",
+                                "municipality",
+                                value
+                              );
+                            }}
+                            disabled={!formData.basicInfo.location}
+                          >
+                            <SelectTrigger className="h-11">
+                              <SelectValue placeholder="Selecciona un municipio" />
+                            </SelectTrigger>
+                            <SelectContent>
+                              {(
+                                municipalitiesByCity[
+                                  formData.basicInfo.location
+                                ] || []
+                              ).map((muni) => (
+                                <SelectItem key={muni} value={muni}>
+                                  {muni}
+                                </SelectItem>
+                              ))}
+                            </SelectContent>
+                          </Select>
+                        </div>
+                      </div>
+
+                      <div className="space-y-2">
+                        <Label className="text-sm font-medium text-gray-700">
+                          Sitio Web
+                        </Label>
+                        <Input
+                          type="url"
+                          value={formData.basicInfo.website}
+                          onChange={(e) => {
+                            const value = e.target.value;
+                            const urlRegex = /^https?:\/\/.+/;
+                            if (value === "" || urlRegex.test(value)) {
+                              updateFormData("basicInfo", "website", value);
+                            }
+                          }}
+                          placeholder="https://miemprendimiento.com"
+                          className="h-11"
+                        />
+                      </div>
+
+                      <div className="space-y-4">
+                        <Label className="text-sm font-medium text-gray-700">
+                          Redes Sociales
+                        </Label>
+                        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                          <div className="space-y-2">
+                            <Label className="text-sm">Facebook</Label>
+                            <Input
+                              value={formData.basicInfo.socialMedia.facebook}
+                              onChange={(e) => {
+                                const value = e.target.value.replace(
+                                  /[^a-zA-Z0-9._-]/g,
+                                  ""
+                                );
+                                updateNestedFormData(
+                                  "basicInfo",
+                                  "socialMedia",
+                                  "facebook",
+                                  value
+                                );
+                              }}
+                              placeholder="@mi-emprendimiento"
+                              className="h-11"
+                            />
+                          </div>
+                          <div className="space-y-2">
+                            <Label className="text-sm">Instagram</Label>
+                            <Input
+                              value={formData.basicInfo.socialMedia.instagram}
+                              onChange={(e) => {
+                                const value = e.target.value.replace(
+                                  /[^a-zA-Z0-9._-]/g,
+                                  ""
+                                );
+                                updateNestedFormData(
+                                  "basicInfo",
+                                  "socialMedia",
+                                  "instagram",
+                                  value
+                                );
+                              }}
+                              placeholder="@mi-emprendimiento"
+                              className="h-11"
+                            />
+                          </div>
+                          <div className="space-y-2">
+                            <Label className="text-sm">LinkedIn</Label>
+                            <Input
+                              value={formData.basicInfo.socialMedia.linkedin}
+                              onChange={(e) => {
+                                const value = e.target.value.replace(
+                                  /[^a-zA-Z0-9._-]/g,
+                                  ""
+                                );
+                                updateNestedFormData(
+                                  "basicInfo",
+                                  "socialMedia",
+                                  "linkedin",
+                                  value
+                                );
+                              }}
+                              placeholder="mi-emprendimiento"
+                              className="h-11"
+                            />
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  </TabsContent>
+
+                  <TabsContent value="ecommerce">
+                    <div className="space-y-6">
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <div className="space-y-2">
+                          <Label>Nombre del Emprendimiento *</Label>
+                          <Input
+                            value={formData.basicInfo.businessName}
+                            onChange={(e) =>
+                              updateFormData(
+                                "basicInfo",
+                                "businessName",
+                                e.target.value
+                              )
+                            }
+                            placeholder="Ej: Mi Tienda Online"
+                          />
+                        </div>
+                        <div className="space-y-2">
+                          <Label>Año de Fundación</Label>
+                          <Input
+                            type="number"
+                            value={formData.basicInfo.foundedYear}
+                            onChange={(e) => {
+                              const value = e.target.value;
+                              const currentYear = new Date().getFullYear();
+                              if (
+                                value === "" ||
+                                (parseInt(value) >= 1900 &&
+                                  parseInt(value) <= currentYear)
+                              ) {
+                                updateFormData(
+                                  "basicInfo",
+                                  "foundedYear",
+                                  value
+                                );
+                              }
+                            }}
+                            placeholder="2024"
+                            min="1900"
+                            max={new Date().getFullYear()}
+                            className="h-11"
+                          />
+                        </div>
+                      </div>
+
+                      <div className="space-y-2">
+                        <Label>Descripción *</Label>
+                        <Textarea
+                          value={formData.basicInfo.description}
+                          onChange={(e) =>
+                            updateFormData(
+                              "basicInfo",
+                              "description",
+                              e.target.value
+                            )
+                          }
+                          placeholder="Describe tu emprendimiento, qué hace, cuál es su propósito..."
+                          className="min-h-[120px]"
+                        />
+                      </div>
+
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <div className="space-y-2">
+                          <Label className="text-sm font-medium text-gray-700">
+                            Categoría *
+                          </Label>
+                          <Select
+                            value={formData.basicInfo.category}
+                            onValueChange={(value) =>
+                              updateFormData("basicInfo", "category", value)
+                            }
+                          >
+                            <SelectTrigger className="h-11">
+                              <SelectValue placeholder="Selecciona una categoría" />
+                            </SelectTrigger>
+                            <SelectContent>
+                              {categories.map((category) => (
+                                <SelectItem
+                                  key={category.value}
+                                  value={category.value}
+                                >
+                                  {category.label}
+                                </SelectItem>
+                              ))}
+                            </SelectContent>
+                          </Select>
+                        </div>
+
+                        <div className="space-y-2">
+                          <Label className="text-sm font-medium text-gray-700">
+                            Subcategoría
+                          </Label>
+                          <Select
+                            value={formData.basicInfo.subcategory}
+                            onValueChange={(value) =>
+                              updateFormData("basicInfo", "subcategory", value)
+                            }
+                            disabled={!selectedCategory}
+                          >
+                            <SelectTrigger className="h-11">
+                              <SelectValue placeholder="Selecciona una subcategoría" />
+                            </SelectTrigger>
+                            <SelectContent>
+                              {selectedCategory?.subcategories.map(
+                                (subcategory) => (
+                                  <SelectItem
+                                    key={subcategory}
+                                    value={subcategory}
+                                  >
+                                    {subcategory}
+                                  </SelectItem>
+                                )
+                              )}
+                            </SelectContent>
+                          </Select>
+                        </div>
+                      </div>
+
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <div className="space-y-2">
+                          <Label className="text-sm font-medium text-gray-700">
+                            Ubicación *
+                          </Label>
+                          <Select
+                            value={formData.basicInfo.location}
+                            onValueChange={(value) => {
+                              updateFormData("basicInfo", "location", value);
+                              setSelectedMunicipality("");
+                            }}
+                          >
+                            <SelectTrigger className="h-11">
+                              <SelectValue placeholder="Selecciona tu ubicación" />
+                            </SelectTrigger>
+                            <SelectContent>
+                              {locations.map((location) => (
+                                <SelectItem key={location} value={location}>
+                                  {location}
+                                </SelectItem>
+                              ))}
+                            </SelectContent>
+                          </Select>
+                        </div>
+                        <div className="space-y-2">
+                          <Label className="text-sm font-medium text-gray-700">
+                            Municipio *
+                          </Label>
+                          <Select
+                            value={selectedMunicipality}
+                            onValueChange={(value) => {
+                              setSelectedMunicipality(value);
+                              updateFormData(
+                                "basicInfo",
+                                "municipality",
+                                value
+                              );
+                            }}
+                            disabled={!formData.basicInfo.location}
+                          >
+                            <SelectTrigger className="h-11">
+                              <SelectValue placeholder="Selecciona un municipio" />
+                            </SelectTrigger>
+                            <SelectContent>
+                              {(
+                                municipalitiesByCity[
+                                  formData.basicInfo.location
+                                ] || []
+                              ).map((muni) => (
+                                <SelectItem key={muni} value={muni}>
+                                  {muni}
+                                </SelectItem>
+                              ))}
+                            </SelectContent>
+                          </Select>
+                        </div>
+                      </div>
+                    </div>
+                  </TabsContent>
+
+                  <TabsContent value="alimentacion">
+                    <div className="space-y-6">
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <div className="space-y-2">
+                          <Label>Nombre del Emprendimiento *</Label>
+                          <Input
+                            value={formData.basicInfo.businessName}
+                            onChange={(e) =>
+                              updateFormData(
+                                "basicInfo",
+                                "businessName",
+                                e.target.value
+                              )
+                            }
+                            placeholder="Ej: Mi Restaurante"
+                          />
+                        </div>
+                        <div className="space-y-2">
+                          <Label>Año de Fundación</Label>
+                          <Input
+                            type="number"
+                            value={formData.basicInfo.foundedYear}
+                            onChange={(e) => {
+                              const value = e.target.value;
+                              const currentYear = new Date().getFullYear();
+                              if (
+                                value === "" ||
+                                (parseInt(value) >= 1900 &&
+                                  parseInt(value) <= currentYear)
+                              ) {
+                                updateFormData(
+                                  "basicInfo",
+                                  "foundedYear",
+                                  value
+                                );
+                              }
+                            }}
+                            placeholder="2024"
+                            min="1900"
+                            max={new Date().getFullYear()}
+                            className="h-11"
+                          />
+                        </div>
+                      </div>
+
+                      <div className="space-y-2">
+                        <Label>Descripción *</Label>
+                        <Textarea
+                          value={formData.basicInfo.description}
+                          onChange={(e) =>
+                            updateFormData(
+                              "basicInfo",
+                              "description",
+                              e.target.value
+                            )
+                          }
+                          placeholder="Describe tu emprendimiento, qué hace, cuál es su propósito..."
+                          className="min-h-[120px]"
+                        />
+                      </div>
+
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <div className="space-y-2">
+                          <Label className="text-sm font-medium text-gray-700">
+                            Categoría *
+                          </Label>
+                          <Select
+                            value={formData.basicInfo.category}
+                            onValueChange={(value) =>
+                              updateFormData("basicInfo", "category", value)
+                            }
+                          >
+                            <SelectTrigger className="h-11">
+                              <SelectValue placeholder="Selecciona una categoría" />
+                            </SelectTrigger>
+                            <SelectContent>
+                              {categories.map((category) => (
+                                <SelectItem
+                                  key={category.value}
+                                  value={category.value}
+                                >
+                                  {category.label}
+                                </SelectItem>
+                              ))}
+                            </SelectContent>
+                          </Select>
+                        </div>
+
+                        <div className="space-y-2">
+                          <Label className="text-sm font-medium text-gray-700">
+                            Subcategoría
+                          </Label>
+                          <Select
+                            value={formData.basicInfo.subcategory}
+                            onValueChange={(value) =>
+                              updateFormData("basicInfo", "subcategory", value)
+                            }
+                            disabled={!selectedCategory}
+                          >
+                            <SelectTrigger className="h-11">
+                              <SelectValue placeholder="Selecciona una subcategoría" />
+                            </SelectTrigger>
+                            <SelectContent>
+                              {selectedCategory?.subcategories.map(
+                                (subcategory) => (
+                                  <SelectItem
+                                    key={subcategory}
+                                    value={subcategory}
+                                  >
+                                    {subcategory}
+                                  </SelectItem>
+                                )
+                              )}
+                            </SelectContent>
+                          </Select>
+                        </div>
+                      </div>
+
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <div className="space-y-2">
+                          <Label className="text-sm font-medium text-gray-700">
+                            Ubicación *
+                          </Label>
+                          <Select
+                            value={formData.basicInfo.location}
+                            onValueChange={(value) => {
+                              updateFormData("basicInfo", "location", value);
+                              setSelectedMunicipality("");
+                            }}
+                          >
+                            <SelectTrigger className="h-11">
+                              <SelectValue placeholder="Selecciona tu ubicación" />
+                            </SelectTrigger>
+                            <SelectContent>
+                              {locations.map((location) => (
+                                <SelectItem key={location} value={location}>
+                                  {location}
+                                </SelectItem>
+                              ))}
+                            </SelectContent>
+                          </Select>
+                        </div>
+                        <div className="space-y-2">
+                          <Label className="text-sm font-medium text-gray-700">
+                            Municipio *
+                          </Label>
+                          <Select
+                            value={selectedMunicipality}
+                            onValueChange={(value) => {
+                              setSelectedMunicipality(value);
+                              updateFormData(
+                                "basicInfo",
+                                "municipality",
+                                value
+                              );
+                            }}
+                            disabled={!formData.basicInfo.location}
+                          >
+                            <SelectTrigger className="h-11">
+                              <SelectValue placeholder="Selecciona un municipio" />
+                            </SelectTrigger>
+                            <SelectContent>
+                              {(
+                                municipalitiesByCity[
+                                  formData.basicInfo.location
+                                ] || []
+                              ).map((muni) => (
+                                <SelectItem key={muni} value={muni}>
+                                  {muni}
+                                </SelectItem>
+                              ))}
+                            </SelectContent>
+                          </Select>
+                        </div>
+                      </div>
+                    </div>
+                  </TabsContent>
+
+                  <TabsContent value="educacion">
+                    <div className="space-y-6">
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <div className="space-y-2">
+                          <Label>Nombre del Emprendimiento *</Label>
+                          <Input
+                            value={formData.basicInfo.businessName}
+                            onChange={(e) =>
+                              updateFormData(
+                                "basicInfo",
+                                "businessName",
+                                e.target.value
+                              )
+                            }
+                            placeholder="Ej: Mi Academia"
+                          />
+                        </div>
+                        <div className="space-y-2">
+                          <Label>Año de Fundación</Label>
+                          <Input
+                            type="number"
+                            value={formData.basicInfo.foundedYear}
+                            onChange={(e) => {
+                              const value = e.target.value;
+                              const currentYear = new Date().getFullYear();
+                              if (
+                                value === "" ||
+                                (parseInt(value) >= 1900 &&
+                                  parseInt(value) <= currentYear)
+                              ) {
+                                updateFormData(
+                                  "basicInfo",
+                                  "foundedYear",
+                                  value
+                                );
+                              }
+                            }}
+                            placeholder="2024"
+                            min="1900"
+                            max={new Date().getFullYear()}
+                            className="h-11"
+                          />
+                        </div>
+                      </div>
+
+                      <div className="space-y-2">
+                        <Label>Descripción *</Label>
+                        <Textarea
+                          value={formData.basicInfo.description}
+                          onChange={(e) =>
+                            updateFormData(
+                              "basicInfo",
+                              "description",
+                              e.target.value
+                            )
+                          }
+                          placeholder="Describe tu emprendimiento, qué hace, cuál es su propósito..."
+                          className="min-h-[120px]"
+                        />
+                      </div>
+
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <div className="space-y-2">
+                          <Label className="text-sm font-medium text-gray-700">
+                            Categoría *
+                          </Label>
+                          <Select
+                            value={formData.basicInfo.category}
+                            onValueChange={(value) =>
+                              updateFormData("basicInfo", "category", value)
+                            }
+                          >
+                            <SelectTrigger className="h-11">
+                              <SelectValue placeholder="Selecciona una categoría" />
+                            </SelectTrigger>
+                            <SelectContent>
+                              {categories.map((category) => (
+                                <SelectItem
+                                  key={category.value}
+                                  value={category.value}
+                                >
+                                  {category.label}
+                                </SelectItem>
+                              ))}
+                            </SelectContent>
+                          </Select>
+                        </div>
+
+                        <div className="space-y-2">
+                          <Label className="text-sm font-medium text-gray-700">
+                            Subcategoría
+                          </Label>
+                          <Select
+                            value={formData.basicInfo.subcategory}
+                            onValueChange={(value) =>
+                              updateFormData("basicInfo", "subcategory", value)
+                            }
+                            disabled={!selectedCategory}
+                          >
+                            <SelectTrigger className="h-11">
+                              <SelectValue placeholder="Selecciona una subcategoría" />
+                            </SelectTrigger>
+                            <SelectContent>
+                              {selectedCategory?.subcategories.map(
+                                (subcategory) => (
+                                  <SelectItem
+                                    key={subcategory}
+                                    value={subcategory}
+                                  >
+                                    {subcategory}
+                                  </SelectItem>
+                                )
+                              )}
+                            </SelectContent>
+                          </Select>
+                        </div>
+                      </div>
+
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <div className="space-y-2">
+                          <Label className="text-sm font-medium text-gray-700">
+                            Ubicación *
+                          </Label>
+                          <Select
+                            value={formData.basicInfo.location}
+                            onValueChange={(value) => {
+                              updateFormData("basicInfo", "location", value);
+                              setSelectedMunicipality("");
+                            }}
+                          >
+                            <SelectTrigger className="h-11">
+                              <SelectValue placeholder="Selecciona tu ubicación" />
+                            </SelectTrigger>
+                            <SelectContent>
+                              {locations.map((location) => (
+                                <SelectItem key={location} value={location}>
+                                  {location}
+                                </SelectItem>
+                              ))}
+                            </SelectContent>
+                          </Select>
+                        </div>
+                        <div className="space-y-2">
+                          <Label className="text-sm font-medium text-gray-700">
+                            Municipio *
+                          </Label>
+                          <Select
+                            value={selectedMunicipality}
+                            onValueChange={(value) => {
+                              setSelectedMunicipality(value);
+                              updateFormData(
+                                "basicInfo",
+                                "municipality",
+                                value
+                              );
+                            }}
+                            disabled={!formData.basicInfo.location}
+                          >
+                            <SelectTrigger className="h-11">
+                              <SelectValue placeholder="Selecciona un municipio" />
+                            </SelectTrigger>
+                            <SelectContent>
+                              {(
+                                municipalitiesByCity[
+                                  formData.basicInfo.location
+                                ] || []
+                              ).map((muni) => (
+                                <SelectItem key={muni} value={muni}>
+                                  {muni}
+                                </SelectItem>
+                              ))}
+                            </SelectContent>
+                          </Select>
+                        </div>
+                      </div>
+                    </div>
+                  </TabsContent>
+
+                  <TabsContent value="servicios">
+                    <div className="space-y-6">
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <div className="space-y-2">
+                          <Label>Nombre del Emprendimiento *</Label>
+                          <Input
+                            value={formData.basicInfo.businessName}
+                            onChange={(e) =>
+                              updateFormData(
+                                "basicInfo",
+                                "businessName",
+                                e.target.value
+                              )
+                            }
+                            placeholder="Ej: Mi Consultoría"
+                          />
+                        </div>
+                        <div className="space-y-2">
+                          <Label>Año de Fundación</Label>
+                          <Input
+                            type="number"
+                            value={formData.basicInfo.foundedYear}
+                            onChange={(e) => {
+                              const value = e.target.value;
+                              const currentYear = new Date().getFullYear();
+                              if (
+                                value === "" ||
+                                (parseInt(value) >= 1900 &&
+                                  parseInt(value) <= currentYear)
+                              ) {
+                                updateFormData(
+                                  "basicInfo",
+                                  "foundedYear",
+                                  value
+                                );
+                              }
+                            }}
+                            placeholder="2024"
+                            min="1900"
+                            max={new Date().getFullYear()}
+                            className="h-11"
+                          />
+                        </div>
+                      </div>
+
+                      <div className="space-y-2">
+                        <Label>Descripción *</Label>
+                        <Textarea
+                          value={formData.basicInfo.description}
+                          onChange={(e) =>
+                            updateFormData(
+                              "basicInfo",
+                              "description",
+                              e.target.value
+                            )
+                          }
+                          placeholder="Describe tu emprendimiento, qué hace, cuál es su propósito..."
+                          className="min-h-[120px]"
+                        />
+                      </div>
+
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <div className="space-y-2">
+                          <Label className="text-sm font-medium text-gray-700">
+                            Categoría *
+                          </Label>
+                          <Select
+                            value={formData.basicInfo.category}
+                            onValueChange={(value) =>
+                              updateFormData("basicInfo", "category", value)
+                            }
+                          >
+                            <SelectTrigger className="h-11">
+                              <SelectValue placeholder="Selecciona una categoría" />
+                            </SelectTrigger>
+                            <SelectContent>
+                              {categories.map((category) => (
+                                <SelectItem
+                                  key={category.value}
+                                  value={category.value}
+                                >
+                                  {category.label}
+                                </SelectItem>
+                              ))}
+                            </SelectContent>
+                          </Select>
+                        </div>
+
+                        <div className="space-y-2">
+                          <Label className="text-sm font-medium text-gray-700">
+                            Subcategoría
+                          </Label>
+                          <Select
+                            value={formData.basicInfo.subcategory}
+                            onValueChange={(value) =>
+                              updateFormData("basicInfo", "subcategory", value)
+                            }
+                            disabled={!selectedCategory}
+                          >
+                            <SelectTrigger className="h-11">
+                              <SelectValue placeholder="Selecciona una subcategoría" />
+                            </SelectTrigger>
+                            <SelectContent>
+                              {selectedCategory?.subcategories.map(
+                                (subcategory) => (
+                                  <SelectItem
+                                    key={subcategory}
+                                    value={subcategory}
+                                  >
+                                    {subcategory}
+                                  </SelectItem>
+                                )
+                              )}
+                            </SelectContent>
+                          </Select>
+                        </div>
+                      </div>
+
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <div className="space-y-2">
+                          <Label className="text-sm font-medium text-gray-700">
+                            Ubicación *
+                          </Label>
+                          <Select
+                            value={formData.basicInfo.location}
+                            onValueChange={(value) => {
+                              updateFormData("basicInfo", "location", value);
+                              setSelectedMunicipality("");
+                            }}
+                          >
+                            <SelectTrigger className="h-11">
+                              <SelectValue placeholder="Selecciona tu ubicación" />
+                            </SelectTrigger>
+                            <SelectContent>
+                              {locations.map((location) => (
+                                <SelectItem key={location} value={location}>
+                                  {location}
+                                </SelectItem>
+                              ))}
+                            </SelectContent>
+                          </Select>
+                        </div>
+                        <div className="space-y-2">
+                          <Label className="text-sm font-medium text-gray-700">
+                            Municipio *
+                          </Label>
+                          <Select
+                            value={selectedMunicipality}
+                            onValueChange={(value) => {
+                              setSelectedMunicipality(value);
+                              updateFormData(
+                                "basicInfo",
+                                "municipality",
+                                value
+                              );
+                            }}
+                            disabled={!formData.basicInfo.location}
+                          >
+                            <SelectTrigger className="h-11">
+                              <SelectValue placeholder="Selecciona un municipio" />
+                            </SelectTrigger>
+                            <SelectContent>
+                              {(
+                                municipalitiesByCity[
+                                  formData.basicInfo.location
+                                ] || []
+                              ).map((muni) => (
+                                <SelectItem key={muni} value={muni}>
+                                  {muni}
+                                </SelectItem>
+                              ))}
+                            </SelectContent>
+                          </Select>
+                        </div>
+                      </div>
+                    </div>
+                  </TabsContent>
+
+                  <TabsContent value="manufactura">
+                    <div className="space-y-6">
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <div className="space-y-2">
+                          <Label>Nombre del Emprendimiento *</Label>
+                          <Input
+                            value={formData.basicInfo.businessName}
+                            onChange={(e) =>
+                              updateFormData(
+                                "basicInfo",
+                                "businessName",
+                                e.target.value
+                              )
+                            }
+                            placeholder="Ej: Mi Taller"
+                          />
+                        </div>
+                        <div className="space-y-2">
+                          <Label>Año de Fundación</Label>
+                          <Input
+                            type="number"
+                            value={formData.basicInfo.foundedYear}
+                            onChange={(e) => {
+                              const value = e.target.value;
+                              const currentYear = new Date().getFullYear();
+                              if (
+                                value === "" ||
+                                (parseInt(value) >= 1900 &&
+                                  parseInt(value) <= currentYear)
+                              ) {
+                                updateFormData(
+                                  "basicInfo",
+                                  "foundedYear",
+                                  value
+                                );
+                              }
+                            }}
+                            placeholder="2024"
+                            min="1900"
+                            max={new Date().getFullYear()}
+                            className="h-11"
+                          />
+                        </div>
+                      </div>
+
+                      <div className="space-y-2">
+                        <Label>Descripción *</Label>
+                        <Textarea
+                          value={formData.basicInfo.description}
+                          onChange={(e) =>
+                            updateFormData(
+                              "basicInfo",
+                              "description",
+                              e.target.value
+                            )
+                          }
+                          placeholder="Describe tu emprendimiento, qué hace, cuál es su propósito..."
+                          className="min-h-[120px]"
+                        />
+                      </div>
+
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <div className="space-y-2">
+                          <Label className="text-sm font-medium text-gray-700">
+                            Categoría *
+                          </Label>
+                          <Select
+                            value={formData.basicInfo.category}
+                            onValueChange={(value) =>
+                              updateFormData("basicInfo", "category", value)
+                            }
+                          >
+                            <SelectTrigger className="h-11">
+                              <SelectValue placeholder="Selecciona una categoría" />
+                            </SelectTrigger>
+                            <SelectContent>
+                              {categories.map((category) => (
+                                <SelectItem
+                                  key={category.value}
+                                  value={category.value}
+                                >
+                                  {category.label}
+                                </SelectItem>
+                              ))}
+                            </SelectContent>
+                          </Select>
+                        </div>
+
+                        <div className="space-y-2">
+                          <Label className="text-sm font-medium text-gray-700">
+                            Subcategoría
+                          </Label>
+                          <Select
+                            value={formData.basicInfo.subcategory}
+                            onValueChange={(value) =>
+                              updateFormData("basicInfo", "subcategory", value)
+                            }
+                            disabled={!selectedCategory}
+                          >
+                            <SelectTrigger className="h-11">
+                              <SelectValue placeholder="Selecciona una subcategoría" />
+                            </SelectTrigger>
+                            <SelectContent>
+                              {selectedCategory?.subcategories.map(
+                                (subcategory) => (
+                                  <SelectItem
+                                    key={subcategory}
+                                    value={subcategory}
+                                  >
+                                    {subcategory}
+                                  </SelectItem>
+                                )
+                              )}
+                            </SelectContent>
+                          </Select>
+                        </div>
+                      </div>
+
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <div className="space-y-2">
+                          <Label className="text-sm font-medium text-gray-700">
+                            Ubicación *
+                          </Label>
+                          <Select
+                            value={formData.basicInfo.location}
+                            onValueChange={(value) => {
+                              updateFormData("basicInfo", "location", value);
+                              setSelectedMunicipality("");
+                            }}
+                          >
+                            <SelectTrigger className="h-11">
+                              <SelectValue placeholder="Selecciona tu ubicación" />
+                            </SelectTrigger>
+                            <SelectContent>
+                              {locations.map((location) => (
+                                <SelectItem key={location} value={location}>
+                                  {location}
+                                </SelectItem>
+                              ))}
+                            </SelectContent>
+                          </Select>
+                        </div>
+                        <div className="space-y-2">
+                          <Label className="text-sm font-medium text-gray-700">
+                            Municipio *
+                          </Label>
+                          <Select
+                            value={selectedMunicipality}
+                            onValueChange={(value) => {
+                              setSelectedMunicipality(value);
+                              updateFormData(
+                                "basicInfo",
+                                "municipality",
+                                value
+                              );
+                            }}
+                            disabled={!formData.basicInfo.location}
+                          >
+                            <SelectTrigger className="h-11">
+                              <SelectValue placeholder="Selecciona un municipio" />
+                            </SelectTrigger>
+                            <SelectContent>
+                              {(
+                                municipalitiesByCity[
+                                  formData.basicInfo.location
+                                ] || []
+                              ).map((muni) => (
+                                <SelectItem key={muni} value={muni}>
+                                  {muni}
+                                </SelectItem>
+                              ))}
+                            </SelectContent>
+                          </Select>
+                        </div>
+                      </div>
+                    </div>
+                  </TabsContent>
+                </Tabs>
+              </div>
+            )}
+
+            {/* Step 2: Services */}
+            {currentStep === 1 && (
+              <div className="space-y-6">
+                <div className="space-y-4">
+                  <Label className="text-sm font-medium text-gray-700">
+                    Servicios que Ofreces *
+                  </Label>
+                  <div className="flex gap-3">
+                    <Input
+                      value={newService}
+                      onChange={(e) => setNewService(e.target.value)}
+                      placeholder="Ej: Desarrollo de sitios web"
+                      onKeyPress={(e) => e.key === "Enter" && addService()}
+                      className="h-11"
+                    />
+                    <Button
+                      onClick={addService}
+                      type="button"
+                      className="h-11 px-4"
+                    >
+                      <Plus className="h-4 w-4" />
+                    </Button>
+                  </div>
+                  <div className="flex flex-wrap gap-2">
+                    {formData.services.services.map((service, index) => (
+                      <Badge
+                        key={index}
+                        variant="secondary"
+                        className="flex items-center gap-2 px-3 py-1 bg-blue-50 text-blue-700 border-blue-200"
+                      >
+                        {service}
+                        <X
+                          className="h-3 w-3 cursor-pointer hover:text-blue-900"
+                          onClick={() => removeService(index)}
+                        />
+                      </Badge>
+                    ))}
+                  </div>
                 </div>
+
                 <div className="space-y-2">
-                  <Label>Email *</Label>
-                  <Input
-                    type="email"
-                    value={formData.contact.email}
+                  <Label className="text-sm font-medium text-gray-700">
+                    Detalles de Servicios
+                  </Label>
+                  <Textarea
+                    value={formData.services.serviceDetails}
                     onChange={(e) =>
-                      updateFormData("contact", "email", e.target.value)
+                      updateFormData(
+                        "services",
+                        "serviceDetails",
+                        e.target.value
+                      )
                     }
-                    placeholder="tu@email.com"
+                    placeholder="Describe en detalle los servicios que ofreces, metodología, tiempos de entrega..."
+                    className="min-h-[120px] resize-none"
                   />
                 </div>
               </div>
+            )}
 
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <div className="space-y-2">
-                  <Label>Teléfono *</Label>
-                  <Input
-                    value={formData.contact.phone}
-                    onChange={(e) =>
-                      updateFormData("contact", "phone", e.target.value)
-                    }
-                    placeholder="+591 70000000"
-                  />
+            {/* Contact Information Step */}
+            {currentStep === 2 && (
+              <div className="space-y-6">
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                  <div className="space-y-2">
+                    <Label className="text-sm font-medium text-gray-700">
+                      Persona de Contacto *
+                    </Label>
+                    <Input
+                      value={formData.contact.contactPerson}
+                      onChange={(e) =>
+                        updateFormData(
+                          "contact",
+                          "contactPerson",
+                          e.target.value
+                        )
+                      }
+                      placeholder="Tu nombre completo"
+                      className="h-11"
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <Label className="text-sm font-medium text-gray-700">
+                      Email *
+                    </Label>
+                    <Input
+                      type="email"
+                      value={formData.contact.email}
+                      onChange={(e) => {
+                        const value = e.target.value;
+                        const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+                        if (value === "" || emailRegex.test(value)) {
+                          updateFormData("contact", "email", value);
+                        }
+                      }}
+                      placeholder="tu@email.com"
+                      className="h-11"
+                    />
+                  </div>
                 </div>
-                <div className="space-y-2">
-                  <Label>WhatsApp</Label>
-                  <Input
-                    value={formData.contact.whatsapp}
-                    onChange={(e) =>
-                      updateFormData("contact", "whatsapp", e.target.value)
-                    }
-                    placeholder="+591 70000000"
-                  />
-                </div>
-              </div>
 
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <div className="space-y-2">
-                  <Label>Método de Contacto Preferido</Label>
-                  <Select
-                    value={formData.contact.preferredContact}
-                    onValueChange={(value) =>
-                      updateFormData("contact", "preferredContact", value)
-                    }
-                  >
-                    <SelectTrigger>
-                      <SelectValue placeholder="Selecciona tu preferencia" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="email">Email</SelectItem>
-                      <SelectItem value="phone">Teléfono</SelectItem>
-                      <SelectItem value="whatsapp">WhatsApp</SelectItem>
-                    </SelectContent>
-                  </Select>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                  <div className="space-y-2">
+                    <Label className="text-sm font-medium text-gray-700">
+                      Teléfono *
+                    </Label>
+                    <Input
+                      type="tel"
+                      value={formData.contact.phone}
+                      onChange={(e) => {
+                        const value = e.target.value.replace(/[^\d+\s-]/g, "");
+                        updateFormData("contact", "phone", value);
+                      }}
+                      placeholder="+591 70000000"
+                      className="h-11"
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <Label className="text-sm font-medium text-gray-700">
+                      Método de Contacto Preferido
+                    </Label>
+                    <Select
+                      value={formData.contact.preferredContact}
+                      onValueChange={(value) =>
+                        updateFormData("contact", "preferredContact", value)
+                      }
+                    >
+                      <SelectTrigger className="h-11">
+                        <SelectValue placeholder="Selecciona tu preferencia" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="email">Email</SelectItem>
+                        <SelectItem value="phone">Teléfono</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
                 </div>
+
                 <div className="space-y-2">
-                  <Label>Horarios de Atención</Label>
+                  <Label className="text-sm font-medium text-gray-700">
+                    Horarios de Atención
+                  </Label>
                   <Input
                     value={formData.contact.availableHours}
                     onChange={(e) =>
@@ -1924,193 +2164,215 @@ export default function PublishEntrepreneurshipPage() {
                       )
                     }
                     placeholder="Lunes a Viernes 9:00 - 18:00"
+                    className="h-11"
                   />
                 </div>
               </div>
-            </div>
-          )}
+            )}
 
-          {/* Media Step */}
-          {currentStep === 3 && (
-            <div className="space-y-6">
-              <div className="space-y-4">
-                <Label>Logo del Emprendimiento</Label>
-                <div 
-                  className={`border-2 border-dashed rounded-lg p-6 text-center transition-colors cursor-pointer ${
-                    dragActive ? 'border-blue-500 bg-blue-50' : 'border-gray-300 hover:border-gray-400'
-                  }`}
-                  onClick={() => document.getElementById('logo-upload')?.click()}
-                  onDragEnter={handleDrag}
-                  onDragLeave={handleDrag}
-                  onDragOver={handleDrag}
-                  onDrop={(e) => handleDrop(e, 'logo')}
-                >
-                  {formData.media.logo ? (
-                    <div className="relative">
-                      <Image
-                        src={URL.createObjectURL(formData.media.logo)}
-                        alt="Logo preview"
-                        width={120}
-                        height={120}
-                        className="mx-auto rounded-lg object-cover"
-                      />
-                      <Button
-                        variant="destructive"
-                        size="sm"
-                        className="absolute -top-2 -right-2"
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          updateFormData("media", "logo", null);
-                        }}
-                      >
-                        <X className="h-4 w-4" />
-                      </Button>
-                    </div>
-                  ) : (
-                    <>
-                      <Upload className="mx-auto h-12 w-12 text-gray-400" />
-                      <p className="mt-2 text-sm text-gray-600">
-                        Arrastra tu logo aquí o haz clic para seleccionar
-                      </p>
-                      <p className="text-xs text-gray-500 mt-1">
-                        Formatos: JPG, PNG, GIF (máx. 5MB)
-                      </p>
-                    </>
-                  )}
-                  <input
-                    id="logo-upload"
-                    type="file"
-                    accept="image/*"
-                    className="hidden"
-                    onChange={(e) => {
-                      const file = e.target.files?.[0];
-                      if (file) {
-                        if (file.size > 5 * 1024 * 1024) {
-                          toast({
-                            title: "Archivo muy grande",
-                            description: "El logo debe ser menor a 5MB",
-                            variant: "destructive",
-                          });
-                          return;
-                        }
-                        updateFormData("media", "logo", file);
-                      }
-                    }}
-                  />
-                </div>
-              </div>
-
-              <div className="space-y-4">
-                <Label>Imágenes del Emprendimiento</Label>
-                <div 
-                  className={`border-2 border-dashed rounded-lg p-6 text-center transition-colors cursor-pointer ${
-                    dragActive ? 'border-blue-500 bg-blue-50' : 'border-gray-300 hover:border-gray-400'
-                  }`}
-                  onClick={() => document.getElementById('images-upload')?.click()}
-                  onDragEnter={handleDrag}
-                  onDragLeave={handleDrag}
-                  onDragOver={handleDrag}
-                  onDrop={(e) => handleDrop(e, 'images')}
-                >
-                  <Upload className="mx-auto h-12 w-12 text-gray-400" />
-                  <p className="mt-2 text-sm text-gray-600">
-                    Arrastra imágenes aquí o haz clic para seleccionar
-                  </p>
-                  <p className="text-xs text-gray-500 mt-1">
-                    Formatos: JPG, PNG, GIF (máx. 5MB por imagen)
-                  </p>
-                  <p className="text-xs text-blue-600 mt-1">
-                    {formData.media.images.length}/10 imágenes seleccionadas
-                  </p>
-                  <input
-                    id="images-upload"
-                    type="file"
-                    accept="image/*"
-                    multiple
-                    className="hidden"
-                    onChange={handleImageUpload}
-                  />
-                </div>
-                {formData.media.images.length > 0 && (
-                  <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-                    {formData.media.images.map((image, index) => (
-                      <div key={index} className="relative">
+            {/* Media Step */}
+            {currentStep === 3 && (
+              <div className="space-y-6">
+                <div className="space-y-4">
+                  <Label className="text-sm font-medium text-gray-700">
+                    Logo del Emprendimiento
+                  </Label>
+                  <div
+                    className={`border-2 border-dashed rounded-lg p-6 text-center transition-colors cursor-pointer ${
+                      dragActive
+                        ? "border-blue-500 bg-blue-50"
+                        : "border-gray-300 hover:border-gray-400"
+                    }`}
+                    onClick={() =>
+                      document.getElementById("logo-upload")?.click()
+                    }
+                    onDragEnter={handleDrag}
+                    onDragLeave={handleDrag}
+                    onDragOver={handleDrag}
+                    onDrop={(e) => handleDrop(e, "logo")}
+                  >
+                    {formData.media.logo ? (
+                      <div className="relative">
                         <Image
-                          src={URL.createObjectURL(image)}
-                          alt={`Imagen ${index + 1}`}
-                          width={200}
-                          height={200}
-                          className="rounded-lg object-cover"
+                          src={URL.createObjectURL(formData.media.logo)}
+                          alt="Logo preview"
+                          width={120}
+                          height={120}
+                          className="mx-auto rounded-lg object-cover"
                         />
                         <Button
                           variant="destructive"
                           size="sm"
-                          className="absolute top-2 right-2"
-                          onClick={() => removeImage(index)}
+                          className="absolute -top-2 -right-2"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            updateFormData("media", "logo", null);
+                          }}
                         >
                           <X className="h-4 w-4" />
                         </Button>
                       </div>
-                    ))}
+                    ) : (
+                      <>
+                        <Upload className="mx-auto h-12 w-12 text-gray-400" />
+                        <p className="mt-2 text-sm text-gray-600">
+                          Arrastra tu logo aquí o haz clic para seleccionar
+                        </p>
+                        <p className="text-xs text-gray-500 mt-1">
+                          Formatos: JPG, PNG, GIF (máx. 5MB)
+                        </p>
+                      </>
+                    )}
+                    <input
+                      id="logo-upload"
+                      type="file"
+                      accept="image/*"
+                      className="hidden"
+                      onChange={(e) => {
+                        const file = e.target.files?.[0];
+                        if (file) {
+                          if (file.size > 5 * 1024 * 1024) {
+                            toast({
+                              title: "Archivo muy grande",
+                              description: "El logo debe ser menor a 5MB",
+                              variant: "destructive",
+                            });
+                            return;
+                          }
+                          updateFormData("media", "logo", file);
+                        }
+                      }}
+                    />
                   </div>
+                </div>
+
+                <div className="space-y-4">
+                  <Label className="text-sm font-medium text-gray-700">
+                    Imágenes del Emprendimiento
+                  </Label>
+                  <div
+                    className={`border-2 border-dashed rounded-lg p-6 text-center transition-colors cursor-pointer ${
+                      dragActive
+                        ? "border-blue-500 bg-blue-50"
+                        : "border-gray-300 hover:border-gray-400"
+                    }`}
+                    onClick={() =>
+                      document.getElementById("images-upload")?.click()
+                    }
+                    onDragEnter={handleDrag}
+                    onDragLeave={handleDrag}
+                    onDragOver={handleDrag}
+                    onDrop={(e) => handleDrop(e, "images")}
+                  >
+                    <Upload className="mx-auto h-12 w-12 text-gray-400" />
+                    <p className="mt-2 text-sm text-gray-600">
+                      Arrastra imágenes aquí o haz clic para seleccionar
+                    </p>
+                    <p className="text-xs text-gray-500 mt-1">
+                      Formatos: JPG, PNG, GIF (máx. 5MB por imagen)
+                    </p>
+                    <p className="text-xs text-blue-600 mt-1">
+                      {formData.media.images.length}/10 imágenes seleccionadas
+                    </p>
+                    <input
+                      id="images-upload"
+                      type="file"
+                      accept="image/*"
+                      multiple
+                      className="hidden"
+                      onChange={handleImageUpload}
+                    />
+                  </div>
+                  {formData.media.images.length > 0 && (
+                    <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+                      {formData.media.images.map((image, index) => (
+                        <div key={index} className="relative">
+                          <Image
+                            src={URL.createObjectURL(image)}
+                            alt={`Imagen ${index + 1}`}
+                            width={200}
+                            height={200}
+                            className="rounded-lg object-cover"
+                          />
+                          <Button
+                            variant="destructive"
+                            size="sm"
+                            className="absolute top-2 right-2"
+                            onClick={() => removeImage(index)}
+                          >
+                            <X className="h-4 w-4" />
+                          </Button>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                </div>
+              </div>
+            )}
+
+            <div className="flex justify-between pt-6 border-t border-gray-200">
+              <Button
+                variant="outline"
+                onClick={() => setCurrentStep(Math.max(0, currentStep - 1))}
+                disabled={currentStep === 0}
+                className="h-11 px-6"
+              >
+                <ChevronLeft className="h-4 w-4 mr-2" />
+                Anterior
+              </Button>
+
+              <div className="flex gap-3">
+                <Button
+                  variant="outline"
+                  onClick={() => setPreviewMode(true)}
+                  className="h-11 px-6"
+                >
+                  <Eye className="h-4 w-4 mr-2" />
+                  Vista Previa
+                </Button>
+
+                <Button variant="outline" className="h-11 px-6">
+                  <Save className="h-4 w-4 mr-2" />
+                  Guardar Borrador
+                </Button>
+
+                {currentStep === steps.length - 1 ? (
+                  <Button
+                    disabled={!isStepValid() || createLoading}
+                    onClick={handleSubmit}
+                    className="h-11 px-6 bg-blue-600 hover:bg-blue-700"
+                  >
+                    {createLoading ? (
+                      <>
+                        <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>
+                        Publicando...
+                      </>
+                    ) : (
+                      <>
+                        <Send className="h-4 w-4 mr-2" />
+                        Publicar
+                      </>
+                    )}
+                  </Button>
+                ) : (
+                  <Button
+                    onClick={() =>
+                      setCurrentStep(
+                        Math.min(steps.length - 1, currentStep + 1)
+                      )
+                    }
+                    disabled={!isStepValid()}
+                    className="h-11 px-6 bg-blue-600 hover:bg-blue-700"
+                  >
+                    Siguiente
+                    <ChevronRight className="h-4 w-4 ml-2" />
+                  </Button>
                 )}
               </div>
             </div>
-          )}
-
-          <div className="flex justify-between pt-6 border-t">
-            <Button
-              variant="outline"
-              onClick={() => setCurrentStep(Math.max(0, currentStep - 1))}
-              disabled={currentStep === 0}
-            >
-              <ChevronLeft className="h-4 w-4 mr-2" />
-              Anterior
-            </Button>
-
-            <div className="flex gap-2">
-              <Button variant="outline" onClick={() => setPreviewMode(true)}>
-                <Eye className="h-4 w-4 mr-2" />
-                Vista Previa
-              </Button>
-
-              <Button variant="outline">
-                <Save className="h-4 w-4 mr-2" />
-                Guardar Borrador
-              </Button>
-
-              {currentStep === steps.length - 1 ? (
-                <Button
-                  disabled={!isStepValid() || createLoading}
-                  onClick={handleSubmit}
-                >
-                  {createLoading ? (
-                    <>
-                      <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>
-                      Publicando...
-                    </>
-                  ) : (
-                    <>
-                      <Send className="h-4 w-4 mr-2" />
-                      Publicar
-                    </>
-                  )}
-                </Button>
-              ) : (
-                <Button
-                  onClick={() =>
-                    setCurrentStep(Math.min(steps.length - 1, currentStep + 1))
-                  }
-                  disabled={!isStepValid()}
-                >
-                  Siguiente
-                  <ChevronRight className="h-4 w-4 ml-2" />
-                </Button>
-              )}
-            </div>
-          </div>
-        </CardContent>
-      </Card>
+          </CardContent>
+        </Card>
+      </div>
     </div>
   );
 }

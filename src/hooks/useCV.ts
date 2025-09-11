@@ -16,6 +16,8 @@ export interface CVData {
     country: string;
     birthDate?: Date;
     gender?: string;
+    documentType?: string;
+    documentNumber?: string;
     profileImage?: string;
   };
   education: {
@@ -208,7 +210,9 @@ export const useCV = () => {
   const cvQuery = useQuery({
     queryKey: ["cv"],
     queryFn: async () => {
+      console.log("🔍 Fetching CV data from API...");
       const data = await apiCall("/cv");
+      console.log("📥 Received CV data from API:", data);
 
       // Transform API response to match CVData interface
       if (data) {
@@ -229,7 +233,11 @@ export const useCV = () => {
           projects: typedData.additional?.projects || [],
           activities: typedData.additional?.extracurricularActivities || [],
           achievements: typedData.additional?.achievements || [],
-          certifications: [],
+          // Note: certifications field doesn't exist in database yet
+          // certifications: typedData.certifications || [],
+          targetPosition: typedData.targetPosition || "",
+          targetCompany: typedData.targetCompany || "",
+          relevantSkills: typedData.relevantSkills || [],
         } as CVData;
       }
       return data;
@@ -326,9 +334,24 @@ export const useCV = () => {
           apiData.additional.achievements = data.achievements;
       }
 
-      if (data.professionalSummary) {
+      if (data.professionalSummary !== undefined) {
         apiData.professionalSummary = data.professionalSummary;
       }
+
+      // Add missing fields
+      if (data.targetPosition !== undefined) {
+        apiData.targetPosition = data.targetPosition;
+      }
+      if (data.targetCompany !== undefined) {
+        apiData.targetCompany = data.targetCompany;
+      }
+      if (data.relevantSkills !== undefined) {
+        apiData.relevantSkills = data.relevantSkills;
+      }
+      // Note: certifications field doesn't exist in database yet
+      // if (data.certifications !== undefined) {
+      //   apiData.certifications = data.certifications;
+      // }
 
       await updateCVMutation.mutateAsync(apiData);
     } catch (error) {
