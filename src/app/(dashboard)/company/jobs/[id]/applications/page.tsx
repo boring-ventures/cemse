@@ -254,6 +254,18 @@ export default function JobApplicationsPage() {
   const sendMessage = async () => {
     if (!messageText.trim() || !selectedApplication) return;
 
+    // Debug: Log user data and application data
+    console.log("🔍 sendMessage - User data:", {
+      userId: user?.id,
+      userRole: user?.role,
+      userCompany: user?.company,
+      userCompanyId: user?.company?.id,
+    });
+    console.log("🔍 sendMessage - Application data:", {
+      applicationId: selectedApplication.id,
+      jobOfferId: selectedApplication.jobOfferId,
+    });
+
     try {
       setSendingMessage(true);
 
@@ -910,36 +922,63 @@ export default function JobApplicationsPage() {
                   </p>
                 </div>
               ) : (
-                messages.map((message) => (
-                  <div
-                    key={message.id}
-                    className={`flex ${message.senderType === "COMPANY" ? "justify-end" : "justify-start"}`}
-                  >
+                messages.map((message) => {
+                  const isOwnMessage =
+                    message.senderType === "COMPANY" &&
+                    message.senderId === user?.id;
+                  const isApplicantMessage = message.senderType === "APPLICANT";
+
+                  return (
                     <div
-                      className={`max-w-xs lg:max-w-md px-4 py-2 rounded-lg ${
-                        message.senderType === "COMPANY"
-                          ? "bg-blue-600 text-white"
-                          : "bg-gray-100 text-gray-800"
-                      }`}
+                      key={message.id}
+                      className={`flex ${isOwnMessage ? "justify-end" : "justify-start"}`}
                     >
-                      <div className="text-sm font-medium mb-1">
-                        {message.senderType === "COMPANY"
-                          ? "Empresa"
-                          : `${selectedApplication?.applicant.firstName} ${selectedApplication?.applicant.lastName}`}
-                      </div>
-                      <div className="text-sm">{message.content}</div>
                       <div
-                        className={`text-xs mt-1 ${
-                          message.senderType === "COMPANY"
-                            ? "text-blue-100"
-                            : "text-gray-500"
-                        }`}
+                        className={`max-w-[70%] ${isOwnMessage ? "order-2" : "order-1"}`}
                       >
-                        {formatChatTime(message.createdAt)}
+                        {/* Sender info */}
+                        <div
+                          className={`text-xs mb-1 ${
+                            isOwnMessage
+                              ? "text-right text-blue-600"
+                              : "text-left text-gray-600"
+                          }`}
+                        >
+                          {isOwnMessage
+                            ? "Tú"
+                            : isApplicantMessage
+                              ? `${selectedApplication?.applicant.firstName} ${selectedApplication?.applicant.lastName}`
+                              : "Usuario"}
+                        </div>
+
+                        {/* Message bubble */}
+                        <div
+                          className={`p-3 rounded-lg ${
+                            isOwnMessage
+                              ? "bg-blue-500 text-white"
+                              : "bg-gray-200 text-gray-800"
+                          }`}
+                        >
+                          <p className="text-sm">{message.content}</p>
+                          <div className="flex items-center justify-between mt-1">
+                            <p
+                              className={`text-xs mt-1 ${
+                                isOwnMessage ? "text-blue-100" : "text-gray-500"
+                              }`}
+                            >
+                              {formatChatTime(message.createdAt)}
+                            </p>
+                            {isOwnMessage && (
+                              <div className="text-xs text-blue-100">
+                                {message.status === "READ" ? "✓✓" : "✓"}
+                              </div>
+                            )}
+                          </div>
+                        </div>
                       </div>
                     </div>
-                  </div>
-                ))
+                  );
+                })
               )}
             </div>
 

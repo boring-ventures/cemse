@@ -124,6 +124,17 @@ export interface ExpressInterestRequest {
   message?: string;
 }
 
+export interface UpdateInterestStatusRequest {
+  companyId: string;
+  status:
+    | "INTERESTED"
+    | "CONTACTED"
+    | "INTERVIEW_SCHEDULED"
+    | "HIRED"
+    | "NOT_INTERESTED";
+  message?: string;
+}
+
 export class YouthApplicationService {
   /**
    * Crear una nueva postulación de joven
@@ -212,11 +223,11 @@ export class YouthApplicationService {
         payload
       );
 
-      const response = await apiCall("/youthapplication", {
+      const response = (await apiCall("/youthapplication", {
         method: "POST",
         headers: await getAuthHeaders(),
         body: JSON.stringify(payload),
-      });
+      })) as YouthApplication;
 
       console.log(
         "✅ YouthApplicationService.createYouthApplication - Application created:",
@@ -254,10 +265,10 @@ export class YouthApplicationService {
         params.append("isPublic", filters.isPublic.toString());
 
       const url = `/youthapplication${params.toString() ? `?${params.toString()}` : ""}`;
-      const response = await apiCall(url, {
+      const response = (await apiCall(url, {
         method: "GET",
         headers: await getAuthHeaders(),
-      });
+      })) as YouthApplication[];
 
       console.log(
         "✅ YouthApplicationService.getYouthApplications - Applications retrieved:",
@@ -283,10 +294,10 @@ export class YouthApplicationService {
         id
       );
 
-      const response = await apiCall(`/youthapplication/${id}`, {
+      const response = (await apiCall(`/youthapplication/${id}`, {
         method: "GET",
         headers: await getAuthHeaders(),
-      });
+      })) as YouthApplication;
 
       console.log(
         "✅ YouthApplicationService.getYouthApplication - Application retrieved:",
@@ -330,11 +341,11 @@ export class YouthApplicationService {
       if (data.coverLetterFile)
         formData.append("coverLetterFile", data.coverLetterFile);
 
-      const response = await apiCall(`/youthapplication/${id}`, {
+      const response = (await apiCall(`/youthapplication/${id}`, {
         method: "PUT",
         headers: await getAuthHeaders(true), // excludeContentType = true para FormData
         body: formData,
-      });
+      })) as YouthApplication;
 
       console.log(
         "✅ YouthApplicationService.updateYouthApplication - Application updated:",
@@ -389,13 +400,13 @@ export class YouthApplicationService {
         applicationId
       );
 
-      const response = await apiCall(
+      const response = (await apiCall(
         `/youthapplication/${applicationId}/message`,
         {
           method: "GET",
           headers: await getAuthHeaders(),
         }
-      );
+      )) as YouthApplicationMessage[];
 
       console.log(
         "✅ YouthApplicationService.getMessages - Messages retrieved:",
@@ -434,14 +445,14 @@ export class YouthApplicationService {
       );
 
       // The API will determine senderType based on authenticated user's profile
-      const response = await apiCall(
+      const response = (await apiCall(
         `/youthapplication/${applicationId}/message`,
         {
           method: "POST",
           headers,
           body: JSON.stringify({ content: data.content }),
         }
-      );
+      )) as YouthApplicationMessage;
 
       console.log(
         "✅ YouthApplicationService.sendMessage - Message sent:",
@@ -470,13 +481,13 @@ export class YouthApplicationService {
         applicationId
       );
 
-      const response = await apiCall(
+      const response = (await apiCall(
         `/youthapplication/${applicationId}/company-interest`,
         {
           method: "GET",
           headers: await getAuthHeaders(),
         }
-      );
+      )) as CompanyInterest[];
 
       console.log(
         "✅ YouthApplicationService.getCompanyInterests - Company interests retrieved:",
@@ -506,14 +517,14 @@ export class YouthApplicationService {
         data
       );
 
-      const response = await apiCall(
+      const response = (await apiCall(
         `/youthapplication/${applicationId}/company-interest`,
         {
           method: "POST",
           headers: await getAuthHeaders(),
           body: JSON.stringify(data),
         }
-      );
+      )) as CompanyInterest;
 
       console.log(
         "✅ YouthApplicationService.expressCompanyInterest - Interest expressed:",
@@ -539,10 +550,10 @@ export class YouthApplicationService {
       );
 
       // Use cookie-based authentication - the API endpoint will handle user identification
-      const response = await apiCall("/youthapplication/my", {
+      const response = (await apiCall("/youthapplication/my", {
         method: "GET",
         headers: await getAuthHeaders(),
-      });
+      })) as YouthApplication[];
 
       console.log(
         "✅ YouthApplicationService.getMyApplications - My applications retrieved:",
@@ -567,10 +578,10 @@ export class YouthApplicationService {
         "👥 YouthApplicationService.getPublicApplications - Getting public applications"
       );
 
-      const response = await apiCall("/youthapplication?isPublic=true", {
+      const response = (await apiCall("/youthapplication?isPublic=true", {
         method: "GET",
         headers: await getAuthHeaders(),
-      });
+      })) as YouthApplication[];
 
       console.log(
         "✅ YouthApplicationService.getPublicApplications - Public applications retrieved:",
@@ -580,6 +591,43 @@ export class YouthApplicationService {
     } catch (error) {
       console.error(
         "❌ YouthApplicationService.getPublicApplications - Error:",
+        error
+      );
+      throw error;
+    }
+  }
+
+  /**
+   * Actualizar estado de interés de empresa
+   */
+  static async updateCompanyInterestStatus(
+    applicationId: string,
+    data: UpdateInterestStatusRequest
+  ): Promise<CompanyInterest> {
+    try {
+      console.log(
+        "👥 YouthApplicationService.updateCompanyInterestStatus - Updating interest status for application:",
+        applicationId,
+        data
+      );
+
+      const response = (await apiCall(
+        `/youthapplication/${applicationId}/company-interest`,
+        {
+          method: "PUT",
+          headers: await getAuthHeaders(),
+          body: JSON.stringify(data),
+        }
+      )) as CompanyInterest;
+
+      console.log(
+        "✅ YouthApplicationService.updateCompanyInterestStatus - Interest status updated:",
+        response
+      );
+      return response;
+    } catch (error) {
+      console.error(
+        "❌ YouthApplicationService.updateCompanyInterestStatus - Error:",
         error
       );
       throw error;

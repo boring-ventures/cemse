@@ -5,6 +5,7 @@ import {
   UpdateYouthApplicationRequest,
   SendMessageRequest,
   ExpressInterestRequest,
+  UpdateInterestStatusRequest,
 } from "@/services/youth-application.service";
 
 // Query keys
@@ -185,6 +186,32 @@ export const useExpressCompanyInterest = () => {
       applicationId: string;
       data: ExpressInterestRequest;
     }) => YouthApplicationService.expressCompanyInterest(applicationId, data),
+    onSuccess: (_, { applicationId }) => {
+      // Invalidar los intereses de esta aplicación
+      queryClient.invalidateQueries({
+        queryKey: YOUTH_APPLICATION_KEYS.interests(applicationId),
+      });
+      // Invalidar la aplicación específica para actualizar contadores
+      queryClient.invalidateQueries({
+        queryKey: YOUTH_APPLICATION_KEYS.detail(applicationId),
+      });
+    },
+  });
+};
+
+// Hook para actualizar estado de interés de empresa
+export const useUpdateCompanyInterestStatus = () => {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: ({
+      applicationId,
+      data,
+    }: {
+      applicationId: string;
+      data: UpdateInterestStatusRequest;
+    }) =>
+      YouthApplicationService.updateCompanyInterestStatus(applicationId, data),
     onSuccess: (_, { applicationId }) => {
       // Invalidar los intereses de esta aplicación
       queryClient.invalidateQueries({

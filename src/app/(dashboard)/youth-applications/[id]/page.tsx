@@ -12,6 +12,8 @@ import {
   Briefcase,
   Users,
   FileText,
+  Edit,
+  Eye,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
@@ -34,12 +36,10 @@ import { useToast } from "@/hooks/use-toast";
 import {
   useYouthApplication,
   useCompanyInterests,
-  useExpressCompanyInterest,
 } from "@/hooks/use-youth-applications";
 import { useCurrentUser } from "@/hooks/use-current-user";
-import { ExpressInterestRequest } from "@/services/youth-application.service";
 import YouthApplicationChat from "@/components/youth-applications/YouthApplicationChat";
-import CompanyInterestStatusManager from "@/components/youth-applications/CompanyInterestStatusManager";
+import YouthInterestResponseManager from "@/components/youth-applications/YouthInterestResponseManager";
 import { BACKEND_URL } from "@/lib/api";
 
 export default function YouthApplicationDetailPage({
@@ -55,8 +55,6 @@ export default function YouthApplicationDetailPage({
   const resolvedParams = use(params);
   const applicationId = resolvedParams.id;
   const [activeTab, setActiveTab] = useState("profile");
-  const [isExpressingInterest, setIsExpressingInterest] = useState(false);
-  const [interestMessage, setInterestMessage] = useState("");
   const [showChatModal, setShowChatModal] = useState(false);
 
   const {
@@ -65,11 +63,6 @@ export default function YouthApplicationDetailPage({
     error,
   } = useYouthApplication(applicationId);
   const { data: companyInterests } = useCompanyInterests(applicationId);
-  const expressInterest = useExpressCompanyInterest();
-
-  const hasExpressedInterest = companyInterests?.some(
-    (interest) => interest.companyId === user?.id
-  );
 
   const getStatusBadge = (status: string) => {
     const statusConfig = {
@@ -94,48 +87,6 @@ export default function YouthApplicationDetailPage({
       month: "long",
       day: "numeric",
     });
-  };
-
-  const handleExpressInterest = async () => {
-    if (!user?.id) {
-      toast({
-        title: "Error",
-        description: "No se pudo identificar tu empresa",
-        variant: "destructive",
-      });
-      return;
-    }
-
-    setIsExpressingInterest(true);
-
-    try {
-      const interestData: ExpressInterestRequest = {
-        companyId: user.id,
-        status: "INTERESTED",
-        message: interestMessage.trim() || undefined,
-      };
-
-      await expressInterest.mutateAsync({
-        applicationId,
-        data: interestData,
-      });
-
-      toast({
-        title: "¡Interés expresado!",
-        description: "El joven será notificado de tu interés",
-      });
-
-      setInterestMessage("");
-    } catch (error) {
-      console.error("Error expressing interest:", error);
-      toast({
-        title: "Error",
-        description: "No se pudo expresar el interés. Inténtalo de nuevo.",
-        variant: "destructive",
-      });
-    } finally {
-      setIsExpressingInterest(false);
-    }
   };
 
   if (isLoading) {
@@ -185,12 +136,7 @@ export default function YouthApplicationDetailPage({
           <h1 className="text-3xl font-bold tracking-tight">
             {application.title}
           </h1>
-          <p className="text-muted-foreground">
-            Postulación de{" "}
-            {youthProfile
-              ? `${youthProfile.firstName} ${youthProfile.lastName}`
-              : "Joven Desarrollador"}
-          </p>
+          <p className="text-muted-foreground">Tu postulación profesional</p>
         </div>
         <div className="flex items-center gap-2">
           {getStatusBadge(application.status)}
@@ -451,55 +397,6 @@ export default function YouthApplicationDetailPage({
 
         {/* Sidebar */}
         <div className="space-y-6">
-          {/* Express Interest Card */}
-          <Card>
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2">
-                <MessageSquare className="h-5 w-5" />
-                Expresar Interés
-              </CardTitle>
-            </CardHeader>
-            <CardContent className="space-y-4">
-              {hasExpressedInterest ? (
-                <div className="text-center py-4">
-                  <div className="text-green-600 mb-2">
-                    ✓ Ya has expresado interés
-                  </div>
-                  <p className="text-sm text-muted-foreground">
-                    El joven ha sido notificado de tu interés
-                  </p>
-                </div>
-              ) : (
-                <>
-                  <textarea
-                    placeholder="Escribe un mensaje personalizado (opcional)..."
-                    value={interestMessage}
-                    onChange={(e) => setInterestMessage(e.target.value)}
-                    className="w-full p-3 border rounded-md resize-none"
-                    rows={4}
-                  />
-                  <Button
-                    onClick={handleExpressInterest}
-                    disabled={isExpressingInterest}
-                    className="w-full"
-                  >
-                    {isExpressingInterest ? (
-                      <>
-                        <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>
-                        Expresando interés...
-                      </>
-                    ) : (
-                      <>
-                        <MessageSquare className="mr-2 h-4 w-4" />
-                        Expresar Interés
-                      </>
-                    )}
-                  </Button>
-                </>
-              )}
-            </CardContent>
-          </Card>
-
           {/* Quick Actions */}
           <Card>
             <CardHeader>
@@ -511,67 +408,28 @@ export default function YouthApplicationDetailPage({
                 className="w-full justify-start"
                 onClick={() => setShowChatModal(true)}
               >
-                <Mail className="mr-2 h-4 w-4" />
-                Enviar mensaje
+                <MessageSquare className="mr-2 h-4 w-4" />
+                Ver mensajes
               </Button>
 
-              {youthProfile?.email && (
-                <Button
-                  variant="outline"
-                  className="w-full justify-start"
-                  onClick={() =>
-                    window.open(`mailto:${youthProfile.email}`, "_blank")
-                  }
-                >
-                  <Mail className="mr-2 h-4 w-4" />
-                  Enviar email
-                </Button>
-              )}
+              <Button
+                variant="outline"
+                className="w-full justify-start"
+                onClick={() =>
+                  router.push(`/youth-applications/${applicationId}/edit`)
+                }
+              >
+                <Edit className="mr-2 h-4 w-4" />
+                Editar postulación
+              </Button>
             </CardContent>
           </Card>
 
-          {/* Status Manager for Current Company */}
-          {hasExpressedInterest && user?.id && (
-            <CompanyInterestStatusManager
-              applicationId={applicationId}
-              interests={companyInterests || []}
-              currentCompanyId={user.id}
-            />
-          )}
-
-          {/* Company Interests */}
-          {companyInterests && companyInterests.length > 0 && (
-            <Card>
-              <CardHeader>
-                <CardTitle className="flex items-center gap-2">
-                  <Users className="h-5 w-5" />
-                  Empresas Interesadas
-                </CardTitle>
-              </CardHeader>
-              <CardContent>
-                <div className="space-y-2">
-                  {companyInterests.map((interest) => (
-                    <div
-                      key={interest.id}
-                      className="flex items-center justify-between p-2 border rounded"
-                    >
-                      <div>
-                        <p className="font-medium text-sm">
-                          {interest.company?.name}
-                        </p>
-                        <p className="text-xs text-muted-foreground">
-                          {interest.status}
-                        </p>
-                      </div>
-                      <Badge variant="outline" className="text-xs">
-                        {interest.status}
-                      </Badge>
-                    </div>
-                  ))}
-                </div>
-              </CardContent>
-            </Card>
-          )}
+          {/* Company Interests Response Manager */}
+          <YouthInterestResponseManager
+            applicationId={applicationId}
+            interests={companyInterests || []}
+          />
         </div>
       </div>
 
@@ -580,10 +438,7 @@ export default function YouthApplicationDetailPage({
         <DialogContent className="max-w-4xl h-[90vh] flex flex-col p-0">
           <DialogHeader className="p-6 pb-4 border-b">
             <DialogTitle className="text-lg font-semibold">
-              Chat con{" "}
-              {youthProfile
-                ? `${youthProfile.firstName} ${youthProfile.lastName}`
-                : "Joven Desarrollador"}
+              Mensajes de tu postulación
             </DialogTitle>
           </DialogHeader>
           <div className="flex-1 overflow-hidden">

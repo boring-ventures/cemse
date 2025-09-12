@@ -47,6 +47,8 @@ import {
   YouthApplication,
 } from "@/services/youth-application.service";
 import YouthApplicationEditModal from "@/components/youth-applications/YouthApplicationEditModal";
+import YouthApplicationDetailsModal from "@/components/youth-applications/YouthApplicationDetailsModal";
+import ChatListModal from "@/components/youth-applications/ChatListModal";
 import { Textarea } from "@/components/ui/textarea";
 import { useYouthApplicationMessages } from "@/hooks/use-youth-application-messages";
 import { useAuthContext } from "@/hooks/use-auth";
@@ -90,7 +92,10 @@ export default function MyYouthApplicationsPage() {
     useState<YouthApplication | null>(null);
   const [showChatModal, setShowChatModal] = useState(false);
   const [showEditModal, setShowEditModal] = useState(false);
+  const [showDetailsModal, setShowDetailsModal] = useState(false);
   const [editingApplication, setEditingApplication] =
+    useState<YouthApplication | null>(null);
+  const [detailsApplication, setDetailsApplication] =
     useState<YouthApplication | null>(null);
 
   // Chat state
@@ -236,6 +241,11 @@ export default function MyYouthApplicationsPage() {
   const handleOpenEdit = (application: YouthApplication) => {
     setEditingApplication(application);
     setShowEditModal(true);
+  };
+
+  const handleOpenDetails = (application: YouthApplication) => {
+    setDetailsApplication(application);
+    setShowDetailsModal(true);
   };
 
   const handleSendMessage = async () => {
@@ -600,11 +610,7 @@ export default function MyYouthApplicationsPage() {
                             <Button
                               variant="outline"
                               size="sm"
-                              onClick={() =>
-                                router.push(
-                                  `/my-applications/${application.id}`
-                                )
-                              }
+                              onClick={() => handleOpenDetails(application)}
                               className="flex items-center gap-2 border-gray-200 hover:border-blue-500 hover:text-blue-600"
                             >
                               <Eye className="w-4 h-4" />
@@ -618,7 +624,7 @@ export default function MyYouthApplicationsPage() {
                               className="flex items-center gap-2 border-gray-200 hover:border-green-500 hover:text-green-600"
                             >
                               <MessageSquare className="w-4 h-4" />
-                              Chat
+                              Conversaciones
                             </Button>
 
                             {application.cvFile && (
@@ -913,6 +919,21 @@ export default function MyYouthApplicationsPage() {
           open={showEditModal}
           onOpenChange={setShowEditModal}
           onSuccess={refetch}
+        />
+
+        {/* Details Modal */}
+        <YouthApplicationDetailsModal
+          application={detailsApplication}
+          open={showDetailsModal}
+          onOpenChange={setShowDetailsModal}
+        />
+
+        {/* Chat List Modal */}
+        <ChatListModal
+          applicationId={selectedApplication?.id || ""}
+          applicationTitle={selectedApplication?.title || ""}
+          open={showChatModal}
+          onOpenChange={setShowChatModal}
         />
       </div>
     </div>

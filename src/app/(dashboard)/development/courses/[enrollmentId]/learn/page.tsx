@@ -98,9 +98,6 @@ export default function CourseLearningPage() {
   const [currentQuiz, setCurrentQuiz] = useState<any>(null);
   const [quizAttempts, setQuizAttempts] = useState<Record<string, any>>({});
   const [showResourcesModal, setShowResourcesModal] = useState(false);
-  const [activeTab, setActiveTab] = useState<
-    "description" | "resources" | "notes"
-  >("description");
   const [showQuizCompletionModal, setShowQuizCompletionModal] = useState(false);
   const [selectedQuizAttempt, setSelectedQuizAttempt] = useState<any>(null);
   const [showLessonCompletionModal, setShowLessonCompletionModal] =
@@ -1068,23 +1065,6 @@ export default function CourseLearningPage() {
               {/* Contenido de la Lección - Estilo Udemy */}
               <div className="flex-1 relative z-20">
                 <div className="bg-white">
-                  {/* Tabs de Contenido */}
-                  <div className="border-b border-gray-200 relative z-30 bg-white">
-                    <div className="max-w-4xl mx-auto px-6">
-                      <div className="flex space-x-8">
-                        <button className="py-4 px-1 border-b-2 border-purple-600 text-purple-600 font-medium text-sm">
-                          Descripción general
-                        </button>
-                        <button className="py-4 px-1 border-b-2 border-transparent text-gray-500 hover:text-gray-700 font-medium text-sm">
-                          Recursos
-                        </button>
-                        <button className="py-4 px-1 border-b-2 border-transparent text-gray-500 hover:text-gray-700 font-medium text-sm">
-                          Notas
-                        </button>
-                      </div>
-                    </div>
-                  </div>
-
                   {/* Contenido Principal */}
                   <div className="max-w-4xl mx-auto px-6 py-8">
                     {/* Header de la lección */}

@@ -75,6 +75,13 @@ import { useRef } from "react";
 import { useJobOffers } from "@/hooks/useJobOfferApi";
 import { useProfiles } from "@/hooks/useProfileApi";
 import { useYouthApplicationMessages } from "@/hooks/use-youth-application-messages";
+import {
+  useExpressCompanyInterest,
+  useCompanyInterests,
+  useUpdateCompanyInterestStatus,
+} from "@/hooks/use-youth-applications";
+import { useCurrentUser } from "@/hooks/use-current-user";
+import { Heart, HeartHandshake } from "lucide-react";
 
 interface CandidatesData {
   candidates: JobApplication[];
@@ -125,6 +132,10 @@ export default function CandidatesPage() {
     useState<JobApplication | null>(null);
   const [showChatModal, setShowChatModal] = useState(false);
   const [newMessage, setNewMessage] = useState("");
+  const [showInterestModal, setShowInterestModal] = useState(false);
+  const [interestMessage, setInterestMessage] = useState("");
+  const [selectedCandidateForInterest, setSelectedCandidateForInterest] =
+    useState<JobApplication | null>(null);
 
   // Chat hook for the selected candidate
   const {
@@ -136,6 +147,16 @@ export default function CandidatesPage() {
     markAsRead,
     refreshMessages,
   } = useYouthApplicationMessages(selectedCandidate?.id || "");
+
+  // Company interest hooks
+  const currentUser = useCurrentUser();
+  const expressInterest = useExpressCompanyInterest();
+  const updateInterestStatus = useUpdateCompanyInterestStatus();
+
+  // Get company interests for the selected candidate
+  const { data: companyInterests } = useCompanyInterests(
+    selectedCandidate?.id || ""
+  );
 
   useEffect(() => {
     fetchCandidates();
@@ -359,6 +380,93 @@ export default function CandidatesPage() {
     }
   };
 
+  // Interest marking handlers
+  const handleExpressInterest = (candidate: JobApplication) => {
+    setSelectedCandidateForInterest(candidate);
+    setInterestMessage("");
+    setShowInterestModal(true);
+  };
+
+  const handleConfirmInterest = async () => {
+    if (!selectedCandidateForInterest || !currentUser?.profile?.company?.id)
+      return;
+
+    try {
+      await expressInterest.mutateAsync({
+        applicationId: selectedCandidateForInterest.id,
+        data: {
+          companyId: currentUser.profile.company.id,
+          status: "INTERESTED",
+          message: interestMessage.trim() || undefined,
+        },
+      });
+
+      toast({
+        title: "Interés expresado",
+        description: "Has expresado interés en este candidato",
+      });
+
+      setShowInterestModal(false);
+      setSelectedCandidateForInterest(null);
+      setInterestMessage("");
+    } catch (error) {
+      toast({
+        title: "Error",
+        description: "No se pudo expresar el interés. Inténtalo de nuevo.",
+        variant: "destructive",
+      });
+    }
+  };
+
+  const handleUpdateInterestStatus = async (
+    candidateId: string,
+    newStatus: string
+  ) => {
+    if (!currentUser?.profile?.company?.id) return;
+
+    try {
+      await updateInterestStatus.mutateAsync({
+        applicationId: candidateId,
+        data: {
+          companyId: currentUser.profile.company.id,
+          status: newStatus as any,
+        },
+      });
+
+      toast({
+        title: "Estado actualizado",
+        description: "El estado del interés ha sido actualizado",
+      });
+    } catch (error) {
+      toast({
+        title: "Error",
+        description: "No se pudo actualizar el estado",
+        variant: "destructive",
+      });
+    }
+  };
+
+  // Check if company has expressed interest in a candidate
+  const hasCompanyInterest = (candidateId: string) => {
+    if (!companyInterests || !currentUser?.profile?.company?.id) return false;
+    return companyInterests.some(
+      (interest) =>
+        interest.companyId === currentUser.profile!.company!.id &&
+        interest.applicationId === candidateId
+    );
+  };
+
+  // Get company's interest status for a candidate
+  const getCompanyInterestStatus = (candidateId: string) => {
+    if (!companyInterests || !currentUser?.profile?.company?.id) return null;
+    const interest = companyInterests.find(
+      (interest) =>
+        interest.companyId === currentUser.profile!.company!.id &&
+        interest.applicationId === candidateId
+    );
+    return interest?.status || null;
+  };
+
   const formatMessageTime = (dateString: string) => {
     const date = new Date(dateString);
     const now = new Date();
@@ -410,6 +518,53 @@ export default function CandidatesPage() {
 
     return (
       <Badge variant={config.variant} className="flex items-center gap-1">
+        <Icon className="w-3 h-3" />
+        {config.label}
+      </Badge>
+    );
+  };
+
+  const getInterestStatusBadge = (status: string) => {
+    const statusConfig = {
+      INTERESTED: {
+        label: "Interesado",
+        variant: "default" as const,
+        icon: Heart,
+        color: "bg-blue-100 text-blue-800",
+      },
+      CONTACTED: {
+        label: "Contactado",
+        variant: "default" as const,
+        icon: Mail,
+        color: "bg-yellow-100 text-yellow-800",
+      },
+      INTERVIEW_SCHEDULED: {
+        label: "Entrevista",
+        variant: "default" as const,
+        icon: Calendar,
+        color: "bg-purple-100 text-purple-800",
+      },
+      HIRED: {
+        label: "Contratado",
+        variant: "default" as const,
+        icon: CheckCircle,
+        color: "bg-green-100 text-green-800",
+      },
+      NOT_INTERESTED: {
+        label: "No Interesado",
+        variant: "destructive" as const,
+        icon: XCircle,
+        color: "bg-red-100 text-red-800",
+      },
+    };
+
+    const config = statusConfig[status as keyof typeof statusConfig];
+    if (!config) return null;
+
+    const Icon = config.icon;
+
+    return (
+      <Badge className={`flex items-center gap-1 ${config.color}`}>
         <Icon className="w-3 h-3" />
         {config.label}
       </Badge>
@@ -788,6 +943,9 @@ export default function CandidatesPage() {
                         Estado
                       </TableHead>
                       <TableHead className="font-semibold text-gray-900">
+                        Interés
+                      </TableHead>
+                      <TableHead className="font-semibold text-gray-900">
                         Vistas
                       </TableHead>
                       <TableHead className="font-semibold text-gray-900">
@@ -863,6 +1021,20 @@ export default function CandidatesPage() {
                           {getStatusBadge(candidate.status)}
                         </TableCell>
                         <TableCell>
+                          {(() => {
+                            const interestStatus = getCompanyInterestStatus(
+                              candidate.id
+                            );
+                            return interestStatus ? (
+                              getInterestStatusBadge(interestStatus)
+                            ) : (
+                              <span className="text-sm text-gray-400">
+                                Sin interés
+                              </span>
+                            );
+                          })()}
+                        </TableCell>
+                        <TableCell>
                           <div className="flex items-center gap-1">
                             <Eye className="h-4 w-4 text-gray-400" />
                             <span className="text-sm text-gray-600">0</span>
@@ -910,6 +1082,80 @@ export default function CandidatesPage() {
                                   <FileText className="mr-2 h-4 w-4" />
                                   Descargar CV
                                 </DropdownMenuItem>
+                              )}
+                              <DropdownMenuSeparator />
+                              {!hasCompanyInterest(candidate.id) ? (
+                                <DropdownMenuItem
+                                  onClick={() =>
+                                    handleExpressInterest(candidate)
+                                  }
+                                >
+                                  <Heart className="mr-2 h-4 w-4" />
+                                  Expresar Interés
+                                </DropdownMenuItem>
+                              ) : (
+                                <>
+                                  <DropdownMenuItem
+                                    onClick={() =>
+                                      handleUpdateInterestStatus(
+                                        candidate.id,
+                                        "CONTACTED"
+                                      )
+                                    }
+                                    disabled={
+                                      getCompanyInterestStatus(candidate.id) ===
+                                      "CONTACTED"
+                                    }
+                                  >
+                                    <Mail className="mr-2 h-4 w-4" />
+                                    Marcar como Contactado
+                                  </DropdownMenuItem>
+                                  <DropdownMenuItem
+                                    onClick={() =>
+                                      handleUpdateInterestStatus(
+                                        candidate.id,
+                                        "INTERVIEW_SCHEDULED"
+                                      )
+                                    }
+                                    disabled={
+                                      getCompanyInterestStatus(candidate.id) ===
+                                      "INTERVIEW_SCHEDULED"
+                                    }
+                                  >
+                                    <Calendar className="mr-2 h-4 w-4" />
+                                    Programar Entrevista
+                                  </DropdownMenuItem>
+                                  <DropdownMenuItem
+                                    onClick={() =>
+                                      handleUpdateInterestStatus(
+                                        candidate.id,
+                                        "HIRED"
+                                      )
+                                    }
+                                    disabled={
+                                      getCompanyInterestStatus(candidate.id) ===
+                                      "HIRED"
+                                    }
+                                  >
+                                    <CheckCircle className="mr-2 h-4 w-4" />
+                                    Marcar como Contratado
+                                  </DropdownMenuItem>
+                                  <DropdownMenuItem
+                                    onClick={() =>
+                                      handleUpdateInterestStatus(
+                                        candidate.id,
+                                        "NOT_INTERESTED"
+                                      )
+                                    }
+                                    disabled={
+                                      getCompanyInterestStatus(candidate.id) ===
+                                      "NOT_INTERESTED"
+                                    }
+                                  >
+                                    <XCircle className="mr-2 h-4 w-4" />
+                                    No Interesado
+                                  </DropdownMenuItem>
+                                </>
                               )}
                               <DropdownMenuSeparator />
                               <DropdownMenuItem
@@ -1391,6 +1637,83 @@ export default function CandidatesPage() {
                 </div>
               )}
             </div>
+          </div>
+        </DialogContent>
+      </Dialog>
+
+      {/* Express Interest Modal */}
+      <Dialog open={showInterestModal} onOpenChange={setShowInterestModal}>
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle>Expresar Interés</DialogTitle>
+            <DialogDescription>
+              Expresa tu interés en este candidato y agrega un mensaje opcional
+            </DialogDescription>
+          </DialogHeader>
+
+          <div className="space-y-4">
+            {selectedCandidateForInterest && (
+              <div className="flex items-center space-x-3 p-3 bg-gray-50 rounded-lg">
+                <Avatar className="h-10 w-10">
+                  <AvatarImage
+                    src="/api/placeholder/40/40"
+                    alt={`${selectedCandidateForInterest.applicant.firstName} ${selectedCandidateForInterest.applicant.lastName}`}
+                  />
+                  <AvatarFallback className="bg-blue-100 text-blue-600 font-medium">
+                    {`${selectedCandidateForInterest.applicant.firstName} ${selectedCandidateForInterest.applicant.lastName}`
+                      .split(" ")
+                      .map((n: string) => n[0])
+                      .join("")}
+                  </AvatarFallback>
+                </Avatar>
+                <div>
+                  <div className="font-medium text-gray-900">
+                    {`${selectedCandidateForInterest.applicant.firstName} ${selectedCandidateForInterest.applicant.lastName}`}
+                  </div>
+                  <div className="text-sm text-gray-600">
+                    {selectedCandidateForInterest.jobOffer.title}
+                  </div>
+                </div>
+              </div>
+            )}
+
+            <div className="space-y-2">
+              <Label htmlFor="interest-message">Mensaje (opcional)</Label>
+              <Textarea
+                id="interest-message"
+                placeholder="Agrega un mensaje personalizado para el candidato..."
+                value={interestMessage}
+                onChange={(e) => setInterestMessage(e.target.value)}
+                rows={3}
+              />
+            </div>
+          </div>
+
+          <div className="flex gap-2 pt-4">
+            <Button
+              onClick={handleConfirmInterest}
+              disabled={expressInterest.isPending}
+              className="flex-1"
+            >
+              {expressInterest.isPending ? (
+                <>
+                  <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>
+                  Expresando...
+                </>
+              ) : (
+                <>
+                  <Heart className="mr-2 h-4 w-4" />
+                  Expresar Interés
+                </>
+              )}
+            </Button>
+            <Button
+              variant="outline"
+              onClick={() => setShowInterestModal(false)}
+              disabled={expressInterest.isPending}
+            >
+              Cancelar
+            </Button>
           </div>
         </DialogContent>
       </Dialog>

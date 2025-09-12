@@ -1,59 +1,67 @@
-import { NextRequest, NextResponse } from 'next/server';
-import { prisma } from '@/lib/prisma';
-import jwt from 'jsonwebtoken';
+import { NextRequest, NextResponse } from "next/server";
+import { prisma } from "@/lib/prisma";
+import jwt from "jsonwebtoken";
 
-const JWT_SECRET = process.env.JWT_SECRET || 'dev-secret-key';
+const JWT_SECRET = process.env.JWT_SECRET || "dev-secret-key";
 
 export async function GET(request: NextRequest) {
   try {
-    console.log('📚 API: Received request for courses');
-    
+    console.log("📚 API: Received request for courses");
+
     // Get auth token (optional for public courses)
-    const token = request.headers.get('authorization')?.replace('Bearer ', '');
+    const token = request.headers.get("authorization")?.replace("Bearer ", "");
     let userId: string | null = null;
-    
+
     if (token) {
       try {
         const decoded = jwt.verify(token, JWT_SECRET) as any;
         userId = decoded.id;
-        console.log('📚 API: Authenticated user:', decoded.username);
+        console.log("📚 API: Authenticated user:", decoded.username);
       } catch (error) {
-        console.log('📚 API: Invalid token, proceeding without auth');
+        console.log("📚 API: Invalid token, proceeding without auth");
       }
     }
 
     const { searchParams } = new URL(request.url);
-    const category = searchParams.get('category');
-    const level = searchParams.get('level');
-    const institutionId = searchParams.get('institutionId');
-    const isActive = searchParams.get('isActive');
-    
+    const category = searchParams.get("category");
+    const level = searchParams.get("level");
+    const institutionId = searchParams.get("institutionId");
+    const isActive = searchParams.get("isActive");
+
     // Build filter conditions
     const where: any = {
-      isActive: true // By default, only show active courses
+      isActive: true, // By default, only show active courses
     };
     if (category) where.category = category;
     if (level) where.level = level;
     if (institutionId) where.instructorId = institutionId;
-    if (isActive !== null) where.isActive = isActive === 'true';
-    
+    if (isActive !== null) where.isActive = isActive === "true";
+
     // If user is authenticated and is an instructor, only show their courses
     // Youth users should see all available courses
     if (userId) {
       // Check if user is an instructor (training center, company, etc.)
       const userProfile = await prisma.profile.findUnique({
         where: { userId },
-        select: { role: true }
+        select: { role: true },
       });
-      
-      if (userProfile?.role && ['TRAINING_CENTERS', 'COMPANIES', 'NGOS_AND_FOUNDATIONS', 'INSTRUCTOR'].includes(userProfile.role)) {
+
+      if (
+        userProfile?.role &&
+        [
+          "TRAINING_CENTERS",
+          "EMPRESAS",
+          "NGOS_AND_FOUNDATIONS",
+          "INSTRUCTOR",
+        ].includes(userProfile.role)
+      ) {
         where.instructorId = userId;
-        console.log('📚 API: Filtering courses by instructor user:', userId);
+        console.log("📚 API: Filtering courses by instructor user:", userId);
       } else {
-        console.log('📚 API: User is not an instructor, showing all courses');
+        console.log("📚 API: User is not an instructor, showing all courses");
       }
     }
-    
+
     // Get courses from database
     const courses = await prisma.course.findMany({
       where,
@@ -65,7 +73,7 @@ export async function GET(request: NextRequest) {
             lastName: true,
             avatarUrl: true,
             jobTitle: true,
-          }
+          },
         },
         modules: {
           select: {
@@ -73,23 +81,20 @@ export async function GET(request: NextRequest) {
             title: true,
             orderIndex: true,
           },
-          orderBy: { orderIndex: 'asc' }
+          orderBy: { orderIndex: "asc" },
         },
         _count: {
           select: {
             enrollments: true,
             modules: true,
-          }
-        }
+          },
+        },
       },
-      orderBy: [
-        { isMandatory: 'desc' },
-        { createdAt: 'desc' }
-      ]
+      orderBy: [{ isMandatory: "desc" }, { createdAt: "desc" }],
     });
 
     // Transform courses to match expected format
-    const transformedCourses = courses.map(course => ({
+    const transformedCourses = courses.map((course) => ({
       id: course.id,
       title: course.title,
       slug: course.slug,
@@ -116,28 +121,35 @@ export async function GET(request: NextRequest) {
       includedMaterials: course.includedMaterials,
       instructorId: course.instructorId,
       institutionName: course.institutionName,
-      instructor: course.instructor ? {
-        id: course.instructor.userId,
-        name: `${course.instructor.firstName || ''} ${course.instructor.lastName || ''}`.trim() || 'Sin nombre',
-        title: course.instructor.jobTitle || 'Instructor',
-        avatar: course.instructor.avatarUrl || '/avatars/default.jpg'
-      } : null,
+      instructor: course.instructor
+        ? {
+            id: course.instructor.userId,
+            name:
+              `${course.instructor.firstName || ""} ${course.instructor.lastName || ""}`.trim() ||
+              "Sin nombre",
+            title: course.instructor.jobTitle || "Instructor",
+            avatar: course.instructor.avatarUrl || "/avatars/default.jpg",
+          }
+        : null,
       organization: {
-        id: '1',
-        name: course.institutionName || 'CEMSE',
-        logo: '/logos/cemse.png'
+        id: "1",
+        name: course.institutionName || "CEMSE",
+        logo: "/logos/cemse.png",
       },
       publishedAt: course.publishedAt?.toISOString(),
       createdAt: course.createdAt.toISOString(),
-      updatedAt: course.updatedAt.toISOString()
+      updatedAt: course.updatedAt.toISOString(),
     }));
 
-    console.log('📚 API: Returning courses from database:', transformedCourses.length);
+    console.log(
+      "📚 API: Returning courses from database:",
+      transformedCourses.length
+    );
     return NextResponse.json({ courses: transformedCourses }, { status: 200 });
   } catch (error) {
-    console.error('❌ Error in courses route:', error);
+    console.error("❌ Error in courses route:", error);
     return NextResponse.json(
-      { message: 'Internal server error' },
+      { message: "Internal server error" },
       { status: 500 }
     );
   }
@@ -145,47 +157,50 @@ export async function GET(request: NextRequest) {
 
 export async function POST(request: NextRequest) {
   try {
-    console.log('📚 API: Received POST request for course creation');
-    
+    console.log("📚 API: Received POST request for course creation");
+
     // Get auth token
-    const token = request.headers.get('authorization')?.replace('Bearer ', '');
+    const token = request.headers.get("authorization")?.replace("Bearer ", "");
     if (!token) {
       return NextResponse.json(
-        { message: 'Authorization required' },
+        { message: "Authorization required" },
         { status: 401 }
       );
     }
 
     // Verify token
     const decoded = jwt.verify(token, JWT_SECRET) as any;
-    console.log('📚 API: Authenticated user:', decoded.username);
+    console.log("📚 API: Authenticated user:", decoded.username);
 
     const body = await request.json();
-    console.log('📚 API: Course data received:', body);
-    
+    console.log("📚 API: Course data received:", body);
+
     // Generate unique slug
-    let baseSlug = body.slug || body.title.toLowerCase()
-      .replace(/[^\w\s-]/g, '') // Remove special characters
-      .replace(/\s+/g, '-') // Replace spaces with hyphens
-      .trim();
-    
+    let baseSlug =
+      body.slug ||
+      body.title
+        .toLowerCase()
+        .replace(/[^\w\s-]/g, "") // Remove special characters
+        .replace(/\s+/g, "-") // Replace spaces with hyphens
+        .trim();
+
     let slug = baseSlug;
     let counter = 1;
-    
+
     // Check for slug uniqueness
     while (await prisma.course.findUnique({ where: { slug } })) {
       slug = `${baseSlug}-${counter}`;
       counter++;
     }
-    
-    console.log('📚 API: Using slug:', slug);
+
+    console.log("📚 API: Using slug:", slug);
 
     // Check if user profile exists
     const userProfile = await prisma.profile.findUnique({
-      where: { userId: decoded.id }
+      where: { userId: decoded.id },
     });
-    
-    console.log('📚 API: User profile found:', !!userProfile);
+
+    console.log("📚 API: User profile found:", !!userProfile);
 
     // Create course in database
     const course = await prisma.course.create({
@@ -199,7 +214,7 @@ export async function POST(request: NextRequest) {
         objectives: body.objectives || [],
         prerequisites: body.prerequisites || [],
         duration: parseInt(body.duration) || 0,
-        level: body.level || 'BEGINNER',
+        level: body.level || "BEGINNER",
         category: body.category,
         isMandatory: body.isMandatory || false,
         isActive: body.isActive !== undefined ? body.isActive : true,
@@ -210,44 +225,54 @@ export async function POST(request: NextRequest) {
         totalQuizzes: 0,
         totalResources: 0,
         tags: body.tags || [],
-        certification: body.certification !== undefined ? body.certification : true,
+        certification:
+          body.certification !== undefined ? body.certification : true,
         includedMaterials: body.includedMaterials || [],
         instructorId: userProfile ? decoded.id : null, // Only set if profile exists
-        institutionName: body.institutionName || 'CEMSE',
+        institutionName: body.institutionName || "CEMSE",
         publishedAt: new Date(), // Set published date
       },
       include: {
-        instructor: userProfile ? {
-          select: {
-            userId: true,
-            firstName: true,
-            lastName: true,
-            avatarUrl: true,
-            jobTitle: true,
-          }
-        } : false
-      }
+        instructor: userProfile
+          ? {
+              select: {
+                userId: true,
+                firstName: true,
+                lastName: true,
+                avatarUrl: true,
+                jobTitle: true,
+              },
+            }
+          : false,
+      },
     });
 
-    console.log('✅ Course created successfully:', course.id);
+    console.log("✅ Course created successfully:", course.id);
     return NextResponse.json({ course }, { status: 201 });
   } catch (error) {
-    console.error('❌ Error creating course:', error);
-    
-    const errorDetails = error instanceof Error ? {
-      message: error.message,
-      code: (error as any).code,
-      meta: (error as any).meta
-    } : { message: 'Unknown error' };
-    
-    console.error('❌ Error details:', errorDetails);
-    
+    console.error("❌ Error creating course:", error);
+
+    const errorDetails =
+      error instanceof Error
+        ? {
+            message: error.message,
+            code: (error as any).code,
+            meta: (error as any).meta,
+          }
+        : { message: "Unknown error" };
+
+    console.error("❌ Error details:", errorDetails);
+
     // Return more detailed error for debugging
     return NextResponse.json(
-      { 
-        message: 'Internal server error',
-        error: process.env.NODE_ENV === 'development' ? errorDetails.message : 'Internal server error',
-        details: process.env.NODE_ENV === 'development' ? errorDetails : undefined
+      {
+        message: "Internal server error",
+        error:
+          process.env.NODE_ENV === "development"
+            ? errorDetails.message
+            : "Internal server error",
+        details:
+          process.env.NODE_ENV === "development" ? errorDetails : undefined,
       },
       { status: 500 }
     );

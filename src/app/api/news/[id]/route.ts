@@ -71,51 +71,60 @@ let mockNews: NewsArticle[] = [
 
 // Helper function to validate news data
 const validateNewsData = (data: any) => {
-  const requiredFields = ['title', 'content', 'summary', 'category'];
+  const requiredFields = ["title", "content", "summary", "category"];
   for (const field of requiredFields) {
     if (!data[field]) {
       throw new Error(`Campo requerido: ${field}`);
     }
   }
-  
-  if (data.priority && !['LOW', 'MEDIUM', 'HIGH', 'URGENT'].includes(data.priority)) {
-    throw new Error('Prioridad inválida');
+
+  if (
+    data.priority &&
+    !["LOW", "MEDIUM", "HIGH", "URGENT"].includes(data.priority)
+  ) {
+    throw new Error("Prioridad inválida");
   }
-  
-  if (data.status && !['DRAFT', 'PUBLISHED', 'ARCHIVED'].includes(data.status)) {
-    throw new Error('Estado inválido');
+
+  if (
+    data.status &&
+    !["DRAFT", "PUBLISHED", "ARCHIVED"].includes(data.status)
+  ) {
+    throw new Error("Estado inválido");
   }
-  
+
   return true;
 };
 
 // Helper function to check permissions
 const checkPermissions = (user: any, authorId: string) => {
   if (!user) {
-    throw new Error('No autenticado');
+    throw new Error("No autenticado");
   }
-  
+
   // SuperAdmin puede editar cualquier noticia
-  if (user.role === 'SUPERADMIN') {
+  if (user.role === "SUPERADMIN") {
     return true;
   }
-  
+
   // El autor puede editar sus propias noticias
   if (user.id === authorId) {
     return true;
   }
-  
+
   // Companies pueden editar noticias de su empresa
-  if (user.role === 'COMPANIES' && user.companyId === authorId) {
+  if (user.role === "EMPRESAS" && user.companyId === authorId) {
     return true;
   }
-  
+
   // Municipal governments pueden editar noticias de su municipio
-  if (user.role === 'MUNICIPAL_GOVERNMENTS' && user.municipalityId === authorId) {
+  if (
+    user.role === "MUNICIPAL_GOVERNMENTS" &&
+    user.municipalityId === authorId
+  ) {
     return true;
   }
-  
-  throw new Error('Sin permisos para editar esta noticia');
+
+  throw new Error("Sin permisos para editar esta noticia");
 };
 
 // GET /api/newsarticle/{id} - Obtener noticia específica
@@ -126,34 +135,34 @@ export async function GET(
   try {
     const session = await getServerSession(authOptions);
     const { id } = params;
-    
-    const news = mockNews.find(n => n.id === id);
-    
+
+    const news = mockNews.find((n) => n.id === id);
+
     if (!news) {
       return NextResponse.json(
-        { error: 'Noticia no encontrada' },
+        { error: "Noticia no encontrada" },
         { status: 404 }
       );
     }
-    
+
     // Si no está autenticado, solo mostrar noticias públicas
-    if (!session && news.status !== 'PUBLISHED') {
+    if (!session && news.status !== "PUBLISHED") {
       return NextResponse.json(
-        { error: 'Noticia no encontrada' },
+        { error: "Noticia no encontrada" },
         { status: 404 }
       );
     }
-    
+
     // Incrementar contador de vistas si está autenticado
     if (session) {
       news.viewCount += 1;
     }
-    
+
     return NextResponse.json(news);
   } catch (error) {
-    console.error('Error getting news by id:', error);
+    console.error("Error getting news by id:", error);
     return NextResponse.json(
-      { error: 'Error interno del servidor' },
+      { error: "Error interno del servidor" },
       { status: 500 }
     );
   }
@@ -167,62 +176,59 @@ export async function PUT(
   try {
     const session = await getServerSession(authOptions);
     const { id } = params;
-    
+
     if (!session) {
-      return NextResponse.json(
-        { error: 'No autenticado' },
-        { status: 401 }
-      );
+      return NextResponse.json({ error: "No autenticado" }, { status: 401 });
     }
-    
-    const newsIndex = mockNews.findIndex(n => n.id === id);
-    
+
+    const newsIndex = mockNews.findIndex((n) => n.id === id);
+
     if (newsIndex === -1) {
       return NextResponse.json(
-        { error: 'Noticia no encontrada' },
+        { error: "Noticia no encontrada" },
         { status: 404 }
       );
     }
-    
+
     const news = mockNews[newsIndex];
-    
+
     // Verificar permisos
     try {
       checkPermissions(session.user, news.authorId);
     } catch (error) {
       return NextResponse.json(
-        { error: error instanceof Error ? error.message : 'Sin permisos' },
+        { error: error instanceof Error ? error.message : "Sin permisos" },
         { status: 403 }
       );
     }
-    
+
     let updateData: any = {};
     let imageFile: File | null = null;
-    
+
     // Verificar si es multipart/form-data
-    const contentType = request.headers.get('content-type') || '';
-    
-    if (contentType.includes('multipart/form-data')) {
+    const contentType = request.headers.get("content-type") || "";
+
+    if (contentType.includes("multipart/form-data")) {
       const formData = await request.formData();
-      
+
       // Extraer campos de texto
       updateData = {
-        title: formData.get('title') as string,
-        content: formData.get('content') as string,
-        summary: formData.get('summary') as string,
-        category: formData.get('category') as string,
-        status: formData.get('status') as string,
-        priority: formData.get('priority') as string,
-        tags: formData.get('tags') as string,
-        featured: formData.get('featured') === 'true',
-        targetAudience: formData.get('targetAudience') as string,
-        region: formData.get('region') as string,
-        videoUrl: formData.get('videoUrl') as string,
-        relatedLinks: formData.get('relatedLinks') as string,
+        title: formData.get("title") as string,
+        content: formData.get("content") as string,
+        summary: formData.get("summary") as string,
+        category: formData.get("category") as string,
+        status: formData.get("status") as string,
+        priority: formData.get("priority") as string,
+        tags: formData.get("tags") as string,
+        featured: formData.get("featured") === "true",
+        targetAudience: formData.get("targetAudience") as string,
+        region: formData.get("region") as string,
+        videoUrl: formData.get("videoUrl") as string,
+        relatedLinks: formData.get("relatedLinks") as string,
       };
-      
+
       // Extraer archivo de imagen
-      const image = formData.get('image') as File;
+      const image = formData.get("image") as File;
       if (image) {
         imageFile = image;
         // En una implementación real, aquí se subiría la imagen a un servicio de almacenamiento
@@ -232,28 +238,42 @@ export async function PUT(
       // JSON data
       updateData = await request.json();
     }
-    
+
     // Validar datos
     validateNewsData(updateData);
-    
+
     // Actualizar noticia
     const updatedNews: NewsArticle = {
       ...news,
       ...updateData,
-      tags: updateData.tags ? updateData.tags.split(',').map((tag: string) => tag.trim()) : news.tags,
-      targetAudience: updateData.targetAudience ? updateData.targetAudience.split(',').map((audience: string) => audience.trim()) : news.targetAudience,
-      relatedLinks: updateData.relatedLinks ? JSON.parse(updateData.relatedLinks) : news.relatedLinks,
-      publishedAt: updateData.status === 'PUBLISHED' && news.status !== 'PUBLISHED' ? new Date().toISOString() : news.publishedAt,
+      tags: updateData.tags
+        ? updateData.tags.split(",").map((tag: string) => tag.trim())
+        : news.tags,
+      targetAudience: updateData.targetAudience
+        ? updateData.targetAudience
+            .split(",")
+            .map((audience: string) => audience.trim())
+        : news.targetAudience,
+      relatedLinks: updateData.relatedLinks
+        ? JSON.parse(updateData.relatedLinks)
+        : news.relatedLinks,
+      publishedAt:
+        updateData.status === "PUBLISHED" && news.status !== "PUBLISHED"
+          ? new Date().toISOString()
+          : news.publishedAt,
       updatedAt: new Date().toISOString(),
     };
-    
+
     mockNews[newsIndex] = updatedNews;
-    
+
     return NextResponse.json(updatedNews);
   } catch (error) {
-    console.error('Error updating news:', error);
+    console.error("Error updating news:", error);
     return NextResponse.json(
-      { error: error instanceof Error ? error.message : 'Error interno del servidor' },
+      {
+        error:
+          error instanceof Error ? error.message : "Error interno del servidor",
+      },
       { status: 400 }
     );
   }
@@ -267,46 +287,43 @@ export async function DELETE(
   try {
     const session = await getServerSession(authOptions);
     const { id } = params;
-    
+
     if (!session) {
-      return NextResponse.json(
-        { error: 'No autenticado' },
-        { status: 401 }
-      );
+      return NextResponse.json({ error: "No autenticado" }, { status: 401 });
     }
-    
-    const newsIndex = mockNews.findIndex(n => n.id === id);
-    
+
+    const newsIndex = mockNews.findIndex((n) => n.id === id);
+
     if (newsIndex === -1) {
       return NextResponse.json(
-        { error: 'Noticia no encontrada' },
+        { error: "Noticia no encontrada" },
         { status: 404 }
       );
     }
-    
+
     const news = mockNews[newsIndex];
-    
+
     // Verificar permisos
     try {
       checkPermissions(session.user, news.authorId);
     } catch (error) {
       return NextResponse.json(
-        { error: error instanceof Error ? error.message : 'Sin permisos' },
+        { error: error instanceof Error ? error.message : "Sin permisos" },
         { status: 403 }
       );
     }
-    
+
     // Eliminar noticia
     mockNews.splice(newsIndex, 1);
-    
+
     return NextResponse.json(
-      { message: 'Noticia eliminada exitosamente' },
+      { message: "Noticia eliminada exitosamente" },
       { status: 204 }
     );
   } catch (error) {
-    console.error('Error deleting news:', error);
+    console.error("Error deleting news:", error);
     return NextResponse.json(
-      { error: 'Error interno del servidor' },
+      { error: "Error interno del servidor" },
       { status: 500 }
     );
   }

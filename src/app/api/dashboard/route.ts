@@ -1,8 +1,8 @@
-import { NextRequest, NextResponse } from 'next/server';
-import { prisma } from '@/lib/prisma';
-import jwt from 'jsonwebtoken';
+import { NextRequest, NextResponse } from "next/server";
+import { prisma } from "@/lib/prisma";
+import jwt from "jsonwebtoken";
 
-const JWT_SECRET = process.env.JWT_SECRET || 'dev-secret-key';
+const JWT_SECRET = process.env.JWT_SECRET || "dev-secret-key";
 
 // Helper function to verify JWT token
 function verifyToken(token: string) {
@@ -16,22 +16,16 @@ function verifyToken(token: string) {
 export async function GET(request: NextRequest) {
   try {
     // Get token from Authorization header
-    const authHeader = request.headers.get('Authorization');
-    if (!authHeader || !authHeader.startsWith('Bearer ')) {
-      return NextResponse.json(
-        { error: 'No token provided' },
-        { status: 401 }
-      );
+    const authHeader = request.headers.get("Authorization");
+    if (!authHeader || !authHeader.startsWith("Bearer ")) {
+      return NextResponse.json({ error: "No token provided" }, { status: 401 });
     }
 
     const token = authHeader.substring(7);
     const decoded = verifyToken(token);
-    
+
     if (!decoded) {
-      return NextResponse.json(
-        { error: 'Invalid token' },
-        { status: 401 }
-      );
+      return NextResponse.json({ error: "Invalid token" }, { status: 401 });
     }
 
     // Get user and profile data
@@ -40,10 +34,7 @@ export async function GET(request: NextRequest) {
     });
 
     if (!user) {
-      return NextResponse.json(
-        { error: 'User not found' },
-        { status: 404 }
-      );
+      return NextResponse.json({ error: "User not found" }, { status: 404 });
     }
 
     let profile = null;
@@ -52,7 +43,7 @@ export async function GET(request: NextRequest) {
         where: { userId: user.id },
       });
     } catch (error) {
-      console.log('No profile found for user:', user.id);
+      console.log("No profile found for user:", user.id);
     }
 
     // Get dashboard stats based on user role
@@ -78,7 +69,7 @@ export async function GET(request: NextRequest) {
       stats.totalUsers = totalUsers;
 
       // Role-specific stats
-      if (user.role === 'SUPERADMIN') {
+      if (user.role === "SUPERADMIN") {
         const [totalCompanies, totalJobOffers] = await Promise.all([
           prisma.company.count({ where: { isActive: true } }),
           prisma.jobOffer.count({ where: { isActive: true } }),
@@ -87,40 +78,40 @@ export async function GET(request: NextRequest) {
         stats.totalJobOffers = totalJobOffers;
       }
 
-      if (['YOUTH', 'ADOLESCENTS'].includes(user.role) && profile) {
+      if (["YOUTH", "ADOLESCENTS"].includes(user.role) && profile) {
         const [enrollments, certificates, applications] = await Promise.all([
           prisma.courseEnrollment.count({ where: { studentId: user.id } }),
           prisma.certificate.count({ where: { userId: user.id } }),
           prisma.jobApplication.count({ where: { applicantId: user.id } }),
         ]);
-        
+
         stats.enrolledCourses = enrollments;
         stats.certificates = certificates;
         stats.jobApplications = applications;
-        
+
         const completedEnrollments = await prisma.courseEnrollment.count({
-          where: { 
-            studentId: user.id, 
-            status: 'COMPLETED' 
-          }
+          where: {
+            studentId: user.id,
+            status: "COMPLETED",
+          },
         });
         stats.completedCourses = completedEnrollments;
       }
 
-      if (user.role === 'COMPANIES') {
+      if (user.role === "EMPRESAS") {
         const company = await prisma.company.findFirst({
-          where: { createdBy: user.id }
+          where: { createdBy: user.id },
         });
-        
+
         if (company) {
           const jobOffers = await prisma.jobOffer.count({
-            where: { companyId: company.id }
+            where: { companyId: company.id },
           });
           stats.totalJobOffers = jobOffers;
         }
       }
     } catch (error) {
-      console.error('Error getting dashboard stats:', error);
+      console.error("Error getting dashboard stats:", error);
       // Continue with default stats
     }
 
@@ -131,10 +122,10 @@ export async function GET(request: NextRequest) {
         username: user.username,
         role: user.role,
         isActive: user.isActive,
-        firstName: profile?.firstName || '',
-        lastName: profile?.lastName || '',
-        email: profile?.email || '',
-        phone: profile?.phone || '',
+        firstName: profile?.firstName || "",
+        lastName: profile?.lastName || "",
+        email: profile?.email || "",
+        phone: profile?.phone || "",
         profilePicture: profile?.avatarUrl || null,
       },
       stats,
@@ -144,9 +135,9 @@ export async function GET(request: NextRequest) {
 
     return NextResponse.json(dashboardData);
   } catch (error) {
-    console.error('Dashboard API error:', error);
+    console.error("Dashboard API error:", error);
     return NextResponse.json(
-      { error: 'Internal server error' },
+      { error: "Internal server error" },
       { status: 500 }
     );
   }
