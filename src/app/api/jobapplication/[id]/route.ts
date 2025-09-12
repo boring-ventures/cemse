@@ -158,6 +158,12 @@ export async function PUT(
         jobOffer: {
           select: {
             companyId: true,
+            company: {
+              select: {
+                id: true,
+                createdBy: true,
+              },
+            },
           },
         },
       },
@@ -172,8 +178,9 @@ export async function PUT(
 
     // Authorization check - only company owners can update application status
     const isCompanyOwner =
-      decoded.role === "COMPANIES" &&
-      (decoded.id === existingApplication.jobOffer.companyId ||
+      (decoded.role === "COMPANIES" || decoded.role === "EMPRESAS") &&
+      (decoded.id === existingApplication.jobOffer.company?.createdBy ||
+        decoded.id === existingApplication.jobOffer.companyId ||
         decoded.companyId === existingApplication.jobOffer.companyId);
     const isAdmin =
       decoded.role === "SUPERADMIN" || decoded.role === "INSTRUCTOR";
@@ -301,6 +308,12 @@ export async function PATCH(
         jobOffer: {
           select: {
             companyId: true,
+            company: {
+              select: {
+                id: true,
+                createdBy: true,
+              },
+            },
           },
         },
       },
@@ -314,16 +327,63 @@ export async function PATCH(
     }
 
     // Authorization check - only company owner can update status
+    console.log("🔍 API: Authorization check - Decoded user:", {
+      id: decoded.id,
+      username: decoded.username,
+      role: decoded.role,
+      companyId: decoded.companyId,
+    });
+    console.log("🔍 API: Authorization check - Job offer company:", {
+      companyId: existingApplication.jobOffer.companyId,
+      companyCreatedBy: existingApplication.jobOffer.company?.createdBy,
+    });
+
     const isCompanyOwner =
-      decoded.role === "COMPANIES" &&
-      (decoded.id === existingApplication.jobOffer.companyId ||
+      (decoded.role === "COMPANIES" || decoded.role === "EMPRESAS") &&
+      (decoded.id === existingApplication.jobOffer.company?.createdBy ||
+        decoded.id === existingApplication.jobOffer.companyId ||
         decoded.companyId === existingApplication.jobOffer.companyId);
     const isAdmin = decoded.role === "SUPERADMIN";
+
+    console.log("🔍 API: Authorization check - Results:", {
+      isCompanyOwner,
+      isAdmin,
+      roleCheck:
+        decoded.role === "COMPANIES" ||
+        decoded.role === "EMPRESAS" ||
+        decoded.role === "EMPRESAS",
+      idMatch: decoded.id === existingApplication.jobOffer.companyId,
+      companyIdMatch:
+        decoded.companyId === existingApplication.jobOffer.companyId,
+      actualValues: {
+        decodedId: decoded.id,
+        decodedCompanyId: decoded.companyId,
+        jobOfferCompanyId: existingApplication.jobOffer.companyId,
+        jobOfferCompanyCreatedBy:
+          existingApplication.jobOffer.company?.createdBy,
+        decodedRole: decoded.role,
+      },
+      checks: {
+        isCreator:
+          decoded.id === existingApplication.jobOffer.company?.createdBy,
+        isCompanyId: decoded.id === existingApplication.jobOffer.companyId,
+        isCompanyIdField:
+          decoded.companyId === existingApplication.jobOffer.companyId,
+      },
+    });
 
     if (!isCompanyOwner && !isAdmin) {
       console.log(
         "🔍 API: Insufficient permissions for user:",
-        decoded.username
+        decoded.username,
+        "Role:",
+        decoded.role,
+        "User ID:",
+        decoded.id,
+        "User Company ID:",
+        decoded.companyId,
+        "Job Offer Company ID:",
+        existingApplication.jobOffer.companyId
       );
       return NextResponse.json(
         { message: "Insufficient permissions" },
@@ -420,7 +480,7 @@ export async function DELETE(
     // Authorization check - applicant can cancel their own application, or admin/company owner can delete
     const isApplicant = decoded.id === existingApplication.applicantId;
     const isCompanyOwner =
-      decoded.role === "COMPANIES" &&
+      (decoded.role === "COMPANIES" || decoded.role === "EMPRESAS") &&
       (decoded.id === existingApplication.jobOffer.companyId ||
         decoded.companyId === existingApplication.jobOffer.companyId);
     const isAdmin = decoded.role === "SUPERADMIN";

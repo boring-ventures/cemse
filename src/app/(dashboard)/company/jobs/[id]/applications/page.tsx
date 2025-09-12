@@ -118,6 +118,7 @@ export default function JobApplicationsPage() {
   const [showMessageModal, setShowMessageModal] = useState(false);
   const [messageText, setMessageText] = useState("");
   const [sendingMessage, setSendingMessage] = useState(false);
+  const [updatingStatus, setUpdatingStatus] = useState<string | null>(null);
 
   // Use job messages hook when an application is selected
   const {
@@ -181,7 +182,23 @@ export default function JobApplicationsPage() {
     status: string,
     reason?: string
   ) => {
+    // Prevent multiple simultaneous updates
+    if (updatingStatus === applicationId) {
+      return;
+    }
+
     try {
+      setUpdatingStatus(applicationId);
+
+      // Debug: Log user data to help troubleshoot
+      console.log("🔍 Frontend Debug - User data:", {
+        userId: user?.id,
+        userRole: user?.role,
+        userCompany: user?.company,
+        userCompanyId: user?.company?.id,
+        isAuthenticated: !!user,
+      });
+
       const response = await fetch(`/api/jobapplication/${applicationId}`, {
         method: "PATCH",
         headers: {
@@ -191,15 +208,17 @@ export default function JobApplicationsPage() {
       });
 
       if (response.ok) {
-        // Update local state
+        const updatedApplication = await response.json();
+
+        // Update local state with the actual response data
         setApplications((prev) =>
           prev.map((app) =>
             app.id === applicationId
               ? {
                   ...app,
-                  status,
-                  decisionReason: reason,
-                  reviewedAt: new Date().toISOString(),
+                  status: updatedApplication.status,
+                  decisionReason: updatedApplication.decisionReason,
+                  reviewedAt: updatedApplication.reviewedAt,
                 }
               : app
           )
@@ -210,15 +229,23 @@ export default function JobApplicationsPage() {
           description: `Estado actualizado a: ${statusLabels[status as keyof typeof statusLabels]}`,
         });
       } else {
-        throw new Error("Failed to update status");
+        const errorData = await response
+          .json()
+          .catch(() => ({ message: "Error desconocido" }));
+        throw new Error(errorData.message || `Error ${response.status}`);
       }
     } catch (error) {
       console.error("Error updating application status:", error);
       toast({
         title: "Error",
-        description: "No se pudo actualizar el estado",
+        description:
+          error instanceof Error
+            ? error.message
+            : "No se pudo actualizar el estado",
         variant: "destructive",
       });
+    } finally {
+      setUpdatingStatus(null);
     }
   };
 
@@ -306,11 +333,15 @@ export default function JobApplicationsPage() {
   const formatChatTime = (dateString: string) => {
     const date = new Date(dateString);
     const now = new Date();
-    const diffInHours = (now.getTime() - date.getTime()) / (1000 * 60 * 60);
+    const diffInMinutes = (now.getTime() - date.getTime()) / (1000 * 60);
 
-    if (diffInHours < 1) {
+    // Show "Ahora" only for messages sent within the last 5 minutes
+    if (diffInMinutes < 5) {
       return "Ahora";
-    } else if (diffInHours < 24) {
+    } else if (diffInMinutes < 60) {
+      return `hace ${Math.floor(diffInMinutes)} min`;
+    } else if (diffInMinutes < 1440) {
+      // Less than 24 hours
       return date.toLocaleTimeString("es-ES", {
         hour: "2-digit",
         minute: "2-digit",
@@ -567,6 +598,7 @@ export default function JobApplicationsPage() {
                             <Button
                               variant="outline"
                               size="sm"
+                              disabled={updatingStatus === application.id}
                               onClick={() =>
                                 updateApplicationStatus(
                                   application.id,
@@ -574,12 +606,17 @@ export default function JobApplicationsPage() {
                                 )
                               }
                             >
-                              <Clock className="w-4 h-4 mr-2" />
+                              {updatingStatus === application.id ? (
+                                <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-current mr-2"></div>
+                              ) : (
+                                <Clock className="w-4 h-4 mr-2" />
+                              )}
                               En Revisión
                             </Button>
                             <Button
                               variant="outline"
                               size="sm"
+                              disabled={updatingStatus === application.id}
                               onClick={() =>
                                 updateApplicationStatus(
                                   application.id,
@@ -588,7 +625,11 @@ export default function JobApplicationsPage() {
                                 )
                               }
                             >
-                              <XCircle className="w-4 h-4 mr-2" />
+                              {updatingStatus === application.id ? (
+                                <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-current mr-2"></div>
+                              ) : (
+                                <XCircle className="w-4 h-4 mr-2" />
+                              )}
                               Rechazar
                             </Button>
                           </>
@@ -598,6 +639,7 @@ export default function JobApplicationsPage() {
                             <Button
                               variant="outline"
                               size="sm"
+                              disabled={updatingStatus === application.id}
                               onClick={() =>
                                 updateApplicationStatus(
                                   application.id,
@@ -605,12 +647,17 @@ export default function JobApplicationsPage() {
                                 )
                               }
                             >
-                              <Star className="w-4 h-4 mr-2" />
+                              {updatingStatus === application.id ? (
+                                <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-current mr-2"></div>
+                              ) : (
+                                <Star className="w-4 h-4 mr-2" />
+                              )}
                               Preseleccionar
                             </Button>
                             <Button
                               variant="outline"
                               size="sm"
+                              disabled={updatingStatus === application.id}
                               onClick={() =>
                                 updateApplicationStatus(
                                   application.id,
@@ -619,7 +666,11 @@ export default function JobApplicationsPage() {
                                 )
                               }
                             >
-                              <XCircle className="w-4 h-4 mr-2" />
+                              {updatingStatus === application.id ? (
+                                <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-current mr-2"></div>
+                              ) : (
+                                <XCircle className="w-4 h-4 mr-2" />
+                              )}
                               Rechazar
                             </Button>
                           </>
@@ -629,16 +680,22 @@ export default function JobApplicationsPage() {
                             <Button
                               variant="outline"
                               size="sm"
+                              disabled={updatingStatus === application.id}
                               onClick={() =>
                                 updateApplicationStatus(application.id, "HIRED")
                               }
                             >
-                              <CheckCircle className="w-4 h-4 mr-2" />
+                              {updatingStatus === application.id ? (
+                                <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-current mr-2"></div>
+                              ) : (
+                                <CheckCircle className="w-4 h-4 mr-2" />
+                              )}
                               Contratar
                             </Button>
                             <Button
                               variant="outline"
                               size="sm"
+                              disabled={updatingStatus === application.id}
                               onClick={() =>
                                 updateApplicationStatus(
                                   application.id,
@@ -647,7 +704,11 @@ export default function JobApplicationsPage() {
                                 )
                               }
                             >
-                              <XCircle className="w-4 h-4 mr-2" />
+                              {updatingStatus === application.id ? (
+                                <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-current mr-2"></div>
+                              ) : (
+                                <XCircle className="w-4 h-4 mr-2" />
+                              )}
                               Rechazar
                             </Button>
                           </>
@@ -763,6 +824,7 @@ export default function JobApplicationsPage() {
                     <>
                       <Button
                         variant="outline"
+                        disabled={updatingStatus === selectedApplication.id}
                         onClick={() =>
                           updateApplicationStatus(
                             selectedApplication.id,
@@ -770,11 +832,16 @@ export default function JobApplicationsPage() {
                           )
                         }
                       >
-                        <Clock className="w-4 h-4 mr-2" />
+                        {updatingStatus === selectedApplication.id ? (
+                          <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-current mr-2"></div>
+                        ) : (
+                          <Clock className="w-4 h-4 mr-2" />
+                        )}
                         En Revisión
                       </Button>
                       <Button
                         variant="outline"
+                        disabled={updatingStatus === selectedApplication.id}
                         onClick={() =>
                           updateApplicationStatus(
                             selectedApplication.id,
@@ -783,7 +850,11 @@ export default function JobApplicationsPage() {
                           )
                         }
                       >
-                        <XCircle className="w-4 h-4 mr-2" />
+                        {updatingStatus === selectedApplication.id ? (
+                          <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-current mr-2"></div>
+                        ) : (
+                          <XCircle className="w-4 h-4 mr-2" />
+                        )}
                         Rechazar
                       </Button>
                     </>
@@ -792,6 +863,7 @@ export default function JobApplicationsPage() {
                     <>
                       <Button
                         variant="outline"
+                        disabled={updatingStatus === selectedApplication.id}
                         onClick={() =>
                           updateApplicationStatus(
                             selectedApplication.id,
@@ -799,11 +871,16 @@ export default function JobApplicationsPage() {
                           )
                         }
                       >
-                        <Star className="w-4 h-4 mr-2" />
+                        {updatingStatus === selectedApplication.id ? (
+                          <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-current mr-2"></div>
+                        ) : (
+                          <Star className="w-4 h-4 mr-2" />
+                        )}
                         Preseleccionar
                       </Button>
                       <Button
                         variant="outline"
+                        disabled={updatingStatus === selectedApplication.id}
                         onClick={() =>
                           updateApplicationStatus(
                             selectedApplication.id,
@@ -812,7 +889,11 @@ export default function JobApplicationsPage() {
                           )
                         }
                       >
-                        <XCircle className="w-4 h-4 mr-2" />
+                        {updatingStatus === selectedApplication.id ? (
+                          <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-current mr-2"></div>
+                        ) : (
+                          <XCircle className="w-4 h-4 mr-2" />
+                        )}
                         Rechazar
                       </Button>
                     </>
@@ -821,6 +902,7 @@ export default function JobApplicationsPage() {
                     <>
                       <Button
                         variant="outline"
+                        disabled={updatingStatus === selectedApplication.id}
                         onClick={() =>
                           updateApplicationStatus(
                             selectedApplication.id,
@@ -828,11 +910,16 @@ export default function JobApplicationsPage() {
                           )
                         }
                       >
-                        <CheckCircle className="w-4 h-4 mr-2" />
+                        {updatingStatus === selectedApplication.id ? (
+                          <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-current mr-2"></div>
+                        ) : (
+                          <CheckCircle className="w-4 h-4 mr-2" />
+                        )}
                         Contratar
                       </Button>
                       <Button
                         variant="outline"
+                        disabled={updatingStatus === selectedApplication.id}
                         onClick={() =>
                           updateApplicationStatus(
                             selectedApplication.id,
@@ -841,7 +928,11 @@ export default function JobApplicationsPage() {
                           )
                         }
                       >
-                        <XCircle className="w-4 h-4 mr-2" />
+                        {updatingStatus === selectedApplication.id ? (
+                          <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-current mr-2"></div>
+                        ) : (
+                          <XCircle className="w-4 h-4 mr-2" />
+                        )}
                         Rechazar
                       </Button>
                     </>

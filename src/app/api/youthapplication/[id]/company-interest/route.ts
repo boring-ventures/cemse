@@ -37,10 +37,7 @@ export async function GET(
 ) {
   try {
     const { id } = await params;
-    console.log(
-      "🔍 API: Received request for company interests in youth application:",
-      id
-    );
+    // console.log("🔍 API: Received request for company interests in youth application:", id);
 
     // Get token from cookies (cookie-based authentication)
     const cookieStore = await cookies();
@@ -59,11 +56,11 @@ export async function GET(
 
     if (token.includes(".") && token.split(".").length === 3) {
       // JWT token
-      console.log("🔍 API: JWT token detected");
+      // console.log("🔍 API: JWT token detected");
       try {
         const payload = jwt.verify(token, JWT_SECRET) as any;
         userId = payload.id;
-        console.log("🔍 API: Authenticated user ID:", userId);
+        // console.log("🔍 API: Authenticated user ID:", userId);
       } catch (error) {
         console.error("🔍 API: JWT verification failed:", error);
         return NextResponse.json(
@@ -114,7 +111,7 @@ export async function GET(
       orderBy: { createdAt: "desc" },
     });
 
-    console.log("✅ API: Found", interests.length, "company interests");
+    // console.log("✅ API: Found", interests.length, "company interests");
     return NextResponse.json(interests);
   } catch (error) {
     console.error("Error in get company interests route:", error);
@@ -154,11 +151,11 @@ export async function POST(
 
     if (token.includes(".") && token.split(".").length === 3) {
       // JWT token
-      console.log("🔍 API: JWT token detected");
+      // console.log("🔍 API: JWT token detected");
       try {
         const payload = jwt.verify(token, JWT_SECRET) as any;
         userId = payload.id;
-        console.log("🔍 API: Authenticated user ID:", userId);
+        // console.log("🔍 API: Authenticated user ID:", userId);
       } catch (error) {
         console.error("🔍 API: JWT verification failed:", error);
         return NextResponse.json(
@@ -196,13 +193,35 @@ export async function POST(
     // Verify that the authenticated user belongs to the company
     const company = await prisma.company.findUnique({
       where: { id: companyId },
-      select: { id: true, name: true },
+      select: {
+        id: true,
+        name: true,
+        createdBy: true,
+      },
     });
 
     if (!company) {
       return NextResponse.json(
         { message: "Company not found" },
         { status: 404 }
+      );
+    }
+
+    // Authorization check - only company owner can express interest
+    const isCompanyOwner = userId === company.createdBy;
+
+    console.log("🔍 API: Authorization check - User:", {
+      userId,
+      companyId,
+      companyCreatedBy: company.createdBy,
+      isCompanyOwner,
+    });
+
+    if (!isCompanyOwner) {
+      console.log("🔍 API: Insufficient permissions for user:", userId);
+      return NextResponse.json(
+        { message: "Insufficient permissions" },
+        { status: 403 }
       );
     }
 
@@ -317,11 +336,11 @@ export async function PUT(
 
     if (token.includes(".") && token.split(".").length === 3) {
       // JWT token
-      console.log("🔍 API: JWT token detected");
+      // console.log("🔍 API: JWT token detected");
       try {
         const payload = jwt.verify(token, JWT_SECRET) as any;
         userId = payload.id;
-        console.log("🔍 API: Authenticated user ID:", userId);
+        // console.log("🔍 API: Authenticated user ID:", userId);
       } catch (error) {
         console.error("🔍 API: JWT verification failed:", error);
         return NextResponse.json(
@@ -353,6 +372,41 @@ export async function PUT(
       return NextResponse.json(
         { message: "Company ID and status are required" },
         { status: 400 }
+      );
+    }
+
+    // Verify that the authenticated user belongs to the company
+    const company = await prisma.company.findUnique({
+      where: { id: companyId },
+      select: {
+        id: true,
+        name: true,
+        createdBy: true,
+      },
+    });
+
+    if (!company) {
+      return NextResponse.json(
+        { message: "Company not found" },
+        { status: 404 }
+      );
+    }
+
+    // Authorization check - only company owner can update interest status
+    const isCompanyOwner = userId === company.createdBy;
+
+    console.log("🔍 API: Authorization check - User:", {
+      userId,
+      companyId,
+      companyCreatedBy: company.createdBy,
+      isCompanyOwner,
+    });
+
+    if (!isCompanyOwner) {
+      console.log("🔍 API: Insufficient permissions for user:", userId);
+      return NextResponse.json(
+        { message: "Insufficient permissions" },
+        { status: 403 }
       );
     }
 

@@ -21,6 +21,8 @@ import {
   Send,
   RefreshCw,
   Calendar,
+  MapPin,
+  Building,
 } from "lucide-react";
 import {
   Card,
@@ -94,10 +96,9 @@ interface CandidatesData {
   stats: {
     total: number;
     byStatus: {
-      sent: number;
-      underReview: number;
-      preSelected: number;
-      rejected: number;
+      active: number;
+      paused: number;
+      closed: number;
       hired: number;
     };
     byJob: Record<string, { jobTitle: string; count: number }>;
@@ -121,15 +122,9 @@ export default function CandidatesPage() {
     useState<JobApplication | null>(null);
   const [updateDialogOpen, setUpdateDialogOpen] = useState(false);
   const [candidateNotes, setCandidateNotes] = useState("");
-  const [candidateRating, setCandidateRating] = useState<number>(0);
-  const [candidateStatus, setCandidateStatus] =
-    useState<ApplicationStatus>("SENT");
+  const [candidateStatus, setCandidateStatus] = useState<string>("ACTIVE");
   const { toast } = useToast();
   const [page, setPage] = useState(1);
-  const [rejectDialogOpen, setRejectDialogOpen] = useState(false);
-  const [rejectionMessage, setRejectionMessage] = useState("");
-  const [candidateToReject, setCandidateToReject] =
-    useState<JobApplication | null>(null);
   const [showChatModal, setShowChatModal] = useState(false);
   const [newMessage, setNewMessage] = useState("");
   const [showInterestModal, setShowInterestModal] = useState(false);
@@ -153,7 +148,13 @@ export default function CandidatesPage() {
   const expressInterest = useExpressCompanyInterest();
   const updateInterestStatus = useUpdateCompanyInterestStatus();
 
-  // Get company interests for the selected candidate
+  // Get company interests for all candidates
+  // We need to fetch interests for all candidates, not just the selected one
+  const [allCompanyInterests, setAllCompanyInterests] = useState<any[]>([]);
+  const [interestsLoading, setInterestsLoading] = useState(false);
+  const [interestsFetched, setInterestsFetched] = useState(false);
+
+  // Get company interests for the selected candidate (for modal)
   const { data: companyInterests } = useCompanyInterests(
     selectedCandidate?.id || ""
   );
@@ -161,6 +162,14 @@ export default function CandidatesPage() {
   useEffect(() => {
     fetchCandidates();
   }, [searchTerm, statusFilter, sortBy, sortOrder, page]);
+
+  // Fetch company interests when candidates are loaded
+  useEffect(() => {
+    if (candidatesData?.candidates && currentUser?.profile?.company?.id) {
+      setInterestsFetched(false); // Reset cache when candidates change
+      fetchAllCompanyInterests();
+    }
+  }, [candidatesData?.candidates?.length, currentUser?.profile?.company?.id]);
 
   // Load messages when chat modal opens
   useEffect(() => {
@@ -193,16 +202,7 @@ export default function CandidatesPage() {
       const transformedData: CandidatesData = {
         candidates: data.map((app: any) => ({
           id: app.id,
-          status:
-            app.status === "ACTIVE"
-              ? "SENT"
-              : app.status === "PAUSED"
-                ? "UNDER_REVIEW"
-                : app.status === "CLOSED"
-                  ? "REJECTED"
-                  : app.status === "HIRED"
-                    ? "HIRED"
-                    : "SENT",
+          status: app.status, // Use the actual youth application status directly
           appliedAt: app.createdAt,
           coverLetter: app.description,
           cvFile: app.cvFile || app.cvUrl,
@@ -213,9 +213,15 @@ export default function CandidatesPage() {
             firstName: app.youthProfile?.firstName || "Sin nombre",
             lastName: app.youthProfile?.lastName || "",
             email: app.youthProfile?.email || "Sin email",
+            phone: app.youthProfile?.phone || "Sin teléfono",
+            address: app.youthProfile?.address || "Sin dirección",
+            municipality: app.youthProfile?.municipality || "Sin municipio",
+            department: app.youthProfile?.department || "Sin departamento",
+            birthDate: app.youthProfile?.birthDate || null,
             avatarUrl: undefined,
-            location: undefined,
-            phone: undefined,
+            location: app.youthProfile?.address
+              ? `${app.youthProfile.address}, ${app.youthProfile.municipality}`
+              : undefined,
           },
           jobOffer: {
             id: app.id,
@@ -234,11 +240,9 @@ export default function CandidatesPage() {
         stats: {
           total: data.length,
           byStatus: {
-            sent: data.filter((app: any) => app.status === "ACTIVE").length,
-            underReview: data.filter((app: any) => app.status === "PAUSED")
-              .length,
-            preSelected: 0,
-            rejected: data.filter((app: any) => app.status === "CLOSED").length,
+            active: data.filter((app: any) => app.status === "ACTIVE").length,
+            paused: data.filter((app: any) => app.status === "PAUSED").length,
+            closed: data.filter((app: any) => app.status === "CLOSED").length,
             hired: data.filter((app: any) => app.status === "HIRED").length,
           },
           byJob: {},
@@ -256,6 +260,62 @@ export default function CandidatesPage() {
       });
     } finally {
       setLoading(false);
+    }
+  };
+
+  // Fetch company interests for all candidates
+  const fetchAllCompanyInterests = async () => {
+    if (
+      !candidatesData?.candidates ||
+      !currentUser?.profile?.company?.id ||
+      interestsLoading ||
+      interestsFetched
+    )
+      return;
+
+    try {
+      setInterestsLoading(true);
+      console.log("🔍 Fetching company interests for all candidates...");
+
+      // Fetch interests for each candidate
+      const interestPromises = candidatesData.candidates.map(
+        async (candidate) => {
+          try {
+            const response = await fetch(
+              `/api/youthapplication/${candidate.id}/company-interest`
+            );
+            if (response.ok) {
+              const interests = await response.json();
+              return interests.filter(
+                (interest: any) =>
+                  interest.companyId === currentUser.profile?.company?.id
+              );
+            }
+            return [];
+          } catch (error) {
+            console.error(
+              `Error fetching interests for candidate ${candidate.id}:`,
+              error
+            );
+            return [];
+          }
+        }
+      );
+
+      const allInterests = await Promise.all(interestPromises);
+      const flattenedInterests = allInterests.flat();
+
+      console.log(
+        "✅ Fetched all company interests:",
+        flattenedInterests.length,
+        "interests"
+      );
+      setAllCompanyInterests(flattenedInterests);
+      setInterestsFetched(true);
+    } catch (error) {
+      console.error("❌ Error fetching all company interests:", error);
+    } finally {
+      setInterestsLoading(false);
     }
   };
 
@@ -295,18 +355,14 @@ export default function CandidatesPage() {
     }
   };
 
-  const handleStatusChange = (
-    candidate: JobApplication,
-    newStatus: ApplicationStatus
-  ) => {
-    updateCandidate(candidate.id, { status: newStatus });
+  const handleStatusChange = (candidate: JobApplication, newStatus: string) => {
+    updateCandidate(candidate.id, { status: newStatus as any });
   };
 
   const openUpdateDialog = (candidate: JobApplication) => {
     setSelectedCandidate(candidate);
     setCandidateNotes(candidate.notes || "");
-    setCandidateRating(candidate.rating || 0);
-    setCandidateStatus(candidate.status);
+    setCandidateStatus(candidate.status as any);
     setUpdateDialogOpen(true);
   };
 
@@ -315,31 +371,8 @@ export default function CandidatesPage() {
 
     updateCandidate(selectedCandidate.id, {
       notes: candidateNotes,
-      rating: candidateRating || undefined,
-      status: candidateStatus,
+      status: candidateStatus as any,
     });
-  };
-
-  const handleRejectClick = (candidate: JobApplication) => {
-    setCandidateToReject(candidate);
-    setRejectionMessage("");
-    setRejectDialogOpen(true);
-  };
-
-  const handleConfirmReject = () => {
-    if (!candidateToReject) return;
-    // Here you would send the rejection message to the backend if needed
-    // For now, just log it
-    console.log(
-      "Rejected candidate:",
-      candidateToReject.id,
-      "Message:",
-      rejectionMessage
-    );
-    handleStatusChange(candidateToReject, "REJECTED");
-    setRejectDialogOpen(false);
-    setCandidateToReject(null);
-    setRejectionMessage("");
   };
 
   // Chat handlers
@@ -406,6 +439,10 @@ export default function CandidatesPage() {
         description: "Has expresado interés en este candidato",
       });
 
+      // Refresh the company interests for all candidates
+      setInterestsFetched(false); // Reset cache to force refresh
+      await fetchAllCompanyInterests();
+
       setShowInterestModal(false);
       setSelectedCandidateForInterest(null);
       setInterestMessage("");
@@ -422,10 +459,19 @@ export default function CandidatesPage() {
     candidateId: string,
     newStatus: string
   ) => {
-    if (!currentUser?.profile?.company?.id) return;
+    if (!currentUser?.profile?.company?.id) {
+      console.log("❌ No company ID found for current user");
+      return;
+    }
+
+    console.log("🔄 Updating interest status:", {
+      candidateId,
+      newStatus,
+      companyId: currentUser.profile.company.id,
+    });
 
     try {
-      await updateInterestStatus.mutateAsync({
+      const result = await updateInterestStatus.mutateAsync({
         applicationId: candidateId,
         data: {
           companyId: currentUser.profile.company.id,
@@ -433,14 +479,21 @@ export default function CandidatesPage() {
         },
       });
 
+      console.log("✅ Interest status updated successfully:", result);
+
+      // Refresh the company interests for all candidates
+      setInterestsFetched(false); // Reset cache to force refresh
+      await fetchAllCompanyInterests();
+
       toast({
         title: "Estado actualizado",
         description: "El estado del interés ha sido actualizado",
       });
     } catch (error) {
+      console.error("❌ Error updating interest status:", error);
       toast({
         title: "Error",
-        description: "No se pudo actualizar el estado",
+        description: `No se pudo actualizar el estado: ${error instanceof Error ? error.message : "Error desconocido"}`,
         variant: "destructive",
       });
     }
@@ -448,22 +501,63 @@ export default function CandidatesPage() {
 
   // Check if company has expressed interest in a candidate
   const hasCompanyInterest = (candidateId: string) => {
-    if (!companyInterests || !currentUser?.profile?.company?.id) return false;
-    return companyInterests.some(
+    if (!allCompanyInterests || !currentUser?.profile?.company?.id) {
+      console.log("🔍 hasCompanyInterest: No data available", {
+        hasAllCompanyInterests: !!allCompanyInterests,
+        hasCompanyId: !!currentUser?.profile?.company?.id,
+        candidateId,
+      });
+      return false;
+    }
+
+    const hasInterest = allCompanyInterests.some(
       (interest) =>
         interest.companyId === currentUser.profile!.company!.id &&
         interest.applicationId === candidateId
     );
+
+    console.log("🔍 hasCompanyInterest:", {
+      candidateId,
+      companyId: currentUser.profile.company.id,
+      allCompanyInterests: allCompanyInterests.length,
+      hasInterest,
+      allInterests: allCompanyInterests.map((i) => ({
+        id: i.id,
+        companyId: i.companyId,
+        applicationId: i.applicationId,
+        status: i.status,
+      })),
+    });
+
+    return hasInterest;
   };
 
   // Get company's interest status for a candidate
   const getCompanyInterestStatus = (candidateId: string) => {
-    if (!companyInterests || !currentUser?.profile?.company?.id) return null;
-    const interest = companyInterests.find(
+    if (!allCompanyInterests || !currentUser?.profile?.company?.id) {
+      console.log("🔍 getCompanyInterestStatus: No data available", {
+        hasAllCompanyInterests: !!allCompanyInterests,
+        hasCompanyId: !!currentUser?.profile?.company?.id,
+        candidateId,
+      });
+      return null;
+    }
+
+    const interest = allCompanyInterests.find(
       (interest) =>
         interest.companyId === currentUser.profile!.company!.id &&
         interest.applicationId === candidateId
     );
+
+    console.log("🔍 getCompanyInterestStatus:", {
+      candidateId,
+      companyId: currentUser.profile.company.id,
+      allCompanyInterests: allCompanyInterests.length,
+      foundInterest: interest
+        ? { id: interest.id, status: interest.status }
+        : null,
+    });
+
     return interest?.status || null;
   };
 
@@ -488,21 +582,23 @@ export default function CandidatesPage() {
     }
   };
 
-  const getStatusBadge = (status: ApplicationStatus) => {
-    const statusConfig = {
-      SENT: { label: "Enviado", variant: "secondary" as const, icon: Clock },
-      UNDER_REVIEW: {
-        label: "En Revisión",
-        variant: "default" as const,
-        icon: Eye,
-      },
-      PRE_SELECTED: {
-        label: "Preseleccionado",
+  const getStatusBadge = (status: string) => {
+    const statusConfig: Record<
+      string,
+      { label: string; variant: any; icon: any }
+    > = {
+      ACTIVE: {
+        label: "Activo",
         variant: "default" as const,
         icon: CheckCircle,
       },
-      REJECTED: {
-        label: "Rechazado",
+      PAUSED: {
+        label: "Pausado",
+        variant: "secondary" as const,
+        icon: Clock,
+      },
+      CLOSED: {
+        label: "Cerrado",
         variant: "destructive" as const,
         icon: XCircle,
       },
@@ -775,9 +871,9 @@ export default function CandidatesPage() {
               </CardHeader>
               <CardContent>
                 <div className="text-3xl font-bold text-blue-600 mb-1">
-                  {candidatesData.stats.byStatus.underReview}
+                  {candidatesData.stats.byStatus.paused}
                 </div>
-                <p className="text-sm text-gray-600">Requieren atención</p>
+                <p className="text-sm text-gray-600">Pausados</p>
               </CardContent>
             </Card>
 
@@ -792,9 +888,9 @@ export default function CandidatesPage() {
               </CardHeader>
               <CardContent>
                 <div className="text-3xl font-bold text-green-600 mb-1">
-                  {candidatesData.stats.byStatus.preSelected}
+                  {candidatesData.stats.byStatus.hired}
                 </div>
-                <p className="text-sm text-gray-600">Listos para entrevista</p>
+                <p className="text-sm text-gray-600">Contratados</p>
               </CardContent>
             </Card>
 
@@ -809,9 +905,9 @@ export default function CandidatesPage() {
               </CardHeader>
               <CardContent>
                 <div className="text-3xl font-bold text-purple-600 mb-1">
-                  {candidatesData.stats.byStatus.hired}
+                  {candidatesData.stats.byStatus.closed}
                 </div>
-                <p className="text-sm text-gray-600">Proceso exitoso</p>
+                <p className="text-sm text-gray-600">Cerrados</p>
               </CardContent>
             </Card>
 
@@ -826,9 +922,9 @@ export default function CandidatesPage() {
               </CardHeader>
               <CardContent>
                 <div className="text-3xl font-bold text-orange-600 mb-1">
-                  {candidatesData.stats.byStatus.sent}
+                  {candidatesData.stats.byStatus.active}
                 </div>
-                <p className="text-sm text-gray-600">Pendientes de revisar</p>
+                <p className="text-sm text-gray-600">Activos</p>
               </CardContent>
             </Card>
           </div>
@@ -861,12 +957,9 @@ export default function CandidatesPage() {
                   </SelectTrigger>
                   <SelectContent>
                     <SelectItem value="all">Todos los estados</SelectItem>
-                    <SelectItem value="SENT">Enviado</SelectItem>
-                    <SelectItem value="UNDER_REVIEW">En Revisión</SelectItem>
-                    <SelectItem value="PRE_SELECTED">
-                      Preseleccionado
-                    </SelectItem>
-                    <SelectItem value="REJECTED">Rechazado</SelectItem>
+                    <SelectItem value="ACTIVE">Activo</SelectItem>
+                    <SelectItem value="PAUSED">Pausado</SelectItem>
+                    <SelectItem value="CLOSED">Cerrado</SelectItem>
                     <SelectItem value="HIRED">Contratado</SelectItem>
                   </SelectContent>
                 </Select>
@@ -1157,23 +1250,6 @@ export default function CandidatesPage() {
                                   </DropdownMenuItem>
                                 </>
                               )}
-                              <DropdownMenuSeparator />
-                              <DropdownMenuItem
-                                onClick={() =>
-                                  handleStatusChange(candidate, "PRE_SELECTED")
-                                }
-                                disabled={candidate.status === "PRE_SELECTED"}
-                              >
-                                <CheckCircle className="mr-2 h-4 w-4" />
-                                Preseleccionar
-                              </DropdownMenuItem>
-                              <DropdownMenuItem
-                                onClick={() => handleRejectClick(candidate)}
-                                disabled={candidate.status === "REJECTED"}
-                              >
-                                <XCircle className="mr-2 h-4 w-4" />
-                                Rechazar
-                              </DropdownMenuItem>
                             </DropdownMenuContent>
                           </DropdownMenu>
                         </TableCell>
@@ -1221,9 +1297,9 @@ export default function CandidatesPage() {
         >
           <DialogContent className="max-w-4xl max-h-[80vh] overflow-y-auto">
             <DialogHeader>
-              <DialogTitle>Detalles del Candidato</DialogTitle>
+              <DialogTitle>Detalles de la Postulación</DialogTitle>
               <DialogDescription>
-                Información completa de la aplicación de{" "}
+                Información completa de la postulación de{" "}
                 {`${selectedCandidate.applicant.firstName} ${selectedCandidate.applicant.lastName}`}
               </DialogDescription>
             </DialogHeader>
@@ -1254,18 +1330,6 @@ export default function CandidatesPage() {
                   </div>
                   <div className="flex items-center gap-4">
                     {getStatusBadge(selectedCandidate.status)}
-                    {selectedCandidate.rating &&
-                      renderStars(selectedCandidate.rating)}
-                  </div>
-                  <div className="grid grid-cols-2 gap-4 text-sm">
-                    <div>
-                      <span className="font-medium">Puesto:</span>{" "}
-                      {selectedCandidate.jobOffer.title}
-                    </div>
-                    <div>
-                      <span className="font-medium">Aplicó:</span>{" "}
-                      {formatDate(selectedCandidate.appliedAt)}
-                    </div>
                   </div>
                 </div>
               </div>
@@ -1322,29 +1386,121 @@ export default function CandidatesPage() {
                 </div>
               )}
 
-              {/* Actions */}
-              <div className="flex justify-end space-x-3 pt-4 border-t">
-                {selectedCandidate.cvFile && (
-                  <Button variant="outline" asChild>
-                    <a
-                      href={selectedCandidate.cvFile}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                    >
-                      <FileText className="mr-2 h-4 w-4" />
-                      Ver CV
-                    </a>
-                  </Button>
-                )}
-                <Button variant="outline">
-                  <Mail className="mr-2 h-4 w-4" />
-                  Enviar Email
-                </Button>
-                <Button onClick={() => openUpdateDialog(selectedCandidate)}>
-                  <Edit3 className="mr-2 h-4 w-4" />
-                  Actualizar
-                </Button>
+              {/* Contact Information */}
+              <div>
+                <h4 className="text-lg font-semibold mb-3">
+                  Información de Contacto
+                </h4>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div className="space-y-3">
+                    <div className="flex items-center space-x-3">
+                      <Mail className="h-4 w-4 text-gray-500" />
+                      <div>
+                        <p className="text-sm font-medium">Email</p>
+                        <p className="text-sm text-gray-600">
+                          {selectedCandidate.applicant.email}
+                        </p>
+                      </div>
+                    </div>
+                    <div className="flex items-center space-x-3">
+                      <Phone className="h-4 w-4 text-gray-500" />
+                      <div>
+                        <p className="text-sm font-medium">Teléfono</p>
+                        <p className="text-sm text-gray-600">
+                          {selectedCandidate.applicant.phone}
+                        </p>
+                      </div>
+                    </div>
+                  </div>
+                  <div className="space-y-3">
+                    <div className="flex items-center space-x-3">
+                      <MapPin className="h-4 w-4 text-gray-500" />
+                      <div>
+                        <p className="text-sm font-medium">Dirección</p>
+                        <p className="text-sm text-gray-600">
+                          {(selectedCandidate.applicant as any).address}
+                        </p>
+                      </div>
+                    </div>
+                    <div className="flex items-center space-x-3">
+                      <Building className="h-4 w-4 text-gray-500" />
+                      <div>
+                        <p className="text-sm font-medium">Municipio</p>
+                        <p className="text-sm text-gray-600">
+                          {(selectedCandidate.applicant as any).municipality}
+                        </p>
+                      </div>
+                    </div>
+                  </div>
+                </div>
               </div>
+
+              <Separator />
+
+              {/* Additional Information */}
+              <div>
+                <h4 className="text-lg font-semibold mb-3">
+                  Información Adicional
+                </h4>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div className="space-y-3">
+                    <div>
+                      <p className="text-sm font-medium">Departamento</p>
+                      <p className="text-sm text-gray-600">
+                        {(selectedCandidate.applicant as any).department}
+                      </p>
+                    </div>
+                    {(selectedCandidate.applicant as any).birthDate && (
+                      <div>
+                        <p className="text-sm font-medium">
+                          Fecha de Nacimiento
+                        </p>
+                        <p className="text-sm text-gray-600">
+                          {new Date(
+                            (selectedCandidate.applicant as any).birthDate
+                          ).toLocaleDateString("es-ES")}
+                        </p>
+                      </div>
+                    )}
+                  </div>
+                  <div className="space-y-3">
+                    <div>
+                      <p className="text-sm font-medium">
+                        Estado de la Postulación
+                      </p>
+                      <div className="mt-1">
+                        {getStatusBadge(selectedCandidate.status)}
+                      </div>
+                    </div>
+                    <div>
+                      <p className="text-sm font-medium">Fecha de Aplicación</p>
+                      <p className="text-sm text-gray-600">
+                        {formatDate(selectedCandidate.appliedAt)}
+                      </p>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              {/* CV Download */}
+              {selectedCandidate.cvFile && (
+                <>
+                  <Separator />
+                  <div className="flex justify-center">
+                    <Button variant="outline" asChild>
+                      <a
+                        href={selectedCandidate.cvFile}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="flex items-center space-x-2"
+                      >
+                        <FileText className="h-4 w-4" />
+                        <span>Descargar CV</span>
+                      </a>
+                    </Button>
+                  </div>
+                </>
+              )}
             </div>
           </DialogContent>
         </Dialog>
@@ -1354,9 +1510,9 @@ export default function CandidatesPage() {
       <Dialog open={updateDialogOpen} onOpenChange={setUpdateDialogOpen}>
         <DialogContent>
           <DialogHeader>
-            <DialogTitle>Actualizar Candidato</DialogTitle>
+            <DialogTitle>Actualizar Postulación</DialogTitle>
             <DialogDescription>
-              Actualiza el estado, calificación y notas del candidato
+              Actualiza el estado y notas de la postulación
             </DialogDescription>
           </DialogHeader>
 
@@ -1365,58 +1521,25 @@ export default function CandidatesPage() {
               <Label htmlFor="status">Estado</Label>
               <Select
                 value={candidateStatus}
-                onValueChange={(value) =>
-                  setCandidateStatus(value as ApplicationStatus)
-                }
+                onValueChange={(value) => setCandidateStatus(value)}
               >
                 <SelectTrigger>
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="SENT">Enviado</SelectItem>
-                  <SelectItem value="UNDER_REVIEW">En Revisión</SelectItem>
-                  <SelectItem value="PRE_SELECTED">Preseleccionado</SelectItem>
-                  <SelectItem value="REJECTED">Rechazado</SelectItem>
+                  <SelectItem value="ACTIVE">Activo</SelectItem>
+                  <SelectItem value="PAUSED">Pausado</SelectItem>
+                  <SelectItem value="CLOSED">Cerrado</SelectItem>
                   <SelectItem value="HIRED">Contratado</SelectItem>
                 </SelectContent>
               </Select>
             </div>
 
             <div>
-              <Label htmlFor="rating">Calificación (1-5 estrellas)</Label>
-              <div className="flex items-center gap-2 mt-2">
-                {[1, 2, 3, 4, 5].map((star) => (
-                  <button
-                    key={star}
-                    type="button"
-                    onClick={() => setCandidateRating(star)}
-                    className="p-1"
-                  >
-                    <Star
-                      className={`w-6 h-6 ${
-                        star <= candidateRating
-                          ? "fill-yellow-400 text-yellow-400"
-                          : "text-gray-300"
-                      }`}
-                    />
-                  </button>
-                ))}
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  onClick={() => setCandidateRating(0)}
-                  className="ml-2"
-                >
-                  Limpiar
-                </Button>
-              </div>
-            </div>
-
-            <div>
-              <Label htmlFor="notes">Notas</Label>
+              <Label htmlFor="notes">Notas sobre la postulación</Label>
               <Textarea
                 id="notes"
-                placeholder="Agrega notas sobre el candidato..."
+                placeholder="Agrega notas sobre la postulación del joven..."
                 value={candidateNotes}
                 onChange={(e) => setCandidateNotes(e.target.value)}
                 className="min-h-[100px]"
@@ -1436,52 +1559,16 @@ export default function CandidatesPage() {
         </DialogContent>
       </Dialog>
 
-      {/* Optional Rejection Message Dialog */}
-      <Dialog open={rejectDialogOpen} onOpenChange={setRejectDialogOpen}>
-        <DialogContent>
-          <DialogHeader>
-            <DialogTitle>Rechazar Candidato</DialogTitle>
-            <DialogDescription>
-              Puedes agregar una respuesta opcional para que el joven sepa el
-              motivo del rechazo.
-            </DialogDescription>
-          </DialogHeader>
-          <div className="space-y-4">
-            <Label htmlFor="rejection-message">
-              Mensaje para el candidato (opcional)
-            </Label>
-            <Textarea
-              id="rejection-message"
-              placeholder="Explica brevemente el motivo del rechazo (opcional)"
-              value={rejectionMessage}
-              onChange={(e) => setRejectionMessage(e.target.value)}
-              className="min-h-[100px]"
-            />
-          </div>
-          <div className="flex justify-end space-x-3 mt-4">
-            <Button
-              variant="outline"
-              onClick={() => setRejectDialogOpen(false)}
-            >
-              Cancelar
-            </Button>
-            <Button variant="destructive" onClick={handleConfirmReject}>
-              Confirmar Rechazo
-            </Button>
-          </div>
-        </DialogContent>
-      </Dialog>
-
       {/* Chat Modal */}
       <Dialog open={showChatModal} onOpenChange={setShowChatModal}>
         <DialogContent className="max-w-4xl max-h-[80vh] overflow-y-auto">
           <DialogHeader>
-            <DialogTitle>Chat con Candidato</DialogTitle>
+            <DialogTitle>Chat con el Joven</DialogTitle>
             <DialogDescription>
               Conversación con{" "}
               {selectedCandidate
                 ? `${selectedCandidate.applicant.firstName} ${selectedCandidate.applicant.lastName}`
-                : "el candidato"}
+                : "el joven"}
             </DialogDescription>
           </DialogHeader>
 

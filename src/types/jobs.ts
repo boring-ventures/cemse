@@ -1,10 +1,19 @@
 export type JobStatus = "ACTIVE" | "PAUSED" | "CLOSED" | "DRAFT";
 
-export type ContractType = "FULL_TIME" | "PART_TIME" | "INTERNSHIP" | "VOLUNTEER" | "FREELANCE";
+export type ContractType =
+  | "FULL_TIME"
+  | "PART_TIME"
+  | "INTERNSHIP"
+  | "VOLUNTEER"
+  | "FREELANCE";
 
 export type WorkModality = "ON_SITE" | "REMOTE" | "HYBRID";
 
-export type ExperienceLevel = "NO_EXPERIENCE" | "ENTRY_LEVEL" | "MID_LEVEL" | "SENIOR_LEVEL";
+export type ExperienceLevel =
+  | "NO_EXPERIENCE"
+  | "ENTRY_LEVEL"
+  | "MID_LEVEL"
+  | "SENIOR_LEVEL";
 
 export type ApplicationStatus =
   | "SENT"
@@ -103,9 +112,13 @@ export interface JobApplication {
     firstName: string;
     lastName: string;
     email: string;
+    phone?: string;
+    address?: string;
+    municipality?: string;
+    department?: string;
+    birthDate?: string | null;
     avatarUrl?: string;
     location?: string;
-    phone?: string;
   };
   jobOffer: {
     id: string;
@@ -134,7 +147,7 @@ export interface JobQuestion {
   id: string;
   jobOfferId: string;
   question: string;
-  type: 'text' | 'multiple_choice' | 'boolean';
+  type: "text" | "multiple_choice" | "boolean";
   required: boolean;
   options: string[];
   orderIndex: number;
